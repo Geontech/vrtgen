@@ -1,0 +1,11 @@
+TestData:
+  type: data
+  Stream ID: true
+  timestamp:
+    integer: utc
+    fractional: picoseconds
+  trailer:
+    - Calibrated Time:
+        default: true
+    - Valid Data
+    - AGC/MGC
