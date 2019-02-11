@@ -48,16 +48,16 @@ class PacketType(IntEnum):
     # 1000-1111 reserved for future VRT Packet types
 
 
-class FieldDescriptor(object):
+class FieldDescriptor:
     DISABLED = 0
     OPTIONAL = 1
     REQUIRED = 2
 
     __slots__ = ('name', '_enable_state', 'default_value')
-    def __init__(self, name, default_value=None):
+    def __init__(self, name):
         self.name = name
         self._enable_state = FieldDescriptor.DISABLED
-        self.default_value = default_value
+        self.default_value = None
 
     def match(self, name):
         return name.lower() == self.name.lower()
@@ -124,14 +124,18 @@ class VRTPacket(object):
         self.fractional_time = TSF.NONE
 
     def get_field(self, name):
-        return self.header.get_field(name)
+        field = self.header.get_field(name)
+        if field is None:
+            raise KeyError(name)
+        return field
 
     def get_header_bytes(self):
-        header = bytearray(b'\x00' * 4)
+        header = bytearray(4)
 
         header[0] = self.packet_type() << 4
         if self.header.class_id.is_enabled:
             header[0] |= 0x08
+        header[0] |= self.packet_specific_bits()
 
         return header
 
@@ -161,9 +165,7 @@ class VRTDataTrailer(FieldContainer):
         self.context_packet_count = self._add_field('Associated Context Packet Count', 7, 6)
 
     def _add_field(self, name, enable_pos, value_pos):
-        field = TrailerField(name, enable_pos, value_pos)
-        self.add_field(field)
-        return field
+        return self.add_field(TrailerField(name, enable_pos, value_pos))
 
     def get_field(self, name):
         field = super().get_field(name)
@@ -200,7 +202,7 @@ class VRTDataPacket(VRTPacket):
             indicator |= 0x4
         if not self.is_v49_0():
             indicator |= 0x2
-        if self.is_spectral:
+        if self.is_spectrum:
             indicator |= 0x1
         return indicator
 
@@ -211,12 +213,74 @@ class VRTDataPacket(VRTPacket):
     def has_trailer(self):
         return self.trailer is not None
 
+class CIF0(FieldContainer):
+    FIELDS = (
+        ('Context Field Change Indicator', 31), # No data
+        ('Reference Point Identifier', 30), # integer 32 (stream ID)
+        ('Bandwidth', 29), # fixed-point 64/20, Hz
+        ('IF Reference Frequency', 28), # fixed-point 64/20, Hz
+        ('RF Reference Frequency', 27), # fixed-point 64/20, Hz
+        ('RF Reference Frequency Offset', 26), # fixed-point 64/20, Hz
+        ('IF Band Offset', 25), # fixed-point 64/20, Hz
+        ('Reference Level', 24), # fixed-point 16/7 dBm (upper 16 reserved)
+        ('Gain', 23), # [stage2 (optional), stage1]: fixed-point 16/7, dB
+        ('Over-range Count', 22), # integer 32
+        ('Sample Rate', 21), # fixed-point 64/20, Hz
+        ('Timestamp Adjustment', 20), # fractional time (integer 64)
+        ('Timestamp Calibration Time', 19), # 1 word, depends on prologue TSI
+        ('Temperature', 18), # fixed-point 16/6, degrees C (upper 16 reserved)
+        ('Device Identifier', 17), # 64 bits total, specific format
+        ('State/Event Indicators', 16), # 32 bits, bit flags
+        ('Signal Data Packet Payload Format', 15), # structured
+        ('Formatted GPS', 14), # structured
+        ('Formatted INS', 13), # structured
+        ('ECEF Ephemeris', 12), # structured
+        ('Relative Ephemeris', 11), # structured
+        ('Ephemeris Ref ID', 10), # integer 32
+        ('GPS ASCII', 9), # 2 word header plus arbitrary binary data
+        ('Context Association Lists', 8)
+        # Field Attributes Enable (CIF7)
+        # Reserved
+        # Reserved
+        # Reserved
+        # CIF 3 Enable
+        # CIF 2 Enable
+        # CIF 1 Enable
+        # Reserved
+    )
+
+    def __init__(self):
+        super().__init__()
+        for name, bit in CIF0.FIELDS:
+            self.add_field(FieldDescriptor(name))
+
+    def get_prologue_bytes(self):
+        prologue = 0
+        for field, bit in zip(self.fields, range(31, -1, -1)):
+            if field.is_enabled:
+                prologue |= 1 << bit
+        return struct.pack('>i', prologue)
+
 class VRTContextPacket(VRTPacket):
     def __init__(self, name):
         VRTPacket.__init__(self, name, stream_id=True)
+        self.is_timestamp_mode = False
+
+        # TODO: move this into a common location
+        self.cif0 = CIF0()
+
+    def get_header_bytes(self):
+        base = super().get_header_bytes()
+        return base + self.cif0.get_prologue_bytes()
 
     def packet_type(self):
         return PacketType.CONTEXT
+
+    def get_field(self, name):
+        field = self.cif0.get_field(name)
+        if field is not None:
+            return field
+        return super().get_field(name)
 
     def packet_specific_bits(self):
         indicator = 0
@@ -260,9 +324,12 @@ class Parser(object):
 
     def parse_field(self, field, node):
         if isinstance(node, yaml.ScalarNode):
-            bool_value = self._constructor.construct_yaml_bool(node)
-            if bool_value:
+            if node.value == 'required':
                 field.set_required()
+            elif node.value == 'optional':
+                field.set_optional()
+            elif node.value == 'disabled':
+                field.set_disabled()
         else:
             logging.warning("Invalid value for field '%s' (line %d, column %d)",
                             field.name, node.start_mark.line, node.start_mark.column)
@@ -327,9 +394,10 @@ class Parser(object):
                     continue
                 trailer = self.parse_trailer(value_node)
             else:
-                field = packet.get_field(field_name)
-                if field is None:
-                    logging.error("Invalid field '%s'", field_name)
+                try:
+                    field = packet.get_field(field_name)
+                except KeyError as exc:
+                    logging.warning('Invalid field %s', exc)
                     continue
                 logging.debug("Parsing field '%s'", field.name)
                 self.parse_field(field, value_node)

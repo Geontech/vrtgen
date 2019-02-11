@@ -1,6 +1,6 @@
 data:
   TestData:
-    Stream ID: true
+    Stream ID: required
     timestamp:
       integer: utc
       fractional: picoseconds
@@ -16,4 +16,5 @@ data:
 
 context:
   TestContext:
-    Class ID: true
+    Class ID: required
+    IF Reference Frequency: optional
