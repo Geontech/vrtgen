@@ -253,12 +253,6 @@ class Parser(object):
     def __init__(self):
         self._constructor = yaml.constructor.SafeConstructor()
 
-    def parse_context_packet(self, name, node):
-        return VRTContextPacket(name)
-
-    def parse_command_packet(self, name, node):
-        return VRTCommandPacket(name)
-
     def parse_namespace(self, node):
         namespace = str(node.value)
         logging.debug('Using namespace %s', namespace)
@@ -269,6 +263,9 @@ class Parser(object):
             bool_value = self._constructor.construct_yaml_bool(node)
             if bool_value:
                 field.set_required()
+        else:
+            logging.warning("Invalid value for field '%s' (line %d, column %d)",
+                            field.name, node.start_mark.line, node.start_mark.column)
 
     def parse_trailer(self, node):
         if not isinstance(node, yaml.MappingNode):
@@ -343,13 +340,13 @@ class Parser(object):
         else:
             return name
 
-    def parse_data_packets(self, node):
+    def parse_packets(self, PacketClass, node):
         if not isinstance(node, yaml.MappingNode):
-            logging.warning('Invalid data packet section (line %d column %d)',
+            logging.warning('Invalid packet section (line %d column %d)',
                             node.start_mark.line, node.start_mark.column)
 
         for key_node, value_node in node.value:
-            packet = VRTDataPacket(key_node.value)
+            packet = PacketClass(key_node.value)
             self.parse_packet(packet, value_node)
             yield packet
 
@@ -361,19 +358,17 @@ class Parser(object):
 
         self.namespace = None
         for key_node, value_node in root.value:
-            name = str(key_node.value)
+            name = key_node.value
             if name == 'namespace':
                 self.parse_namespace(value_node)
             elif name == 'data':
-                yield from self.parse_data_packets(value_node)
+                yield from self.parse_packets(VRTDataPacket, value_node)
+            elif name == 'context':
+                yield from self.parse_packets(VRTContextPacket, value_node)
+            elif name == 'control':
+                yield from self.parse_packets(VRTControlPacket, value_node)
             else:
-                if name.startswith('.'):
-                    logging.debug('Skipping hidden packet %s', name)
-                    continue
-                try:
-                    yield self.parse_packet(name, value_node)
-                except Exception as exc:
-                    logging.exception(exc)
+                logging.warning("Invalid section '%s'", key_node.value)
 
 def hex_bytes(data):
     return ''.join('{:02x}'.format(ch) for ch in data)

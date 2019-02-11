@@ -13,3 +13,7 @@ data:
       AGC/MGC: required
       Sample Loss: true
       Associated Context Packet Count: required
+
+context:
+  TestContext:
+    Class ID: true
