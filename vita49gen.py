@@ -15,7 +15,7 @@ logging.getLogger().setLevel(logging.DEBUG)
 # 01 - UTC
 # 10 - GPS
 # 11 - Other
-class TSI(object):
+class TSI(IntEnum):
     NONE  = 0
     UTC   = 1
     GPS   = 2
@@ -26,7 +26,7 @@ class TSI(object):
 # 01 - sample-count
 # 10 - real-time (picoseconds)
 # 11 - free-running count
-class TSF(object):
+class TSF(IntEnum):
     NONE         = 0
     SAMPLE_COUNT = 1
     REAL_TIME    = 2
@@ -287,8 +287,8 @@ class Parser(object):
         else:
             logger.warning("Invalid field attribute '%s'", value)
 
-    def parse_packet(self, name, node):
-        logging.info('Processing packet %s', self.get_packet_name(name))
+    def parse_packet(self, packet, node):
+        logging.info('Processing packet %s', self.get_packet_name(packet.name))
         if not isinstance(node, yaml.MappingNode):
             err = 'Invalid packet definition %s (line %d, column %d)' % (name, node.start_mark.line, node.start_mark.column)
             raise RuntimeError(err)
@@ -297,26 +297,26 @@ class Parser(object):
         for key_node, value_node in node.value:
             field_name = str(key_node.value).lower()
             if field_name == 'trailer':
+                if not isinstance(packet, VRTDataPacket):
+                    logging.warning('Trailer only valid for data packets')
+                    continue
                 trailer = self.parse_trailer(value_node)
-
-        mapping = self._constructor.construct_mapping(node)
-        packet_type = mapping.get('type', None).lower()
-        if packet_type == 'data':
-            return self.parse_data_packet(name, mapping)
-        elif packet_type == 'context':
-            return self.parse_context_packet(name, node)
-        elif packet_type == 'command':
-            return self.parse_command_packet(name, node)
-        elif packet_type is None:
-            raise RuntimeError('No packet type specified')
-        else:
-            raise RuntimeError('Invalid packet type ' + mapping['type'])
 
     def get_packet_name(self, name):
         if self.namespace:
             return '::'.join((self.namespace, name))
         else:
             return name
+
+    def parse_data_packets(self, node):
+        if not isinstance(node, yaml.MappingNode):
+            logging.warning('Invalid data packet section (line %d column %d)',
+                            node.start_mark.line, node.start_mark.column)
+
+        for key_node, value_node in node.value:
+            packet = VRTDataPacket(key_node.value)
+            self.parse_packet(packet, value_node)
+            yield packet
 
     def parse(self, filename):
         with open(filename, 'r') as fp:
@@ -329,6 +329,8 @@ class Parser(object):
             name = str(key_node.value)
             if name == 'namespace':
                 self.parse_namespace(value_node)
+            elif name == 'data':
+                yield from self.parse_data_packets(value_node)
             else:
                 if name.startswith('.'):
                     logging.debug('Skipping hidden packet %s', name)

@@ -1,15 +1,15 @@
-TestData:
-  type: data
-  Stream ID: true
-  timestamp:
-    integer: utc
-    fractional: picoseconds
-  trailer:
-    Calibrated Time:
-      default: true
-      attributes:
-        - required
-    Valid Data: required
-    AGC/MGC: required
-    Sample Loss: true
-    Associated Context Packet Count: required
+data:
+  TestData:
+    Stream ID: true
+    timestamp:
+      integer: utc
+      fractional: picoseconds
+    trailer:
+      Calibrated Time:
+        default: true
+        attributes:
+          - required
+      Valid Data: required
+      AGC/MGC: required
+      Sample Loss: true
+      Associated Context Packet Count: required
