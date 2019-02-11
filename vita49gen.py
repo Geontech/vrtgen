@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import logging
 import struct
@@ -31,10 +31,6 @@ class TSF(object):
     REAL_TIME    = 2
     FREE_RUNNING = 3
 
-DISABLED = 0
-OPTIONAL = 1
-REQUIRED = 2
-
 class VRTMessage(object):
     def __init__(self, name, stream_id=True):
         self.name = name
@@ -44,7 +40,7 @@ class VRTMessage(object):
         self.fractional_time = TSF.NONE
 
     def header(self):
-        header = bytearray('\x00' * 4)
+        header = bytearray(b'\x00' * 4)
 
         header[0] = self.packet_type() << 4
         if self.has_class_id:
@@ -53,48 +49,56 @@ class VRTMessage(object):
         return header
 
 class FieldDescriptor(object):
-    __slots__ = ('name', '_enabled', 'default_value')
-    def __init__(self, name, is_enabled=DISABLED, default_value=None):
+    DISABLED = 0
+    OPTIONAL = 1
+    REQUIRED = 2
+
+    __slots__ = ('name', '_enable_state', 'default_value')
+    def __init__(self, name, default_value=None):
         self.name = name
-        self._enabled = is_enabled
+        self._enable_state = FieldDescriptor.DISABLED
         self.default_value = default_value
+
+    def match(self, name):
+        return name.lower() == self.name.lower()
 
     @property
     def is_enabled(self):
-        if self.is_optional:
-            return self.default_value is not None
+        if self.default_value is not None:
+            return True
         else:
             return self.is_required
 
     @property
     def is_required(self):
-        return self._enabled == REQUIRED
+        return self._enable_state == FieldDescriptor.REQUIRED
 
     def set_required(self):
-        self._enabled = REQUIRED
+        self._enable_state = FieldDescriptor.REQUIRED
 
     @property
     def is_optional(self):
-        return self._enabled == OPTIONAL
+        return self._enable_state == FieldDescriptor.OPTIONAL
 
     def set_optional(self):
-        self._enabled = OPTIONAL
+        self._enable_state = FieldDescriptor.OPTIONAL
 
     @property
     def is_disabled(self):
-        return self._enabled == DISABLED
+        return self._enable_state == FieldDescriptor.DISABLED
 
     def set_disabled(self):
-        self._enabled = DISABLED
-        
+        self._enable_state = FieldDescriptor.DISABLED
+
 
 class TrailerField(FieldDescriptor):
     __slots__ = ('enable_bit', 'value_bit')
 
     def __init__(self, name, enable_bit, value_bit):
-        FieldDescriptor.__init__(self, name, default_value=False)
+        FieldDescriptor.__init__(self, name)
         self.enable_bit = enable_bit
         self.value_bit = value_bit
+
 
 class VRTDataTrailer(object):
     def __init__(self):
@@ -109,7 +113,7 @@ class VRTDataTrailer(object):
         self.sample_loss = self._add_field('Sample Loss', 24, 12)
         # [23,22], [11,10] Sample Frame, User-Defined
         # [21..20], [9..8] User-Defined
-        self.context_packet_count = False
+        self.context_packet_count = self._add_field('Associated Context Packet Count', 7, 6)
 
     def _add_field(self, name, enable_pos, value_pos):
         field = TrailerField(name, enable_pos, value_pos)
@@ -118,11 +122,11 @@ class VRTDataTrailer(object):
 
     def get_field(self, name):
         for field in self.__fields:
-            if not isinstance(field, TrailerField):
+            if not isinstance(field, FieldDescriptor):
                 continue
-            if name.lower() == field.name.lower():
+            if field.match(name):
                 return field
-        raise KeyError('Invalid trailer field "'+name+'"')
+        raise KeyError(name)
 
     def get_value(self):
         flag = 0
@@ -131,7 +135,7 @@ class VRTDataTrailer(object):
                 flag |= 1 << field.enable_bit
             if field.default_value:
                 flag |= 1 << field.value_bit
-        if self.context_packet_count:
+        if self.context_packet_count.is_enabled:
             flag |= 1 << 7
         return flag
 
@@ -155,6 +159,7 @@ class VRTDataMessage(VRTMessage):
             indicator |= 0x2
         if self.is_spectral:
             indicator |= 0x1
+        return indicator
 
     def is_v49_0(self):
         # TBD: How to check?
@@ -176,6 +181,7 @@ class VRTContextMessage(VRTMessage):
             indicator |= 0x02
         if self.is_timestamp_mode:
             indicator |= 0x01
+        return indicator
 
     def is_v49_0(self):
         # TBD: How to check?
@@ -210,7 +216,7 @@ class Parser(object):
 
     def parse_context_message(self, name, node):
         return VRTContextMessage(name)
-    
+
     def parse_command_message(self, name, node):
         return VRTCommandMessage(name)
 
@@ -220,38 +226,50 @@ class Parser(object):
         self.namespace = namespace
 
     def parse_trailer(self, node):
-        if not isinstance(node, yaml.SequenceNode):
+        if not isinstance(node, yaml.MappingNode):
             logging.warning('Invalid trailer definition in message (line %d, column %d)' % (node.start_mark.line, node.start_mark.column))
             return None
-        
+
         trailer = VRTDataTrailer()
-        for field_node in node.value:
-            if isinstance(field_node, yaml.ScalarNode):
-                field_name = str(field_node.value)
-                required = True
-                value = None
-            elif isinstance(field_node, yaml.MappingNode):
-                field_name, field_value = field_node.value[0]
-                field_name = str(field_name.value)
-                mapping = self._constructor.construct_mapping(field_value)
-                required = mapping.get('required', True)
-                value = mapping.get('default', None)
-            else:
-                logging.warning('Invalid trailer field definition in message (line %d, column %d)' % (field_node.start_mark.line, field_node.start_mark.column)) 
-                continue
+        for field_name, field_value in node.value:
+            field_name = str(field_name.value)
             try:
                 field = trailer.get_field(field_name)
-            except Exception as exc:
-                logging.warning('%s', exc)
+            except KeyError as exc:
+                logging.warning('Invalid trailer field %s', exc)
                 continue
-            if required:
-                field.set_required()
-            if value is not None:
-                field.default_value = value
 
-        print hex(trailer.get_value())
+            if isinstance(field_value, yaml.ScalarNode):
+                try:
+                    field.default_value = self._constructor.construct_yaml_bool(field_value)
+                except:
+                    self._set_field_attribute(field, str(field_value.value))
+            elif isinstance(field_value, yaml.MappingNode):
+                mapping = self._constructor.construct_mapping(field_value)
+                for key, value in mapping.items():
+                    if key == 'default':
+                        field.default_value = value
+                    elif key == 'attributes':
+                        for attribute in value:
+                            self._set_field_attribute(field, attribute)
+            else:
+                logging.warning('Invalid value for trailer field "%s" (line %d, column %d)',
+                                field_name, field_value.start_mark.line, field_value.start_mark.column)
+                continue
+
+        logging.debug('Trailer %s', hex(trailer.get_value()))
 
         return trailer
+
+    def _set_field_attribute(self, field, value):
+        if value == 'optional':
+            field.set_optional()
+        elif value == 'required':
+            field.set_required()
+        elif value == 'disabled':
+            field.set_disabled()
+        else:
+            logger.warning("Invalid field attribute '%s'", value)
 
     def parse_message(self, name, node):
         logging.info('Processing message %s', self.get_message_name(name))
@@ -295,7 +313,7 @@ class Parser(object):
             name = str(key_node.value)
             if name == 'namespace':
                 self.parse_namespace(value_node)
-            else: 
+            else:
                 if name.startswith('.'):
                     logging.debug('Skipping hidden message %s', name)
                     continue
@@ -308,4 +326,5 @@ if __name__ == '__main__':
     source = sys.argv[1]
     p = Parser()
     for message in p.parse(source):
-        print [hex(ch) for ch in message.header()]
+        header = message.header()
+        logging.debug('Message header 0x%08x', struct.unpack('i', header)[0])

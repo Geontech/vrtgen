@@ -5,7 +5,11 @@ TestData:
     integer: utc
     fractional: picoseconds
   trailer:
-    - Calibrated Time:
-        default: true
-    - Valid Data
-    - AGC/MGC
+    Calibrated Time:
+      default: true
+      attributes:
+        - required
+    Valid Data: required
+    AGC/MGC: required
+    Sample Loss: true
+    Associated Context Packet Count: required
