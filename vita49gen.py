@@ -47,22 +47,6 @@ class PacketType(IntEnum):
     EXTENSION_COMMAND        = 7 # 0111
     # 1000-1111 reserved for future VRT Packet types
 
-class VRTPacket(object):
-    def __init__(self, name, stream_id=True):
-        self.name = name
-        self.has_stream_id = stream_id
-        self.has_class_id = False
-        self.integer_time = TSI.NONE
-        self.fractional_time = TSF.NONE
-
-    def header(self):
-        header = bytearray(b'\x00' * 4)
-
-        header[0] = self.packet_type() << 4
-        if self.has_class_id:
-            header[0] |= 0x08
-
-        return header
 
 class FieldDescriptor(object):
     DISABLED = 0
@@ -106,6 +90,51 @@ class FieldDescriptor(object):
     def set_disabled(self):
         self._enable_state = FieldDescriptor.DISABLED
 
+class FieldContainer:
+    def __init__(self):
+        self.__fields = []
+
+    def add_field(self, field):
+        self.__fields.append(field)
+        return field
+
+    def get_field(self, name):
+        for field in self.__fields:
+            if field.match(name):
+                return field
+        return None
+
+    @property
+    def fields(self):
+        return self.__fields
+
+class VRTHeader(FieldContainer):
+    def __init__(self, stream_id=True):
+        super().__init__()
+        self.stream_id = self.add_field(FieldDescriptor('Stream ID'))
+        if stream_id:
+            self.stream_id.set_required()
+        self.class_id = self.add_field(FieldDescriptor('Class ID'))
+
+class VRTPacket(object):
+    def __init__(self, name, stream_id=True):
+        self.name = name
+        self.header = VRTHeader(stream_id)
+        self.integer_time = TSI.NONE
+        self.fractional_time = TSF.NONE
+
+    def get_field(self, name):
+        return self.header.get_field(name)
+
+    def get_header_bytes(self):
+        header = bytearray(b'\x00' * 4)
+
+        header[0] = self.packet_type() << 4
+        if self.header.class_id.is_enabled:
+            header[0] |= 0x08
+
+        return header
+
 
 class TrailerField(FieldDescriptor):
     __slots__ = ('enable_bit', 'value_bit')
@@ -116,9 +145,9 @@ class TrailerField(FieldDescriptor):
         self.value_bit = value_bit
 
 
-class VRTDataTrailer(object):
+class VRTDataTrailer(FieldContainer):
     def __init__(self):
-        self.__fields = []
+        super().__init__()
         self.calibrated_time = self._add_field('Calibrated Time', 31, 19)
         self.valid_data = self._add_field('Valid Data', 30, 18)
         self.reference_lock = self._add_field('Reference Lock', 29, 17)
@@ -133,20 +162,18 @@ class VRTDataTrailer(object):
 
     def _add_field(self, name, enable_pos, value_pos):
         field = TrailerField(name, enable_pos, value_pos)
-        self.__fields.append(field)
+        self.add_field(field)
         return field
 
     def get_field(self, name):
-        for field in self.__fields:
-            if not isinstance(field, FieldDescriptor):
-                continue
-            if field.match(name):
-                return field
-        raise KeyError(name)
+        field = super().get_field(name)
+        if field is None:
+            raise KeyError(name)
+        return field
 
     def get_value(self):
         flag = 0
-        for field in self.__fields:
+        for field in self.fields:
             if field.is_enabled:
                 flag |= 1 << field.enable_bit
             if field.default_value:
@@ -162,7 +189,7 @@ class VRTDataPacket(VRTPacket):
         self.trailer = None
 
     def packet_type(self):
-        if self.has_stream_id:
+        if self.header.stream_id.is_enabled:
             return PacketType.SIGNAL_DATA_STREAM_ID
         else:
             return PacketType.SIGNAL_DATA
@@ -226,10 +253,6 @@ class Parser(object):
     def __init__(self):
         self._constructor = yaml.constructor.SafeConstructor()
 
-    def parse_data_packet(self, name, data):
-        packet = VRTDataPacket(name)
-        return packet
-
     def parse_context_packet(self, name, node):
         return VRTContextPacket(name)
 
@@ -240,6 +263,12 @@ class Parser(object):
         namespace = str(node.value)
         logging.debug('Using namespace %s', namespace)
         self.namespace = namespace
+
+    def parse_field(self, field, node):
+        if isinstance(node, yaml.ScalarNode):
+            bool_value = self._constructor.construct_yaml_bool(node)
+            if bool_value:
+                field.set_required()
 
     def parse_trailer(self, node):
         if not isinstance(node, yaml.MappingNode):
@@ -293,14 +322,20 @@ class Parser(object):
             err = 'Invalid packet definition %s (line %d, column %d)' % (name, node.start_mark.line, node.start_mark.column)
             raise RuntimeError(err)
 
-        trailer = None
         for key_node, value_node in node.value:
-            field_name = str(key_node.value).lower()
-            if field_name == 'trailer':
+            field_name = key_node.value
+            if field_name.lower() == 'trailer':
                 if not isinstance(packet, VRTDataPacket):
                     logging.warning('Trailer only valid for data packets')
                     continue
                 trailer = self.parse_trailer(value_node)
+            else:
+                field = packet.get_field(field_name)
+                if field is None:
+                    logging.error("Invalid field '%s'", field_name)
+                    continue
+                logging.debug("Parsing field '%s'", field.name)
+                self.parse_field(field, value_node)
 
     def get_packet_name(self, name):
         if self.namespace:
@@ -340,9 +375,12 @@ class Parser(object):
                 except Exception as exc:
                     logging.exception(exc)
 
+def hex_bytes(data):
+    return ''.join('{:02x}'.format(ch) for ch in data)
+
 if __name__ == '__main__':
     source = sys.argv[1]
     p = Parser()
     for packet in p.parse(source):
-        header = packet.header()
-        logging.debug('Packet header 0x%08x', struct.unpack('i', header)[0])
+        header = packet.get_header_bytes()
+        logging.debug('Packet header 0x%s', hex_bytes(header))
