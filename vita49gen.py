@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from enum import IntEnum
 import logging
 import struct
 import sys
@@ -31,7 +32,22 @@ class TSF(object):
     REAL_TIME    = 2
     FREE_RUNNING = 3
 
-class VRTMessage(object):
+class PacketType(IntEnum):
+    """
+    Constants for the 4-bit Packet Type field in the VRT Packet Header.
+    Refer to VITA 49.2 Table 5.1.1-1.
+    """
+    SIGNAL_DATA              = 0 # 0000
+    SIGNAL_DATA_STREAM_ID    = 1 # 0001
+    EXTENSION_DATA           = 2 # 0010
+    EXTENSION_DATA_STREAM_ID = 3 # 0011
+    CONTEXT                  = 4 # 0100
+    EXTENSION_CONTEXT        = 5 # 0101
+    COMMAND                  = 6 # 0110
+    EXTENSION_COMMAND        = 7 # 0111
+    # 1000-1111 reserved for future VRT Packet types
+
+class VRTPacket(object):
     def __init__(self, name, stream_id=True):
         self.name = name
         self.has_stream_id = stream_id
@@ -139,17 +155,17 @@ class VRTDataTrailer(object):
             flag |= 1 << 7
         return flag
 
-class VRTDataMessage(VRTMessage):
+class VRTDataPacket(VRTPacket):
     def __init__(self, name):
-        VRTMessage.__init__(self, name, stream_id=False)
+        VRTPacket.__init__(self, name, stream_id=False)
         self.is_spectrum = False
         self.trailer = None
 
     def packet_type(self):
         if self.has_stream_id:
-            return 0x1
+            return PacketType.SIGNAL_DATA_STREAM_ID
         else:
-            return 0x0
+            return PacketType.SIGNAL_DATA
 
     def packet_specific_bits(self):
         indicator = 0
@@ -168,12 +184,12 @@ class VRTDataMessage(VRTMessage):
     def has_trailer(self):
         return self.trailer is not None
 
-class VRTContextMessage(VRTMessage):
+class VRTContextPacket(VRTPacket):
     def __init__(self, name):
-        VRTMessage.__init__(self, name, stream_id=True)
+        VRTPacket.__init__(self, name, stream_id=True)
 
     def packet_type(self):
-        return 0x4
+        return PacketType.CONTEXT
 
     def packet_specific_bits(self):
         indicator = 0
@@ -187,12 +203,12 @@ class VRTContextMessage(VRTMessage):
         # TBD: How to check?
         return True
 
-class VRTCommandMessage(VRTMessage):
+class VRTCommandPacket(VRTPacket):
     def __init__(self, name):
-        VRTMessage.__init__(self, name, stream_id=True)
+        VRTPacket.__init__(self, name, stream_id=True)
 
     def packet_type(self):
-        return 0x6
+        return PacketType.COMMAND
 
     def is_v49_0(self):
         # Command packets were added in 49.2, so by definition cannot be 49.0
@@ -210,15 +226,15 @@ class Parser(object):
     def __init__(self):
         self._constructor = yaml.constructor.SafeConstructor()
 
-    def parse_data_message(self, name, data):
-        message = VRTDataMessage(name)
-        return message
+    def parse_data_packet(self, name, data):
+        packet = VRTDataPacket(name)
+        return packet
 
-    def parse_context_message(self, name, node):
-        return VRTContextMessage(name)
+    def parse_context_packet(self, name, node):
+        return VRTContextPacket(name)
 
-    def parse_command_message(self, name, node):
-        return VRTCommandMessage(name)
+    def parse_command_packet(self, name, node):
+        return VRTCommandPacket(name)
 
     def parse_namespace(self, node):
         namespace = str(node.value)
@@ -227,7 +243,7 @@ class Parser(object):
 
     def parse_trailer(self, node):
         if not isinstance(node, yaml.MappingNode):
-            logging.warning('Invalid trailer definition in message (line %d, column %d)' % (node.start_mark.line, node.start_mark.column))
+            logging.warning('Invalid trailer definition in packet (line %d, column %d)' % (node.start_mark.line, node.start_mark.column))
             return None
 
         trailer = VRTDataTrailer()
@@ -271,10 +287,10 @@ class Parser(object):
         else:
             logger.warning("Invalid field attribute '%s'", value)
 
-    def parse_message(self, name, node):
-        logging.info('Processing message %s', self.get_message_name(name))
+    def parse_packet(self, name, node):
+        logging.info('Processing packet %s', self.get_packet_name(name))
         if not isinstance(node, yaml.MappingNode):
-            err = 'Invalid message definition %s (line %d, column %d)' % (name, node.start_mark.line, node.start_mark.column)
+            err = 'Invalid packet definition %s (line %d, column %d)' % (name, node.start_mark.line, node.start_mark.column)
             raise RuntimeError(err)
 
         trailer = None
@@ -284,19 +300,19 @@ class Parser(object):
                 trailer = self.parse_trailer(value_node)
 
         mapping = self._constructor.construct_mapping(node)
-        message_type = mapping.get('type', None).lower()
-        if message_type == 'data':
-            return self.parse_data_message(name, mapping)
-        elif message_type == 'context':
-            return self.parse_context_message(name, node)
-        elif message_type == 'command':
-            return self.parse_command_message(name, node)
-        elif message_type is None:
-            raise RuntimeError('No message type specified')
+        packet_type = mapping.get('type', None).lower()
+        if packet_type == 'data':
+            return self.parse_data_packet(name, mapping)
+        elif packet_type == 'context':
+            return self.parse_context_packet(name, node)
+        elif packet_type == 'command':
+            return self.parse_command_packet(name, node)
+        elif packet_type is None:
+            raise RuntimeError('No packet type specified')
         else:
-            raise RuntimeError('Invalid message type ' + mapping['type'])
+            raise RuntimeError('Invalid packet type ' + mapping['type'])
 
-    def get_message_name(self, name):
+    def get_packet_name(self, name):
         if self.namespace:
             return '::'.join((self.namespace, name))
         else:
@@ -315,16 +331,16 @@ class Parser(object):
                 self.parse_namespace(value_node)
             else:
                 if name.startswith('.'):
-                    logging.debug('Skipping hidden message %s', name)
+                    logging.debug('Skipping hidden packet %s', name)
                     continue
                 try:
-                    yield self.parse_message(name, value_node)
+                    yield self.parse_packet(name, value_node)
                 except Exception as exc:
                     logging.exception(exc)
 
 if __name__ == '__main__':
     source = sys.argv[1]
     p = Parser()
-    for message in p.parse(source):
-        header = message.header()
-        logging.debug('Message header 0x%08x', struct.unpack('i', header)[0])
+    for packet in p.parse(source):
+        header = packet.header()
+        logging.debug('Packet header 0x%08x', struct.unpack('i', header)[0])
