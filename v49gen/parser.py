@@ -123,9 +123,8 @@ class Parser(object):
                     continue
                 logging.debug("Parsing field '%s'", field.name)
                 self.parse_field_value(field, value_node)
-                # If a field is only given a value, assume it's required
-                # TODO: Should be constant as well?
-                field.set_required()
+                # If a field is only given a value, its value is constant
+                field.set_constant()
 
         return packet
 

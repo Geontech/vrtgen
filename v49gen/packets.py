@@ -93,6 +93,7 @@ class FieldDescriptor:
     DISABLED = 0
     OPTIONAL = 1
     REQUIRED = 2
+    CONSTANT = 3
 
     __slots__ = ('name', 'enable_bit', '_enable_state', 'format', 'default_value')
     def __init__(self, name, enable_bit=None, format=None):
@@ -136,6 +137,13 @@ class FieldDescriptor:
     def set_disabled(self):
         self._enable_state = FieldDescriptor.DISABLED
 
+    @property
+    def is_constant(self):
+        return self._enable_state == FieldDescriptor.CONSTANT
+
+    def set_constant(self):
+        self._enable_state = FieldDescriptor.CONSTANT
+
 class FieldContainer:
     def __init__(self):
         self.__fields = []
@@ -156,19 +164,17 @@ class FieldContainer:
         return self.__fields
 
 class VRTPrologue(FieldContainer):
-    def __init__(self, stream_id=True):
+    def __init__(self):
         super().__init__()
         self.stream_id = self.add_field('Stream ID', format=INT32)
-        if stream_id:
-            self.stream_id.set_required()
         self.class_id = self.add_field('Class ID')
         self.integer_timestamp = self.add_field('TSI', format=TSIFormat)
         self.fractional_timestamp = self.add_field('TSF', format=TSFFormat)
 
 class VRTPacket(object):
-    def __init__(self, name, stream_id=True):
+    def __init__(self, name):
         self.name = name
-        self.prologue = VRTPrologue(stream_id)
+        self.prologue = VRTPrologue()
 
     @property
     def has_trailer(self):
@@ -220,7 +226,7 @@ class VRTDataTrailer(FieldContainer):
 
 class VRTDataPacket(VRTPacket):
     def __init__(self, name):
-        super().__init__(name, stream_id=False)
+        super().__init__(name)
         self.is_spectrum = False
         self.trailer = VRTDataTrailer()
 
@@ -305,7 +311,8 @@ class CIF0(FieldContainer):
 
 class VRTContextPacket(VRTPacket):
     def __init__(self, name):
-        VRTPacket.__init__(self, name, stream_id=True)
+        super().__init__(name)
+        self.prologue.stream_id.set_required()
         self.is_timestamp_mode = False
 
         # TODO: move this into a common location
@@ -338,7 +345,8 @@ class VRTContextPacket(VRTPacket):
 
 class VRTCommandPacket(VRTPacket):
     def __init__(self, name):
-        VRTPacket.__init__(self, name, stream_id=True)
+        super().__init__(name)
+        self.prologue.stream_id.set_required()
 
     def packet_type(self):
         return PacketType.COMMAND

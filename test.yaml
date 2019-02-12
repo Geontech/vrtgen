@@ -3,7 +3,7 @@ TestData:
   Stream ID: required
   TSI: utc
   TSF: picoseconds
-  # Top-level field is constant (TODO)
+  # Top-level field is constant
   Calibrated Time: true
   # Required fields is sequence
   required:
