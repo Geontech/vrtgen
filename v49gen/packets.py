@@ -214,6 +214,7 @@ class VRTDataTrailer(FieldContainer):
                 flag |= 1 << field.format.bit
         return struct.pack('>I', flag)
 
+    @property
     def is_enabled(self):
         return any(not field.is_disabled for field in self.fields)
 

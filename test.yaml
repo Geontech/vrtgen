@@ -15,6 +15,9 @@ TestData:
   optional:
     - Sample Loss
 
+BasicData:
+  type: data
+
 TestContext:
   type: context
   required:
