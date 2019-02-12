@@ -30,20 +30,20 @@ class Parser(object):
             logging.warning("Invalid value for field '%s' (line %d, column %d)",
                             field.name, node.start_mark.line, node.start_mark.column)
 
-    def parse_trailer(self, node):
+    def parse_trailer(self, packet, node):
         if not isinstance(node, yaml.MappingNode):
             logging.warning('Invalid trailer definition in packet (line %d, column %d)' % (node.start_mark.line, node.start_mark.column))
             return None
 
-        trailer = VRTDataTrailer()
         for field_name, field_value in node.value:
             field_name = str(field_name.value)
             try:
-                field = trailer.get_field(field_name)
+                field = packet.get_field(field_name)
             except KeyError as exc:
                 logging.warning('Invalid trailer field %s', exc)
                 continue
 
+            logging.debug("Parsing field '%s'", field.name)
             if isinstance(field_value, yaml.ScalarNode):
                 try:
                     field.default_value = self._constructor.construct_yaml_bool(field_value)
@@ -61,10 +61,6 @@ class Parser(object):
                 logging.warning('Invalid value for trailer field "%s" (line %d, column %d)',
                                 field_name, field_value.start_mark.line, field_value.start_mark.column)
                 continue
-
-        logging.debug('Trailer %s', hex(trailer.get_value()))
-
-        return trailer
 
     def _set_field_attribute(self, field, value):
         if value == 'optional':
@@ -88,7 +84,7 @@ class Parser(object):
                 if not isinstance(packet, VRTDataPacket):
                     logging.warning('Trailer only valid for data packets')
                     continue
-                trailer = self.parse_trailer(value_node)
+                self.parse_trailer(packet, value_node)
             else:
                 try:
                     field = packet.get_field(field_name)
@@ -142,4 +138,6 @@ if __name__ == '__main__':
     p = Parser()
     for packet in p.parse(source):
         header = packet.get_header_bytes()
-        logging.debug('Packet header 0x%s', hex_bytes(header))
+        logging.debug('Packet header  0x%s', hex_bytes(header))
+        if packet.has_trailer:
+            logging.debug('Packet trailer 0x%s', hex_bytes(packet.trailer.get_bytes()))

@@ -119,7 +119,7 @@ class FieldContainer:
 class VRTHeader(FieldContainer):
     def __init__(self, stream_id=True):
         super().__init__()
-        self.stream_id = self.add_field(FieldDescriptor('Stream ID'))
+        self.stream_id = self.add_field(FieldDescriptor('Stream ID', format=INT32))
         if stream_id:
             self.stream_id.set_required()
         self.class_id = self.add_field(FieldDescriptor('Class ID'))
@@ -130,6 +130,10 @@ class VRTPacket(object):
         self.header = VRTHeader(stream_id)
         self.integer_time = TSI.NONE
         self.fractional_time = TSF.NONE
+
+    @property
+    def has_trailer(self):
+        return False
 
     def get_field(self, name):
         field = self.header.get_field(name)
@@ -162,28 +166,23 @@ class VRTDataTrailer(FieldContainer):
         # [21..20], [9..8] User-Defined
         self.context_packet_count = self.add_field(FieldDescriptor('Associated Context Packet Count', 7, IntFormat(7)))
 
-    def get_field(self, name):
-        field = super().get_field(name)
-        if field is None:
-            raise KeyError(name)
-        return field
-
-    def get_value(self):
+    def get_bytes(self):
         flag = 0
         for field in self.fields:
             if field.is_enabled:
                 flag |= 1 << field.enable_bit
             if field.default_value:
                 flag |= 1 << field.format.bit
-        if self.context_packet_count.is_enabled:
-            flag |= 1 << self.context_packet_count.enable_bit
-        return flag
+        return struct.pack('>I', flag)
+
+    def is_enabled(self):
+        return any(not field.is_disabled for field in self.fields)
 
 class VRTDataPacket(VRTPacket):
     def __init__(self, name):
-        VRTPacket.__init__(self, name, stream_id=False)
+        super().__init__(name, stream_id=False)
         self.is_spectrum = False
-        self.trailer = None
+        self.trailer = VRTDataTrailer()
 
     def packet_type(self):
         if self.header.stream_id.is_enabled:
@@ -195,18 +194,26 @@ class VRTDataPacket(VRTPacket):
         indicator = 0
         if self.has_trailer:
             indicator |= 0x4
-        if not self.is_v49_0():
+        if not self.is_v49_0:
             indicator |= 0x2
         if self.is_spectrum:
             indicator |= 0x1
         return indicator
 
+    @property
     def is_v49_0(self):
         # TBD: How to check?
         return True
 
+    @property
     def has_trailer(self):
-        return self.trailer is not None
+        return self.trailer.is_enabled
+
+    def get_field(self, name):
+        field = self.trailer.get_field(name)
+        if field is not None:
+            return field
+        return super().get_field(name)
 
 class CIF0(FieldContainer):
     FIELDS = (
@@ -254,7 +261,7 @@ class CIF0(FieldContainer):
         for field in self.fields:
             if field.is_enabled:
                 prologue |= 1 << field.enable_bit
-        return struct.pack('>i', prologue)
+        return struct.pack('>I', prologue)
 
 class VRTContextPacket(VRTPacket):
     def __init__(self, name):
