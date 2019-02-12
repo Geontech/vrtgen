@@ -4,6 +4,28 @@ import logging
 
 import yaml
 
+class MergingIterator:
+    def __init__(self, nodes):
+        self._iter = iter(nodes)
+        self._stack = []
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            item = next(self._iter)
+        except StopIteration:
+            if not self._stack:
+                raise
+            self._iter = self._stack.pop()
+            item = next(self._iter)
+        if item[0].tag == 'tag:yaml.org,2002:merge':
+            self._stack.append(self._iter)
+            self._iter = iter(item[1].value)
+            return next(self._iter)
+        return item
+
 class ParserError(RuntimeError):
     def __init__(self, message, node):
         super().__init__(message)
@@ -90,7 +112,7 @@ class Parser(object):
             return name
 
     def _create_packet(self, name, node):
-        key, value = node.value[0]
+        key, value = node
         if key.value.lower() != 'type':
             raise ParserError('Packet type must follow packet declaration', node)
         packet_type = value.value.lower()
@@ -108,9 +130,10 @@ class Parser(object):
         if not isinstance(node, yaml.MappingNode):
             raise ParserError('Invalid packet definition', node)
 
-        packet = self._create_packet(name, node)
+        map_iter = MergingIterator(node.value)
+        packet = self._create_packet(name, next(map_iter))
 
-        for key_node, value_node in node.value[1:]:
+        for key_node, value_node in map_iter:
             field_name = key_node.value
             if field_name.lower() in ('required', 'optional'):
                 # Within an attribute scope, set the attribute on all fields
@@ -140,6 +163,8 @@ class Parser(object):
             name = key_node.value
             if name == 'namespace':
                 self.parse_namespace(value_node)
+            elif name.startswith('.'):
+                logging.debug("Skipping hidden entry %s", name)
             else:
                 try:
                     yield self.parse_packet(name, value_node)
