@@ -102,7 +102,8 @@ class FieldContainer:
     def __init__(self):
         self.__fields = []
 
-    def add_field(self, field):
+    def add_field(self, *args, **kwargs):
+        field = FieldDescriptor(*args, **kwargs)
         self.__fields.append(field)
         return field
 
@@ -119,10 +120,10 @@ class FieldContainer:
 class VRTHeader(FieldContainer):
     def __init__(self, stream_id=True):
         super().__init__()
-        self.stream_id = self.add_field(FieldDescriptor('Stream ID', format=INT32))
+        self.stream_id = self.add_field('Stream ID', format=INT32)
         if stream_id:
             self.stream_id.set_required()
-        self.class_id = self.add_field(FieldDescriptor('Class ID'))
+        self.class_id = self.add_field('Class ID')
 
 class VRTPacket(object):
     def __init__(self, name, stream_id=True):
@@ -154,17 +155,17 @@ class VRTPacket(object):
 class VRTDataTrailer(FieldContainer):
     def __init__(self):
         super().__init__()
-        self.calibrated_time = self.add_field(FieldDescriptor('Calibrated Time', 31, BitFormat(19)))
-        self.valid_data = self.add_field(FieldDescriptor('Valid Data', 30, BitFormat(18)))
-        self.reference_lock = self.add_field(FieldDescriptor('Reference Lock', 29, BitFormat(17)))
-        self.agc_mgc = self.add_field(FieldDescriptor('AGC/MGC', 28, BitFormat(16)))
-        self.detected_signal = self.add_field(FieldDescriptor('Detected Signal', 27, BitFormat(15)))
-        self.spectral_inversion = self.add_field(FieldDescriptor('Spectral Inversion', 26, BitFormat(14)))
-        self.over_range = self.add_field(FieldDescriptor('Over-range', 25, BitFormat(13)))
-        self.sample_loss = self.add_field(FieldDescriptor('Sample Loss', 24, BitFormat(12)))
+        self.calibrated_time = self.add_field('Calibrated Time', 31, BitFormat(19))
+        self.valid_data = self.add_field('Valid Data', 30, BitFormat(18))
+        self.reference_lock = self.add_field('Reference Lock', 29, BitFormat(17))
+        self.agc_mgc = self.add_field('AGC/MGC', 28, BitFormat(16))
+        self.detected_signal = self.add_field('Detected Signal', 27, BitFormat(15))
+        self.spectral_inversion = self.add_field('Spectral Inversion', 26, BitFormat(14))
+        self.over_range = self.add_field('Over-range', 25, BitFormat(13))
+        self.sample_loss = self.add_field('Sample Loss', 24, BitFormat(12))
         # [23,22], [11,10] Sample Frame, User-Defined
         # [21..20], [9..8] User-Defined
-        self.context_packet_count = self.add_field(FieldDescriptor('Associated Context Packet Count', 7, IntFormat(7)))
+        self.context_packet_count = self.add_field('Associated Context Packet Count', 7, IntFormat(7))
 
     def get_bytes(self):
         flag = 0
@@ -254,7 +255,7 @@ class CIF0(FieldContainer):
     def __init__(self):
         super().__init__()
         for name, bit in CIF0.FIELDS:
-            self.add_field(FieldDescriptor(name, bit))
+            self.add_field(name, bit)
 
     def get_prologue_bytes(self):
         prologue = 0
