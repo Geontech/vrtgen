@@ -111,10 +111,14 @@ class FieldDescriptor:
 
     @property
     def is_enabled(self):
-        if self.default_value is not None:
-            return True
+        return self._enable_state != FieldDescriptor.DISABLED
+
+    @property
+    def is_set(self):
+        if self.is_optional:
+            return self.default_value is not None
         else:
-            return self.is_required
+            return self.is_enabled
 
     @property
     def is_required(self):
@@ -129,13 +133,6 @@ class FieldDescriptor:
 
     def set_optional(self):
         self._enable_state = FieldDescriptor.OPTIONAL
-
-    @property
-    def is_disabled(self):
-        return self._enable_state == FieldDescriptor.DISABLED
-
-    def set_disabled(self):
-        self._enable_state = FieldDescriptor.DISABLED
 
     @property
     def is_constant(self):
@@ -190,11 +187,21 @@ class VRTPacket(object):
         header = bytearray(4)
 
         header[0] = self.packet_type() << 4
-        if self.prologue.class_id.is_enabled:
+        if self.prologue.class_id.is_set:
             header[0] |= 0x08
         header[0] |= self.packet_specific_bits()
 
         return header
+
+    def add_field(self, name, optional=False):
+        field = self.get_field(name)
+        if field.is_enabled:
+            raise ValueError('duplicate field')
+        if optional:
+            field.set_optional()
+        else:
+            field.set_required()
+        return field
 
 class VRTDataTrailer(FieldContainer):
     def __init__(self):
@@ -214,15 +221,15 @@ class VRTDataTrailer(FieldContainer):
     def get_bytes(self):
         flag = 0
         for field in self.fields:
-            if field.is_enabled:
+            if field.is_set:
                 flag |= 1 << field.enable_bit
-            if field.default_value:
-                flag |= 1 << field.format.bit
+                if field.default_value:
+                    flag |= 1 << field.format.bit
         return struct.pack('>I', flag)
 
     @property
     def is_enabled(self):
-        return any(not field.is_disabled for field in self.fields)
+        return any(field.is_enabled for field in self.fields)
 
 class VRTDataPacket(VRTPacket):
     def __init__(self, name):
@@ -231,7 +238,7 @@ class VRTDataPacket(VRTPacket):
         self.trailer = VRTDataTrailer()
 
     def packet_type(self):
-        if self.prologue.stream_id.is_enabled:
+        if self.prologue.stream_id.is_set:
             return PacketType.SIGNAL_DATA_STREAM_ID
         else:
             return PacketType.SIGNAL_DATA
@@ -305,7 +312,7 @@ class CIF0(FieldContainer):
     def get_prologue_bytes(self):
         prologue = 0
         for field in self.fields:
-            if field.is_enabled:
+            if field.is_set:
                 prologue |= 1 << field.enable_bit
         return struct.pack('>I', prologue)
 

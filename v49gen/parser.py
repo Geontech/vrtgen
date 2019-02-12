@@ -61,7 +61,7 @@ class Parser(object):
         else:
             raise ParserError('Invalid field description', node)
 
-    def parse_fields(self, packet, node):
+    def parse_fields(self, packet, node, optional):
         if not isinstance(node, yaml.SequenceNode):
             raise ParserError('Packet fields must be sequence', node)
 
@@ -72,14 +72,16 @@ class Parser(object):
                 logging.error("%s (line %d column %d)", exc, exc.line, exc.column)
                 continue
             try:
-                field = packet.get_field(name)
+                field = packet.add_field(name, optional)
             except KeyError as exc:
                 logging.error("Invalid field %s", exc)
+                continue
+            except ValueError as exc:
+                logging.error("Duplicate field '%s'", name)
                 continue
             logging.debug("Parsing field '%s'", name)
             if value_node is not None:
                 self.parse_field_value(field, value_node)
-            yield field
 
     def get_packet_name(self, name):
         if self.namespace:
@@ -110,14 +112,13 @@ class Parser(object):
 
         for key_node, value_node in node.value[1:]:
             field_name = key_node.value
-            if field_name.lower() in ('required', 'optional', 'disabled'):
+            if field_name.lower() in ('required', 'optional'):
                 # Within an attribute scope, set the attribute on all fields
-                attribute = field_name.lower()
-                for field in self.parse_fields(packet, value_node):
-                    self._set_field_attribute(field, attribute)
+                optional = field_name.lower() == 'optional'
+                self.parse_fields(packet, value_node, optional)
             else:
                 try:
-                    field = packet.get_field(field_name)
+                    field = packet.add_field(field_name)
                 except KeyError as exc:
                     logging.warning('Invalid field %s', exc)
                     continue
