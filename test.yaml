@@ -1,24 +1,24 @@
-data:
-  TestData:
-    Stream ID: required
-    timestamp:
-      integer: utc
-      fractional: picoseconds
-    Calibrated Time: true
+TestData:
+  type: data
+  Stream ID: required
+  timestamp:
+    integer: utc
+    fractional: picoseconds
+  # Top-level field is constant (TODO)
+  Calibrated Time: true
+  # Required fields is sequence
+  required:
+    # Default value is 1-entry mapping
+    - Valid Data: true
+    - AGC/MGC
+    - Associated Context Packet Count
+    - Over-range: false
+  optional:
+    - Sample Loss
 
-    # Required fields is sequence
-    required:
-      # Default value is 1-entry mapping
-      - Valid Data: true
-      - AGC/MGC
-      - Associated Context Packet Count
-      - Over-range: false
-    optional:
-      - Sample Loss
-
-context:
-  TestContext:
-    required:
-      - Class ID
-    optional:
-      - IF Reference Frequency
+TestContext:
+  type: context
+  required:
+    - Class ID
+  optional:
+    - IF Reference Frequency

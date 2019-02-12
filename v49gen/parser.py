@@ -4,6 +4,19 @@ import logging
 
 import yaml
 
+class ParserError(RuntimeError):
+    def __init__(self, message, node):
+        super().__init__(message)
+        self.node = node
+
+    @property
+    def line(self):
+        return self.node.start_mark.line
+
+    @property
+    def column(self):
+        return self.node.start_mark.column
+
 class Parser(object):
     def __init__(self):
         self._constructor = yaml.constructor.SafeConstructor()
@@ -37,31 +50,6 @@ class Parser(object):
         else:
             logger.warning("Invalid field attribute '%s'", value)
 
-    def parse_packet(self, packet, node):
-        logging.info('Processing packet %s', self.get_packet_name(packet.name))
-        if not isinstance(node, yaml.MappingNode):
-            err = 'Invalid packet definition %s (line %d, column %d)' % (name, node.start_mark.line, node.start_mark.column)
-            raise RuntimeError(err)
-
-        for key_node, value_node in node.value:
-            field_name = key_node.value
-            if field_name.lower() in ('required', 'optional', 'disabled'):
-                # Within an attribute scope, set the attribute on all fields
-                attribute = field_name.lower()
-                for field in self.parse_fields(packet, value_node):
-                    self._set_field_attribute(field, attribute)
-            else:
-                try:
-                    field = packet.get_field(field_name)
-                except KeyError as exc:
-                    logging.warning('Invalid field %s', exc)
-                    continue
-                logging.debug("Parsing field '%s'", field.name)
-                self.parse_field(field, value_node)
-                # If a field is only given a value, assume it's required
-                # TODO: Should be constant as well?
-                field.set_required()
-
     def parse_field_entry(self, node):
         if isinstance(node, yaml.ScalarNode):
             return node.value, None
@@ -75,7 +63,7 @@ class Parser(object):
 
     def parse_fields(self, packet, node):
         if not isinstance(node, yaml.SequenceNode):
-            raise TypeError('Sequence node expected')
+            raise ParserError('Packet fields must be sequence', node)
 
         for field in node.value:
             try:
@@ -99,15 +87,43 @@ class Parser(object):
         else:
             return name
 
-    def parse_packets(self, PacketClass, node):
+    def parse_packet(self, name, node):
+        logging.info('Processing packet %s', self.get_packet_name(name))
         if not isinstance(node, yaml.MappingNode):
-            logging.warning('Invalid packet section (line %d column %d)',
-                            node.start_mark.line, node.start_mark.column)
+            raise ParserError('Invalid packet definition', node)
+        key, value = node.value[0]
+        if key.value.lower() != 'type':
+            raise ParserError('Packet type must follow packet declaration', node)
+        packet_type = value.value.lower()
+        if packet_type == 'data':
+            packet = VRTDataPacket(name)
+        elif packet_type == 'context':
+            packet = VRTContextPacket(name)
+        elif packet_type == 'control':
+            packet = VRTControlPacket(name)
+        else:
+            raise ParserError("Invalid packet type '"+value.value+"'", node)
 
-        for key_node, value_node in node.value:
-            packet = PacketClass(key_node.value)
-            self.parse_packet(packet, value_node)
-            yield packet
+        for key_node, value_node in node.value[1:]:
+            field_name = key_node.value
+            if field_name.lower() in ('required', 'optional', 'disabled'):
+                # Within an attribute scope, set the attribute on all fields
+                attribute = field_name.lower()
+                for field in self.parse_fields(packet, value_node):
+                    self._set_field_attribute(field, attribute)
+            else:
+                try:
+                    field = packet.get_field(field_name)
+                except KeyError as exc:
+                    logging.warning('Invalid field %s', exc)
+                    continue
+                logging.debug("Parsing field '%s'", field.name)
+                self.parse_field(field, value_node)
+                # If a field is only given a value, assume it's required
+                # TODO: Should be constant as well?
+                field.set_required()
+
+        return packet
 
     def parse(self, filename):
         with open(filename, 'r') as fp:
@@ -120,11 +136,8 @@ class Parser(object):
             name = key_node.value
             if name == 'namespace':
                 self.parse_namespace(value_node)
-            elif name == 'data':
-                yield from self.parse_packets(VRTDataPacket, value_node)
-            elif name == 'context':
-                yield from self.parse_packets(VRTContextPacket, value_node)
-            elif name == 'control':
-                yield from self.parse_packets(VRTControlPacket, value_node)
             else:
-                logging.warning("Invalid section '%s'", key_node.value)
+                try:
+                    yield self.parse_packet(name, value_node)
+                except ParserError as exc:
+                    logging.error("%s (line %d column %d)", str(exc), exc.line, exc.column)
