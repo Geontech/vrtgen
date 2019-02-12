@@ -155,7 +155,7 @@ class FieldContainer:
     def fields(self):
         return self.__fields
 
-class VRTHeader(FieldContainer):
+class VRTPrologue(FieldContainer):
     def __init__(self, stream_id=True):
         super().__init__()
         self.stream_id = self.add_field('Stream ID', format=INT32)
@@ -168,14 +168,14 @@ class VRTHeader(FieldContainer):
 class VRTPacket(object):
     def __init__(self, name, stream_id=True):
         self.name = name
-        self.header = VRTHeader(stream_id)
+        self.prologue = VRTPrologue(stream_id)
 
     @property
     def has_trailer(self):
         return False
 
     def get_field(self, name):
-        field = self.header.get_field(name)
+        field = self.prologue.get_field(name)
         if field is None:
             raise KeyError(name)
         return field
@@ -184,7 +184,7 @@ class VRTPacket(object):
         header = bytearray(4)
 
         header[0] = self.packet_type() << 4
-        if self.header.class_id.is_enabled:
+        if self.prologue.class_id.is_enabled:
             header[0] |= 0x08
         header[0] |= self.packet_specific_bits()
 
@@ -224,7 +224,7 @@ class VRTDataPacket(VRTPacket):
         self.trailer = VRTDataTrailer()
 
     def packet_type(self):
-        if self.header.stream_id.is_enabled:
+        if self.prologue.stream_id.is_enabled:
             return PacketType.SIGNAL_DATA_STREAM_ID
         else:
             return PacketType.SIGNAL_DATA

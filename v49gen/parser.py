@@ -71,12 +71,12 @@ class Parser(object):
             except ParserError as exc:
                 logging.error("%s (line %d column %d)", exc, exc.line, exc.column)
                 continue
-            logging.debug("Parsing field '%s'", name)
             try:
                 field = packet.get_field(name)
             except KeyError as exc:
                 logging.error("Invalid field %s", exc)
                 continue
+            logging.debug("Parsing field '%s'", name)
             if value_node is not None:
                 self.parse_field_value(field, value_node)
             yield field
