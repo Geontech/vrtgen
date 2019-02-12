@@ -4,19 +4,21 @@ data:
     timestamp:
       integer: utc
       fractional: picoseconds
-    Calibrated Time:
-      value: true
-      attributes:
-        - required
+    Calibrated Time: true
+
+    # Required fields is sequence
     required:
-      - Valid Data
+      # Default value is 1-entry mapping
+      - Valid Data: true
       - AGC/MGC
       - Associated Context Packet Count
+      - Over-range: false
     optional:
       - Sample Loss
 
 context:
   TestContext:
-    Class ID: required
+    required:
+      - Class ID
     optional:
       - IF Reference Frequency

@@ -16,32 +16,11 @@ class Parser(object):
     def parse_field(self, field, node):
         if isinstance(node, yaml.ScalarNode):
             value = self._constructor.construct_object(node)
-            if value in ('required', 'optional', 'disabled'):
-                self._set_field_attribute(field, value)
-            else:
-                logging.debug("Setting value for field '%s': %s", field.name, value)
-                try:
-                    field.set_value(value)
-                except (ValueError, TypeError) as exc:
-                    logging.error("Could not set value for field '%s': %s", field.name, exc)
-                # If a field is only given a value, assume it's required
-                # TODO: Should be constant as well?
-                field.set_required()
-        elif isinstance(node, yaml.MappingNode):
-            for key_node, value_node in node.value:
-                key = key_node.value.lower()
-                if key == 'value':
-                    value = self._constructor.construct_object(value_node)
-                    logging.debug("Setting value '%s' for field '%s'", value, field.name)
-                    try:
-                        field.set_value(value)
-                    except Exception as exc:
-                        logging.error("Could not set value for field '%s': %s", field.name, exc)
-                elif key == 'attributes':
-                    for attr in self._constructor.construct_sequence(value_node):
-                        self._set_field_attribute(field, attr)
-                else:
-                    logging.warning("Invalid key '%s'", key)
+            logging.debug("Setting value for field '%s': %s", field.name, value)
+            try:
+                field.set_value(value)
+            except (ValueError, TypeError) as exc:
+                logging.error("Could not set value for field '%s': %s", field.name, exc)
         else:
             logging.error("Invalid value for field '%s'", field.name)
 
@@ -66,8 +45,11 @@ class Parser(object):
 
         for key_node, value_node in node.value:
             field_name = key_node.value
-            if field_name.lower() in ('required', 'optional'):
-                self.parse_fields_attribute(packet, field_name.lower(), value_node)
+            if field_name.lower() in ('required', 'optional', 'disabled'):
+                # Within an attribute scope, set the attribute on all fields
+                attribute = field_name.lower()
+                for field in self.parse_fields(packet, value_node):
+                    self._set_field_attribute(field, attribute)
             else:
                 try:
                     field = packet.get_field(field_name)
@@ -76,24 +58,40 @@ class Parser(object):
                     continue
                 logging.debug("Parsing field '%s'", field.name)
                 self.parse_field(field, value_node)
+                # If a field is only given a value, assume it's required
+                # TODO: Should be constant as well?
+                field.set_required()
 
-    def parse_fields_attribute(self, packet, attribute, node):
-        if isinstance(node, yaml.SequenceNode):
-            for field in node.value:
-                self.set_field_attribute(packet, attribute, field.value)
+    def parse_field_entry(self, node):
+        if isinstance(node, yaml.ScalarNode):
+            return node.value, None
         elif isinstance(node, yaml.MappingNode):
-            for key_node, value_node in node.value:
-                self.set_field_attribute(packet, attribute, key_node.value)
+            if len(node.value) != 1:
+                raise ValueError('Multiple field keys')
+            key_node, value_node = node.value[0]
+            return key_node.value, self._constructor.construct_object(value_node)
         else:
-            self.set_field_attribute(packet, attribute, node.value)
+            raise ValueError('Invalid field description')
 
-    def set_field_attribute(self, packet, attribute, name):
-        try:
-            field = packet.get_field(name)
-        except KeyError as exc:
-            logging.error("Invalid field %s", exc)
-            return
-        self._set_field_attribute(field, attribute)
+    def parse_fields(self, packet, node):
+        if not isinstance(node, yaml.SequenceNode):
+            raise TypeError('Sequence node expected')
+
+        for field in node.value:
+            try:
+                name, value = self.parse_field_entry(field)
+            except ValueError as exc:
+                logging.error("Invalid field entry (line %d column %d)", node.start_mark.line, node.start_mark.column)
+                continue
+            logging.debug("Parsing field '%s'", name)
+            try:
+                field = packet.get_field(name)
+            except KeyError as exc:
+                logging.error("Invalid field %s", exc)
+                continue
+            if value is not None:
+                field.set_value(value)
+            yield field
 
     def get_packet_name(self, name):
         if self.namespace:
