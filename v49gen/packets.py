@@ -38,16 +38,33 @@ class PacketType(IntEnum):
     EXTENSION_COMMAND        = 7 # 0111
     # 1000-1111 reserved for future VRT Packet types
 
+class BitFormat:
+    def __init__(self, bit):
+        self.bit = bit
+
+class IntFormat:
+    def __init__(self, bits=32):
+        self.bits = bits
+
+INT32 = IntFormat()
+
+class FixedFormat(IntFormat):
+    def __init__(self, bits, radix):
+        super().__init__(bits)
+        self.radix = radix
+
 
 class FieldDescriptor:
     DISABLED = 0
     OPTIONAL = 1
     REQUIRED = 2
 
-    __slots__ = ('name', '_enable_state', 'default_value')
-    def __init__(self, name):
+    __slots__ = ('name', 'enable_bit', '_enable_state', 'format', 'default_value')
+    def __init__(self, name, enable_bit=None, format=None):
         self.name = name
         self._enable_state = FieldDescriptor.DISABLED
+        self.enable_bit = enable_bit
+        self.format = format
         self.default_value = None
 
     def match(self, name):
@@ -130,33 +147,20 @@ class VRTPacket(object):
 
         return header
 
-
-class TrailerField(FieldDescriptor):
-    __slots__ = ('enable_bit', 'value_bit')
-
-    def __init__(self, name, enable_bit, value_bit):
-        FieldDescriptor.__init__(self, name)
-        self.enable_bit = enable_bit
-        self.value_bit = value_bit
-
-
 class VRTDataTrailer(FieldContainer):
     def __init__(self):
         super().__init__()
-        self.calibrated_time = self._add_field('Calibrated Time', 31, 19)
-        self.valid_data = self._add_field('Valid Data', 30, 18)
-        self.reference_lock = self._add_field('Reference Lock', 29, 17)
-        self.agc_mgc = self._add_field('AGC/MGC', 28, 16)
-        self.detected_signal = self._add_field('Detected Signal', 27, 15)
-        self.spectral_inversion = self._add_field('Spectral Inversion', 26, 14)
-        self.over_range = self._add_field('Over-range', 25, 13)
-        self.sample_loss = self._add_field('Sample Loss', 24, 12)
+        self.calibrated_time = self.add_field(FieldDescriptor('Calibrated Time', 31, BitFormat(19)))
+        self.valid_data = self.add_field(FieldDescriptor('Valid Data', 30, BitFormat(18)))
+        self.reference_lock = self.add_field(FieldDescriptor('Reference Lock', 29, BitFormat(17)))
+        self.agc_mgc = self.add_field(FieldDescriptor('AGC/MGC', 28, BitFormat(16)))
+        self.detected_signal = self.add_field(FieldDescriptor('Detected Signal', 27, BitFormat(15)))
+        self.spectral_inversion = self.add_field(FieldDescriptor('Spectral Inversion', 26, BitFormat(14)))
+        self.over_range = self.add_field(FieldDescriptor('Over-range', 25, BitFormat(13)))
+        self.sample_loss = self.add_field(FieldDescriptor('Sample Loss', 24, BitFormat(12)))
         # [23,22], [11,10] Sample Frame, User-Defined
         # [21..20], [9..8] User-Defined
-        self.context_packet_count = self._add_field('Associated Context Packet Count', 7, 6)
-
-    def _add_field(self, name, enable_pos, value_pos):
-        return self.add_field(TrailerField(name, enable_pos, value_pos))
+        self.context_packet_count = self.add_field(FieldDescriptor('Associated Context Packet Count', 7, IntFormat(7)))
 
     def get_field(self, name):
         field = super().get_field(name)
@@ -170,9 +174,9 @@ class VRTDataTrailer(FieldContainer):
             if field.is_enabled:
                 flag |= 1 << field.enable_bit
             if field.default_value:
-                flag |= 1 << field.value_bit
+                flag |= 1 << field.format.bit
         if self.context_packet_count.is_enabled:
-            flag |= 1 << 7
+            flag |= 1 << self.context_packet_count.enable_bit
         return flag
 
 class VRTDataPacket(VRTPacket):
@@ -243,13 +247,13 @@ class CIF0(FieldContainer):
     def __init__(self):
         super().__init__()
         for name, bit in CIF0.FIELDS:
-            self.add_field(FieldDescriptor(name))
+            self.add_field(FieldDescriptor(name, bit))
 
     def get_prologue_bytes(self):
         prologue = 0
-        for field, bit in zip(self.fields, range(31, -1, -1)):
+        for field in self.fields:
             if field.is_enabled:
-                prologue |= 1 << bit
+                prologue |= 1 << field.enable_bit
         return struct.pack('>i', prologue)
 
 class VRTContextPacket(VRTPacket):
