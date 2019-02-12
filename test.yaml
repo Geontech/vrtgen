@@ -4,17 +4,19 @@ data:
     timestamp:
       integer: utc
       fractional: picoseconds
-    trailer:
-      Calibrated Time:
-        default: true
-        attributes:
-          - required
-      Valid Data: required
-      AGC/MGC: required
-      Sample Loss: true
-      Associated Context Packet Count: required
+    Calibrated Time:
+      value: true
+      attributes:
+        - required
+    required:
+      - Valid Data
+      - AGC/MGC
+      - Associated Context Packet Count
+    optional:
+      - Sample Loss
 
 context:
   TestContext:
     Class ID: required
-    IF Reference Frequency: optional
+    optional:
+      - IF Reference Frequency

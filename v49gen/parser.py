@@ -66,13 +66,34 @@ class Parser(object):
 
         for key_node, value_node in node.value:
             field_name = key_node.value
-            try:
-                field = packet.get_field(field_name)
-            except KeyError as exc:
-                logging.warning('Invalid field %s', exc)
-                continue
-            logging.debug("Parsing field '%s'", field.name)
-            self.parse_field(field, value_node)
+            if field_name.lower() in ('required', 'optional'):
+                self.parse_fields_attribute(packet, field_name.lower(), value_node)
+            else:
+                try:
+                    field = packet.get_field(field_name)
+                except KeyError as exc:
+                    logging.warning('Invalid field %s', exc)
+                    continue
+                logging.debug("Parsing field '%s'", field.name)
+                self.parse_field(field, value_node)
+
+    def parse_fields_attribute(self, packet, attribute, node):
+        if isinstance(node, yaml.SequenceNode):
+            for field in node.value:
+                self.set_field_attribute(packet, attribute, field.value)
+        elif isinstance(node, yaml.MappingNode):
+            for key_node, value_node in node.value:
+                self.set_field_attribute(packet, attribute, key_node.value)
+        else:
+            self.set_field_attribute(packet, attribute, node.value)
+
+    def set_field_attribute(self, packet, attribute, name):
+        try:
+            field = packet.get_field(name)
+        except KeyError as exc:
+            logging.error("Invalid field %s", exc)
+            return
+        self._set_field_attribute(field, attribute)
 
     def get_packet_name(self, name):
         if self.namespace:
