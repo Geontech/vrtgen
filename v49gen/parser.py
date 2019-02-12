@@ -26,7 +26,7 @@ class Parser(object):
         logging.debug('Using namespace %s', namespace)
         self.namespace = namespace
 
-    def parse_field(self, field, node):
+    def parse_field_value(self, field, node):
         if isinstance(node, yaml.ScalarNode):
             value = self._constructor.construct_object(node)
             logging.debug("Setting value for field '%s': %s", field.name, value)
@@ -50,16 +50,16 @@ class Parser(object):
         else:
             logger.warning("Invalid field attribute '%s'", value)
 
-    def parse_field_entry(self, node):
+    def parse_field_list_entry(self, node):
         if isinstance(node, yaml.ScalarNode):
             return node.value, None
         elif isinstance(node, yaml.MappingNode):
             if len(node.value) != 1:
-                raise ValueError('Multiple field keys')
+                raise ParserError('Multiple field keys', node)
             key_node, value_node = node.value[0]
-            return key_node.value, self._constructor.construct_object(value_node)
+            return key_node.value, value_node
         else:
-            raise ValueError('Invalid field description')
+            raise ParserError('Invalid field description', node)
 
     def parse_fields(self, packet, node):
         if not isinstance(node, yaml.SequenceNode):
@@ -67,9 +67,9 @@ class Parser(object):
 
         for field in node.value:
             try:
-                name, value = self.parse_field_entry(field)
-            except ValueError as exc:
-                logging.error("Invalid field entry (line %d column %d)", node.start_mark.line, node.start_mark.column)
+                name, value_node = self.parse_field_list_entry(field)
+            except ParserError as exc:
+                logging.error("%s (line %d column %d)", exc, exc.line, exc.column)
                 continue
             logging.debug("Parsing field '%s'", name)
             try:
@@ -77,8 +77,8 @@ class Parser(object):
             except KeyError as exc:
                 logging.error("Invalid field %s", exc)
                 continue
-            if value is not None:
-                field.set_value(value)
+            if value_node is not None:
+                self.parse_field_value(field, value_node)
             yield field
 
     def get_packet_name(self, name):
@@ -87,22 +87,26 @@ class Parser(object):
         else:
             return name
 
-    def parse_packet(self, name, node):
-        logging.info('Processing packet %s', self.get_packet_name(name))
-        if not isinstance(node, yaml.MappingNode):
-            raise ParserError('Invalid packet definition', node)
+    def _create_packet(self, name, node):
         key, value = node.value[0]
         if key.value.lower() != 'type':
             raise ParserError('Packet type must follow packet declaration', node)
         packet_type = value.value.lower()
         if packet_type == 'data':
-            packet = VRTDataPacket(name)
+            return VRTDataPacket(name)
         elif packet_type == 'context':
-            packet = VRTContextPacket(name)
+            return VRTContextPacket(name)
         elif packet_type == 'control':
-            packet = VRTControlPacket(name)
+            return VRTControlPacket(name)
         else:
             raise ParserError("Invalid packet type '"+value.value+"'", node)
+
+    def parse_packet(self, name, node):
+        logging.info('Processing packet %s', self.get_packet_name(name))
+        if not isinstance(node, yaml.MappingNode):
+            raise ParserError('Invalid packet definition', node)
+
+        packet = self._create_packet(name, node)
 
         for key_node, value_node in node.value[1:]:
             field_name = key_node.value
@@ -118,7 +122,7 @@ class Parser(object):
                     logging.warning('Invalid field %s', exc)
                     continue
                 logging.debug("Parsing field '%s'", field.name)
-                self.parse_field(field, value_node)
+                self.parse_field_value(field, value_node)
                 # If a field is only given a value, assume it's required
                 # TODO: Should be constant as well?
                 field.set_required()
