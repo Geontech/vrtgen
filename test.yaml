@@ -1,9 +1,8 @@
 TestData:
   type: data
   Stream ID: required
-  timestamp:
-    integer: utc
-    fractional: picoseconds
+  TSI: utc
+  TSF: picoseconds
   # Top-level field is constant (TODO)
   Calibrated Time: true
   # Required fields is sequence

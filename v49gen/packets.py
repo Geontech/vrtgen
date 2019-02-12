@@ -65,6 +65,30 @@ class FixedFormat(IntFormat):
         # TODO: float-to-fixed conversion
         return float(value)
 
+class EnumFormat:
+    def __init__(self, values):
+        self.values = values
+
+    def convert(self, value):
+        try:
+            return self.values[value.lower()]
+        except KeyError:
+            raise ValueError("Invalid value '"+value+"'")
+
+TSIFormat = EnumFormat({
+    'none':  TSI.NONE,
+    'utc':   TSI.UTC,
+    'gps':   TSI.GPS,
+    'other': TSI.OTHER
+})
+
+TSFFormat = EnumFormat({
+    'none':         TSF.NONE,
+    'samples':      TSF.SAMPLE_COUNT,
+    'picoseconds':  TSF.REAL_TIME,
+    'free running': TSF.FREE_RUNNING
+})
+
 class FieldDescriptor:
     DISABLED = 0
     OPTIONAL = 1
@@ -138,13 +162,13 @@ class VRTHeader(FieldContainer):
         if stream_id:
             self.stream_id.set_required()
         self.class_id = self.add_field('Class ID')
+        self.integer_timestamp = self.add_field('TSI', format=TSIFormat)
+        self.fractional_timestamp = self.add_field('TSF', format=TSFFormat)
 
 class VRTPacket(object):
     def __init__(self, name, stream_id=True):
         self.name = name
         self.header = VRTHeader(stream_id)
-        self.integer_time = TSI.NONE
-        self.fractional_time = TSF.NONE
 
     @property
     def has_trailer(self):
