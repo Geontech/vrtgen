@@ -15,54 +15,45 @@ class Parser(object):
 
     def parse_field(self, field, node):
         if isinstance(node, yaml.ScalarNode):
-            if node.value == 'required':
-                field.set_required()
-            elif node.value == 'optional':
-                field.set_optional()
-            elif node.value == 'disabled':
-                field.set_disabled()
-        else:
-            logging.warning("Invalid value for field '%s' (line %d, column %d)",
-                            field.name, node.start_mark.line, node.start_mark.column)
-
-    def parse_trailer(self, packet, node):
-        if not isinstance(node, yaml.MappingNode):
-            logging.warning('Invalid trailer definition in packet (line %d, column %d)' % (node.start_mark.line, node.start_mark.column))
-            return None
-
-        for field_name, field_value in node.value:
-            field_name = str(field_name.value)
-            try:
-                field = packet.get_field(field_name)
-            except KeyError as exc:
-                logging.warning('Invalid trailer field %s', exc)
-                continue
-
-            logging.debug("Parsing field '%s'", field.name)
-            if isinstance(field_value, yaml.ScalarNode):
-                try:
-                    field.default_value = self._constructor.construct_yaml_bool(field_value)
-                except:
-                    self._set_field_attribute(field, str(field_value.value))
-            elif isinstance(field_value, yaml.MappingNode):
-                mapping = self._constructor.construct_mapping(field_value)
-                for key, value in mapping.items():
-                    if key == 'default':
-                        field.default_value = value
-                    elif key == 'attributes':
-                        for attribute in value:
-                            self._set_field_attribute(field, attribute)
+            value = self._constructor.construct_object(node)
+            if value in ('required', 'optional', 'disabled'):
+                self._set_field_attribute(field, value)
             else:
-                logging.warning('Invalid value for trailer field "%s" (line %d, column %d)',
-                                field_name, field_value.start_mark.line, field_value.start_mark.column)
-                continue
+                logging.debug("Setting value for field '%s': %s", field.name, value)
+                try:
+                    field.set_value(value)
+                except (ValueError, TypeError) as exc:
+                    logging.error("Could not set value for field '%s': %s", field.name, exc)
+                # If a field is only given a value, assume it's required
+                # TODO: Should be constant as well?
+                field.set_required()
+        elif isinstance(node, yaml.MappingNode):
+            for key_node, value_node in node.value:
+                key = key_node.value.lower()
+                if key == 'value':
+                    value = self._constructor.construct_object(value_node)
+                    logging.debug("Setting value '%s' for field '%s'", value, field.name)
+                    try:
+                        field.set_value(value)
+                    except Exception as exc:
+                        logging.error("Could not set value for field '%s': %s", field.name, exc)
+                elif key == 'attributes':
+                    for attr in self._constructor.construct_sequence(value_node):
+                        self._set_field_attribute(field, attr)
+                else:
+                    logging.warning("Invalid key '%s'", key)
+        else:
+            logging.error("Invalid value for field '%s'", field.name)
 
     def _set_field_attribute(self, field, value):
         if value == 'optional':
+            logging.debug("Field '%s' is optional", field.name)
             field.set_optional()
         elif value == 'required':
+            logging.debug("Field '%s' is required", field.name)
             field.set_required()
         elif value == 'disabled':
+            logging.debug("Field '%s' is disabled", field.name)
             field.set_disabled()
         else:
             logger.warning("Invalid field attribute '%s'", value)
@@ -75,19 +66,13 @@ class Parser(object):
 
         for key_node, value_node in node.value:
             field_name = key_node.value
-            if field_name.lower() == 'trailer':
-                if not isinstance(packet, VRTDataPacket):
-                    logging.warning('Trailer only valid for data packets')
-                    continue
-                self.parse_trailer(packet, value_node)
-            else:
-                try:
-                    field = packet.get_field(field_name)
-                except KeyError as exc:
-                    logging.warning('Invalid field %s', exc)
-                    continue
-                logging.debug("Parsing field '%s'", field.name)
-                self.parse_field(field, value_node)
+            try:
+                field = packet.get_field(field_name)
+            except KeyError as exc:
+                logging.warning('Invalid field %s', exc)
+                continue
+            logging.debug("Parsing field '%s'", field.name)
+            self.parse_field(field, value_node)
 
     def get_packet_name(self, name):
         if self.namespace:

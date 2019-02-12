@@ -42,9 +42,17 @@ class BitFormat:
     def __init__(self, bit):
         self.bit = bit
 
+    def convert(self, value):
+        return bool(value)
+
 class IntFormat:
     def __init__(self, bits=32):
         self.bits = bits
+
+    def convert(self, value):
+        value = int(value)
+        # TODO: range check
+        return value
 
 INT32 = IntFormat()
 
@@ -53,6 +61,9 @@ class FixedFormat(IntFormat):
         super().__init__(bits)
         self.radix = radix
 
+    def convert(self, value):
+        # TODO: float-to-fixed conversion
+        return float(value)
 
 class FieldDescriptor:
     DISABLED = 0
@@ -69,6 +80,9 @@ class FieldDescriptor:
 
     def match(self, name):
         return name.lower() == self.name.lower()
+
+    def set_value(self, value):
+        self.default_value = self.format.convert(value)
 
     @property
     def is_enabled(self):
