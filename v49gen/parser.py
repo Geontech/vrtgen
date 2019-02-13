@@ -62,9 +62,10 @@ class PacketParser:
         self.constructor = yaml.constructor.SafeConstructor()
 
         for field in VRTPrologue().fields:
-            if field.name in ('TSI', 'TSF'):
+            if field.name in ('TSI', 'TSF', 'Class ID'):
                 continue
             self.add_field_parser(field.name, field.format)
+        self.add_field_parser('Class ID', func=self.parse_class_id)
         self.add_field_parser('TSI', func=self.parse_tsi)
         self.add_field_parser('TSF', func=self.parse_tsf)
 
@@ -73,6 +74,25 @@ class PacketParser:
 
         for name, _, format in CIF0.FIELDS:
             self.add_field_parser(name, format)
+
+    def parse_class_id(self, node):
+        if not isinstance(node, yaml.MappingNode):
+            raise TypeError('structured data required')
+        value = {}
+        for key_node, value_node in node.value:
+            field_name = key_node.value.lower()
+            if field_name == 'oui':
+                value['OUI'] = self.parse_oui(value_node)
+            elif field_name == 'information class code':
+                value['Information Class Code'] = self.parse_int(value_node)
+            elif field_name == 'packet class code':
+                value['Packet Class Code'] = self.parse_int(value_node)
+            else:
+                self.warning("Invalid field '%s' for Class ID", key_node.value)
+        return value
+
+    def parse_oui(self, node):
+        return self.constructor.construct_yaml_str(node)
 
     def parse_tsi(self, node):
         value = self.constructor.construct_yaml_str(node)

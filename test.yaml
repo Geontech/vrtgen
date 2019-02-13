@@ -4,6 +4,10 @@
 
 TestData:
   type: data
+  Class ID:
+    OUI: FF-FF-FF
+    Information Class Code: 0x0001
+    Packet Class Code: 0x0001
   # Top-level field is constant
   Calibrated Time: true
   # Required fields is sequence
