@@ -1,27 +1,7 @@
 from enum import IntEnum
 import struct
 
-# TSI Code
-# 00 - no integer timecode
-# 01 - UTC
-# 10 - GPS
-# 11 - Other
-class TSI(IntEnum):
-    NONE  = 0
-    UTC   = 1
-    GPS   = 2
-    OTHER = 3
-
-# TSF Code
-# 00 - no fractional timcode
-# 01 - sample-count
-# 10 - real-time (picoseconds)
-# 11 - free-running count
-class TSF(IntEnum):
-    NONE         = 0
-    SAMPLE_COUNT = 1
-    REAL_TIME    = 2
-    FREE_RUNNING = 3
+from .formats import *
 
 class PacketType(IntEnum):
     """
@@ -37,57 +17,6 @@ class PacketType(IntEnum):
     COMMAND                  = 6 # 0110
     EXTENSION_COMMAND        = 7 # 0111
     # 1000-1111 reserved for future VRT Packet types
-
-class BitFormat:
-    def __init__(self, bit):
-        self.bit = bit
-
-    def convert(self, value):
-        return bool(value)
-
-class IntFormat:
-    def __init__(self, bits=32):
-        self.bits = bits
-
-    def convert(self, value):
-        value = int(value)
-        # TODO: range check
-        return value
-
-INT32 = IntFormat()
-
-class FixedFormat(IntFormat):
-    def __init__(self, bits, radix):
-        super().__init__(bits)
-        self.radix = radix
-
-    def convert(self, value):
-        # TODO: float-to-fixed conversion
-        return float(value)
-
-class EnumFormat:
-    def __init__(self, values):
-        self.values = values
-
-    def convert(self, value):
-        try:
-            return self.values[value.lower()]
-        except KeyError:
-            raise ValueError("Invalid value '"+value+"'")
-
-TSIFormat = EnumFormat({
-    'none':  TSI.NONE,
-    'utc':   TSI.UTC,
-    'gps':   TSI.GPS,
-    'other': TSI.OTHER
-})
-
-TSFFormat = EnumFormat({
-    'none':         TSF.NONE,
-    'samples':      TSF.SAMPLE_COUNT,
-    'picoseconds':  TSF.REAL_TIME,
-    'free running': TSF.FREE_RUNNING
-})
 
 class FieldDescriptor:
     DISABLED = 0
@@ -165,8 +94,8 @@ class VRTPrologue(FieldContainer):
         super().__init__()
         self.stream_id = self.add_field('Stream ID', format=INT32)
         self.class_id = self.add_field('Class ID')
-        self.integer_timestamp = self.add_field('TSI', format=TSIFormat)
-        self.fractional_timestamp = self.add_field('TSF', format=TSFFormat)
+        self.integer_timestamp = self.add_field('TSI', format=TSI)
+        self.fractional_timestamp = self.add_field('TSF', format=TSF)
 
 class VRTPacket(object):
     def __init__(self, name):
@@ -206,14 +135,14 @@ class VRTPacket(object):
 class VRTDataTrailer(FieldContainer):
     def __init__(self):
         super().__init__()
-        self.calibrated_time = self.add_field('Calibrated Time', 31, BitFormat(19))
-        self.valid_data = self.add_field('Valid Data', 30, BitFormat(18))
-        self.reference_lock = self.add_field('Reference Lock', 29, BitFormat(17))
-        self.agc_mgc = self.add_field('AGC/MGC', 28, BitFormat(16))
-        self.detected_signal = self.add_field('Detected Signal', 27, BitFormat(15))
-        self.spectral_inversion = self.add_field('Spectral Inversion', 26, BitFormat(14))
-        self.over_range = self.add_field('Over-range', 25, BitFormat(13))
-        self.sample_loss = self.add_field('Sample Loss', 24, BitFormat(12))
+        self.calibrated_time = self.add_field('Calibrated Time', 31, BIT)
+        self.valid_data = self.add_field('Valid Data', 30, BIT)
+        self.reference_lock = self.add_field('Reference Lock', 29, BIT)
+        self.agc_mgc = self.add_field('AGC/MGC', 28, BIT)
+        self.detected_signal = self.add_field('Detected Signal', 27, BIT)
+        self.spectral_inversion = self.add_field('Spectral Inversion', 26, BIT)
+        self.over_range = self.add_field('Over-range', 25, BIT)
+        self.sample_loss = self.add_field('Sample Loss', 24, BIT)
         # [23,22], [11,10] Sample Frame, User-Defined
         # [21..20], [9..8] User-Defined
         self.context_packet_count = self.add_field('Associated Context Packet Count', 7, IntFormat(7))
@@ -223,8 +152,9 @@ class VRTDataTrailer(FieldContainer):
         for field in self.fields:
             if field.is_set:
                 flag |= 1 << field.enable_bit
-                if field.default_value:
-                    flag |= 1 << field.format.bit
+                if field.format == BIT and field.default_value:
+                    # The enable and value bits are offset by 12
+                    flag |= 1 << (field.enable_bit - 12)
         return struct.pack('>I', flag)
 
     @property
@@ -270,30 +200,30 @@ class VRTDataPacket(VRTPacket):
 
 class CIF0(FieldContainer):
     FIELDS = (
-        ('Context Field Change Indicator', 31), # No data
-        ('Reference Point Identifier', 30), # integer 32 (stream ID)
-        ('Bandwidth', 29), # fixed-point 64/20, Hz
-        ('IF Reference Frequency', 28), # fixed-point 64/20, Hz
-        ('RF Reference Frequency', 27), # fixed-point 64/20, Hz
-        ('RF Reference Frequency Offset', 26), # fixed-point 64/20, Hz
-        ('IF Band Offset', 25), # fixed-point 64/20, Hz
-        ('Reference Level', 24), # fixed-point 16/7 dBm (upper 16 reserved)
-        ('Gain', 23), # [stage2 (optional), stage1]: fixed-point 16/7, dB
-        ('Over-range Count', 22), # integer 32
-        ('Sample Rate', 21), # fixed-point 64/20, Hz
-        ('Timestamp Adjustment', 20), # fractional time (integer 64)
-        ('Timestamp Calibration Time', 19), # 1 word, depends on prologue TSI
-        ('Temperature', 18), # fixed-point 16/6, degrees C (upper 16 reserved)
-        ('Device Identifier', 17), # 64 bits total, specific format
-        ('State/Event Indicators', 16), # 32 bits, bit flags
-        ('Signal Data Packet Payload Format', 15), # structured
-        ('Formatted GPS', 14), # structured
-        ('Formatted INS', 13), # structured
-        ('ECEF Ephemeris', 12), # structured
-        ('Relative Ephemeris', 11), # structured
-        ('Ephemeris Ref ID', 10), # integer 32
-        ('GPS ASCII', 9), # 2 word header plus arbitrary binary data
-        ('Context Association Lists', 8)
+        ('Context Field Change Indicator', 31, None), # No data
+        ('Reference Point Identifier', 30, INT32), # integer 32 (stream ID)
+        ('Bandwidth', 29, FixedFormat(64, 20)), # fixed-point 64/20, Hz
+        ('IF Reference Frequency', 28, FixedFormat(64, 20)), # fixed-point 64/20, Hz
+        ('RF Reference Frequency', 27, FixedFormat(64, 20)), # fixed-point 64/20, Hz
+        ('RF Reference Frequency Offset', 26, FixedFormat(64, 20)), # fixed-point 64/20, Hz
+        ('IF Band Offset', 25, FixedFormat(64, 20)), # fixed-point 64/20, Hz
+        ('Reference Level', 24, None), # fixed-point 16/7 dBm (upper 16 reserved)
+        ('Gain', 23, None), # [stage2 (optional), stage1]: fixed-point 16/7, dB
+        ('Over-range Count', 22, INT32), # integer 32
+        ('Sample Rate', 21, FixedFormat(64, 20)), # fixed-point 64/20, Hz
+        ('Timestamp Adjustment', 20, INT64), # fractional time (integer 64)
+        ('Timestamp Calibration Time', 19, INT32), # 1 word, depends on prologue TSI
+        ('Temperature', 18, FixedFormat(16, 6)), # fixed-point 16/6, degrees C (upper 16 reserved)
+        ('Device Identifier', 17, None), # 64 bits total, specific format
+        ('State/Event Indicators', 16, None), # 32 bits, bit flags
+        ('Signal Data Packet Payload Format', 15, None), # structured
+        ('Formatted GPS', 14, None), # structured
+        ('Formatted INS', 13, None), # structured
+        ('ECEF Ephemeris', 12, None), # structured
+        ('Relative Ephemeris', 11, None), # structured
+        ('Ephemeris Ref ID', 10, INT32), # integer 32
+        ('GPS ASCII', 9, None), # 2 word header plus arbitrary binary data
+        ('Context Association Lists', 8, None)
         # Field Attributes Enable (CIF7)
         # Reserved
         # Reserved
@@ -306,8 +236,8 @@ class CIF0(FieldContainer):
 
     def __init__(self):
         super().__init__()
-        for name, bit in CIF0.FIELDS:
-            self.add_field(name, bit)
+        for name, bit, format in CIF0.FIELDS:
+            self.add_field(name, bit, format)
 
     def get_prologue_bytes(self):
         prologue = 0

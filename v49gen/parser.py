@@ -64,19 +64,15 @@ class PacketParser:
         for field in VRTPrologue().fields:
             if field.name in ('TSI', 'TSF'):
                 continue
-            if isinstance(field.format, IntFormat):
-                self.add_field_parser(field.name, self.parse_int32)
-            else:
-                self.add_field_parser(field.name, self.parse_empty)
+            self.add_field_parser(field.name, field.format)
+        self.add_field_parser('TSI', func=self.parse_tsi)
+        self.add_field_parser('TSF', func=self.parse_tsf)
 
         for field in VRTDataTrailer().fields:
-            self.add_field_parser(field.name, self.parse_bool)
+            self.add_field_parser(field.name, field.format)
 
         for field in CIF0().fields:
-            self.add_field_parser(field.name, self.parse_empty)
-
-        self.add_field_parser('TSI', self.parse_tsi)
-        self.add_field_parser('TSF', self.parse_tsf)
+            self.add_field_parser(field.name, field.format)
 
     def parse_tsi(self, node):
         value = self.constructor.construct_yaml_str(node)
@@ -104,16 +100,33 @@ class PacketParser:
         else:
             raise KeyError(value)
 
-    def parse_int32(self, node):
+    def parse_int(self, node):
         return self.constructor.construct_yaml_int(node)
 
-    def parse_bool(self, node):
-        return self.constructor.construct_yaml_bool(node)
+    def parse_float(self, node):
+        return self.constructor.construct_yaml_float(node)
+
+    def parse_bit(self, node):
+        try:
+            self.constructor.construct_yaml_bool(node)
+        except:
+            return {'0':False, '1':True}[node.value]
 
     def parse_empty(self, node):
         raise ValueError('cannot set value')
 
-    def add_field_parser(self, name, func):
+    def add_field_parser(self, name, format=None, func=None):
+        if not func:
+            if format == BIT:
+                func = self.parse_bit
+            elif isinstance(format, FixedFormat):
+                # TODO: bits/range
+                func = self.parse_float
+            elif isinstance(format, IntFormat):
+                # TODO: bit widths
+                func = self.parse_int
+            else:
+                func = self.parse_empty
         self.field_parsers.append(FieldParser(name, func))
 
     def get_field_parser(self, name):
