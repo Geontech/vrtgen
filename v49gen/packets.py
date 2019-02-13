@@ -107,7 +107,7 @@ class FieldDescriptor:
         return name.lower() == self.name.lower()
 
     def set_value(self, value):
-        self.default_value = self.format.convert(value)
+        self.default_value = value
 
     @property
     def is_enabled(self):

@@ -1,5 +1,6 @@
 from .packets import *
 
+import collections
 import logging
 
 import yaml
@@ -39,38 +40,124 @@ class ParserError(RuntimeError):
     def column(self):
         return self.node.start_mark.column
 
-class Parser(object):
-    def __init__(self):
-        self._constructor = yaml.constructor.SafeConstructor()
+class FieldParser:
+    __slots__ = ('name', 'func')
 
-    def parse_namespace(self, node):
-        namespace = str(node.value)
-        logging.debug('Using namespace %s', namespace)
-        self.namespace = namespace
+    def __init__(self, name, func):
+        self.name = name
+        self.func = func
 
-    def parse_field_value(self, field, node):
-        if isinstance(node, yaml.ScalarNode):
-            value = self._constructor.construct_object(node)
-            logging.debug("Setting value for field '%s': %s", field.name, value)
+    def parse_value(self, node):
+        return self.func(node)
+
+FieldValue = collections.namedtuple('FieldValue', ['value', 'optional'])
+
+class PacketParser:
+    def __init__(self, name):
+        self.name = name
+        self.log = logging.getLogger(name)
+        self.type = None
+        self.fields = {}
+        self.field_parsers = []
+        self.constructor = yaml.constructor.SafeConstructor()
+
+        for field in VRTPrologue().fields:
+            if field.name in ('TSI', 'TSF'):
+                continue
+            if isinstance(field.format, IntFormat):
+                self.add_field_parser(field.name, self.parse_int32)
+            else:
+                self.add_field_parser(field.name, self.parse_empty)
+
+        for field in VRTDataTrailer().fields:
+            self.add_field_parser(field.name, self.parse_bool)
+
+        for field in CIF0().fields:
+            self.add_field_parser(field.name, self.parse_empty)
+
+        self.add_field_parser('TSI', self.parse_tsi)
+        self.add_field_parser('TSF', self.parse_tsf)
+
+    def parse_tsi(self, node):
+        value = self.constructor.construct_yaml_str(node)
+        if value == 'none':
+            return TSI.NONE
+        elif value == 'utc':
+            return TSI.UTC
+        elif value == 'gps':
+            return TSI.GPS
+        elif value == 'other':
+            return TSI.OTHER
+        else:
+            raise KeyError(value)
+
+    def parse_tsf(self, node):
+        value = self.constructor.construct_yaml_str(node)
+        if value == 'none':
+            return TSF.NONE
+        elif value == 'samples':
+            return TSF.SAMPLE_COUNT
+        elif value == 'picoseconds':
+            return TSF.REAL_TIME
+        elif value == 'free running':
+            return TSF.FREE_RUNNING
+        else:
+            raise KeyError(value)
+
+    def parse_int32(self, node):
+        return self.constructor.construct_yaml_int(node)
+
+    def parse_bool(self, node):
+        return self.constructor.construct_yaml_bool(node)
+
+    def parse_empty(self, node):
+        raise ValueError('cannot set value')
+
+    def add_field_parser(self, name, func):
+        self.field_parsers.append(FieldParser(name, func))
+
+    def get_field_parser(self, name):
+        for parser in self.field_parsers:
+            if name.lower() == parser.name.lower():
+                return parser
+        return None
+
+    def warning(self, *args, **kwargs):
+        self.log.warning(*args, **kwargs)
+
+    def error(self, *args, **kwargs):
+        self.log.error(*args, **kwargs)
+
+    def parse_field(self, name, value_node=None, optional=False):
+        if name in self.fields:
+            self.warning("Duplicate field '%s'", name)
+            return
+        field = self.get_field_parser(name)
+        if field is None:
+            self.error("Invalid field '%s'", name)
+            return
+        if value_node is not None:
             try:
-                field.set_value(value)
-            except (ValueError, TypeError) as exc:
-                logging.error("Could not set value for field '%s': %s", field.name, exc)
+                value = field.parse_value(value_node)
+            except (KeyError, ValueError) as exc:
+                self.error("Invalid value for field '%s': '%s'", field.name, value_node.value)
+                return
+            self.log.debug('Field %s has value %s', field.name, value)
         else:
-            logging.error("Invalid value for field '%s'", field.name)
+            value = None
+        self.log.debug('Field %s is %s', field.name, 'optional' if optional else 'required')
+        self.fields[field.name] = FieldValue(value, optional)
 
-    def _set_field_attribute(self, field, value):
-        if value == 'optional':
-            logging.debug("Field '%s' is optional", field.name)
-            field.set_optional()
-        elif value == 'required':
-            logging.debug("Field '%s' is required", field.name)
-            field.set_required()
-        elif value == 'disabled':
-            logging.debug("Field '%s' is disabled", field.name)
-            field.set_disabled()
+    def parse_packet_type(self, node):
+        packet_type = self.constructor.construct_yaml_str(node)
+        if packet_type.lower() == 'data':
+            self.type = VRTDataPacket
+        elif packet_type.lower() == 'context':
+            self.type = VRTContextPacket
+        elif packet_type.lower() == 'control':
+            self.type = VRTControlPacket
         else:
-            logger.warning("Invalid field attribute '%s'", value)
+            raise ParserError("Invalid packet type '"+packet_type+"'")
 
     def parse_field_list_entry(self, node):
         if isinstance(node, yaml.ScalarNode):
@@ -83,27 +170,56 @@ class Parser(object):
         else:
             raise ParserError('Invalid field description', node)
 
-    def parse_fields(self, packet, node, optional):
+    def parse_fields(self, node, optional=False):
         if not isinstance(node, yaml.SequenceNode):
-            raise ParserError('Packet fields must be sequence', node)
+            self.error('Packet fields must be sequence', node)
+            return
 
         for field in node.value:
             try:
-                name, value_node = self.parse_field_list_entry(field)
+                field_name, value_node = self.parse_field_list_entry(field)
             except ParserError as exc:
-                logging.error("%s (line %d column %d)", exc, exc.line, exc.column)
+                self.error('%s', exc)
                 continue
+            self.parse_field(field_name, value_node, optional)
+
+    def parse(self, node):
+        for key_node, value_node in MergingIterator(node.value):
+            field_name = key_node.value
+            if field_name.lower() in ('required', 'optional'):
+                # Within an attribute scope, set the attribute on all fields
+                optional = (field_name.lower() == 'optional')
+                self.parse_fields(value_node, optional)
+            elif field_name.lower() == 'type':
+                try:
+                    self.parse_packet_type(value_node)
+                except ParserError as exc:
+                    self.error('%s', exc)
+            else:
+                field = self.parse_field(field_name, value_node)
+                if field is None:
+                    continue
+
+        if self.type is None:
+            raise ParserError('No packet type provided', node)
+        packet = self.type(self.name)
+        for field_name, field_value in self.fields.items():
             try:
-                field = packet.add_field(name, optional)
+                field = packet.add_field(field_name, field_value.optional)
             except KeyError as exc:
-                logging.error("Invalid field %s", exc)
-                continue
-            except ValueError as exc:
-                logging.error("Duplicate field '%s'", name)
-                continue
-            logging.debug("Parsing field '%s'", name)
-            if value_node is not None:
-                self.parse_field_value(field, value_node)
+                self.error("'%s' is not a valid field for packet type", field_name)
+            if field_value.value is not None:
+                field.set_value(field_value.value)
+        return packet
+
+class FileParser(object):
+    def __init__(self):
+        self._constructor = yaml.constructor.SafeConstructor()
+
+    def parse_namespace(self, node):
+        namespace = str(node.value)
+        logging.debug('Using namespace %s', namespace)
+        self.namespace = namespace
 
     def get_packet_name(self, name):
         if self.namespace:
@@ -130,27 +246,7 @@ class Parser(object):
         if not isinstance(node, yaml.MappingNode):
             raise ParserError('Invalid packet definition', node)
 
-        map_iter = MergingIterator(node.value)
-        packet = self._create_packet(name, next(map_iter))
-
-        for key_node, value_node in map_iter:
-            field_name = key_node.value
-            if field_name.lower() in ('required', 'optional'):
-                # Within an attribute scope, set the attribute on all fields
-                optional = field_name.lower() == 'optional'
-                self.parse_fields(packet, value_node, optional)
-            else:
-                try:
-                    field = packet.add_field(field_name)
-                except KeyError as exc:
-                    logging.warning('Invalid field %s', exc)
-                    continue
-                logging.debug("Parsing field '%s'", field.name)
-                self.parse_field_value(field, value_node)
-                # If a field is only given a value, its value is constant
-                field.set_constant()
-
-        return packet
+        return PacketParser(name).parse(node)
 
     def parse(self, filename):
         with open(filename, 'r') as fp:

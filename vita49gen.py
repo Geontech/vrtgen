@@ -3,9 +3,9 @@
 import logging
 import sys
 
-from v49gen.parser import Parser
+from v49gen.parser import FileParser
 
-logging.basicConfig(format='%(levelname)s: %(message)s')
+logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
 
 def hex_bytes(data):
@@ -13,7 +13,7 @@ def hex_bytes(data):
 
 if __name__ == '__main__':
     source = sys.argv[1]
-    p = Parser()
+    p = FileParser()
     for packet in p.parse(source):
         prologue = packet.get_header_bytes()
         logging.debug('Packet prologue 0x%s', hex_bytes(prologue))
