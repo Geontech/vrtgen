@@ -71,8 +71,8 @@ class PacketParser:
         for field in VRTDataTrailer().fields:
             self.add_field_parser(field.name, field.format)
 
-        for field in CIF0().fields:
-            self.add_field_parser(field.name, field.format)
+        for name, _, format in CIF0.FIELDS:
+            self.add_field_parser(name, format)
 
     def parse_tsi(self, node):
         value = self.constructor.construct_yaml_str(node)
@@ -221,6 +221,7 @@ class PacketParser:
                 field = packet.add_field(field_name, field_value.optional)
             except KeyError as exc:
                 self.error("'%s' is not a valid field for packet type", field_name)
+                continue
             if field_value.value is not None:
                 field.set_value(field_value.value)
         return packet

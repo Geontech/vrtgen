@@ -4,14 +4,13 @@
 
 TestData:
   type: data
-  Stream ID: required
-  TSI: utc
-  TSF: picoseconds
   # Top-level field is constant
   Calibrated Time: true
   # Required fields is sequence
   required:
-    # Default value is 1-entry mapping
+    - Stream ID
+    - TSI: utc
+    - TSF: picoseconds
     - Valid Data: true
     - AGC/MGC
     - Associated Context Packet Count
@@ -23,8 +22,10 @@ TestMerge:
   type: data
   <<: *common
 
-BasicData:
+InvalidField:
   type: data
+  required:
+    - IF Reference Frequency: 0.0
 
 TestContext:
   type: context
