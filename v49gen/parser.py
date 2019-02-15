@@ -5,28 +5,6 @@ import logging
 
 import yaml
 
-class MergingIterator:
-    def __init__(self, nodes):
-        self._iter = iter(nodes)
-        self._stack = []
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        try:
-            item = next(self._iter)
-        except StopIteration:
-            if not self._stack:
-                raise
-            self._iter = self._stack.pop()
-            item = next(self._iter)
-        if item[0].tag == 'tag:yaml.org,2002:merge':
-            self._stack.append(self._iter)
-            self._iter = iter(item[1].value)
-            return next(self._iter)
-        return item
-
 class ParserError(RuntimeError):
     def __init__(self, message, node):
         super().__init__(message)
@@ -93,32 +71,6 @@ class PacketParser:
 
     def parse_oui(self, node):
         return self.constructor.construct_yaml_str(node)
-
-    def parse_tsi(self, node):
-        value = self.constructor.construct_yaml_str(node)
-        if value == 'none':
-            return TSI.NONE
-        elif value == 'utc':
-            return TSI.UTC
-        elif value == 'gps':
-            return TSI.GPS
-        elif value == 'other':
-            return TSI.OTHER
-        else:
-            raise KeyError(value)
-
-    def parse_tsf(self, node):
-        value = self.constructor.construct_yaml_str(node)
-        if value == 'none':
-            return TSF.NONE
-        elif value == 'samples':
-            return TSF.SAMPLE_COUNT
-        elif value == 'picoseconds':
-            return TSF.REAL_TIME
-        elif value == 'free running':
-            return TSF.FREE_RUNNING
-        else:
-            raise KeyError(value)
 
     def parse_int(self, node):
         return self.constructor.construct_yaml_int(node)
@@ -246,57 +198,98 @@ class PacketParser:
                 field.set_value(field_value.value)
         return packet
 
-class FileParser(object):
-    def __init__(self):
-        self._constructor = yaml.constructor.SafeConstructor()
-
-    def parse_namespace(self, node):
-        namespace = str(node.value)
-        logging.debug('Using namespace %s', namespace)
-        self.namespace = namespace
-
-    def get_packet_name(self, name):
-        if self.namespace:
-            return '::'.join((self.namespace, name))
-        else:
-            return name
-
-    def _create_packet(self, name, node):
-        key, value = node
-        if key.value.lower() != 'type':
-            raise ParserError('Packet type must follow packet declaration', node)
-        packet_type = value.value.lower()
-        if packet_type == 'data':
-            return VRTDataPacket(name)
-        elif packet_type == 'context':
-            return VRTContextPacket(name)
-        elif packet_type == 'control':
-            return VRTControlPacket(name)
-        else:
-            raise ParserError("Invalid packet type '"+value.value+"'", node)
-
-    def parse_packet(self, name, node):
-        logging.info('Processing packet %s', self.get_packet_name(name))
-        if not isinstance(node, yaml.MappingNode):
-            raise ParserError('Invalid packet definition', node)
-
-        return PacketParser(name).parse(node)
+class FileParser:
+    field_parsers = {}
 
     def parse(self, filename):
         with open(filename, 'r') as fp:
-            root = yaml.compose(fp)
-        if not isinstance(root, yaml.MappingNode):
-            raise RuntimeError('invalid YAML file')
+            document = yaml.load(fp)
 
-        self.namespace = None
-        for key_node, value_node in root.value:
-            name = key_node.value
-            if name == 'namespace':
-                self.parse_namespace(value_node)
-            elif name.startswith('.'):
+        for name, value in document.items():
+            if name.startswith('.'):
                 logging.debug("Skipping hidden entry %s", name)
             else:
                 try:
-                    yield self.parse_packet(name, value_node)
-                except ParserError as exc:
-                    logging.error("%s (line %d column %d)", str(exc), exc.line, exc.column)
+                    yield self.parse_packet(name, value)
+                except Exception as exc:
+                    logging.error("%s", str(exc))
+
+    def split_value(self, value):
+        if isinstance(value, dict):
+            if len(value) != 1:
+                raise ValueError('Multiple values in list')
+            return value.copy().popitem()
+        elif isinstance(value, list):
+            raise TypeError('Fields cannot be specified as a list')
+        else:
+            return value, None
+
+    def parse_packet(self, name, value):
+        logging.info('Processing packet %s', name)
+        if not isinstance(value, dict):
+            raise RuntimeError('Invalid definition for packet ' + name)
+
+        packet_type = value.pop('type', None)
+        if packet_type is None:
+            raise RuntimeError('No packet type specified for ' + name)
+        if packet_type == 'data':
+            packet = VRTDataPacket(name)
+        elif packet_type == 'context':
+            packet = VRTContextPacket(name)
+        elif packet_type == 'control':
+            packet = VRTControlPacket(name)
+        else:
+            raise RuntimeError("Invalid type '{0}' for packet '{1}'".format(packet_type, name))
+
+        for field_name, field_value in value.items():
+            if field_name == 'required':
+                if not isinstance(field_value, list):
+                    raise TypeError('Invalid value for required fields')
+                for item in field_value:
+                    key, val = self.split_value(item)
+                    field = self.parse_field(packet, key, val)
+                    # field.required
+            elif field_name == 'optional':
+                if not isinstance(field_value, list):
+                    raise TypeError('Invalid value for optional fields')
+                for item in field_value:
+                    key, val = self.split_value(item)
+                    field = self.parse_field(packet, key, val)
+                    # field.optional
+            else:
+                field = self.parse_field(packet, field_name, field_value)
+                # field.constant
+
+        return packet
+
+    def parse_field_value(self, name, value):
+        key = name.casefold()
+        parser = self.field_parsers.get(key)
+        if parser:
+            return parser(self, value)
+        else:
+            return value
+
+    def parse_tsi(self, value):
+        return {'none':  TSI.NONE,
+                'utc':   TSI.UTC,
+                'gps':   TSI.GPS,
+                'other': TSI.OTHER}[value.lower()]
+    field_parsers['tsi'] = parse_tsi
+
+    def parse_tsf(self, value):
+        return {'none':         TSF.NONE,
+                'samples':      TSF.SAMPLE_COUNT,
+                'picoseconds':  TSF.REAL_TIME,
+                'free running': TSF.FREE_RUNNING}[value.lower()]
+    field_parsers['tsf'] = parse_tsf
+
+    def parse_field(self, packet, name, value):
+        try:
+            field = packet.add_field(name)
+        except KeyError:
+            logging.error("Invalid field '%s' for packet %s", name, packet.name)
+            return
+        value = self.parse_field_value(name, value)
+        logging.debug("Field '%s' = %s", name, value)
+        field.set_value(value)

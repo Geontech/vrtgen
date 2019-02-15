@@ -1,4 +1,4 @@
-.common: &common
+.defaults: &defaults
   TSI: utc
   TSF: picoseconds
 
@@ -24,7 +24,7 @@ TestData:
 
 TestMerge:
   type: data
-  <<: *common
+  <<: *defaults
 
 InvalidField:
   type: data
