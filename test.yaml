@@ -4,6 +4,9 @@
 
 TestData:
   type: data
+  Stream ID: required
+  TSI: utc
+  TSF: picoseconds
   OUI: FF-FF-FF
   Information Class Code: 0x0001
   Packet Class Code: 0x0001
@@ -11,9 +14,6 @@ TestData:
   Calibrated Time: true
   # Required fields is sequence
   required:
-    - Stream ID
-    - TSI: utc
-    - TSF: picoseconds
     - Valid Data: true
     - AGC/MGC
     - Associated Context Packet Count
@@ -36,7 +36,6 @@ InvalidField:
 
 TestContext:
   type: context
-  required:
-    - Class ID
+  Class ID: required
   optional:
     - IF Reference Frequency

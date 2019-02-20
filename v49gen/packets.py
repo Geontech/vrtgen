@@ -130,6 +130,10 @@ class VRTPacket(object):
         return False
 
     @property
+    def stream_id(self):
+        return self.prologue.stream_id
+
+    @property
     def class_id(self):
         return self.prologue.class_id
 

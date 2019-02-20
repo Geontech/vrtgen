@@ -111,6 +111,18 @@ class PacketParser:
         packet.class_id.packet_class = int(value)
         packet.class_id.set_required()
 
+    def parse_stream_id(self, packet, value):
+        if isinstance(value, str):
+            if value.casefold() == 'required':
+                packet.stream_id.set_required()
+            elif value.casefold() == 'optional':
+                packet.stream_id.set_optional()
+            else:
+                raise ValueError(value)
+        else:
+            packet.stream_id = int(value)
+            packet.stream_id.set_required()
+
     def parse_field(self, packet, name, value):
         parser = self.field_parsers.get(name.casefold(), None)
         if parser is not None:
@@ -124,6 +136,7 @@ class PacketParser:
         self.log.debug("Field '%s' = %s", name, value)
         field.set_value(value)
 
+PacketParser.add_field_parser('Stream ID', PacketParser.parse_stream_id)
 PacketParser.add_field_parser('TSI', PacketParser.parse_tsi)
 PacketParser.add_field_parser('TSF', PacketParser.parse_tsf)
 PacketParser.add_field_parser('Class ID', PacketParser.parse_class_id)
