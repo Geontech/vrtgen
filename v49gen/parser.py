@@ -23,6 +23,10 @@ def str_to_tsf(value):
     }[value.lower()]
 
 class FieldParser:
+    def __init__(self, log, context):
+        self.log = log
+        self.context = context
+
     def parse_field_attribute(self, value):
         if isinstance(value, str):
             return {
@@ -53,60 +57,46 @@ class FieldParser:
             raise NotImplementedError('format')
 
     def to_bool(self, value):
-        return bool(value)
+        if isinstance(value, bool):
+            return value
+        elif isinstance(value, int):
+            return [False,True][value]
+        else:
+            raise TypeError('must be boolean, 0 or 1')
+
+    def parse_field(self, name, value):
+        field = self.context.get_field(name)
+        self.log.debug("Parsing field '%s'", field.name)
+        attribute = self.parse_field_attribute(value)
+        if attribute is not None:
+            self.set_field_attribute(field, attribute)
+        else:
+            value = self.parse_field_value(field, value)
+            self.log.debug("Field '%s' = %s", field.name, value)
+            field.set_required()
+
+    def parse(self, value):
+        for field_name, field_value in value.items():
+            try:
+                self.parse_field(field_name, field_value)
+            except KeyError:
+                self.log.error("Invalid field '%s'", field_name)
 
 class TrailerParser(FieldParser):
     def __init__(self, log, trailer):
-        self.log = log.getChild('Trailer')
-        self.trailer = trailer
-
-    def parse_field(self, name, value):
-        field = self.trailer.get_field(name)
-        self.log.debug("Parsing field '%s'", field.name)
-        attribute = self.parse_field_attribute(value)
-        if attribute is not None:
-            self.set_field_attribute(field, attribute)
-        else:
-            value = self.parse_field_value(field, value)
-            self.log.debug("Field '%s' = %s", field.name, value)
-            field.set_required()
-
-    def parse(self, value):
-        for field_name, field_value in value.items():
-            try:
-                self.parse_field(field_name, field_value)
-            except KeyError:
-                self.log.error("Invalid field '%s'", field_name)
+        super().__init__(log.getChild('Trailer'), trailer)
 
 class CIFPayloadParser(FieldParser):
     def __init__(self, log, packet):
-        self.log = log.getChild('CIF')
-        self.packet = packet
-
-    def parse_field(self, name, value):
-        field = self.packet.get_field(name)
-        self.log.debug("Parsing field '%s'", field.name)
-        attribute = self.parse_field_attribute(value)
-        if attribute is not None:
-            self.set_field_attribute(field, attribute)
-        else:
-            value = self.parse_field_value(field, value)
-            self.log.debug("Field '%s' = %s", field.name, value)
-            field.set_required()
-
-    def parse(self, value):
-        for field_name, field_value in value.items():
-            try:
-                self.parse_field(field_name, field_value)
-            except KeyError:
-                self.log.error("Invalid field '%s'", field_name)
+        super().__init__(log.getChild('CIF'), packet)
 
 class PacketParser(FieldParser):
     field_parsers = {}
 
     def __init__(self, name):
+        # TODO: use base class context member
+        super().__init__(logging.getLogger(name), None)
         self.name = name
-        self.log = logging.getLogger(name)
 
     @classmethod
     def add_field_parser(cls, name, parser):
