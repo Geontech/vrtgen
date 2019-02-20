@@ -25,11 +25,12 @@ TestMerge:
 TestClassID:
   type: context
   Class ID: required
+  payload:
+    IF Reference Frequency: 0.0
 
 InvalidField:
   type: data
-  required:
-    - IF Reference Frequency: 0.0
+  IF Reference Frequency: 0.0
 
 TestContext:
   type: context

@@ -83,47 +83,22 @@ class PacketParser(FieldParser):
         else:
             return value, None
 
-    def parse(self, value):
-        if not isinstance(value, dict):
-            raise RuntimeError('Invalid definition for packet ' + self.name)
+    def parse_trailer(self, packet, value):
+        self.log.error('Only data packets can have a trailer')
 
-        packet_type = value.pop('type', None)
-        if packet_type is None:
-            raise RuntimeError('No packet type specified for ' + self.name)
-        if packet_type == 'data':
-            packet = VRTDataPacket(self.name)
-        elif packet_type == 'context':
-            packet = VRTContextPacket(self.name)
-        elif packet_type == 'control':
-            packet = VRTControlPacket(self.name)
-        else:
-            raise RuntimeError("Invalid type '{0}' for packet '{1}'".format(packet_type, self.name))
+    def parse_payload(self, packet, value):
+        raise NotImplementedError('Payload processing not implemented')
+
+    def parse(self, value):
+        packet = self.create_packet(self.name)
 
         for field_name, field_value in value.items():
             if field_name == 'trailer':
-                try:
-                    trailer = packet.trailer
-                except AttributeError:
-                    self.log.error('Packet type %s cannot have a trailer', packet_type)
-                    continue
-                TrailerParser(self.log, trailer).parse(field_value)
-            elif field_name == 'required':
-                if not isinstance(field_value, list):
-                    raise TypeError('Invalid value for required fields')
-                for item in field_value:
-                    key, val = self.split_value(item)
-                    field = self.parse_field(packet, key, val)
-                    # field.required
-            elif field_name == 'optional':
-                if not isinstance(field_value, list):
-                    raise TypeError('Invalid value for optional fields')
-                for item in field_value:
-                    key, val = self.split_value(item)
-                    field = self.parse_field(packet, key, val)
-                    # field.optional
+                self.parse_trailer(packet, field_value)
+            elif field_name == 'payload':
+                self.parse_payload(packet, field_value)
             else:
                 field = self.parse_field(packet, field_name, field_value)
-                # field.constant
 
         return packet
 
@@ -202,7 +177,46 @@ PacketParser.add_field_parser('OUI', PacketParser.parse_oui)
 PacketParser.add_field_parser('Packet Class Code', PacketParser.parse_packet_class)
 PacketParser.add_field_parser('Information Class Code', PacketParser.parse_information_class)
 
+class DataPacketParser(PacketParser):
+    field_parsers = PacketParser.field_parsers.copy()
+
+    def create_packet(self, name):
+        return VRTDataPacket(name)
+
+    def parse_trailer(self, packet, value):
+        TrailerParser(self.log, packet.trailer).parse(value)
+
+class ContextPacketParser(PacketParser):
+    field_parsers = PacketParser.field_parsers.copy()
+
+    def create_packet(self, name):
+        return VRTContextPacket(name)
+
+class CommandPacketParser(PacketParser):
+    field_parsers = PacketParser.field_parsers.copy()
+
+    def create_packet(self, name):
+        return VRTCommandPacket(name)
+
 class FileParser:
+    def parse_packet(self, name, value):
+        if not isinstance(value, dict):
+            raise RuntimeError('Invalid definition for packet ' + name)
+
+        packet_type = value.pop('type', None)
+        if packet_type is None:
+            raise RuntimeError('No packet type specified for ' + name)
+        if packet_type == 'data':
+            parser = DataPacketParser(name)
+        elif packet_type == 'context':
+            parser = ContextPacketParser(name)
+        elif packet_type == 'control':
+            parser = ControlPacketParser(name)
+        else:
+            raise RuntimeError("Invalid type '{0}' for packet '{1}'".format(packet_type, name))
+
+        return parser.parse(value)
+
     def parse(self, filename):
         with open(filename, 'r') as fp:
             document = yaml.load(fp)
@@ -213,6 +227,6 @@ class FileParser:
             else:
                 logging.info('Processing packet %s', name)
                 try:
-                    yield PacketParser(name).parse(value)
+                    yield self.parse_packet(name, value)
                 except Exception as exc:
                     logging.exception("%s %s", name, str(exc))
