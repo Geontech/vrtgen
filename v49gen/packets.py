@@ -24,19 +24,19 @@ class FieldDescriptor:
     REQUIRED = 2
     CONSTANT = 3
 
-    __slots__ = ('name', 'enable_bit', '_enable_state', 'format', 'default_value')
+    __slots__ = ('name', 'enable_bit', '_enable_state', 'format', 'value')
     def __init__(self, name, enable_bit=None, format=None):
         self.name = name
         self._enable_state = FieldDescriptor.DISABLED
         self.enable_bit = enable_bit
         self.format = format
-        self.default_value = None
+        self.value = None
 
     def match(self, name):
         return name.lower() == self.name.lower()
 
     def set_value(self, value):
-        self.default_value = value
+        self.value = value
 
     @property
     def is_enabled(self):
@@ -45,7 +45,7 @@ class FieldDescriptor:
     @property
     def is_set(self):
         if self.is_optional:
-            return self.default_value is not None
+            return self.value is not None
         else:
             return self.is_enabled
 
@@ -193,7 +193,7 @@ class VRTDataTrailer(FieldContainer):
         for field in self.fields:
             if field.is_set:
                 flag |= 1 << field.enable_bit
-                if field.format == BIT and field.default_value:
+                if field.format == BIT and field.value:
                     # The enable and value bits are offset by 12
                     flag |= 1 << (field.enable_bit - 12)
         return struct.pack('>I', flag)
