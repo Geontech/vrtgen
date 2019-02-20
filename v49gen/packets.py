@@ -215,6 +215,10 @@ class VRTDataPacket(VRTPacket):
             return PacketType.SIGNAL_DATA
 
     def packet_specific_bits(self):
+        # Bits:
+        # (T)railer invluded
+        # (N)ot a V49.0 packet
+        # Signal (S)pectrum or signal time data
         indicator = 0
         if self.has_trailer:
             indicator |= 0x4
@@ -281,29 +285,40 @@ class CIF0(FieldContainer):
                 prologue |= 1 << field.enable_bit
         return struct.pack('>I', prologue)
 
-class VRTContextPacket(VRTPacket):
+class VRTCIFPacket(VRTPacket):
+    """
+    Common base class for VRT packets that include the CIF fields (i.e.,
+    context and command).
+    """
     def __init__(self, name):
         super().__init__(name)
-        self.prologue.stream_id.set_required()
-        self.is_timestamp_mode = False
-
-        # TODO: move this into a common location
-        self.cif0 = CIF0()
+        self.stream_id.set_required()
+        self.cif = [CIF0()]
 
     def get_header_bytes(self):
         base = super().get_header_bytes()
-        return base + self.cif0.get_prologue_bytes()
+        return base + self.cif[0].get_prologue_bytes()
+
+    def get_field(self, name):
+        for cif in self.cif:
+            field = cif.get_field(name)
+            if field is not None:
+                return field
+        return super().get_field(name)
+
+class VRTContextPacket(VRTCIFPacket):
+    def __init__(self, name):
+        super().__init__(name)
+        self.is_timestamp_mode = False
 
     def packet_type(self):
         return PacketType.CONTEXT
 
-    def get_field(self, name):
-        field = self.cif0.get_field(name)
-        if field is not None:
-            return field
-        return super().get_field(name)
-
     def packet_specific_bits(self):
+        # Bits:
+        # (R)eserved
+        # (N)ot a V49.0 packet
+        # Timestamp Mode (TSM)
         indicator = 0
         if not self.is_v49_0():
             indicator |= 0x02
@@ -315,13 +330,26 @@ class VRTContextPacket(VRTPacket):
         # TBD: How to check?
         return True
 
-class VRTCommandPacket(VRTPacket):
+class VRTCommandPacket(VRTCIFPacket):
     def __init__(self, name):
         super().__init__(name)
-        self.prologue.stream_id.set_required()
+        self.acknowledge = False
+        self.cancellation = False
 
     def packet_type(self):
         return PacketType.COMMAND
+
+    def packet_specific_bits(self):
+        # Bits:
+        # (A)cknowledge
+        # (R)eserved
+        # Cance(L)lation
+        indicator = 0
+        if self.acknowledge:
+            indicator |= 0x4
+        if self.cancellation:
+            indicator |= 0x1
+        return indicator
 
     def is_v49_0(self):
         # Command packets were added in 49.2, so by definition cannot be 49.0

@@ -35,3 +35,11 @@ TestContext:
   Class ID: required
   payload:
     IF Reference Frequency: optional
+
+TestCommand:
+  type: command
+  TSI: utc
+  TSF: picoseconds
+  Class ID: required
+  payload:
+    RF Reference Frequency: required

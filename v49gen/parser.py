@@ -233,8 +233,8 @@ class FileParser:
             parser = DataPacketParser(name)
         elif packet_type == 'context':
             parser = ContextPacketParser(name)
-        elif packet_type == 'control':
-            parser = ControlPacketParser(name)
+        elif packet_type == 'command':
+            parser = CommandPacketParser(name)
         else:
             raise RuntimeError("Invalid type '{0}' for packet '{1}'".format(packet_type, name))
 
