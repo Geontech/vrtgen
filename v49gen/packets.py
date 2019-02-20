@@ -70,12 +70,23 @@ class FieldDescriptor:
     def set_constant(self):
         self._enable_state = FieldDescriptor.CONSTANT
 
+class ClassID(FieldDescriptor):
+    __slots__ = ('oui', 'information_class', 'packet_class')
+    def __init__(self):
+        super().__init__('Class ID')
+        self.oui = None
+        self.information_class = None
+        self.packet_class = None
+
 class FieldContainer:
     def __init__(self):
         self.__fields = []
 
     def add_field(self, *args, **kwargs):
-        field = FieldDescriptor(*args, **kwargs)
+        if isinstance(args[0], FieldDescriptor):
+            field = args[0]
+        else:
+            field = FieldDescriptor(*args, **kwargs)
         self.__fields.append(field)
         return field
 
@@ -93,7 +104,7 @@ class VRTPrologue(FieldContainer):
     def __init__(self):
         super().__init__()
         self.stream_id = self.add_field('Stream ID', format=INT32)
-        self.class_id = self.add_field('Class ID')
+        self.class_id = self.add_field(ClassID())
         self.integer_timestamp = self.add_field('TSI', format=TSI)
         self.fractional_timestamp = self.add_field('TSF', format=TSF)
 
@@ -105,6 +116,18 @@ class VRTPacket(object):
     @property
     def has_trailer(self):
         return False
+
+    @property
+    def class_id(self):
+        return self.prologue.class_id
+
+    @property
+    def tsi(self):
+        return self.prologue.integer_timestamp
+
+    @property
+    def tsf(self):
+        return self.prologue.fractional_timestamp
 
     def get_field(self, name):
         field = self.prologue.get_field(name)
