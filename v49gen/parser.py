@@ -41,18 +41,18 @@ class FieldParser:
 
 class TrailerParser(FieldParser):
     def __init__(self, log, trailer):
-        self.log = log
+        self.log = log.getChild('Trailer')
         self.trailer = trailer
 
     def parse_field(self, name, value):
         field = self.trailer.get_field(name)
-        self.log.debug("Parsing trailer field '%s'", field.name)
+        self.log.debug("Parsing field '%s'", field.name)
         attribute = self.parse_field_attribute(value)
         if attribute is not None:
             self.set_field_attribute(field, attribute)
         else:
             value = self.parse_field_value(field, value)
-            self.log.debug("Trailer field '%s' = %s", field.name, value)
+            self.log.debug("Field '%s' = %s", field.name, value)
             field.set_required()
 
     def parse(self, value):
@@ -60,22 +60,22 @@ class TrailerParser(FieldParser):
             try:
                 self.parse_field(field_name, field_value)
             except KeyError:
-                self.log.error("Invalid trailer field '%s'", field_name)
+                self.log.error("Invalid field '%s'", field_name)
 
 class CIFPayloadParser(FieldParser):
     def __init__(self, log, packet):
-        self.log = log
+        self.log = log.getChild('CIF')
         self.packet = packet
 
     def parse_field(self, name, value):
         field = self.packet.get_field(name)
-        self.log.debug("Parsing trailer field '%s'", field.name)
+        self.log.debug("Parsing field '%s'", field.name)
         attribute = self.parse_field_attribute(value)
         if attribute is not None:
             self.set_field_attribute(field, attribute)
         else:
             value = self.parse_field_value(field, value)
-            self.log.debug("Trailer field '%s' = %s", field.name, value)
+            self.log.debug("Field '%s' = %s", field.name, value)
             field.set_required()
 
     def parse(self, value):
@@ -83,7 +83,7 @@ class CIFPayloadParser(FieldParser):
             try:
                 self.parse_field(field_name, field_value)
             except KeyError:
-                self.log.error("Invalid CIF field '%s'", field_name)
+                self.log.error("Invalid field '%s'", field_name)
 
 class PacketParser(FieldParser):
     field_parsers = {}
