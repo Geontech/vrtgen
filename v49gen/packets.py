@@ -78,6 +78,18 @@ class ClassID(FieldDescriptor):
         self.information_class = None
         self.packet_class = None
 
+class TSIField(FieldDescriptor):
+    __slots__ = ('mode',)
+    def __init__(self):
+        super().__init__('TSI', format=INT32)
+        self.mode = TSI.NONE
+
+class TSFField(FieldDescriptor):
+    __slots__ = ('mode',)
+    def __init__(self):
+        super().__init__('TSF', format=INT64)
+        self.mode = TSF.NONE
+
 class FieldContainer:
     def __init__(self):
         self.__fields = []
@@ -105,8 +117,8 @@ class VRTPrologue(FieldContainer):
         super().__init__()
         self.stream_id = self.add_field('Stream ID', format=INT32)
         self.class_id = self.add_field(ClassID())
-        self.integer_timestamp = self.add_field('TSI', format=TSI)
-        self.fractional_timestamp = self.add_field('TSF', format=TSF)
+        self.integer_timestamp = self.add_field(TSIField())
+        self.fractional_timestamp = self.add_field(TSFField())
 
 class VRTPacket(object):
     def __init__(self, name):
@@ -139,9 +151,11 @@ class VRTPacket(object):
         header = bytearray(4)
 
         header[0] = self.packet_type() << 4
-        if self.prologue.class_id.is_set:
+        if self.class_id.is_set:
             header[0] |= 0x08
         header[0] |= self.packet_specific_bits()
+        header[1] = self.tsi.mode << 6
+        header[1] |= self.tsf.mode << 4
 
         return header
 

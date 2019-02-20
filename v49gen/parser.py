@@ -65,19 +65,23 @@ class PacketParser:
         return packet
 
     def parse_tsi(self, packet, value):
-        value = {'none':  TSI.NONE,
-                 'utc':   TSI.UTC,
-                 'gps':   TSI.GPS,
-                 'other': TSI.OTHER}[value.lower()]
-        packet.tsi.set_value(value)
+        mode = {
+            'none':  TSI.NONE,
+            'utc':   TSI.UTC,
+            'gps':   TSI.GPS,
+            'other': TSI.OTHER
+        }[value.lower()]
+        packet.tsi.mode = mode
         packet.tsf.set_required()
 
     def parse_tsf(self, packet, value):
-        value = {'none':         TSF.NONE,
-                 'samples':      TSF.SAMPLE_COUNT,
-                 'picoseconds':  TSF.REAL_TIME,
-                 'free running': TSF.FREE_RUNNING}[value.lower()]
-        packet.tsf.set_value(value)
+        mode = {
+            'none':         TSF.NONE,
+            'samples':      TSF.SAMPLE_COUNT,
+            'picoseconds':  TSF.REAL_TIME,
+            'free running': TSF.FREE_RUNNING
+        }[value.lower()]
+        packet.tsf.mode = mode
         packet.tsf.set_required()
 
     def parse_class_id(self, packet, value):
