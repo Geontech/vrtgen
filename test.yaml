@@ -15,7 +15,9 @@ TestData:
   Information Class Code: 0x0001
   Packet Class Code: 0x0001
   trailer:
-    Calibrated Time: true
+    Calibrated Time:
+      required: true
+      value: true
     Valid Data: true
     AGC/MGC: required
     Associated Context Packet Count: required

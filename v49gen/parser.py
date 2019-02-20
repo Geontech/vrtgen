@@ -45,6 +45,10 @@ class FieldParser:
             if not field.is_optional:
                 self.log.debug("Field '%s' is optional", field.name)
                 field.set_optional()
+        elif attribute == FieldDescriptor.CONSTANT:
+            if not field.is_constant:
+                self.log.debug("Field '%s' is constant", field.name)
+                field.set_constant()
 
     def parse_field_value(self, field, value):
         if field.format == BIT:
@@ -67,13 +71,29 @@ class FieldParser:
     def parse_field(self, name, value):
         field = self.context.get_field(name)
         self.log.debug("Parsing field '%s'", field.name)
-        attribute = self.parse_field_attribute(value)
-        if attribute is not None:
-            self.set_field_attribute(field, attribute)
+        if isinstance(value, dict):
+            attribute = FieldDescriptor.REQUIRED
+            field_value = None
+            for key, val in value.items():
+                if key.casefold() == 'required':
+                    if not val:
+                        attribute = FieldDescriptor.OPTIONAL
+                elif key.casefold() == 'value':
+                    field_value = val
+                else:
+                    self.log.warn("Invalid option '%s'", key)
         else:
-            value = self.parse_field_value(field, value)
-            self.log.debug("Field '%s' = %s", field.name, value)
-            field.set_required()
+            attribute = self.parse_field_attribute(value)
+            if attribute is None:
+                field_value = self.parse_field_value(field, value)
+                attribute = FieldDescriptor.CONSTANT
+            else:
+                field_value = None
+
+        self.set_field_attribute(field, attribute)
+        if field_value is not None:
+            field.set_value(field_value)
+            self.log.debug("Field '%s' = %s", field.name, field_value)
 
     def parse(self, value):
         for field_name, field_value in value.items():
