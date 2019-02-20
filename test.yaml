@@ -5,8 +5,12 @@
 TestData:
   type: data
   Stream ID: required
-  TSI: utc
-  TSF: picoseconds
+  TSI:
+    required: false
+    format: utc
+  TSF:
+    required: false
+    format: picoseconds
   OUI: FF-FF-FF
   Information Class Code: 0x0001
   Packet Class Code: 0x0001

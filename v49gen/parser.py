@@ -6,6 +6,22 @@ import re
 
 import yaml
 
+def str_to_tsi(value):
+    return {
+        'none':  TSI.NONE,
+        'utc':   TSI.UTC,
+        'gps':   TSI.GPS,
+        'other': TSI.OTHER
+    }[value.lower()]
+
+def str_to_tsf(value):
+    return {
+        'none':         TSF.NONE,
+        'samples':      TSF.SAMPLE_COUNT,
+        'picoseconds':  TSF.REAL_TIME,
+        'free running': TSF.FREE_RUNNING
+    }[value.lower()]
+
 class FieldParser:
     def parse_field_attribute(self, value):
         if isinstance(value, str):
@@ -116,26 +132,36 @@ class PacketParser(FieldParser):
         return packet
 
     def parse_tsi(self, packet, value):
-        mode = {
-            'none':  TSI.NONE,
-            'utc':   TSI.UTC,
-            'gps':   TSI.GPS,
-            'other': TSI.OTHER
-        }[value.lower()]
-        packet.tsi.mode = mode
-        self.log.debug('TSI mode is %s', mode)
-        self.set_field_attribute(packet.tsi, FieldDescriptor.REQUIRED)
+        if isinstance(value, dict):
+            if value.get('required', True):
+                attribute = FieldDescriptor.REQUIRED
+            else:
+                attribute = FieldDescriptor.OPTIONAL
+            format = value.get('format', None)
+        else:
+            attribute = FieldDescriptor.REQUIRED
+            format = value
+        if format is not None:
+            mode = str_to_tsi(format)
+            packet.tsi.mode = mode
+            self.log.debug('TSI mode is %s', mode)
+        self.set_field_attribute(packet.tsi, attribute)
 
     def parse_tsf(self, packet, value):
-        mode = {
-            'none':         TSF.NONE,
-            'samples':      TSF.SAMPLE_COUNT,
-            'picoseconds':  TSF.REAL_TIME,
-            'free running': TSF.FREE_RUNNING
-        }[value.lower()]
-        packet.tsf.mode = mode
-        self.log.debug('TSF mode is %s', mode)
-        self.set_field_attribute(packet.tsf, FieldDescriptor.REQUIRED)
+        if isinstance(value, dict):
+            if value.get('required', True):
+                attribute = FieldDescriptor.REQUIRED
+            else:
+                attribute = FieldDescriptor.OPTIONAL
+            format = value.get('format', None)
+        else:
+            attribute = FieldDescriptor.REQUIRED
+            format = value
+        if format is not None:
+            mode = str_to_tsf(format)
+            packet.tsf.mode = mode
+            self.log.debug('TSF mode is %s', mode)
+        self.set_field_attribute(packet.tsf, attribute)
 
     def parse_class_id(self, packet, value):
         attribute = self.parse_field_attribute(value)
