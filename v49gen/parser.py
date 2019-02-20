@@ -6,16 +6,40 @@ import re
 
 import yaml
 
-def parse_attribute(value):
-    if isinstance(value, str):
-        return {
-            'required': FieldDescriptor.REQUIRED,
-            'optional': FieldDescriptor.OPTIONAL
-        }.get(value.casefold(), value)
-    else:
-        return value
+class FieldParser:
+    def parse_field_attribute(self, value):
+        if isinstance(value, str):
+            return {
+                'required': FieldDescriptor.REQUIRED,
+                'optional': FieldDescriptor.OPTIONAL
+            }.get(value.casefold(), None)
+        else:
+            return None
 
-class TrailerParser:
+    def set_field_attribute(self, field, attribute):
+        if attribute == FieldDescriptor.REQUIRED:
+            if not field.is_required:
+                self.log.debug("Field '%s' is required", field.name)
+                field.set_required()
+        elif attribute == FieldDescriptor.OPTIONAL:
+            if not field.is_optional:
+                self.log.debug("Field '%s' is optional", field.name)
+                field.set_optional()
+
+    def parse_field_value(self, field, value):
+        if field.format == BIT:
+            return self.to_bool(value)
+        elif isinstance(field.format, FixedFormat):
+            return float(value)
+        elif isinstance(field.format, IntFormat):
+            return int(value)
+        else:
+            raise NotImplementedError('format')
+
+    def to_bool(self, value):
+        return bool(value)
+
+class TrailerParser(FieldParser):
     def __init__(self, log, trailer):
         self.log = log
         self.trailer = trailer
@@ -23,11 +47,13 @@ class TrailerParser:
     def parse_field(self, name, value):
         field = self.trailer.get_field(name)
         self.log.debug("Parsing trailer field '%s'", field.name)
-        attribute = parse_attribute(value)
-        if attribute == FieldDescriptor.REQUIRED:
+        attribute = self.parse_field_attribute(value)
+        if attribute is not None:
+            self.set_field_attribute(field, attribute)
+        else:
+            value = self.parse_field_value(field, value)
+            self.log.debug("Trailer field '%s' = %s", field.name, value)
             field.set_required()
-        elif attribute == FieldDescriptor.OPTIONAL:
-            field.set_optional()
 
     def parse(self, value):
         for field_name, field_value in value.items():
@@ -36,7 +62,7 @@ class TrailerParser:
             except KeyError:
                 self.log.error("Invalid trailer field '%s'", field_name)
 
-class PacketParser:
+class PacketParser(FieldParser):
     field_parsers = {}
 
     def __init__(self, name):
@@ -109,7 +135,8 @@ class PacketParser:
             'other': TSI.OTHER
         }[value.lower()]
         packet.tsi.mode = mode
-        packet.tsf.set_required()
+        self.log.debug('TSI mode is %s', mode)
+        self.set_field_attribute(packet.tsi, FieldDescriptor.REQUIRED)
 
     def parse_tsf(self, packet, value):
         mode = {
@@ -119,17 +146,14 @@ class PacketParser:
             'free running': TSF.FREE_RUNNING
         }[value.lower()]
         packet.tsf.mode = mode
-        packet.tsf.set_required()
+        self.log.debug('TSF mode is %s', mode)
+        self.set_field_attribute(packet.tsf, FieldDescriptor.REQUIRED)
 
     def parse_class_id(self, packet, value):
-        if value is None:
-            return
-        elif str(value).casefold() == 'required':
-            packet.class_id.set_required()
-        elif str(value).casefold() == 'optional':
-            packet.class_id.set_optional()
-        else:
+        attribute = self.parse_field_attribute(value)
+        if attribute is None:
             raise ValueError(value)
+        self.set_field_attribute(packet.class_id, attribute)
 
     HEX_DIGIT = r'[0-9a-zA-Z]'
     OUI_RE = re.compile(r'({0})-({0})-({0})$'.format(HEX_DIGIT*2))
@@ -138,27 +162,23 @@ class PacketParser:
         if not match:
             raise ValueError('OUI format must be XX-XX-XX')
         packet.class_id.oui = int(''.join(match.groups()), 16)
-        packet.class_id.set_required()
+        self.set_field_attribute(packet.class_id, FieldDescriptor.REQUIRED)
 
     def parse_information_class(self, packet, value):
         packet.class_id.information_class = int(value)
-        packet.class_id.set_required()
+        self.set_field_attribute(packet.class_id, FieldDescriptor.REQUIRED)
 
     def parse_packet_class(self, packet, value):
         packet.class_id.packet_class = int(value)
-        packet.class_id.set_required()
+        self.set_field_attribute(packet.class_id, FieldDescriptor.REQUIRED)
 
     def parse_stream_id(self, packet, value):
-        if isinstance(value, str):
-            if value.casefold() == 'required':
-                packet.stream_id.set_required()
-            elif value.casefold() == 'optional':
-                packet.stream_id.set_optional()
-            else:
-                raise ValueError(value)
+        attribute = self.parse_field_attribute(value)
+        if attribute is not None:
+            self.set_field_attribute(packet.stream_id, attribute)
         else:
             packet.stream_id = int(value)
-            packet.stream_id.set_required()
+            self.set_field_attribute(packet.stream_id, FieldDescriptor.REQUIRED)
 
     def parse_field(self, packet, name, value):
         parser = self.field_parsers.get(name.casefold(), None)
