@@ -62,6 +62,29 @@ class TrailerParser(FieldParser):
             except KeyError:
                 self.log.error("Invalid trailer field '%s'", field_name)
 
+class CIFPayloadParser(FieldParser):
+    def __init__(self, log, packet):
+        self.log = log
+        self.packet = packet
+
+    def parse_field(self, name, value):
+        field = self.packet.get_field(name)
+        self.log.debug("Parsing trailer field '%s'", field.name)
+        attribute = self.parse_field_attribute(value)
+        if attribute is not None:
+            self.set_field_attribute(field, attribute)
+        else:
+            value = self.parse_field_value(field, value)
+            self.log.debug("Trailer field '%s' = %s", field.name, value)
+            field.set_required()
+
+    def parse(self, value):
+        for field_name, field_value in value.items():
+            try:
+                self.parse_field(field_name, field_value)
+            except KeyError:
+                self.log.error("Invalid CIF field '%s'", field_name)
+
 class PacketParser(FieldParser):
     field_parsers = {}
 
@@ -157,17 +180,11 @@ class PacketParser(FieldParser):
 
     def parse_field(self, packet, name, value):
         parser = self.field_parsers.get(name.casefold(), None)
-        if parser is not None:
-            self.log.debug("Parsing field '%s'", name)
-            return parser(self, packet, value)
-
-        try:
-            field = packet.add_field(name)
-        except KeyError:
+        if parser is None:
             self.log.error("Invalid field '%s'", name)
             return
-        self.log.debug("Field '%s' = %s", name, value)
-        field.set_value(value)
+
+        parser(self, packet, value)
 
 PacketParser.add_field_parser('Stream ID', PacketParser.parse_stream_id)
 PacketParser.add_field_parser('TSI', PacketParser.parse_tsi)
@@ -192,11 +209,17 @@ class ContextPacketParser(PacketParser):
     def create_packet(self, name):
         return VRTContextPacket(name)
 
+    def parse_payload(self, packet, value):
+        CIFPayloadParser(self.log, packet).parse(value)
+
 class CommandPacketParser(PacketParser):
     field_parsers = PacketParser.field_parsers.copy()
 
     def create_packet(self, name):
         return VRTCommandPacket(name)
+
+    def parse_payload(self, packet, value):
+        CIFPayloadParser(self.log, packet).parse(value)
 
 class FileParser:
     def parse_packet(self, name, value):
