@@ -6,25 +6,16 @@ import re
 
 import yaml
 
-class FileParser:
+class PacketParser:
     field_parsers = {}
+
+    def __init__(self, name):
+        self.name = name
+        self.log = logging.getLogger(name)
 
     @classmethod
     def add_field_parser(cls, name, parser):
         cls.field_parsers[name.casefold()] = parser
-
-    def parse(self, filename):
-        with open(filename, 'r') as fp:
-            document = yaml.load(fp)
-
-        for name, value in document.items():
-            if name.startswith('.'):
-                logging.debug("Skipping hidden entry %s", name)
-            else:
-                try:
-                    yield self.parse_packet(name, value)
-                except Exception as exc:
-                    logging.exception("%s %s", name, str(exc))
 
     def split_value(self, value):
         if isinstance(value, dict):
@@ -36,22 +27,21 @@ class FileParser:
         else:
             return value, None
 
-    def parse_packet(self, name, value):
-        logging.info('Processing packet %s', name)
+    def parse(self, value):
         if not isinstance(value, dict):
-            raise RuntimeError('Invalid definition for packet ' + name)
+            raise RuntimeError('Invalid definition for packet ' + self.name)
 
         packet_type = value.pop('type', None)
         if packet_type is None:
-            raise RuntimeError('No packet type specified for ' + name)
+            raise RuntimeError('No packet type specified for ' + self.name)
         if packet_type == 'data':
-            packet = VRTDataPacket(name)
+            packet = VRTDataPacket(self.name)
         elif packet_type == 'context':
-            packet = VRTContextPacket(name)
+            packet = VRTContextPacket(self.name)
         elif packet_type == 'control':
-            packet = VRTControlPacket(name)
+            packet = VRTControlPacket(self.name)
         else:
-            raise RuntimeError("Invalid type '{0}' for packet '{1}'".format(packet_type, name))
+            raise RuntimeError("Invalid type '{0}' for packet '{1}'".format(packet_type, self.name))
 
         for field_name, field_value in value.items():
             if field_name == 'required':
@@ -125,14 +115,29 @@ class FileParser:
         try:
             field = packet.add_field(name)
         except KeyError:
-            logging.error("Invalid field '%s' for packet %s", name, packet.name)
+            self.log.error("Invalid field '%s'", name)
             return
-        logging.debug("Field '%s' = %s", name, value)
+        self.log.debug("Field '%s' = %s", name, value)
         field.set_value(value)
 
-FileParser.add_field_parser('TSI', FileParser.parse_tsi)
-FileParser.add_field_parser('TSF', FileParser.parse_tsf)
-FileParser.add_field_parser('Class ID', FileParser.parse_class_id)
-FileParser.add_field_parser('OUI', FileParser.parse_oui)
-FileParser.add_field_parser('Packet Class Code', FileParser.parse_packet_class)
-FileParser.add_field_parser('Information Class Code', FileParser.parse_information_class)
+PacketParser.add_field_parser('TSI', PacketParser.parse_tsi)
+PacketParser.add_field_parser('TSF', PacketParser.parse_tsf)
+PacketParser.add_field_parser('Class ID', PacketParser.parse_class_id)
+PacketParser.add_field_parser('OUI', PacketParser.parse_oui)
+PacketParser.add_field_parser('Packet Class Code', PacketParser.parse_packet_class)
+PacketParser.add_field_parser('Information Class Code', PacketParser.parse_information_class)
+
+class FileParser:
+    def parse(self, filename):
+        with open(filename, 'r') as fp:
+            document = yaml.load(fp)
+
+        for name, value in document.items():
+            if name.startswith('.'):
+                logging.debug("Skipping hidden entry %s", name)
+            else:
+                logging.info('Processing packet %s', name)
+                try:
+                    yield PacketParser(name).parse(value)
+                except Exception as exc:
+                    logging.exception("%s %s", name, str(exc))
