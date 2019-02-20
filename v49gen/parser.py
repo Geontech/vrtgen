@@ -96,16 +96,6 @@ class PacketParser(FieldParser):
     def add_field_parser(cls, name, parser):
         cls.field_parsers[name.casefold()] = parser
 
-    def split_value(self, value):
-        if isinstance(value, dict):
-            if len(value) != 1:
-                raise ValueError('Multiple values in list')
-            return value.copy().popitem()
-        elif isinstance(value, list):
-            raise TypeError('Fields cannot be specified as a list')
-        else:
-            return value, None
-
     def parse_trailer(self, packet, value):
         self.log.error('Only data packets can have a trailer')
 
