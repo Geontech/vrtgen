@@ -2,6 +2,7 @@ from .packets import *
 
 import collections
 import logging
+import re
 
 import yaml
 
@@ -283,6 +284,34 @@ class FileParser:
                 'picoseconds':  TSF.REAL_TIME,
                 'free running': TSF.FREE_RUNNING}[value.lower()]
     field_parsers['tsf'] = parse_tsf
+
+    HEX_DIGIT = r'[0-9a-zA-Z]'
+    OUI_RE = re.compile(r'({0})-({0})-({0})$'.format(HEX_DIGIT*2))
+    def parse_oui(self, value):
+        match = self.OUI_RE.match(value)
+        if not match:
+            raise ValueError('OUI format must be XX-XX-XX')
+        return int(''.join(match.groups()), 16)
+    field_parsers['oui'] = parse_oui
+
+    def parse_class_id(self, value):
+        if value is None:
+            return None
+        oui = None
+        information_class = None
+        packet_class = None
+        for field_name, field_value in value.items():
+            name = field_name.casefold()
+            if name == 'oui':
+                oui = self.parse_oui(field_value)
+            elif name == 'information class code':
+                information_class = int(field_value)
+            elif name == 'packet class code':
+                packet_class = int(field_value)
+            else:
+                logging.warn("Invalid Class ID field '%s'", field_name)
+        return (oui, information_class, packet_class)
+    field_parsers['class id'] = parse_class_id
 
     def parse_field(self, packet, name, value):
         try:
