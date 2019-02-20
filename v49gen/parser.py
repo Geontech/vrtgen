@@ -6,6 +6,36 @@ import re
 
 import yaml
 
+def parse_attribute(value):
+    if isinstance(value, str):
+        return {
+            'required': FieldDescriptor.REQUIRED,
+            'optional': FieldDescriptor.OPTIONAL
+        }.get(value.casefold(), value)
+    else:
+        return value
+
+class TrailerParser:
+    def __init__(self, log, trailer):
+        self.log = log
+        self.trailer = trailer
+
+    def parse_field(self, name, value):
+        field = self.trailer.get_field(name)
+        self.log.debug("Parsing trailer field '%s'", field.name)
+        attribute = parse_attribute(value)
+        if attribute == FieldDescriptor.REQUIRED:
+            field.set_required()
+        elif attribute == FieldDescriptor.OPTIONAL:
+            field.set_optional()
+
+    def parse(self, value):
+        for field_name, field_value in value.items():
+            try:
+                self.parse_field(field_name, field_value)
+            except KeyError:
+                self.log.error("Invalid trailer field '%s'", field_name)
+
 class PacketParser:
     field_parsers = {}
 
@@ -44,7 +74,14 @@ class PacketParser:
             raise RuntimeError("Invalid type '{0}' for packet '{1}'".format(packet_type, self.name))
 
         for field_name, field_value in value.items():
-            if field_name == 'required':
+            if field_name == 'trailer':
+                try:
+                    trailer = packet.trailer
+                except AttributeError:
+                    self.log.error('Packet type %s cannot have a trailer', packet_type)
+                    continue
+                TrailerParser(self.log, trailer).parse(field_value)
+            elif field_name == 'required':
                 if not isinstance(field_value, list):
                     raise TypeError('Invalid value for required fields')
                 for item in field_value:
@@ -126,6 +163,7 @@ class PacketParser:
     def parse_field(self, packet, name, value):
         parser = self.field_parsers.get(name.casefold(), None)
         if parser is not None:
+            self.log.debug("Parsing field '%s'", name)
             return parser(self, packet, value)
 
         try:

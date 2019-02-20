@@ -10,16 +10,13 @@ TestData:
   OUI: FF-FF-FF
   Information Class Code: 0x0001
   Packet Class Code: 0x0001
-  # Top-level field is constant
-  Calibrated Time: true
-  # Required fields is sequence
-  required:
-    - Valid Data: true
-    - AGC/MGC
-    - Associated Context Packet Count
-    - Over-range: false
-  optional:
-    - Sample Loss
+  trailer:
+    Calibrated Time: true
+    Valid Data: true
+    AGC/MGC: required
+    Associated Context Packet Count: required
+    Over-range: false
+    Sample Loss: optional
 
 TestMerge:
   type: data

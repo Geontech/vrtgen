@@ -233,12 +233,6 @@ class VRTDataPacket(VRTPacket):
     def has_trailer(self):
         return self.trailer.is_enabled
 
-    def get_field(self, name):
-        field = self.trailer.get_field(name)
-        if field is not None:
-            return field
-        return super().get_field(name)
-
 class CIF0(FieldContainer):
     FIELDS = (
         ('Context Field Change Indicator', 31, None), # No data
