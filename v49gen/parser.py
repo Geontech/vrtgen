@@ -23,9 +23,46 @@ def str_to_tsf(value):
     }[value.lower()]
 
 class FieldParser:
+    FIELD_PARSERS = {}
+    FORMAT_PARSERS = {}
+    VALUE_PARSERS = {}
+
     def __init__(self, log, context):
         self.log = log
         self.context = context
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        # Copy the class-wide parser tables on subclass creation so that they
+        # can add or otherwise alter the parsers without affecting any other
+        # classes in the hierarchy
+        cls.FIELD_PARSERS = cls.FIELD_PARSERS.copy()
+        cls.FORMAT_PARSERS = cls.FORMAT_PARSERS.copy()
+        cls.VALUE_PARSERS = cls.VALUE_PARSERS.copy()
+
+    def __lookup_parser(self, table, name):
+        return table.get(name.casefold(), None)
+
+    @classmethod
+    def add_field_parser(cls, name, parser):
+        cls.FIELD_PARSERS[name.casefold()] = parser
+
+    def get_field_parser(self, name):
+        return self.__lookup_parser(self.FIELD_PARSERS, name)
+
+    @classmethod
+    def add_format_parser(cls, name, parser):
+        cls.FORMAT_PARSERS[name.casefold()] = parser
+
+    def get_format_parser(self, name):
+        return self.__lookup_parser(self.FORMAT_PARSERS, name)
+
+    @classmethod
+    def add_value_parser(cls, name, parser):
+        cls.VALUE_PARSERS[name.casefold()] = parser
+
+    def get_value_parser(self, name):
+        return self.__lookup_parser(self.VALUE_PARSERS, name)
 
     def parse_field_attribute(self, value):
         if isinstance(value, str):
@@ -51,6 +88,10 @@ class FieldParser:
                 field.set_constant()
 
     def parse_field_value(self, field, value):
+        parser = self.get_value_parser(field.name)
+        if parser is not None:
+            return parser(self, value)
+
         if field.format == BIT:
             return self.to_bool(value)
         elif isinstance(field.format, FixedFormat):
@@ -75,11 +116,15 @@ class FieldParser:
             attribute = FieldDescriptor.REQUIRED
             field_value = None
             for key, val in value.items():
-                if key.casefold() == 'required':
+                if key == 'required':
                     if not val:
                         attribute = FieldDescriptor.OPTIONAL
-                elif key.casefold() == 'value':
+                elif key == 'value':
                     field_value = val
+                elif key == 'format':
+                    parser = self.get_format_parser(field.name)
+                    if parser is None:
+                        self.log.warn("Field '%s' does not have a format option", field.name)
                 else:
                     self.log.warn("Invalid option '%s'", key)
         else:
@@ -111,16 +156,10 @@ class CIFPayloadParser(FieldParser):
         super().__init__(log.getChild('CIF'), packet)
 
 class PacketParser(FieldParser):
-    field_parsers = {}
-
     def __init__(self, name):
         # TODO: use base class context member
         super().__init__(logging.getLogger(name), None)
         self.name = name
-
-    @classmethod
-    def add_field_parser(cls, name, parser):
-        cls.field_parsers[name.casefold()] = parser
 
     def parse_trailer(self, packet, value):
         self.log.error('Only data packets can have a trailer')
@@ -205,7 +244,7 @@ class PacketParser(FieldParser):
             self.set_field_attribute(packet.stream_id, FieldDescriptor.REQUIRED)
 
     def parse_field(self, packet, name, value):
-        parser = self.field_parsers.get(name.casefold(), None)
+        parser = self.get_field_parser(name)
         if parser is None:
             self.log.error("Invalid field '%s'", name)
             return
@@ -221,8 +260,6 @@ PacketParser.add_field_parser('Packet Class Code', PacketParser.parse_packet_cla
 PacketParser.add_field_parser('Information Class Code', PacketParser.parse_information_class)
 
 class DataPacketParser(PacketParser):
-    field_parsers = PacketParser.field_parsers.copy()
-
     def create_packet(self, name):
         return VRTDataPacket(name)
 
@@ -230,8 +267,6 @@ class DataPacketParser(PacketParser):
         TrailerParser(self.log, packet.trailer).parse(value)
 
 class ContextPacketParser(PacketParser):
-    field_parsers = PacketParser.field_parsers.copy()
-
     def create_packet(self, name):
         return VRTContextPacket(name)
 
@@ -239,8 +274,6 @@ class ContextPacketParser(PacketParser):
         CIFPayloadParser(self.log, packet).parse(value)
 
 class CommandPacketParser(PacketParser):
-    field_parsers = PacketParser.field_parsers.copy()
-
     def create_packet(self, name):
         return VRTCommandPacket(name)
 
