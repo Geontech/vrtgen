@@ -32,5 +32,6 @@ class FixedFormat(IntFormat):
         self.radix = radix
 
 BIT = IntFormat(1)
+INT16 = IntFormat(16)
 INT32 = IntFormat(32)
 INT64 = IntFormat(64)

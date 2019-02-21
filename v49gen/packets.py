@@ -285,6 +285,54 @@ class CIF0(FieldContainer):
                 prologue |= 1 << field.enable_bit
         return struct.pack('>I', prologue)
 
+class CIF1(FieldContainer):
+    FIELDS = (
+        ('Phase Offset', 31, FixedFormat(16, 7)), # fixed-point 16/7, radians (upper 16 reserved)
+        ('Polarization', 30, None), # [tilt, ellipticity]: fixed-point 16/13, radians
+        ('3-D Pointing Vector', 29, None), # [elevation, azimuthal]: fixed-point 16/7, degrees
+        ('3-D Pointing Vector Structure', 28, None), # structured data
+        ('Spatial Scan Type', 27, INT16), # Generic 16-bit identifier
+        ('Spatial Reference Type', 26, None), # multi-field
+        ('Beam Widths', 25, None), # [horizonal, vertical]: fixed-point 16/7. degrees
+        ('Range', 24, None), # fixed-point 32/6, meters
+        # Reserved
+        # Reserved
+        # Reserved
+        ('Eb/No BER', 20, None), # [Eb/No, BER], fixed-point 16/7, dB
+        ('Threshold', 19, None), # [stage2 (optional), stage1]: fixed-point 16/7, dB
+        ('Compression Point', 18, FixedFormat(16, 7)),
+        ('Intercept Points', 17, None), # [2IIP, 3IIP]: fixed-point 16/7, dBm
+        ('SNR/Noise Figure', 16, None), # [SNR, Noise]: fixed-point 16/7, dB
+        ('Aux Frequency', 13, FixedFormat(64, 20)),
+        ('Aux Gain', 14, None), # [stage2 (optional), stage1]: fixed-point 16/7, dB
+        ('Aux Bandwidth', 13, FixedFormat(64, 20)),
+        # Reserved
+        ('Array of CIFS', 11, None),
+        ('Spectrum', 10, None), # structured
+        ('Sector Scan/Step', 9, None),
+        # Reserved
+        ('Index List', 7, None), # structured array
+        ('Discrete I/O 32', 6, None), # 32 user-defined bits
+        ('Discrete I/O 64', 5, None), # 64 user-defined bits
+        ('Health Status', 4, INT16), # 16-bit identifier
+        # V49 Spec Compliance - 32 bits for V49 compliance level
+        ('Version and Build Code', 2, None), # structured, 32 bits
+        ('Buffer Size', 1, None) # struct, 64 bits
+        # Reserved
+    )
+
+    def __init__(self):
+        super().__init__()
+        for name, bit, format in CIF1.FIELDS:
+            self.add_field(name, bit, format)
+
+    def get_prologue_bytes(self):
+        prologue = 0
+        for field in self.fields:
+            if field.is_set:
+                prologue |= 1 << field.enable_bit
+        return struct.pack('>I', prologue)
+
 class VRTCIFPacket(VRTPacket):
     """
     Common base class for VRT packets that include the CIF fields (i.e.,
@@ -293,7 +341,7 @@ class VRTCIFPacket(VRTPacket):
     def __init__(self, name):
         super().__init__(name)
         self.stream_id.set_required()
-        self.cif = [CIF0()]
+        self.cif = [CIF0(), CIF1()]
 
     def get_header_bytes(self):
         base = super().get_header_bytes()

@@ -41,6 +41,7 @@ TestContext:
   Class ID: required
   payload:
     IF Reference Frequency: optional
+    Aux Frequency: optional
 
 TestCommand:
   type: command
