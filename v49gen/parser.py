@@ -130,8 +130,13 @@ class SectionParser:
         except (TypeError, ValueError) as exc:
             self.log.error("Invalid definition for '%s': %s", name, exc)
 
+    def parse_option(self, name, value):
+        return False
+
     def parse(self, value):
         for field_name, field_value in value.items():
+            if self.parse_option(field_name, field_value):
+                continue
             try:
                 self.parse_field(field_name, field_value)
             except KeyError:
@@ -144,6 +149,13 @@ class SectionParser:
 class TrailerParser(SectionParser):
     def __init__(self, log, trailer):
         super().__init__(log.getChild('Trailer'), trailer)
+
+    def parse_option(self, name, value):
+        if name.casefold() == 'user-defined':
+            self.log.warn('User-defined bits not implemented')
+            return True
+        else:
+            return super().parse_option(name, value)
 
 class CIFPayloadParser(SectionParser):
     def __init__(self, log, packet):
