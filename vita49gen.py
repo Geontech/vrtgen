@@ -38,9 +38,10 @@ if __name__ == '__main__':
         for packet in FileParser().parse(filename):
             prologue = packet.get_header_bytes()
             if args.verbose:
-                print('Packet prologue:')
+                print('Packet ' + packet.name)
+                print('Prologue:')
                 dump_bytes(prologue, sys.stdout)
                 if packet.has_trailer:
                     trailer = packet.trailer.get_bytes()
-                    print('Packet trailer:')
+                    print('Trailer:')
                     dump_bytes(trailer, sys.stdout)
