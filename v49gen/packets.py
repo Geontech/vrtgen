@@ -1,4 +1,5 @@
 from enum import IntEnum
+import inspect
 import struct
 
 from .formats import *
@@ -18,16 +19,17 @@ class PacketType(IntEnum):
     EXTENSION_COMMAND        = 7 # 0111
     # 1000-1111 reserved for future VRT Packet types
 
-class FieldDescriptor:
+class Field:
     DISABLED = 0
     OPTIONAL = 1
     REQUIRED = 2
     CONSTANT = 3
 
+class FieldDescriptor:
     __slots__ = ('name', 'enable_bit', '_enable_state', 'format', 'value')
     def __init__(self, name, enable_bit=None, format=None):
         self.name = name
-        self._enable_state = FieldDescriptor.DISABLED
+        self._enable_state = Field.DISABLED
         self.enable_bit = enable_bit
         self.format = format
         self.value = None
@@ -40,7 +42,7 @@ class FieldDescriptor:
 
     @property
     def is_enabled(self):
-        return self._enable_state != FieldDescriptor.DISABLED
+        return self._enable_state != Field.DISABLED
 
     @property
     def is_set(self):
@@ -51,28 +53,30 @@ class FieldDescriptor:
 
     @property
     def is_required(self):
-        return self._enable_state == FieldDescriptor.REQUIRED
+        return self._enable_state == Field.REQUIRED
 
     def set_required(self):
-        self._enable_state = FieldDescriptor.REQUIRED
+        self._enable_state = Field.REQUIRED
 
     @property
     def is_optional(self):
-        return self._enable_state == FieldDescriptor.OPTIONAL
+        return self._enable_state == Field.OPTIONAL
 
     def set_optional(self):
-        self._enable_state = FieldDescriptor.OPTIONAL
+        self._enable_state = Field.OPTIONAL
 
     @property
     def is_constant(self):
-        return self._enable_state == FieldDescriptor.CONSTANT
+        return self._enable_state == Field.CONSTANT
 
     def set_constant(self):
-        self._enable_state = FieldDescriptor.CONSTANT
+        self._enable_state = Field.CONSTANT
 
 class FieldContainer:
     def __init__(self):
         self.__fields = []
+        for name, field in inspect.getmembers(self, lambda x: isinstance(x, FieldDescriptor)):
+            self.__fields.append(field)
 
     def add_field(self, *args, **kwargs):
         if isinstance(args[0], FieldDescriptor):
@@ -98,12 +102,12 @@ class StructFieldDescriptor(FieldDescriptor, FieldContainer):
         FieldContainer.__init__(self)
 
 class ClassID(StructFieldDescriptor):
-    __slots__ = ('oui', 'information_class', 'packet_class')
+    oui = FieldDescriptor('OUI', format=IntFormat(24))
+    information_class = FieldDescriptor('Information Class Code', format=INT16)
+    packet_class = FieldDescriptor('Packet Class Code', format=INT16)
+
     def __init__(self):
         super().__init__('Class ID')
-        self.oui = self.add_field('OUI', format=IntFormat(24))
-        self.information_class = self.add_field('Information Class Code', format=INT16)
-        self.packet_class = self.add_field('Packet Class Code', format=INT16)
 
 class TSIField(FieldDescriptor):
     __slots__ = ('mode',)
@@ -118,12 +122,13 @@ class TSFField(FieldDescriptor):
         self.mode = TSF.NONE
 
 class VRTPrologue(FieldContainer):
+    stream_id = FieldDescriptor('Stream ID', format=INT32)
+    class_id = ClassID()
+    integer_timestamp = TSIField()
+    fractional_timestamp = TSFField()
+
     def __init__(self):
         super().__init__()
-        self.stream_id = self.add_field('Stream ID', format=INT32)
-        self.class_id = self.add_field(ClassID())
-        self.integer_timestamp = self.add_field(TSIField())
-        self.fractional_timestamp = self.add_field(TSFField())
 
 class VRTPacket(object):
     def __init__(self, name):
@@ -163,23 +168,21 @@ class VRTPacket(object):
         return header
 
 class VRTDataTrailer(FieldContainer):
-    def __init__(self):
-        super().__init__()
-        self.calibrated_time = self.add_field('Calibrated Time', 31, BIT)
-        self.valid_data = self.add_field('Valid Data', 30, BIT)
-        self.reference_lock = self.add_field('Reference Lock', 29, BIT)
-        self.agc_mgc = self.add_field('AGC/MGC', 28, BIT)
-        self.detected_signal = self.add_field('Detected Signal', 27, BIT)
-        self.spectral_inversion = self.add_field('Spectral Inversion', 26, BIT)
-        self.over_range = self.add_field('Over-range', 25, BIT)
-        self.sample_loss = self.add_field('Sample Loss', 24, BIT)
-        # The Sample Frame field was added in V49.2, replacing 2 user-defined
-        # bits. While the bits can still be user-defined for compatibility with
-        # V49.0 implementations, the spec strongly discourages it, and it is
-        # not supported here.
-        self.sample_frame = self.add_field('Sample Frame', 23, IntFormat(2))
-        # [21..20], [9..8] User-Defined
-        self.context_packet_count = self.add_field('Associated Context Packet Count', 7, IntFormat(7))
+    calibrated_time = FieldDescriptor('Calibrated Time', 31, BIT)
+    valid_data = FieldDescriptor('Valid Data', 30, BIT)
+    reference_lock = FieldDescriptor('Reference Lock', 29, BIT)
+    agc_mgc = FieldDescriptor('AGC/MGC', 28, BIT)
+    detected_signal = FieldDescriptor('Detected Signal', 27, BIT)
+    spectral_inversion = FieldDescriptor('Spectral Inversion', 26, BIT)
+    over_range = FieldDescriptor('Over-range', 25, BIT)
+    sample_loss = FieldDescriptor('Sample Loss', 24, BIT)
+    # The Sample Frame field was added in V49.2, replacing 2 user-defined
+    # bits. While the bits can still be user-defined for compatibility with
+    # V49.0 implementations, the spec strongly discourages it, and it is
+    # not supported here.
+    sample_frame = FieldDescriptor('Sample Frame', 23, IntFormat(2))
+    # [21..20], [9..8] User-Defined
+    context_packet_count = FieldDescriptor('Associated Context Packet Count', 7, IntFormat(7))
 
     def get_bytes(self):
         word = 0
@@ -238,46 +241,85 @@ class VRTDataPacket(VRTPacket):
         return self.trailer.is_enabled
 
 class CIF0(FieldContainer):
-    FIELDS = (
-        # Context Field Change Indicator (bit 31) is a binary flag that can be
-        # set at run-time. No configuration is possible.
-        ('Reference Point Identifier', 30, INT32), # integer 32 (stream ID)
-        ('Bandwidth', 29, FixedFormat(64, 20)), # fixed-point 64/20, Hz
-        ('IF Reference Frequency', 28, FixedFormat(64, 20)), # fixed-point 64/20, Hz
-        ('RF Reference Frequency', 27, FixedFormat(64, 20)), # fixed-point 64/20, Hz
-        ('RF Reference Frequency Offset', 26, FixedFormat(64, 20)), # fixed-point 64/20, Hz
-        ('IF Band Offset', 25, FixedFormat(64, 20)), # fixed-point 64/20, Hz
-        ('Reference Level', 24, FixedFormat(16, 7)), # fixed-point 16/7 dBm (upper 16 reserved)
-        ('Gain', 23, None), # [stage2 (optional), stage1]: fixed-point 16/7, dB
-        ('Over-range Count', 22, INT32), # integer 32
-        ('Sample Rate', 21, FixedFormat(64, 20)), # fixed-point 64/20, Hz
-        ('Timestamp Adjustment', 20, INT64), # fractional time (integer 64)
-        ('Timestamp Calibration Time', 19, INT32), # 1 word, depends on prologue TSI
-        ('Temperature', 18, FixedFormat(16, 6)), # fixed-point 16/6, degrees C (upper 16 reserved)
-        ('Device Identifier', 17, None), # 64 bits total, specific format
-        ('State/Event Indicators', 16, None), # 32 bits, bit flags
-        ('Signal Data Packet Payload Format', 15, None), # structured
-        ('Formatted GPS', 14, None), # structured
-        ('Formatted INS', 13, None), # structured
-        ('ECEF Ephemeris', 12, None), # structured
-        ('Relative Ephemeris', 11, None), # structured
-        ('Ephemeris Ref ID', 10, INT32), # integer 32
-        ('GPS ASCII', 9, None), # 2 word header plus arbitrary binary data
-        ('Context Association Lists', 8, None)
-        # Field Attributes Enable (CIF7)
-        # Reserved
-        # Reserved
-        # Reserved
-        # CIF 3 Enable
-        # CIF 2 Enable
-        # CIF 1 Enable
-        # Reserved
-    )
+    # Context Field Change Indicator (0/31) is a binary flag that can be
+    # set at run-time. No configuration is possible.
 
-    def __init__(self):
-        super().__init__()
-        for name, bit, format in CIF0.FIELDS:
-            self.add_field(name, bit, format)
+    # Reference Point Identifier (0/30): integer 32 (stream ID)
+    reference_point_id = FieldDescriptor('Reference Point Identifier', 30, INT32)
+
+    # Bandwidth (0/29) fixed-point 64/20, Hz
+    bandwidth = FieldDescriptor('Bandwidth', 29, FixedFormat(64, 20))
+
+    # fixed-point 64/20, Hz
+    if_frequency = FieldDescriptor('IF Reference Frequency', 28, FixedFormat(64, 20))
+
+    # fixed-point 64/20, Hz
+    rf_frequency = FieldDescriptor('RF Reference Frequency', 27, FixedFormat(64, 20))
+
+    # fixed-point 64/20, Hz
+    rf_frequency_offset = FieldDescriptor('RF Reference Frequency Offset', 26, FixedFormat(64, 20))
+
+    # fixed-point 64/20, Hz
+    if_band_offset = FieldDescriptor('IF Band Offset', 25, FixedFormat(64, 20))
+
+    # fixed-point 16/7 dBm (upper 16 reserved)
+    reference_level = FieldDescriptor('Reference Level', 24, FixedFormat(16, 7))
+
+    # [stage2 (optional), stage1]: fixed-point 16/7, dB
+    gain = FieldDescriptor('Gain', 23, None)
+
+    # integer 32
+    over_range_count = FieldDescriptor('Over-range Count', 22, INT32)
+
+    # fixed-point 64/20, Hz
+    sample_rate = FieldDescriptor('Sample Rate', 21, FixedFormat(64, 20))
+
+    # fractional time (integer 64)
+    timestamp_adjustment = FieldDescriptor('Timestamp Adjustment', 20, INT64)
+
+    # 1 word, depends on prologue TSI
+    timestamp_calibration_time = FieldDescriptor('Timestamp Calibration Time', 19, INT32)
+
+    # fixed-point 16/6, degrees C (upper 16 reserved)
+    temperature = FieldDescriptor('Temperature', 18, FixedFormat(16, 6))
+
+    # 64 bits total, specific format
+    device_id = FieldDescriptor('Device Identifier', 17, None)
+
+    # 32 bits, bit flags
+    state_event_indicators = FieldDescriptor('State/Event Indicators', 16, None)
+
+    # structured
+    data_format = FieldDescriptor('Signal Data Packet Payload Format', 15, None)
+
+    # structured
+    formatted_gps = FieldDescriptor('Formatted GPS', 14, None)
+
+    # structured
+    formatted_ins = FieldDescriptor('Formatted INS', 13, None)
+
+    # structured
+    ecef_ephemeris = FieldDescriptor('ECEF Ephemeris', 12, None)
+
+    # structured
+    relative_ephemeris = FieldDescriptor('Relative Ephemeris', 11, None)
+
+    # integer 32
+    ephemeris_ref_id = FieldDescriptor('Ephemeris Ref ID', 10, INT32)
+
+    # 2 word header plus arbitrary binary data
+    gps_ascii = FieldDescriptor('GPS ASCII', 9, None)
+
+    context_association_lists = ('Context Association Lists', 8, None)
+
+    # Field Attributes Enable (CIF7)
+    # Reserved
+    # Reserved
+    # Reserved
+    # CIF 3 Enable
+    # CIF 2 Enable
+    # CIF 1 Enable
+    # Reserved
 
     def get_prologue_bytes(self):
         prologue = 0

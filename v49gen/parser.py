@@ -21,11 +21,11 @@ class FieldParser:
                 self.parse_scalar(log, field, value)
 
     def parse_mapping(self, log, field, mapping):
-        attribute = FieldDescriptor.REQUIRED
+        attribute = Field.REQUIRED
         for key, value in mapping.items():
             if key == 'required':
                 if not value:
-                    attribute = FieldDescriptor.OPTIONAL
+                    attribute = Field.OPTIONAL
             elif not self.parse_mapping_entry(log, field, key, value):
                 log.warn("Invalid option '%s' for field '%s'", key, field.name)
 
@@ -42,7 +42,7 @@ class FieldParser:
         self.set_value(log, field, value)
         # If a value is given with no other qualifiers, consider the
         # field value to be constant
-        self.set_attribute(log, field, FieldDescriptor.CONSTANT)
+        self.set_attribute(log, field, Field.CONSTANT)
 
     def parse_scalar_value(self, field, value):
         raise TypeError("{0} is not a valid value for field '{1}'".format(value, field.name))
@@ -50,22 +50,22 @@ class FieldParser:
     def parse_attribute(self, value):
         if isinstance(value, str):
             return {
-                'required': FieldDescriptor.REQUIRED,
-                'optional': FieldDescriptor.OPTIONAL
+                'required': Field.REQUIRED,
+                'optional': Field.OPTIONAL
             }.get(value.casefold(), None)
         else:
             return None
 
     def set_attribute(self, log, field, attribute):
-        if attribute == FieldDescriptor.REQUIRED:
+        if attribute == Field.REQUIRED:
             if not field.is_required:
                 log.debug("Field '%s' is required", field.name)
                 field.set_required()
-        elif attribute == FieldDescriptor.OPTIONAL:
+        elif attribute == Field.OPTIONAL:
             if not field.is_optional:
                 log.debug("Field '%s' is optional", field.name)
                 field.set_optional()
-        elif attribute == FieldDescriptor.CONSTANT:
+        elif attribute == Field.CONSTANT:
             if not field.is_constant:
                 log.debug("Field '%s' is constant", field.name)
                 field.set_constant()
@@ -202,7 +202,7 @@ class TimeModeParser(FieldParser):
 
     def parse_scalar(self, log, field, value):
         self.parse_mode(log, field, value)
-        self.set_attribute(log, field, FieldDescriptor.REQUIRED)
+        self.set_attribute(log, field, Field.REQUIRED)
 
 class TSIParser(TimeModeParser):
     def __init__(self):
