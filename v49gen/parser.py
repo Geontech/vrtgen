@@ -91,10 +91,10 @@ class GenericFieldParser(FieldParser):
         return True
 
     def to_bool(self, value):
-        if isinstance(value, bool):
-            return value
-        elif isinstance(value, int):
-            return [False,True][value]
+        if value in (0, False):
+            return False
+        elif value in (1, True):
+            return True
         else:
             raise TypeError('must be boolean, 0 or 1')
 
