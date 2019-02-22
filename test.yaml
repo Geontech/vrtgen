@@ -11,9 +11,10 @@ TestData:
   TSF:
     required: false
     format: picoseconds
-  OUI: FF-FF-FF
-  Information Class Code: 0x0001
-  Packet Class Code: 0x0001
+  Class ID:
+    OUI: FF-FF-FF
+    Information Class Code: 0x0001
+    Packet Class Code: 0x0001
   trailer:
     Calibrated Time:
       required: true

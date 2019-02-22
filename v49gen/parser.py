@@ -6,26 +6,100 @@ import re
 
 import yaml
 
-def str_to_tsi(value):
-    return {
-        'none':  TSI.NONE,
-        'utc':   TSI.UTC,
-        'gps':   TSI.GPS,
-        'other': TSI.OTHER
-    }[value.lower()]
-
-def str_to_tsf(value):
-    return {
-        'none':         TSF.NONE,
-        'samples':      TSF.SAMPLE_COUNT,
-        'picoseconds':  TSF.REAL_TIME,
-        'free running': TSF.FREE_RUNNING
-    }[value.lower()]
-
 class FieldParser:
+    def __call__(self, log, context, name, value):
+        field = context.get_field(name)
+        log.debug("Parsing field '%s'", field.name)
+        if isinstance(value, dict):
+            self.parse_mapping(log, field, value)
+        elif isinstance(value, list):
+            self.parse_sequence(log, field, value)
+        else:
+            attribute = self.parse_attribute(value)
+            if attribute is not None:
+                self.set_attribute(log, field, attribute)
+            else:
+                self.parse_scalar(log, field, value)
+
+    def parse_mapping(self, log, field, mapping):
+        attribute = FieldDescriptor.REQUIRED
+        for key, value in mapping.items():
+            if key == 'required':
+                if not value:
+                    attribute = FieldDescriptor.OPTIONAL
+            elif not self.parse_mapping_entry(log, field, key, value):
+                log.warn("Invalid option '%s' for field '%s'", key, field.name)
+
+        self.set_attribute(log, field, attribute)
+
+    def parse_mapping_entry(self, log, field, key, value):
+        return False
+
+    def parse_sequence(self, log, field, value):
+        raise TypeError("Field '"+field.name+"' cannot be defined with a sequence")
+
+    def parse_scalar(self, log, field, value):
+        raise TypeError("{0} is not a valid value for field '{1}'".format(value, field.name))
+
+    def parse_attribute(self, value):
+        if isinstance(value, str):
+            return {
+                'required': FieldDescriptor.REQUIRED,
+                'optional': FieldDescriptor.OPTIONAL
+            }.get(value.casefold(), None)
+        else:
+            return None
+
+    def set_attribute(self, log, field, attribute):
+        if attribute == FieldDescriptor.REQUIRED:
+            if not field.is_required:
+                log.debug("Field '%s' is required", field.name)
+                field.set_required()
+        elif attribute == FieldDescriptor.OPTIONAL:
+            if not field.is_optional:
+                log.debug("Field '%s' is optional", field.name)
+                field.set_optional()
+        elif attribute == FieldDescriptor.CONSTANT:
+            if not field.is_constant:
+                log.debug("Field '%s' is constant", field.name)
+                field.set_constant()
+
+    def set_value(self, log, field, value):
+        field.value = value
+        log.debug("Field '%s' = %s", field.name, value)
+
+class GenericFieldParser(FieldParser):
+    def parse_scalar_value(self, field, value):
+        if field.format == BIT:
+            return self.to_bool(value)
+        elif isinstance(field.format, FixedFormat):
+            return float(value)
+        elif isinstance(field.format, IntFormat):
+            return int(value)
+        else:
+            raise NotImplementedError('unsupported format {}'.format(field.format))
+
+    def parse_scalar(self, log, field, value):
+        value = self.parse_scalar_value(field, value)
+        self.set_value(log, field, value)
+
+    def parse_mapping_entry(self, log, field, name, value):
+        if name == 'value':
+            self.parse_scalar(log, field, value)
+        else:
+            return False
+        return True
+
+    def to_bool(self, value):
+        if isinstance(value, bool):
+            return value
+        elif isinstance(value, int):
+            return [False,True][value]
+        else:
+            raise TypeError('must be boolean, 0 or 1')
+
+class SectionParser:
     FIELD_PARSERS = {}
-    FORMAT_PARSERS = {}
-    VALUE_PARSERS = {}
 
     def __init__(self, log, context):
         self.log = log
@@ -37,108 +111,24 @@ class FieldParser:
         # can add or otherwise alter the parsers without affecting any other
         # classes in the hierarchy
         cls.FIELD_PARSERS = cls.FIELD_PARSERS.copy()
-        cls.FORMAT_PARSERS = cls.FORMAT_PARSERS.copy()
-        cls.VALUE_PARSERS = cls.VALUE_PARSERS.copy()
-
-    def __lookup_parser(self, table, name):
-        return table.get(name.casefold(), None)
 
     @classmethod
     def add_field_parser(cls, name, parser):
         cls.FIELD_PARSERS[name.casefold()] = parser
 
     def get_field_parser(self, name):
-        return self.__lookup_parser(self.FIELD_PARSERS, name)
-
-    @classmethod
-    def add_format_parser(cls, name, parser):
-        cls.FORMAT_PARSERS[name.casefold()] = parser
-
-    def get_format_parser(self, name):
-        return self.__lookup_parser(self.FORMAT_PARSERS, name)
-
-    @classmethod
-    def add_value_parser(cls, name, parser):
-        cls.VALUE_PARSERS[name.casefold()] = parser
-
-    def get_value_parser(self, name):
-        return self.__lookup_parser(self.VALUE_PARSERS, name)
-
-    def parse_field_attribute(self, value):
-        if isinstance(value, str):
-            return {
-                'required': FieldDescriptor.REQUIRED,
-                'optional': FieldDescriptor.OPTIONAL
-            }.get(value.casefold(), None)
-        else:
-            return None
-
-    def set_field_attribute(self, field, attribute):
-        if attribute == FieldDescriptor.REQUIRED:
-            if not field.is_required:
-                self.log.debug("Field '%s' is required", field.name)
-                field.set_required()
-        elif attribute == FieldDescriptor.OPTIONAL:
-            if not field.is_optional:
-                self.log.debug("Field '%s' is optional", field.name)
-                field.set_optional()
-        elif attribute == FieldDescriptor.CONSTANT:
-            if not field.is_constant:
-                self.log.debug("Field '%s' is constant", field.name)
-                field.set_constant()
-
-    def parse_field_value(self, field, value):
-        parser = self.get_value_parser(field.name)
-        if parser is not None:
-            return parser(self, value)
-
-        if field.format == BIT:
-            return self.to_bool(value)
-        elif isinstance(field.format, FixedFormat):
-            return float(value)
-        elif isinstance(field.format, IntFormat):
-            return int(value)
-        else:
-            raise NotImplementedError('format')
-
-    def to_bool(self, value):
-        if isinstance(value, bool):
-            return value
-        elif isinstance(value, int):
-            return [False,True][value]
-        else:
-            raise TypeError('must be boolean, 0 or 1')
+        return self.FIELD_PARSERS.get(name.casefold(), GenericFieldParser())
 
     def parse_field(self, name, value):
-        field = self.context.get_field(name)
-        self.log.debug("Parsing field '%s'", field.name)
-        if isinstance(value, dict):
-            attribute = FieldDescriptor.REQUIRED
-            field_value = None
-            for key, val in value.items():
-                if key == 'required':
-                    if not val:
-                        attribute = FieldDescriptor.OPTIONAL
-                elif key == 'value':
-                    field_value = val
-                elif key == 'format':
-                    parser = self.get_format_parser(field.name)
-                    if parser is None:
-                        self.log.warn("Field '%s' does not have a format option", field.name)
-                else:
-                    self.log.warn("Invalid option '%s'", key)
-        else:
-            attribute = self.parse_field_attribute(value)
-            if attribute is None:
-                field_value = self.parse_field_value(field, value)
-                attribute = FieldDescriptor.CONSTANT
-            else:
-                field_value = None
-
-        self.set_field_attribute(field, attribute)
-        if field_value is not None:
-            field.set_value(field_value)
-            self.log.debug("Field '%s' = %s", field.name, field_value)
+        parser = self.get_field_parser(name)
+        if parser is None:
+            parser = GenericFieldParser()
+        try:
+            parser(self.log, self.context, name, value)
+        except KeyError:
+            self.log.error("Invalid field '%s'", name)
+        except (TypeError, ValueError) as exc:
+            self.log.error("Invalid definition for '%s': %s", name, exc)
 
     def parse(self, value):
         for field_name, field_value in value.items():
@@ -146,16 +136,20 @@ class FieldParser:
                 self.parse_field(field_name, field_value)
             except KeyError:
                 self.log.error("Invalid field '%s'", field_name)
+            except ValueError as exc:
+                self.log.error("Invalid value for field '%s': %s", field_name, exc)
+            except Exception as exc:
+                self.log.error("Field '%s': %s", field_name, exc)
 
-class TrailerParser(FieldParser):
+class TrailerParser(SectionParser):
     def __init__(self, log, trailer):
         super().__init__(log.getChild('Trailer'), trailer)
 
-class CIFPayloadParser(FieldParser):
+class CIFPayloadParser(SectionParser):
     def __init__(self, log, packet):
         super().__init__(log.getChild('CIF'), packet)
 
-class PacketParser(FieldParser):
+class PacketParser(SectionParser):
     def __init__(self, name):
         # TODO: use base class context member
         super().__init__(logging.getLogger(name), None)
@@ -169,6 +163,7 @@ class PacketParser(FieldParser):
 
     def parse(self, value):
         packet = self.create_packet(self.name)
+        self.context = packet
 
         for field_name, field_value in value.items():
             if field_name == 'trailer':
@@ -176,88 +171,95 @@ class PacketParser(FieldParser):
             elif field_name == 'payload':
                 self.parse_payload(packet, field_value)
             else:
-                field = self.parse_field(packet, field_name, field_value)
+                try:
+                    self.parse_field(field_name, field_value)
+                except KeyError:
+                    self.log.error("Invalid field '%s'", field_name)
 
         return packet
 
-    def parse_tsi(self, packet, value):
-        if isinstance(value, dict):
-            if value.get('required', True):
-                attribute = FieldDescriptor.REQUIRED
-            else:
-                attribute = FieldDescriptor.OPTIONAL
-            format = value.get('format', None)
-        else:
-            attribute = FieldDescriptor.REQUIRED
-            format = value
-        if format is not None:
-            mode = str_to_tsi(format)
-            packet.tsi.mode = mode
-            self.log.debug('TSI mode is %s', mode)
-        self.set_field_attribute(packet.tsi, attribute)
+class StreamIDParser(FieldParser):
+    def parse_scalar(self, log, field, value):
+        self.set_value(log, field, int(value))
 
-    def parse_tsf(self, packet, value):
-        if isinstance(value, dict):
-            if value.get('required', True):
-                attribute = FieldDescriptor.REQUIRED
-            else:
-                attribute = FieldDescriptor.OPTIONAL
-            format = value.get('format', None)
-        else:
-            attribute = FieldDescriptor.REQUIRED
-            format = value
-        if format is not None:
-            mode = str_to_tsf(format)
-            packet.tsf.mode = mode
-            self.log.debug('TSF mode is %s', mode)
-        self.set_field_attribute(packet.tsf, attribute)
+class TSIParser(FieldParser):
+    VALUES = {
+        'none':  TSI.NONE,
+        'utc':   TSI.UTC,
+        'gps':   TSI.GPS,
+        'other': TSI.OTHER
+    }
 
-    def parse_class_id(self, packet, value):
-        attribute = self.parse_field_attribute(value)
-        if attribute is None:
+    def parse_tsi(self, log, field, value):
+        mode = self.VALUES.get(value.casefold(), None)
+        if mode is None:
             raise ValueError(value)
-        self.set_field_attribute(packet.class_id, attribute)
+        field.mode = mode
+        log.debug('TSI mode is %s', mode)
 
+    def parse_mapping_entry(self, log, field, name, value):
+        if name == 'format':
+            self.parse_tsi(log, field, value)
+        else:
+            return False
+        return True
+
+    def parse_scalar(self, log, field, value):
+        self.parse_tsi(log, field, value)
+
+class TSFParser(FieldParser):
+    VALUES = {
+        'none':         TSF.NONE,
+        'samples':      TSF.SAMPLE_COUNT,
+        'picoseconds':  TSF.REAL_TIME,
+        'free running': TSF.FREE_RUNNING
+    }
+
+    def parse_tsf(self, log, field, value):
+        mode = self.VALUES.get(value.casefold(), None)
+        if mode is None:
+            raise ValueError(value)
+        field.mode = mode
+        log.debug('TSF mode is %s', mode)
+
+    def parse_mapping_entry(self, log, field, name, value):
+        if name == 'format':
+            self.parse_tsf(log, field, value)
+        else:
+            return False
+        return True
+
+    def parse_scalar(self, log, field, value):
+        self.parse_tsf(log, field, value)
+
+class ClassIDParser(FieldParser):
     HEX_DIGIT = r'[0-9a-zA-Z]'
     OUI_RE = re.compile(r'({0})-({0})-({0})$'.format(HEX_DIGIT*2))
-    def parse_oui(self, packet, value):
+    def parse_oui(self, value):
         match = self.OUI_RE.match(value)
         if not match:
             raise ValueError('OUI format must be XX-XX-XX')
-        packet.class_id.oui = int(''.join(match.groups()), 16)
-        self.set_field_attribute(packet.class_id, FieldDescriptor.REQUIRED)
+        return int(''.join(match.groups()), 16)
 
-    def parse_information_class(self, packet, value):
-        packet.class_id.information_class = int(value)
-        self.set_field_attribute(packet.class_id, FieldDescriptor.REQUIRED)
-
-    def parse_packet_class(self, packet, value):
-        packet.class_id.packet_class = int(value)
-        self.set_field_attribute(packet.class_id, FieldDescriptor.REQUIRED)
-
-    def parse_stream_id(self, packet, value):
-        attribute = self.parse_field_attribute(value)
-        if attribute is not None:
-            self.set_field_attribute(packet.stream_id, attribute)
+    def parse_mapping_entry(self, log, field, name, value):
+        name = name.casefold()
+        if name == 'oui':
+            field.oui = self.parse_oui(value)
+            log.debug('OUI = %X', field.oui)
+        elif name == 'information class code':
+            field.information_class = int(value)
+            log.debug('Information Class Code = %x', field.information_class)
+        elif name == 'packet class code':
+            field.packet_class = int(value)
+            log.debug('Packet Class Code = %x', field.packet_class)
         else:
-            packet.stream_id = int(value)
-            self.set_field_attribute(packet.stream_id, FieldDescriptor.REQUIRED)
+            return False
+        return True
 
-    def parse_field(self, packet, name, value):
-        parser = self.get_field_parser(name)
-        if parser is None:
-            self.log.error("Invalid field '%s'", name)
-            return
-
-        parser(self, packet, value)
-
-PacketParser.add_field_parser('Stream ID', PacketParser.parse_stream_id)
-PacketParser.add_field_parser('TSI', PacketParser.parse_tsi)
-PacketParser.add_field_parser('TSF', PacketParser.parse_tsf)
-PacketParser.add_field_parser('Class ID', PacketParser.parse_class_id)
-PacketParser.add_field_parser('OUI', PacketParser.parse_oui)
-PacketParser.add_field_parser('Packet Class Code', PacketParser.parse_packet_class)
-PacketParser.add_field_parser('Information Class Code', PacketParser.parse_information_class)
+PacketParser.add_field_parser('Stream ID', StreamIDParser())
+PacketParser.add_field_parser('TSI', TSIParser())
+PacketParser.add_field_parser('TSF', TSFParser())
+PacketParser.add_field_parser('Class ID', ClassIDParser())
 
 class DataPacketParser(PacketParser):
     def create_packet(self, name):
