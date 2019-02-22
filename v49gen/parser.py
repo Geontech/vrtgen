@@ -183,57 +183,47 @@ class StreamIDParser(FieldParser):
     def parse_scalar(self, log, field, value):
         self.set_value(log, field, int(value))
 
-class TSIParser(FieldParser):
-    VALUES = {
-        'none':  TSI.NONE,
-        'utc':   TSI.UTC,
-        'gps':   TSI.GPS,
-        'other': TSI.OTHER
-    }
+class TimeModeParser(FieldParser):
+    def __init__(self, values):
+        self.values = values
 
-    def parse_tsi(self, log, field, value):
-        mode = self.VALUES.get(value.casefold(), None)
+    def parse_mode(self, log, field, value):
+        mode = self.values.get(value.casefold(), None)
         if mode is None:
             raise ValueError(value)
         field.mode = mode
-        log.debug('TSI mode is %s', mode)
+        log.debug('%s mode is %s', field.name, mode)
 
     def parse_mapping_entry(self, log, field, name, value):
         if name == 'format':
-            self.parse_tsi(log, field, value)
+            self.parse_mode(log, field, value)
         else:
             return False
         return True
 
     def parse_scalar(self, log, field, value):
-        self.parse_tsi(log, field, value)
+        self.parse_mode(log, field, value)
         self.set_attribute(log, field, FieldDescriptor.REQUIRED)
 
-class TSFParser(FieldParser):
-    VALUES = {
-        'none':         TSF.NONE,
-        'samples':      TSF.SAMPLE_COUNT,
-        'picoseconds':  TSF.REAL_TIME,
-        'free running': TSF.FREE_RUNNING
-    }
+class TSIParser(TimeModeParser):
+    def __init__(self):
+        values = {
+            'none':  TSI.NONE,
+            'utc':   TSI.UTC,
+            'gps':   TSI.GPS,
+            'other': TSI.OTHER
+        }
+        super().__init__(values)
 
-    def parse_tsf(self, log, field, value):
-        mode = self.VALUES.get(value.casefold(), None)
-        if mode is None:
-            raise ValueError(value)
-        field.mode = mode
-        log.debug('TSF mode is %s', mode)
-
-    def parse_mapping_entry(self, log, field, name, value):
-        if name == 'format':
-            self.parse_tsf(log, field, value)
-        else:
-            return False
-        return True
-
-    def parse_scalar(self, log, field, value):
-        self.parse_tsf(log, field, value)
-        self.set_attribute(log, field, FieldDescriptor.REQUIRED)
+class TSFParser(TimeModeParser):
+    def __init__(self):
+        values = {
+            'none':         TSF.NONE,
+            'samples':      TSF.SAMPLE_COUNT,
+            'picoseconds':  TSF.REAL_TIME,
+            'free running': TSF.FREE_RUNNING
+        }
+        super().__init__(values)
 
 class ClassIDParser(FieldParser):
     HEX_DIGIT = r'[0-9a-zA-Z]'
