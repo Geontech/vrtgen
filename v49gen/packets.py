@@ -150,12 +150,6 @@ class VRTPacket(object):
     def tsf(self):
         return self.prologue.fractional_timestamp
 
-    def get_field(self, name):
-        field = self.prologue.get_field(name)
-        if field is None:
-            raise KeyError(name)
-        return field
-
     def get_header_bytes(self):
         header = bytearray(4)
 
@@ -167,16 +161,6 @@ class VRTPacket(object):
         header[1] |= self.tsf.mode << 4
 
         return header
-
-    def add_field(self, name, optional=False):
-        field = self.get_field(name)
-        if field.is_enabled:
-            raise ValueError('duplicate field')
-        if optional:
-            field.set_optional()
-        else:
-            field.set_required()
-        return field
 
 class VRTDataTrailer(FieldContainer):
     def __init__(self):

@@ -150,8 +150,8 @@ class CIFPayloadParser(SectionParser):
         super().__init__(log.getChild('CIF'), packet)
 
 class PrologueParser(SectionParser):
-    def __init__(self, log, packet):
-        super().__init__(log.getChild('Prologue'), packet)
+    def __init__(self, log, prologue):
+        super().__init__(log.getChild('Prologue'), prologue)
 
 
 class StreamIDParser(FieldParser):
@@ -244,7 +244,7 @@ class PacketParser:
         self.log = logging.getLogger(name)
 
     def parse_prologue(self, packet, value):
-        PrologueParser(self.log, packet).parse(value)
+        PrologueParser(self.log, packet.prologue).parse(value)
 
     def parse_trailer(self, packet, value):
         self.log.error('Only data packets can have a trailer')
