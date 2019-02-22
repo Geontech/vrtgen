@@ -1,6 +1,5 @@
 from .packets import *
 
-import collections
 import logging
 import re
 
