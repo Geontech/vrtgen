@@ -20,9 +20,6 @@ class FieldParser:
                 self.set_attribute(log, field, attribute)
             else:
                 self.parse_scalar(log, field, value)
-                # If a value is given with no other qualifiers, consider the
-                # field value to be constant
-                self.set_attribute(log, field, FieldDescriptor.CONSTANT)
 
     def parse_mapping(self, log, field, mapping):
         attribute = FieldDescriptor.REQUIRED
@@ -42,6 +39,13 @@ class FieldParser:
         raise TypeError("Field '"+field.name+"' cannot be defined with a sequence")
 
     def parse_scalar(self, log, field, value):
+        value = self.parse_scalar_value(field, value)
+        self.set_value(log, field, value)
+        # If a value is given with no other qualifiers, consider the
+        # field value to be constant
+        self.set_attribute(log, field, FieldDescriptor.CONSTANT)
+
+    def parse_scalar_value(self, field, value):
         raise TypeError("{0} is not a valid value for field '{1}'".format(value, field.name))
 
     def parse_attribute(self, value):
@@ -82,13 +86,10 @@ class GenericFieldParser(FieldParser):
         else:
             raise NotImplementedError('unsupported format {}'.format(field.format))
 
-    def parse_scalar(self, log, field, value):
-        value = self.parse_scalar_value(field, value)
-        self.set_value(log, field, value)
-
     def parse_mapping_entry(self, log, field, name, value):
         if name == 'value':
-            self.parse_scalar(log, field, value)
+            value = self.parse_scalar_value(field, value)
+            self.set_value(log, field, value)
         else:
             return False
         return True
@@ -150,15 +151,11 @@ class SectionParser:
                 self.log.error("Field '%s': %s", field_name, exc)
 
 class SSIParser(FieldParser):
-    def parse_ssi(self, value):
+    def parse_scalar_value(self, log, field, value):
         ssi = getattr(SSI, value.upper(), None)
         if ssi is None:
             raise ValueError(value)
         return ssi
-
-    def parse_scalar(self, log, field, value):
-        value = self.parse_ssi(value)
-        self.set_value(log, field, value)
 
 class TrailerParser(SectionParser):
     def __init__(self, log, trailer):
@@ -210,6 +207,7 @@ class TSIParser(FieldParser):
 
     def parse_scalar(self, log, field, value):
         self.parse_tsi(log, field, value)
+        self.set_attribute(log, field, FieldDescriptor.REQUIRED)
 
 class TSFParser(FieldParser):
     VALUES = {
@@ -235,6 +233,7 @@ class TSFParser(FieldParser):
 
     def parse_scalar(self, log, field, value):
         self.parse_tsf(log, field, value)
+        self.set_attribute(log, field, FieldDescriptor.REQUIRED)
 
 class ClassIDParser(FieldParser):
     HEX_DIGIT = r'[0-9a-zA-Z]'
