@@ -239,14 +239,15 @@ class VRTDataPacket(VRTPacket):
 
 class CIF0(FieldContainer):
     FIELDS = (
-        ('Context Field Change Indicator', 31, None), # No data
+        # Context Field Change Indicator (bit 31) is a binary flag that can be
+        # set at run-time. No configuration is possible.
         ('Reference Point Identifier', 30, INT32), # integer 32 (stream ID)
         ('Bandwidth', 29, FixedFormat(64, 20)), # fixed-point 64/20, Hz
         ('IF Reference Frequency', 28, FixedFormat(64, 20)), # fixed-point 64/20, Hz
         ('RF Reference Frequency', 27, FixedFormat(64, 20)), # fixed-point 64/20, Hz
         ('RF Reference Frequency Offset', 26, FixedFormat(64, 20)), # fixed-point 64/20, Hz
         ('IF Band Offset', 25, FixedFormat(64, 20)), # fixed-point 64/20, Hz
-        ('Reference Level', 24, None), # fixed-point 16/7 dBm (upper 16 reserved)
+        ('Reference Level', 24, FixedFormat(16, 7)), # fixed-point 16/7 dBm (upper 16 reserved)
         ('Gain', 23, None), # [stage2 (optional), stage1]: fixed-point 16/7, dB
         ('Over-range Count', 22, INT32), # integer 32
         ('Sample Rate', 21, FixedFormat(64, 20)), # fixed-point 64/20, Hz
@@ -294,7 +295,7 @@ class CIF1(FieldContainer):
         ('Spatial Scan Type', 27, INT16), # Generic 16-bit identifier
         ('Spatial Reference Type', 26, None), # multi-field
         ('Beam Widths', 25, None), # [horizonal, vertical]: fixed-point 16/7. degrees
-        ('Range', 24, None), # fixed-point 32/6, meters
+        ('Range', 24, FixedFormat(32, 6)), # fixed-point 32/6, meters
         # Reserved
         # Reserved
         # Reserved
