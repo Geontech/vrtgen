@@ -70,26 +70,6 @@ class FieldDescriptor:
     def set_constant(self):
         self._enable_state = FieldDescriptor.CONSTANT
 
-class ClassID(FieldDescriptor):
-    __slots__ = ('oui', 'information_class', 'packet_class')
-    def __init__(self):
-        super().__init__('Class ID')
-        self.oui = None
-        self.information_class = None
-        self.packet_class = None
-
-class TSIField(FieldDescriptor):
-    __slots__ = ('mode',)
-    def __init__(self):
-        super().__init__('TSI', format=INT32)
-        self.mode = TSI.NONE
-
-class TSFField(FieldDescriptor):
-    __slots__ = ('mode',)
-    def __init__(self):
-        super().__init__('TSF', format=INT64)
-        self.mode = TSF.NONE
-
 class FieldContainer:
     def __init__(self):
         self.__fields = []
@@ -111,6 +91,31 @@ class FieldContainer:
     @property
     def fields(self):
         return self.__fields
+
+class StructFieldDescriptor(FieldDescriptor, FieldContainer):
+    def __init__(self, *args, **kwargs):
+        FieldDescriptor.__init__(self, *args, **kwargs)
+        FieldContainer.__init__(self)
+
+class ClassID(StructFieldDescriptor):
+    __slots__ = ('oui', 'information_class', 'packet_class')
+    def __init__(self):
+        super().__init__('Class ID')
+        self.oui = self.add_field('OUI', format=IntFormat(24))
+        self.information_class = self.add_field('Information Class Code', format=INT16)
+        self.packet_class = self.add_field('Packet Class Code', format=INT16)
+
+class TSIField(FieldDescriptor):
+    __slots__ = ('mode',)
+    def __init__(self):
+        super().__init__('TSI', format=INT32)
+        self.mode = TSI.NONE
+
+class TSFField(FieldDescriptor):
+    __slots__ = ('mode',)
+    def __init__(self):
+        super().__init__('TSF', format=INT64)
+        self.mode = TSF.NONE
 
 class VRTPrologue(FieldContainer):
     def __init__(self):

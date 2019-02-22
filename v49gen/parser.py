@@ -218,18 +218,19 @@ class ClassIDParser(FieldParser):
         return int(''.join(match.groups()), 16)
 
     def parse_mapping_entry(self, log, field, name, value):
-        name = name.casefold()
-        if name == 'oui':
-            field.oui = self.parse_oui(value)
-            log.debug('OUI = %X', field.oui)
-        elif name == 'information class code':
-            field.information_class = int(value)
-            log.debug('Information Class Code = %x', field.information_class)
-        elif name == 'packet class code':
-            field.packet_class = int(value)
-            log.debug('Packet Class Code = %x', field.packet_class)
+        if field.oui.match(name):
+            subfield = field.oui
+            value = self.parse_oui(value)
+        elif field.information_class.match(name):
+            subfield = field.information_class
+            value = int(value)
+        elif field.packet_class.match(name):
+            subfield = field.packet_class
+            value = int(value)
         else:
             return False
+        subfield.value = value
+        log.debug("'%s' = %s", subfield.name, value)
         return True
 
 PrologueParser.add_field_parser('Stream ID', StreamIDParser())
