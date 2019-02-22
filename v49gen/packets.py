@@ -173,19 +173,30 @@ class VRTDataTrailer(FieldContainer):
         self.spectral_inversion = self.add_field('Spectral Inversion', 26, BIT)
         self.over_range = self.add_field('Over-range', 25, BIT)
         self.sample_loss = self.add_field('Sample Loss', 24, BIT)
-        # [23,22], [11,10] Sample Frame, User-Defined
+        # The Sample Frame field was added in V49.2, replacing 2 user-defined
+        # bits. While the bits can still be user-defined for compatibility with
+        # V49.0 implementations, the spec strongly discourages it, and it is
+        # not supported here.
+        self.sample_frame = self.add_field('Sample Frame', 23, IntFormat(2))
         # [21..20], [9..8] User-Defined
         self.context_packet_count = self.add_field('Associated Context Packet Count', 7, IntFormat(7))
 
     def get_bytes(self):
-        flag = 0
+        word = 0
         for field in self.fields:
-            if field.is_set:
-                flag |= 1 << field.enable_bit
-                if field.format == BIT and field.value:
-                    # The enable and value bits are offset by 12
-                    flag |= 1 << (field.enable_bit - 12)
-        return struct.pack('>I', flag)
+            if not field.is_set:
+                continue
+            word |= 1 << field.enable_bit
+            # Sample Frame has two enable bits because it was taken from
+            # user-defined bits; set both here
+            if field == self.sample_frame:
+                word |= 1 << field.enable_bit - 1
+            if field.value:
+                # The enable and value bits are offset by 12
+                position = field.enable_bit - 12
+                value = int(field.value)
+                word |= value << position
+        return struct.pack('>I', word)
 
     @property
     def is_enabled(self):

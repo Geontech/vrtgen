@@ -22,6 +22,21 @@ class TSF(IntEnum):
     REAL_TIME    = 2
     FREE_RUNNING = 3
 
+class SSI(IntEnum):
+    """
+    Start/Stop of Sample Frame Indication (SSI) Bits:
+      SINGLE (00) - Sample Frames are not applicable to data packets, or the
+                    entire Sample Frame is contained in a single data packet
+      FIRST (01)  - First data packet of current Sample Frame
+      MIDDLE (10) - Middle packet or packets of Sample Frame: "continuation"
+                    indicator
+      FINAL (11)  - Final data packet of current Sample Frame
+    """
+    SINGLE = 0
+    FIRST = 1
+    MIDDLE = 2
+    FINAL = 3
+
 class IntFormat:
     def __init__(self, bits=32):
         self.bits = bits

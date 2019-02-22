@@ -20,6 +20,9 @@ class FieldParser:
                 self.set_attribute(log, field, attribute)
             else:
                 self.parse_scalar(log, field, value)
+                # If a value is given with no other qualifiers, consider the
+                # field value to be constant
+                self.set_attribute(log, field, FieldDescriptor.CONSTANT)
 
     def parse_mapping(self, log, field, mapping):
         attribute = FieldDescriptor.REQUIRED
@@ -146,6 +149,17 @@ class SectionParser:
             except Exception as exc:
                 self.log.error("Field '%s': %s", field_name, exc)
 
+class SSIParser(FieldParser):
+    def parse_ssi(self, value):
+        ssi = getattr(SSI, value.upper(), None)
+        if ssi is None:
+            raise ValueError(value)
+        return ssi
+
+    def parse_scalar(self, log, field, value):
+        value = self.parse_ssi(value)
+        self.set_value(log, field, value)
+
 class TrailerParser(SectionParser):
     def __init__(self, log, trailer):
         super().__init__(log.getChild('Trailer'), trailer)
@@ -156,6 +170,8 @@ class TrailerParser(SectionParser):
             return True
         else:
             return super().parse_option(name, value)
+
+TrailerParser.add_field_parser('Sample Frame', SSIParser())
 
 class CIFPayloadParser(SectionParser):
     def __init__(self, log, packet):
