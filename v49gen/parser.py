@@ -149,34 +149,10 @@ class CIFPayloadParser(SectionParser):
     def __init__(self, log, packet):
         super().__init__(log.getChild('CIF'), packet)
 
-class PacketParser(SectionParser):
-    def __init__(self, name):
-        # TODO: use base class context member
-        super().__init__(logging.getLogger(name), None)
-        self.name = name
+class PrologueParser(SectionParser):
+    def __init__(self, log, packet):
+        super().__init__(log.getChild('Prologue'), packet)
 
-    def parse_trailer(self, packet, value):
-        self.log.error('Only data packets can have a trailer')
-
-    def parse_payload(self, packet, value):
-        raise NotImplementedError('Payload processing not implemented')
-
-    def parse(self, value):
-        packet = self.create_packet(self.name)
-        self.context = packet
-
-        for field_name, field_value in value.items():
-            if field_name == 'trailer':
-                self.parse_trailer(packet, field_value)
-            elif field_name == 'payload':
-                self.parse_payload(packet, field_value)
-            else:
-                try:
-                    self.parse_field(field_name, field_value)
-                except KeyError:
-                    self.log.error("Invalid field '%s'", field_name)
-
-        return packet
 
 class StreamIDParser(FieldParser):
     def parse_scalar(self, log, field, value):
@@ -256,10 +232,42 @@ class ClassIDParser(FieldParser):
             return False
         return True
 
-PacketParser.add_field_parser('Stream ID', StreamIDParser())
-PacketParser.add_field_parser('TSI', TSIParser())
-PacketParser.add_field_parser('TSF', TSFParser())
-PacketParser.add_field_parser('Class ID', ClassIDParser())
+PrologueParser.add_field_parser('Stream ID', StreamIDParser())
+PrologueParser.add_field_parser('TSI', TSIParser())
+PrologueParser.add_field_parser('TSF', TSFParser())
+PrologueParser.add_field_parser('Class ID', ClassIDParser())
+
+class PacketParser:
+    def __init__(self, name):
+        self.name = name
+        self.log = logging.getLogger(name)
+
+    def parse_prologue(self, packet, value):
+        PrologueParser(self.log, packet).parse(value)
+
+    def parse_trailer(self, packet, value):
+        self.log.error('Only data packets can have a trailer')
+
+    def parse_payload(self, packet, value):
+        raise NotImplementedError('Payload processing not implemented')
+
+    def parse_option(self, packet, name, value):
+        return False
+
+    def parse(self, value):
+        packet = self.create_packet(self.name)
+
+        for field_name, field_value in value.items():
+            if field_name == 'prologue':
+                self.parse_prologue(packet, field_value)
+            elif field_name == 'trailer':
+                self.parse_trailer(packet, field_value)
+            elif field_name == 'payload':
+                self.parse_payload(packet, field_value)
+            elif not self.parse_option(packet, field_name, field_value):
+                self.log.error("Invalid option '%s'", field_name)
+
+        return packet
 
 class DataPacketParser(PacketParser):
     def create_packet(self, name):

@@ -4,17 +4,18 @@
 
 TestData:
   type: data
-  Stream ID: required
-  TSI:
-    required: false
-    format: utc
-  TSF:
-    required: false
-    format: picoseconds
-  Class ID:
-    OUI: FF-FF-FF
-    Information Class Code: 0x0001
-    Packet Class Code: 0x0001
+  prologue:
+    Stream ID: required
+    TSI:
+      required: false
+      format: utc
+    TSF:
+      required: false
+      format: picoseconds
+    Class ID:
+      OUI: FF-FF-FF
+      Information Class Code: 0x0001
+      Packet Class Code: 0x0001
   trailer:
     Calibrated Time:
       required: true
@@ -27,27 +28,32 @@ TestData:
 
 TestMerge:
   type: data
-  <<: *defaults
+  prologue:
+    <<: *defaults
 
 TestClassID:
   type: context
-  Class ID: required
+  prologue:
+    Class ID: required
 
 InvalidField:
   type: data
-  IF Reference Frequency: 0.0
+  prologue:
+    IF Reference Frequency: 0.0
 
 TestContext:
   type: context
-  Class ID: required
+  prologue:
+    Class ID: required
   payload:
     IF Reference Frequency: optional
     Aux Frequency: optional
 
 TestCommand:
   type: command
-  TSI: utc
-  TSF: picoseconds
-  Class ID: required
+  prologue:
+    TSI: utc
+    TSF: picoseconds
+    Class ID: required
   payload:
     RF Reference Frequency: required
