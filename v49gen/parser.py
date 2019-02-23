@@ -6,9 +6,7 @@ import re
 import yaml
 
 class FieldParser:
-    def __call__(self, log, context, name, value):
-        field = context.get_field(name)
-        log.debug("Parsing field '%s'", field.name)
+    def __call__(self, log, field, value):
         if isinstance(value, dict):
             self.parse_mapping(log, field, value)
         elif isinstance(value, list):
@@ -122,14 +120,13 @@ class SectionParser:
     def get_field_parser(self, name):
         return self.FIELD_PARSERS.get(name.casefold(), GenericFieldParser())
 
-    def parse_field(self, name, value):
-        parser = self.get_field_parser(name)
+    def parse_field(self, field, value):
+        self.log.debug("Parsing field '%s'", field.name)
+        parser = self.get_field_parser(field.name)
         if parser is None:
             parser = GenericFieldParser()
         try:
-            parser(self.log, self.context, name, value)
-        except KeyError:
-            self.log.error("Invalid field '%s'", name)
+            parser(self.log, field, value)
         except (TypeError, ValueError) as exc:
             self.log.error("Invalid definition for '%s': %s", name, exc)
 
@@ -140,14 +137,18 @@ class SectionParser:
         for field_name, field_value in value.items():
             if self.parse_option(field_name, field_value):
                 continue
-            try:
-                self.parse_field(field_name, field_value)
-            except KeyError:
+
+            field = self.context.get_field(field_name)
+            if field is None:
                 self.log.error("Invalid field '%s'", field_name)
-            except ValueError as exc:
+                continue
+
+            try:
+                self.parse_field(field, field_value)
+            except (TypeError, ValueError) as exc:
                 self.log.error("Invalid value for field '%s': %s", field_name, exc)
             except Exception as exc:
-                self.log.error("Field '%s': %s", field_name, exc)
+                self.log.exception("Field '%s': %s", field_name, exc)
 
 class SSIParser(FieldParser):
     def parse_scalar_value(self, log, field, value):
