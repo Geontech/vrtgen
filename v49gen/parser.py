@@ -114,8 +114,8 @@ class SectionParser:
         cls.FIELD_PARSERS = cls.FIELD_PARSERS.copy()
 
     @classmethod
-    def add_field_parser(cls, name, parser):
-        cls.FIELD_PARSERS[name.casefold()] = parser
+    def add_field_parser(cls, field, parser):
+        cls.FIELD_PARSERS[field.name.casefold()] = parser
 
     def get_field_parser(self, name):
         return self.FIELD_PARSERS.get(name.casefold(), GenericFieldParser())
@@ -168,7 +168,7 @@ class TrailerParser(SectionParser):
         else:
             return super().parse_option(name, value)
 
-TrailerParser.add_field_parser('Sample Frame', SSIParser())
+TrailerParser.add_field_parser(VRTDataTrailer.sample_frame, SSIParser())
 
 class CIFPayloadParser(SectionParser):
     def __init__(self, log, packet):
@@ -250,10 +250,10 @@ class ClassIDParser(FieldParser):
         log.debug("'%s' = %s", subfield.name, value)
         return True
 
-PrologueParser.add_field_parser('Stream ID', StreamIDParser())
-PrologueParser.add_field_parser('TSI', TSIParser())
-PrologueParser.add_field_parser('TSF', TSFParser())
-PrologueParser.add_field_parser('Class ID', ClassIDParser())
+PrologueParser.add_field_parser(VRTPrologue.stream_id, StreamIDParser())
+PrologueParser.add_field_parser(VRTPrologue.integer_timestamp, TSIParser())
+PrologueParser.add_field_parser(VRTPrologue.fractional_timestamp, TSFParser())
+PrologueParser.add_field_parser(VRTPrologue.class_id, ClassIDParser())
 
 class PacketParser:
     def __init__(self, name):
