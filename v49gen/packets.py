@@ -78,14 +78,6 @@ class FieldContainer:
         for name, field in inspect.getmembers(self, lambda x: isinstance(x, FieldDescriptor)):
             self.__fields.append(field)
 
-    def add_field(self, *args, **kwargs):
-        if isinstance(args[0], FieldDescriptor):
-            field = args[0]
-        else:
-            field = FieldDescriptor(*args, **kwargs)
-        self.__fields.append(field)
-        return field
-
     def get_field(self, name):
         for field in self.__fields:
             if field.match(name):
@@ -329,45 +321,94 @@ class CIF0(FieldContainer):
         return struct.pack('>I', prologue)
 
 class CIF1(FieldContainer):
-    FIELDS = (
-        ('Phase Offset', 31, FixedFormat(16, 7)), # fixed-point 16/7, radians (upper 16 reserved)
-        ('Polarization', 30, None), # [tilt, ellipticity]: fixed-point 16/13, radians
-        ('3-D Pointing Vector', 29, None), # [elevation, azimuthal]: fixed-point 16/7, degrees
-        ('3-D Pointing Vector Structure', 28, None), # structured data
-        ('Spatial Scan Type', 27, INT16), # Generic 16-bit identifier
-        ('Spatial Reference Type', 26, None), # multi-field
-        ('Beam Widths', 25, None), # [horizonal, vertical]: fixed-point 16/7. degrees
-        ('Range', 24, FixedFormat(32, 6)), # fixed-point 32/6, meters
-        # Reserved
-        # Reserved
-        # Reserved
-        ('Eb/No BER', 20, None), # [Eb/No, BER], fixed-point 16/7, dB
-        ('Threshold', 19, None), # [stage2 (optional), stage1]: fixed-point 16/7, dB
-        ('Compression Point', 18, FixedFormat(16, 7)),
-        ('Intercept Points', 17, None), # [2IIP, 3IIP]: fixed-point 16/7, dBm
-        ('SNR/Noise Figure', 16, None), # [SNR, Noise]: fixed-point 16/7, dB
-        ('Aux Frequency', 13, FixedFormat(64, 20)),
-        ('Aux Gain', 14, None), # [stage2 (optional), stage1]: fixed-point 16/7, dB
-        ('Aux Bandwidth', 13, FixedFormat(64, 20)),
-        # Reserved
-        ('Array of CIFS', 11, None),
-        ('Spectrum', 10, None), # structured
-        ('Sector Scan/Step', 9, None),
-        # Reserved
-        ('Index List', 7, None), # structured array
-        ('Discrete I/O 32', 6, None), # 32 user-defined bits
-        ('Discrete I/O 64', 5, None), # 64 user-defined bits
-        ('Health Status', 4, INT16), # 16-bit identifier
-        # V49 Spec Compliance - 32 bits for V49 compliance level
-        ('Version and Build Code', 2, None), # structured, 32 bits
-        ('Buffer Size', 1, None) # struct, 64 bits
-        # Reserved
-    )
+    # Phase Offset (1/31): fixed-point 16/7, radians (upper 16 reserved)
+    phase_offset = FieldDescriptor('Phase Offset', 31, FixedFormat(16, 7))
 
-    def __init__(self):
-        super().__init__()
-        for name, bit, format in CIF1.FIELDS:
-            self.add_field(name, bit, format)
+    # Polarization (1/30): [tilt, ellipticity], fixed-point 16/13, radians
+    polarization = FieldDescriptor('Polarization', 30, None)
+
+    # 3-D Pointing Vector (1/29): [elevation, azimuthal], fixed-point 16/7, degrees
+    pointing_vector = FieldDescriptor('3-D Pointing Vector', 29, None)
+
+    # 3-D Pointing Vector Structure (1/28): structured data
+    pointing_vector_struct = FieldDescriptor('3-D Pointing Vector Structure', 28, None)
+
+    # Spatial Scan Type (1/27): Generic 16-bit identifier
+    spatial_scan_type = FieldDescriptor('Spatial Scan Type', 27, INT16)
+
+    # Spatial Reference Type (1/26): struct
+    spatial_reference_type = FieldDescriptor('Spatial Reference Type', 26, None)
+
+    # Beam Widths (1/25): [horizonal, vertical]: fixed-point 16/7. degrees
+    beam_widths = FieldDescriptor('Beam Widths', 25, None)
+
+    # Range (1/24): fixed-point 32/6, meters
+    range = FieldDescriptor('Range', 24, FixedFormat(32, 6))
+
+    # Reserved (1/23)
+    # Reserved (1/22)
+    # Reserved (1/21)
+
+    # Eb/No BER (1/20): [Eb/No, BER], fixed-point 16/7, dB
+    ebno_ber = FieldDescriptor('Eb/No BER', 20, None)
+
+    # Threshold (1/18): [stage2 (optional), stage1], fixed-point 16/7, dB
+    threshold = FieldDescriptor('Threshold', 19, None)
+
+    # Compression Point (1/18)
+    compression_point = FieldDescriptor('Compression Point', 18, FixedFormat(16, 7))
+
+    # Intercept Points (1/17): [2IIP, 3IIP], fixed-point 16/7, dBm
+    intercept_points = FieldDescriptor('Intercept Points', 17, None)
+
+    # SNR/Noise Figure (1/16): [SNR, Noise], fixed-point 16/7, dB
+    snr_noise_figure = FieldDescriptor('SNR/Noise Figure', 16, None)
+
+    # Aux Frequency (1/15)
+    aux_frequency = FieldDescriptor('Aux Frequency', 15, FixedFormat(64, 20))
+
+    # Aux Gain (1/14): [stage2 (optional), stage1]: fixed-point 16/7, dB
+    aux_gain = FieldDescriptor('Aux Gain', 14, None)
+
+    # Aux Bandidth (1/13)
+    aux_bandwidth = FieldDescriptor('Aux Bandwidth', 13, FixedFormat(64, 20))
+
+    # Reserved (1/12)
+
+    # Array of CIFS (1/11): This allows multiple CIF blocks, wnich makes for
+    # some complex support code.
+    array_of_cifs = FieldDescriptor('Array of CIFS', 11, None)
+
+    # Spectrum (1/10)
+    spectrum = FieldDescriptor('Spectrum', 10, None)
+
+    # Sector Scan/Step (1/9)
+    sector_scan_step = FieldDescriptor('Sector Scan/Step', 9, None),
+
+    # Reserved (1/8)
+
+    # Index List (1/7): array of structs
+    FieldDescriptor('Index List', 7, None)
+
+    # Discrete I/O 32-bit (1/6): 32 additional bits of user-defined fields
+    FieldDescriptor('Discrete I/O 32', 6, None)
+
+    # Discrete I/O 64-bit (1/7): 64 additional bits of user-defined fields
+    FieldDescriptor('Discrete I/O 64', 5, None), # 64 user-defined bits
+
+    # Health Status (1/4): 16-bit identifier
+    FieldDescriptor('Health Status', 4, INT16)
+
+    # V49 Spec Compliance (1/3): 32 bits for V49 compliance level, only four
+    # values currently defined.
+
+    # Version and Build Code (1/2): struct, 32 bits
+    version_build_code = FieldDescriptor('Version and Build Code', 2, None)
+
+    # Buffer Size (1/1): struct, 64 bits
+    buffer_size = FieldDescriptor('Buffer Size', 1, None)
+
+    # Reserved (1/0)
 
     def get_prologue_bytes(self):
         prologue = 0
