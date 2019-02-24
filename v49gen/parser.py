@@ -178,11 +178,6 @@ class PrologueParser(SectionParser):
     def __init__(self, log, prologue):
         super().__init__(log.getChild('Prologue'), prologue)
 
-
-class StreamIDParser(FieldParser):
-    def parse_scalar(self, log, field, value):
-        self.set_value(log, field, int(value))
-
 class TimeModeParser(FieldParser):
     def __init__(self, values):
         self.values = values
@@ -250,7 +245,6 @@ class ClassIDParser(FieldParser):
         log.debug("'%s' = %s", subfield.name, value)
         return True
 
-PrologueParser.add_field_parser(VRTPrologue.stream_id, StreamIDParser())
 PrologueParser.add_field_parser(VRTPrologue.integer_timestamp, TSIParser())
 PrologueParser.add_field_parser(VRTPrologue.fractional_timestamp, TSFParser())
 PrologueParser.add_field_parser(VRTPrologue.class_id, ClassIDParser())

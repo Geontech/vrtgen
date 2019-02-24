@@ -25,24 +25,66 @@ class Field:
     REQUIRED = 2
     CONSTANT = 3
 
-class FieldDescriptor:
-    __slots__ = ('name', 'enable_bit', '_enable_state', 'format', 'value')
-    def __init__(self, name, enable_bit=None, format=None):
-        self.name = name
-        self._enable_state = Field.DISABLED
-        self.enable_bit = enable_bit
-        self.format = format
-        self.value = None
-
-    def match(self, name):
-        return name.lower() == self.name.lower()
-
-    def set_value(self, value):
-        self.value = value
+    __slots__ = ('_enable')
+    def __init__(self):
+        self._enable = Field.DISABLED
 
     @property
     def is_enabled(self):
-        return self._enable_state != Field.DISABLED
+        return self._enable != Field.DISABLED
+
+    @property
+    def is_required(self):
+        return self._enable == Field.REQUIRED
+
+    def set_required(self):
+        self._enable = Field.REQUIRED
+
+    @property
+    def is_optional(self):
+        return self._enable == Field.OPTIONAL
+
+    def set_optional(self):
+        self._enable = Field.OPTIONAL
+
+    @property
+    def is_constant(self):
+        return self._enable == Field.CONSTANT
+
+    def set_constant(self):
+        self._enable = Field.CONSTANT
+
+    def match(self, name):
+        # Relying on a little bit of class trickery here: Field does not have
+        # a "name" attribute, but it's never directly used. FieldDescriptor
+        # creates derived classes with the name set as a class attribute (this
+        # is also a minor space optimization, since the name is the same for
+        # all instances).
+        return self.name.casefold() == name.casefold()
+
+class FieldContainer:
+    def __init__(self):
+        self.__fields = {}
+        for name, field in self.get_field_descriptors():
+            instance = field()
+            setattr(self, name, instance)
+            self.__fields[field.name.casefold()] = instance
+
+    def get_field(self, name):
+        return self.__fields.get(name.casefold(), None)
+
+    @classmethod
+    def get_field_descriptors(cls):
+        return inspect.getmembers(cls, lambda x: isinstance(x, FieldDescriptor))
+
+    @property
+    def fields(self):
+        return self.__fields.values()
+
+class SimpleField(Field):
+    def __init__(self):
+        Field.__init__(self)
+        self.value = None
 
     @property
     def is_set(self):
@@ -51,73 +93,53 @@ class FieldDescriptor:
         else:
             return self.is_enabled
 
-    @property
-    def is_required(self):
-        return self._enable_state == Field.REQUIRED
-
-    def set_required(self):
-        self._enable_state = Field.REQUIRED
-
-    @property
-    def is_optional(self):
-        return self._enable_state == Field.OPTIONAL
-
-    def set_optional(self):
-        self._enable_state = Field.OPTIONAL
-
-    @property
-    def is_constant(self):
-        return self._enable_state == Field.CONSTANT
-
-    def set_constant(self):
-        self._enable_state = Field.CONSTANT
-
-class FieldContainer:
+class StructField(Field, FieldContainer):
     def __init__(self):
-        self.__fields = []
-        for name, field in inspect.getmembers(self, lambda x: isinstance(x, FieldDescriptor)):
-            self.__fields.append(field)
-
-    def get_field(self, name):
-        for field in self.__fields:
-            if field.match(name):
-                return field
-        return None
-
-    @property
-    def fields(self):
-        return self.__fields
-
-class StructFieldDescriptor(FieldDescriptor, FieldContainer):
-    def __init__(self, *args, **kwargs):
-        FieldDescriptor.__init__(self, *args, **kwargs)
+        Field.__init__(self)
         FieldContainer.__init__(self)
 
-class ClassID(StructFieldDescriptor):
+    @property
+    def is_set(self):
+        if self.is_optional:
+            return any(f.value is not None for f in self.fields)
+        else:
+            return self.is_enabled
+
+class FieldDescriptor(type):
+    def __new__(self, name, enable_bit=None, format=None, field=SimpleField):
+        bases = (field,)
+        namespace = {
+            'name': name,
+            'enable_bit': enable_bit,
+            'format': format
+        }
+        return super().__new__(self, name, bases, namespace)
+
+    def __init__(self, name, *args, **kwargs):
+        return super().__init__(name)
+
+class ClassIDField(StructField):
     oui = FieldDescriptor('OUI', format=IntFormat(24))
     information_class = FieldDescriptor('Information Class Code', format=INT16)
     packet_class = FieldDescriptor('Packet Class Code', format=INT16)
 
-    def __init__(self):
-        super().__init__('Class ID')
-
-class TSIField(FieldDescriptor):
+class TSIField(SimpleField):
     __slots__ = ('mode',)
     def __init__(self):
-        super().__init__('TSI', format=INT32)
+        super().__init__()
         self.mode = TSI.NONE
 
-class TSFField(FieldDescriptor):
+class TSFField(SimpleField):
     __slots__ = ('mode',)
     def __init__(self):
-        super().__init__('TSF', format=INT64)
+        super().__init__()
         self.mode = TSF.NONE
 
 class VRTPrologue(FieldContainer):
     stream_id = FieldDescriptor('Stream ID', format=INT32)
-    class_id = ClassID()
-    integer_timestamp = TSIField()
-    fractional_timestamp = TSFField()
+    class_id = FieldDescriptor('Class ID', field=ClassIDField)
+    integer_timestamp = FieldDescriptor('TSI', field=TSIField, format=INT32)
+    fractional_timestamp = FieldDescriptor('TSF', field=TSFField, format=INT64)
 
     def __init__(self):
         super().__init__()
