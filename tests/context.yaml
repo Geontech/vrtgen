@@ -1,0 +1,31 @@
+TestContext:
+  type: context
+  prologue:
+    Class ID:
+      OUI: FF-FF-FF
+  payload:
+    Gain:
+      required: False
+      Stage 1: 0.0
+      Stage 2: 0.0
+    Device Identifier:
+      Manufacturer OUI: AB-CD-EF
+      Device Code: 0
+    Polarization:
+      Tilt Angle: 0.0
+      Ellipticity Angle: 0.0
+    3-D Pointing Vector:
+      Elevation Angle: 0.0
+      Azimuthal Angle: 0.0
+    Beam Widths:
+      Horizontal: 1
+      Vertical: 1
+    Eb/No BER:
+      Eb/No: 0
+      BER: 0
+    Threshold:
+      Stage 1: 0.0
+      Stage 2: 0.0
+    SNR/Noise Figure:
+      SNR: 0
+      Noise Figure: 0
