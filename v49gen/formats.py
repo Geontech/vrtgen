@@ -36,17 +36,3 @@ class SSI(IntEnum):
     FIRST = 1
     MIDDLE = 2
     FINAL = 3
-
-class IntFormat:
-    def __init__(self, bits=32):
-        self.bits = bits
-
-class FixedFormat(IntFormat):
-    def __init__(self, bits, radix):
-        super().__init__(bits)
-        self.radix = radix
-
-BIT = IntFormat(1)
-INT16 = IntFormat(16)
-INT32 = IntFormat(32)
-INT64 = IntFormat(64)

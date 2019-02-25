@@ -30,6 +30,16 @@ class Field:
         self._enable = Field.DISABLED
 
     @property
+    def is_set(self):
+        if self.has_value:
+            return True
+        return self._enable in (Field.REQUIRED, Field.CONSTANT)
+
+    @property
+    def has_value(self):
+        return False
+
+    @property
     def is_enabled(self):
         return self._enable != Field.DISABLED
 
@@ -83,17 +93,38 @@ class FieldContainer:
     def fields(self):
         return self.__fields.values()
 
+# Placeholder for field types that have not been implemented yet
+class UnimplementedField(Field):
+    pass
+
 class SimpleField(Field):
     def __init__(self):
         Field.__init__(self)
         self.value = None
 
     @property
-    def is_set(self):
-        if self.is_optional:
-            return self.value is not None
-        else:
-            return self.is_enabled
+    def has_value(self):
+        return self.value is not None
+
+class BitField(SimpleField):
+    pass
+
+class IntegerField(SimpleField):
+    @classmethod
+    def create(cls, bits):
+        name = 'Int{:d}Field'.format(bits)
+        return type(name, (cls,), {'bits':bits})
+
+Int64Field = IntegerField.create(64)
+Int32Field = IntegerField.create(32)
+Int24Field = IntegerField.create(24)
+Int16Field = IntegerField.create(16)
+
+class FixedPointField(SimpleField):
+    @classmethod
+    def create(cls, bits, radix):
+        name = 'Fixed{:d}_{:d}Field'.format(bits, radix)
+        return type(name, (cls,), {'bits':bits, 'radix':radix})
 
 class StructField(Field, FieldContainer):
     def __init__(self):
@@ -101,43 +132,39 @@ class StructField(Field, FieldContainer):
         FieldContainer.__init__(self)
 
     @property
-    def is_set(self):
-        if self.is_optional:
-            return any(f.value is not None for f in self.fields)
-        else:
-            return self.is_enabled
+    def has_value(self):
+        return any(f.value is not None for f in self.fields)
 
-def field_descriptor(name, enable_bit=None, format=None, field=SimpleField):
+def field_descriptor(name, field, enable_bit=None):
         bases = (field,)
         namespace = {
             'name': name,
-            'enable_bit': enable_bit,
-            'format': format
+            'enable_bit': enable_bit
         }
         return type(name, bases, namespace)
 
 class ClassIDField(StructField):
-    oui = field_descriptor('OUI', format=IntFormat(24))
-    information_class = field_descriptor('Information Class Code', format=INT16)
-    packet_class = field_descriptor('Packet Class Code', format=INT16)
+    oui = field_descriptor('OUI', Int24Field)
+    information_class = field_descriptor('Information Class Code', Int16Field)
+    packet_class = field_descriptor('Packet Class Code', Int16Field)
 
-class TSIField(SimpleField):
+class TSIField(Int32Field):
     __slots__ = ('mode',)
     def __init__(self):
         super().__init__()
         self.mode = TSI.NONE
 
-class TSFField(SimpleField):
+class TSFField(Int64Field):
     __slots__ = ('mode',)
     def __init__(self):
         super().__init__()
         self.mode = TSF.NONE
 
 class VRTPrologue(FieldContainer):
-    stream_id = field_descriptor('Stream ID', format=INT32)
-    class_id = field_descriptor('Class ID', field=ClassIDField)
-    integer_timestamp = field_descriptor('TSI', field=TSIField, format=INT32)
-    fractional_timestamp = field_descriptor('TSF', field=TSFField, format=INT64)
+    stream_id = field_descriptor('Stream ID', Int32Field)
+    class_id = field_descriptor('Class ID', ClassIDField)
+    integer_timestamp = field_descriptor('TSI', TSIField)
+    fractional_timestamp = field_descriptor('TSF', TSFField)
 
     def __init__(self):
         super().__init__()
@@ -180,21 +207,21 @@ class VRTPacket(object):
         return header
 
 class VRTDataTrailer(FieldContainer):
-    calibrated_time = field_descriptor('Calibrated Time', 31, BIT)
-    valid_data = field_descriptor('Valid Data', 30, BIT)
-    reference_lock = field_descriptor('Reference Lock', 29, BIT)
-    agc_mgc = field_descriptor('AGC/MGC', 28, BIT)
-    detected_signal = field_descriptor('Detected Signal', 27, BIT)
-    spectral_inversion = field_descriptor('Spectral Inversion', 26, BIT)
-    over_range = field_descriptor('Over-range', 25, BIT)
-    sample_loss = field_descriptor('Sample Loss', 24, BIT)
+    calibrated_time = field_descriptor('Calibrated Time', BitField, 31)
+    valid_data = field_descriptor('Valid Data', BitField, 30)
+    reference_lock = field_descriptor('Reference Lock', BitField, 29)
+    agc_mgc = field_descriptor('AGC/MGC', BitField, 28)
+    detected_signal = field_descriptor('Detected Signal', BitField, 27)
+    spectral_inversion = field_descriptor('Spectral Inversion', BitField, 26)
+    over_range = field_descriptor('Over-range', BitField, 25)
+    sample_loss = field_descriptor('Sample Loss', BitField, 24)
     # The Sample Frame field was added in V49.2, replacing 2 user-defined
     # bits. While the bits can still be user-defined for compatibility with
     # V49.0 implementations, the spec strongly discourages it, and it is
     # not supported here.
-    sample_frame = field_descriptor('Sample Frame', 23, IntFormat(2))
+    sample_frame = field_descriptor('Sample Frame', IntegerField.create(2), 23)
     # [21..20], [9..8] User-Defined
-    context_packet_count = field_descriptor('Associated Context Packet Count', 7, IntFormat(7))
+    context_packet_count = field_descriptor('Associated Context Packet Count', IntegerField.create(7), 7)
 
     def get_bytes(self):
         word = 0
@@ -257,72 +284,72 @@ class CIF0(FieldContainer):
     # set at run-time. No configuration is possible.
 
     # Reference Point Identifier (0/30): integer 32 (stream ID)
-    reference_point_id = field_descriptor('Reference Point Identifier', 30, INT32)
+    reference_point_id = field_descriptor('Reference Point Identifier', Int32Field, 30)
 
     # Bandwidth (0/29) fixed-point 64/20, Hz
-    bandwidth = field_descriptor('Bandwidth', 29, FixedFormat(64, 20))
+    bandwidth = field_descriptor('Bandwidth', FixedPointField.create(64, 20), 29)
 
     # fixed-point 64/20, Hz
-    if_frequency = field_descriptor('IF Reference Frequency', 28, FixedFormat(64, 20))
+    if_frequency = field_descriptor('IF Reference Frequency', FixedPointField.create(64, 20), 28)
 
     # fixed-point 64/20, Hz
-    rf_frequency = field_descriptor('RF Reference Frequency', 27, FixedFormat(64, 20))
+    rf_frequency = field_descriptor('RF Reference Frequency', FixedPointField.create(64, 20), 27)
 
     # fixed-point 64/20, Hz
-    rf_frequency_offset = field_descriptor('RF Reference Frequency Offset', 26, FixedFormat(64, 20))
+    rf_frequency_offset = field_descriptor('RF Reference Frequency Offset', FixedPointField.create(64, 20), 26)
 
     # fixed-point 64/20, Hz
-    if_band_offset = field_descriptor('IF Band Offset', 25, FixedFormat(64, 20))
+    if_band_offset = field_descriptor('IF Band Offset', FixedPointField.create(64, 20), 25)
 
     # fixed-point 16/7 dBm (upper 16 reserved)
-    reference_level = field_descriptor('Reference Level', 24, FixedFormat(16, 7))
+    reference_level = field_descriptor('Reference Level', FixedPointField.create(16, 7), 24)
 
     # [stage2 (optional), stage1]: fixed-point 16/7, dB
-    gain = field_descriptor('Gain', 23, None)
+    gain = field_descriptor('Gain', UnimplementedField, 23)
 
     # integer 32
-    over_range_count = field_descriptor('Over-range Count', 22, INT32)
+    over_range_count = field_descriptor('Over-range Count', Int32Field, 22)
 
     # fixed-point 64/20, Hz
-    sample_rate = field_descriptor('Sample Rate', 21, FixedFormat(64, 20))
+    sample_rate = field_descriptor('Sample Rate', FixedPointField.create(64, 20), 21)
 
     # fractional time (integer 64)
-    timestamp_adjustment = field_descriptor('Timestamp Adjustment', 20, INT64)
+    timestamp_adjustment = field_descriptor('Timestamp Adjustment', Int64Field, 20)
 
     # 1 word, depends on prologue TSI
-    timestamp_calibration_time = field_descriptor('Timestamp Calibration Time', 19, INT32)
+    timestamp_calibration_time = field_descriptor('Timestamp Calibration Time', Int32Field, 19)
 
     # fixed-point 16/6, degrees C (upper 16 reserved)
-    temperature = field_descriptor('Temperature', 18, FixedFormat(16, 6))
+    temperature = field_descriptor('Temperature', FixedPointField.create(16, 6), 18)
 
     # 64 bits total, specific format
-    device_id = field_descriptor('Device Identifier', 17, None)
+    device_id = field_descriptor('Device Identifier', UnimplementedField, 17)
 
     # 32 bits, bit flags
-    state_event_indicators = field_descriptor('State/Event Indicators', 16, None)
+    state_event_indicators = field_descriptor('State/Event Indicators', UnimplementedField, 16)
 
     # structured
-    data_format = field_descriptor('Signal Data Packet Payload Format', 15, None)
+    data_format = field_descriptor('Signal Data Packet Payload Format', UnimplementedField, 15)
 
     # structured
-    formatted_gps = field_descriptor('Formatted GPS', 14, None)
+    formatted_gps = field_descriptor('Formatted GPS', UnimplementedField, 14)
 
     # structured
-    formatted_ins = field_descriptor('Formatted INS', 13, None)
+    formatted_ins = field_descriptor('Formatted INS', UnimplementedField, 13)
 
     # structured
-    ecef_ephemeris = field_descriptor('ECEF Ephemeris', 12, None)
+    ecef_ephemeris = field_descriptor('ECEF Ephemeris', UnimplementedField, 12)
 
     # structured
-    relative_ephemeris = field_descriptor('Relative Ephemeris', 11, None)
+    relative_ephemeris = field_descriptor('Relative Ephemeris', UnimplementedField, 11)
 
     # integer 32
-    ephemeris_ref_id = field_descriptor('Ephemeris Ref ID', 10, INT32)
+    ephemeris_ref_id = field_descriptor('Ephemeris Ref ID', Int32Field, 10)
 
     # 2 word header plus arbitrary binary data
-    gps_ascii = field_descriptor('GPS ASCII', 9, None)
+    gps_ascii = field_descriptor('GPS ASCII', UnimplementedField, 9)
 
-    context_association_lists = ('Context Association Lists', 8, None)
+    context_association_lists = ('Context Association Lists', 8)
 
     # Field Attributes Enable (CIF7)
     # Reserved
@@ -342,91 +369,91 @@ class CIF0(FieldContainer):
 
 class CIF1(FieldContainer):
     # Phase Offset (1/31): fixed-point 16/7, radians (upper 16 reserved)
-    phase_offset = field_descriptor('Phase Offset', 31, FixedFormat(16, 7))
+    phase_offset = field_descriptor('Phase Offset', FixedPointField.create(16, 7), 31)
 
     # Polarization (1/30): [tilt, ellipticity], fixed-point 16/13, radians
-    polarization = field_descriptor('Polarization', 30, None)
+    polarization = field_descriptor('Polarization', UnimplementedField, 30)
 
     # 3-D Pointing Vector (1/29): [elevation, azimuthal], fixed-point 16/7, degrees
-    pointing_vector = field_descriptor('3-D Pointing Vector', 29, None)
+    pointing_vector = field_descriptor('3-D Pointing Vector', UnimplementedField, 29)
 
     # 3-D Pointing Vector Structure (1/28): structured data
-    pointing_vector_struct = field_descriptor('3-D Pointing Vector Structure', 28, None)
+    pointing_vector_struct = field_descriptor('3-D Pointing Vector Structure', UnimplementedField, 28)
 
     # Spatial Scan Type (1/27): Generic 16-bit identifier
-    spatial_scan_type = field_descriptor('Spatial Scan Type', 27, INT16)
+    spatial_scan_type = field_descriptor('Spatial Scan Type', Int16Field, 27)
 
     # Spatial Reference Type (1/26): struct
-    spatial_reference_type = field_descriptor('Spatial Reference Type', 26, None)
+    spatial_reference_type = field_descriptor('Spatial Reference Type', UnimplementedField, 26)
 
     # Beam Widths (1/25): [horizonal, vertical]: fixed-point 16/7. degrees
-    beam_widths = field_descriptor('Beam Widths', 25, None)
+    beam_widths = field_descriptor('Beam Widths', UnimplementedField, 25)
 
     # Range (1/24): fixed-point 32/6, meters
-    range = field_descriptor('Range', 24, FixedFormat(32, 6))
+    range = field_descriptor('Range', FixedPointField.create(32, 6), 24)
 
     # Reserved (1/23)
     # Reserved (1/22)
     # Reserved (1/21)
 
     # Eb/No BER (1/20): [Eb/No, BER], fixed-point 16/7, dB
-    ebno_ber = field_descriptor('Eb/No BER', 20, None)
+    ebno_ber = field_descriptor('Eb/No BER', UnimplementedField, 20)
 
     # Threshold (1/18): [stage2 (optional), stage1], fixed-point 16/7, dB
-    threshold = field_descriptor('Threshold', 19, None)
+    threshold = field_descriptor('Threshold', UnimplementedField, 19)
 
     # Compression Point (1/18)
-    compression_point = field_descriptor('Compression Point', 18, FixedFormat(16, 7))
+    compression_point = field_descriptor('Compression Point', FixedPointField.create(16, 7), 18)
 
     # Intercept Points (1/17): [2IIP, 3IIP], fixed-point 16/7, dBm
-    intercept_points = field_descriptor('Intercept Points', 17, None)
+    intercept_points = field_descriptor('Intercept Points', UnimplementedField, 17)
 
     # SNR/Noise Figure (1/16): [SNR, Noise], fixed-point 16/7, dB
-    snr_noise_figure = field_descriptor('SNR/Noise Figure', 16, None)
+    snr_noise_figure = field_descriptor('SNR/Noise Figure', UnimplementedField, 16)
 
     # Aux Frequency (1/15)
-    aux_frequency = field_descriptor('Aux Frequency', 15, FixedFormat(64, 20))
+    aux_frequency = field_descriptor('Aux Frequency', FixedPointField.create(64, 20), 15)
 
     # Aux Gain (1/14): [stage2 (optional), stage1]: fixed-point 16/7, dB
-    aux_gain = field_descriptor('Aux Gain', 14, None)
+    aux_gain = field_descriptor('Aux Gain', UnimplementedField, 14)
 
     # Aux Bandidth (1/13)
-    aux_bandwidth = field_descriptor('Aux Bandwidth', 13, FixedFormat(64, 20))
+    aux_bandwidth = field_descriptor('Aux Bandwidth', FixedPointField.create(64, 20), 13)
 
     # Reserved (1/12)
 
     # Array of CIFS (1/11): This allows multiple CIF blocks, wnich makes for
     # some complex support code.
-    array_of_cifs = field_descriptor('Array of CIFS', 11, None)
+    array_of_cifs = field_descriptor('Array of CIFS', UnimplementedField, 11)
 
     # Spectrum (1/10)
-    spectrum = field_descriptor('Spectrum', 10, None)
+    spectrum = field_descriptor('Spectrum', UnimplementedField, 10)
 
     # Sector Scan/Step (1/9)
-    sector_scan_step = field_descriptor('Sector Scan/Step', 9, None),
+    sector_scan_step = field_descriptor('Sector Scan/Step', UnimplementedField, 9),
 
     # Reserved (1/8)
 
     # Index List (1/7): array of structs
-    field_descriptor('Index List', 7, None)
+    field_descriptor('Index List', UnimplementedField, 7)
 
     # Discrete I/O 32-bit (1/6): 32 additional bits of user-defined fields
-    field_descriptor('Discrete I/O 32', 6, None)
+    field_descriptor('Discrete I/O 32', UnimplementedField, 6)
 
     # Discrete I/O 64-bit (1/7): 64 additional bits of user-defined fields
-    field_descriptor('Discrete I/O 64', 5, None), # 64 user-defined bits
+    field_descriptor('Discrete I/O 64', UnimplementedField, 5), # 64 user-defined bits
 
     # Health Status (1/4): 16-bit identifier
-    field_descriptor('Health Status', 4, INT16)
+    field_descriptor('Health Status', Int16Field, 4)
 
     # V49 Spec Compliance (1/3): 32 bits for V49 compliance level, only four
     # values currently defined.
 
     # Version and Build Code (1/2): struct, 32 bits
-    version_build_code = field_descriptor('Version and Build Code', 2, None)
+    version_build_code = field_descriptor('Version and Build Code', UnimplementedField, 2)
 
     # Buffer Size (1/1): struct, 64 bits
-    buffer_size = field_descriptor('Buffer Size', 1, None)
+    buffer_size = field_descriptor('Buffer Size', UnimplementedField, 1)
 
     # Reserved (1/0)
 

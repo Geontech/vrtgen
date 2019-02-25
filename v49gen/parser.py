@@ -74,14 +74,14 @@ class FieldParser:
 
 class GenericFieldParser(FieldParser):
     def parse_scalar_value(self, field, value):
-        if field.format == BIT:
+        if isinstance(field, BitField):
             return self.to_bool(value)
-        elif isinstance(field.format, FixedFormat):
+        elif isinstance(field, FixedPointField):
             return float(value)
-        elif isinstance(field.format, IntFormat):
+        elif isinstance(field, IntegerField):
             return int(value)
         else:
-            raise NotImplementedError('unsupported format {}'.format(field.format))
+            raise NotImplementedError("unsupported field '{}'".format(field.name))
 
     def parse_mapping_entry(self, log, field, name, value):
         if name == 'value':
