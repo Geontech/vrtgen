@@ -64,13 +64,18 @@ class Field:
     def set_constant(self):
         self._enable = Field.CONSTANT
 
-    def match(self, name):
+    @property
+    def enable_flag(self):
+        return 1 << self.enable_bit
+
+    @classmethod
+    def match(cls, name):
         # Relying on a little bit of class trickery here: Field does not have
         # a "name" attribute, but it's never directly used. field_descriptor()
         # creates derived classes with the name set as a class attribute (this
         # is also a minor space optimization, since the name is the same for
         # all instances).
-        return self.name.casefold() == name.casefold()
+        return cls.name.casefold() == name.casefold()
 
 class FieldContainer:
     def __init__(self):
@@ -96,6 +101,16 @@ class FieldContainer:
 # Placeholder for field types that have not been implemented yet
 class UnimplementedField(Field):
     pass
+
+class UserDefinedField(Field):
+    def __init__(self):
+        Field.__init__(self)
+        self.value = None
+
+    @classmethod
+    def create(cls, bits):
+        name = 'UserDefined{:d}Field'.format(bits)
+        return type(name, (cls,), {'bits':bits})
 
 class SimpleField(Field):
     def __init__(self):
@@ -166,10 +181,6 @@ class TSFField(Int64Field):
     def __init__(self):
         super().__init__()
         self.mode = TSF.NONE
-
-class GainField(StructField):
-    stage1 = field_descriptor('Stage 1', FixedPointField.create(16, 7))
-    stage2 = field_descriptor('Stage 2', FixedPointField.create(16, 7))
 
 class DeviceIDField(StructField):
     manufacturer_oui = field_descriptor('Manufacturer OUI', OUIField)
@@ -243,11 +254,7 @@ class VRTDataTrailer(FieldContainer):
         for field in self.fields:
             if not field.is_set:
                 continue
-            word |= 1 << field.enable_bit
-            # Sample Frame has two enable bits because it was taken from
-            # user-defined bits; set both here
-            if field == self.sample_frame:
-                word |= 1 << field.enable_bit - 1
+            word |= field.enable_flag
             if field.value:
                 # The enable and value bits are offset by 12
                 position = field.enable_bit - 12
@@ -293,6 +300,23 @@ class VRTDataPacket(VRTPacket):
     @property
     def has_trailer(self):
         return self.trailer.is_enabled
+
+class GainField(StructField):
+    stage1 = field_descriptor('Stage 1', FixedPointField.create(16, 7))
+    stage2 = field_descriptor('Stage 2', FixedPointField.create(16, 7))
+
+class StateEventIndicators(StructField):
+    calibrated_time = field_descriptor('Calibrated Time', BitField, 31)
+    valid_data = field_descriptor('Valid Data', BitField, 30)
+    reference_lock = field_descriptor('Reference Lock', BitField, 29)
+    agc_mgc = field_descriptor('AGC/MGC', BitField, 28)
+    detected_signal = field_descriptor('Detected Signal', BitField, 27)
+    spectral_inversion = field_descriptor('Spectral Inversion', BitField, 26)
+    over_range = field_descriptor('Over-range', BitField, 25)
+    sample_loss = field_descriptor('Sample Loss', BitField, 24)
+    # [23..20] reserved
+    # [7..0] User-Defined
+    user_defined = field_descriptor('User-Defined', UserDefinedField.create(8))
 
 class CIF0(FieldContainer):
     # Context Field Change Indicator (0/31) is a binary flag that can be
@@ -341,7 +365,7 @@ class CIF0(FieldContainer):
     device_id = field_descriptor('Device Identifier', DeviceIDField, 17)
 
     # State/Event Indicators (0/16): 32 bits, bit flags
-    state_event_indicators = field_descriptor('State/Event Indicators', UnimplementedField, 16)
+    state_event_indicators = field_descriptor('State/Event Indicators', StateEventIndicators, 16)
 
     # Data Payload Format (0/15): structured
     data_format = field_descriptor('Signal Data Packet Payload Format', UnimplementedField, 15)

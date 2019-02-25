@@ -11,6 +11,12 @@ TestContext:
     Device Identifier:
       Manufacturer OUI: AB-CD-EF
       Device Code: 0
+    State/Event Indicators:
+      Calibrated Time: true
+      Valid Data:
+        required: true
+      Over-range: 0
+      # User-Defined: TODO
     Polarization:
       Tilt Angle: 0.0
       Ellipticity Angle: 0.0

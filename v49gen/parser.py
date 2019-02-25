@@ -90,6 +90,8 @@ class GenericFieldParser(FieldParser):
             return float(value)
         elif isinstance(field, IntegerField):
             return int(value)
+        elif isinstance(field, UserDefinedField):
+            raise ValueError('user-defined fields are not implemented')
         else:
             raise NotImplementedError("unsupported field '{}'".format(field.name))
 
@@ -190,7 +192,11 @@ class StructFieldParser(FieldParser):
         if subfield is None:
             return False
         parser = GenericFieldParser()
-        parser(log.getChild(field.name), subfield, value)
+        log = log.getChild(field.name)
+        try:
+            parser(log, subfield, value)
+        except (ValueError, TypeError) as exc:
+            log.error("Invalid definition for '%s': %s", subfield.name, exc)
         return True
 
 class CIFPayloadParser(SectionParser):
