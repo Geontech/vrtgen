@@ -143,8 +143,11 @@ def field_descriptor(name, field, enable_bit=None):
         }
         return type(name, bases, namespace)
 
+class OUIField(Int24Field):
+    pass
+
 class ClassIDField(StructField):
-    oui = field_descriptor('OUI', Int24Field)
+    oui = field_descriptor('OUI', OUIField)
     information_class = field_descriptor('Information Class Code', Int16Field)
     packet_class = field_descriptor('Packet Class Code', Int16Field)
 
@@ -159,6 +162,14 @@ class TSFField(Int64Field):
     def __init__(self):
         super().__init__()
         self.mode = TSF.NONE
+
+class GainField(StructField):
+    stage1 = field_descriptor('Stage 1', FixedPointField.create(16, 7))
+    stage2 = field_descriptor('Stage 2', FixedPointField.create(16, 7))
+
+class DeviceIDField(StructField):
+    manufacturer_oui = field_descriptor('Manufacturer OUI', OUIField)
+    device_code = field_descriptor('Device Code', Int16Field)
 
 class VRTPrologue(FieldContainer):
     stream_id = field_descriptor('Stream ID', Int32Field)
@@ -305,7 +316,7 @@ class CIF0(FieldContainer):
     reference_level = field_descriptor('Reference Level', FixedPointField.create(16, 7), 24)
 
     # [stage2 (optional), stage1]: fixed-point 16/7, dB
-    gain = field_descriptor('Gain', UnimplementedField, 23)
+    gain = field_descriptor('Gain', GainField, 23)
 
     # integer 32
     over_range_count = field_descriptor('Over-range Count', Int32Field, 22)
@@ -323,7 +334,7 @@ class CIF0(FieldContainer):
     temperature = field_descriptor('Temperature', FixedPointField.create(16, 6), 18)
 
     # 64 bits total, specific format
-    device_id = field_descriptor('Device Identifier', UnimplementedField, 17)
+    device_id = field_descriptor('Device Identifier', DeviceIDField, 17)
 
     # 32 bits, bit flags
     state_event_indicators = field_descriptor('State/Event Indicators', UnimplementedField, 16)
@@ -415,7 +426,7 @@ class CIF1(FieldContainer):
     aux_frequency = field_descriptor('Aux Frequency', FixedPointField.create(64, 20), 15)
 
     # Aux Gain (1/14): [stage2 (optional), stage1]: fixed-point 16/7, dB
-    aux_gain = field_descriptor('Aux Gain', UnimplementedField, 14)
+    aux_gain = field_descriptor('Aux Gain', GainField, 14)
 
     # Aux Bandidth (1/13)
     aux_bandwidth = field_descriptor('Aux Bandwidth', FixedPointField.create(64, 20), 13)

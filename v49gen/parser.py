@@ -73,7 +73,17 @@ class FieldParser:
         log.debug("Field '%s' = %s", field.name, value)
 
 class GenericFieldParser(FieldParser):
+    HEX_DIGIT = r'[0-9a-zA-Z]'
+    OUI_RE = re.compile(r'({0})-({0})-({0})$'.format(HEX_DIGIT*2))
+    def parse_oui(self, value):
+        match = self.OUI_RE.match(str(value))
+        if not match:
+            raise ValueError('OUI format must be XX-XX-XX')
+        return int(''.join(match.groups()), 16)
+
     def parse_scalar_value(self, field, value):
+        if isinstance(field, OUIField):
+            return self.parse_oui(value)
         if isinstance(field, BitField):
             return self.to_bool(value)
         elif isinstance(field, FixedPointField):
@@ -117,18 +127,22 @@ class SectionParser:
     def add_field_parser(cls, field, parser):
         cls.FIELD_PARSERS[field.name.casefold()] = parser
 
-    def get_field_parser(self, name):
-        return self.FIELD_PARSERS.get(name.casefold(), GenericFieldParser())
+    def get_field_parser(self, field):
+        parser = self.FIELD_PARSERS.get(field.name.casefold(), None)
+        if parser is not None:
+            return parser
+        elif isinstance(field, StructField):
+            return StructFieldParser()
+        else:
+            return GenericFieldParser()
 
     def parse_field(self, field, value):
         self.log.debug("Parsing field '%s'", field.name)
-        parser = self.get_field_parser(field.name)
-        if parser is None:
-            parser = GenericFieldParser()
+        parser = self.get_field_parser(field)
         try:
             parser(self.log, field, value)
         except (TypeError, ValueError) as exc:
-            self.log.error("Invalid definition for '%s': %s", name, exc)
+            self.log.error("Invalid definition for '%s': %s", field.name, exc)
 
     def parse_option(self, name, value):
         return False
@@ -170,9 +184,18 @@ class TrailerParser(SectionParser):
 
 TrailerParser.add_field_parser(VRTDataTrailer.sample_frame, SSIParser())
 
+class StructFieldParser(FieldParser):
+    def parse_mapping_entry(self, log, field, name, value):
+        subfield = field.get_field(name)
+        if subfield is None:
+            return False
+        parser = GenericFieldParser()
+        parser(log.getChild(field.name), subfield, value)
+        return True
+
 class CIFPayloadParser(SectionParser):
     def __init__(self, log, packet):
-        super().__init__(log.getChild('CIF'), packet)
+        super().__init__(log.getChild('Payload'), packet)
 
 class PrologueParser(SectionParser):
     def __init__(self, log, prologue):
@@ -220,34 +243,8 @@ class TSFParser(TimeModeParser):
         }
         super().__init__(values)
 
-class ClassIDParser(FieldParser):
-    HEX_DIGIT = r'[0-9a-zA-Z]'
-    OUI_RE = re.compile(r'({0})-({0})-({0})$'.format(HEX_DIGIT*2))
-    def parse_oui(self, value):
-        match = self.OUI_RE.match(value)
-        if not match:
-            raise ValueError('OUI format must be XX-XX-XX')
-        return int(''.join(match.groups()), 16)
-
-    def parse_mapping_entry(self, log, field, name, value):
-        if field.oui.match(name):
-            subfield = field.oui
-            value = self.parse_oui(value)
-        elif field.information_class.match(name):
-            subfield = field.information_class
-            value = int(value)
-        elif field.packet_class.match(name):
-            subfield = field.packet_class
-            value = int(value)
-        else:
-            return False
-        subfield.value = value
-        log.debug("'%s' = %s", subfield.name, value)
-        return True
-
 PrologueParser.add_field_parser(VRTPrologue.integer_timestamp, TSIParser())
 PrologueParser.add_field_parser(VRTPrologue.fractional_timestamp, TSFParser())
-PrologueParser.add_field_parser(VRTPrologue.class_id, ClassIDParser())
 
 class PacketParser:
     def __init__(self, name):
