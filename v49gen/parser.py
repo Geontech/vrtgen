@@ -197,6 +197,17 @@ class CIFPayloadParser(SectionParser):
     def __init__(self, log, packet):
         super().__init__(log.getChild('Payload'), packet)
 
+class IndexListParser(FieldParser):
+    def parse_mapping_entry(self, log, field, name, value):
+        if name.casefold() == 'entry size':
+            field.entry_size = int(value)
+            log.debug("Index List entry size is %d", value)
+        else:
+            return False
+        return True
+
+CIFPayloadParser.add_field_parser(CIF1.index_list, IndexListParser())
+
 class PrologueParser(SectionParser):
     def __init__(self, log, prologue):
         super().__init__(log.getChild('Prologue'), prologue)

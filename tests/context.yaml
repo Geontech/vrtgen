@@ -29,3 +29,5 @@ TestContext:
     SNR/Noise Figure:
       SNR: 0
       Noise Figure: 0
+    Index List:
+      entry size: 16

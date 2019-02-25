@@ -426,6 +426,21 @@ class SNRNoiseField(StructField):
     # O signifies "unused"
     noise = field_descriptor('Noise Figure', FixedPointField.create(16, 7))
 
+class IndexListOptions(Field):
+    def __init__(self):
+        super().__init__()
+        self.__size = None
+
+    @property
+    def entry_size(self):
+        return self.__size
+
+    @entry_size.setter
+    def entry_size(self, size):
+        if size not in (None, 8, 16, 32):
+            raise ValueError('Index list entries must be 8, 16 or 32 bits')
+        self.__size = size
+
 class CIF1(FieldContainer):
     # Phase Offset (1/31): fixed-point 16/7, radians (upper 16 reserved)
     phase_offset = field_descriptor('Phase Offset', FixedPointField.create(16, 7), 31)
@@ -500,17 +515,17 @@ class CIF1(FieldContainer):
     # Reserved (1/8)
 
     # Index List (1/7): Struct header with an array of identifiers (8, 16 or 32
-    # bits).
-    field_descriptor('Index List', UnimplementedField, 7)
+    # bits). Only the entry size is configurable for code generation.
+    index_list = field_descriptor('Index List', IndexListOptions, 7)
 
     # Discrete I/O 32-bit (1/6): 32 additional bits of user-defined fields
-    field_descriptor('Discrete I/O 32', UnimplementedField, 6)
+    discrete_io_32 = field_descriptor('Discrete I/O 32', UnimplementedField, 6)
 
     # Discrete I/O 64-bit (1/7): 64 additional bits of user-defined fields
-    field_descriptor('Discrete I/O 64', UnimplementedField, 5), # 64 user-defined bits
+    discrete_io_64 = field_descriptor('Discrete I/O 64', UnimplementedField, 5), # 64 user-defined bits
 
     # Health Status (1/4): 16-bit identifier
-    field_descriptor('Health Status', Int16Field, 4)
+    health_status = field_descriptor('Health Status', Int16Field, 4)
 
     # V49 Spec Compliance (1/3): 32 bits for V49 compliance level, only four
     # values currently defined.
