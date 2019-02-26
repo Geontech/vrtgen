@@ -46,11 +46,11 @@ class FieldParser:
                 self.parse_scalar(log, field, value)
 
     def parse_mapping(self, log, field, mapping):
-        attribute = Field.REQUIRED
+        attribute = Field.Mode.REQUIRED
         for key, value in mapping.items():
             if key == 'required':
                 if not value:
-                    attribute = Field.OPTIONAL
+                    attribute = Field.Mode.OPTIONAL
             elif not self.parse_mapping_entry(log, field, key, value):
                 log.warn("Invalid option '%s' for field '%s'", key, field.name)
 
@@ -67,7 +67,8 @@ class FieldParser:
         self.set_value(log, field, value)
         # If a value is given with no other qualifiers, consider the
         # field value to be constant
-        self.set_attribute(log, field, Field.CONSTANT)
+        log.debug("Field '%s' is CONSTANT", field.name)
+        field.set_constant()
 
     def parse_scalar_value(self, field, value):
         raise TypeError("{0} is not a valid value for field '{1}'".format(value, field.name))
@@ -75,30 +76,29 @@ class FieldParser:
     def parse_attribute(self, value):
         if isinstance(value, str):
             return {
-                'required': Field.REQUIRED,
-                'optional': Field.OPTIONAL,
-                'disabled': Field.DISABLED
+                'required': Field.Mode.REQUIRED,
+                'optional': Field.Mode.OPTIONAL,
+                'disabled': Field.Mode.DISABLED
             }.get(value.casefold(), None)
         else:
             return None
 
     def set_attribute(self, log, field, attribute):
-        if attribute == Field.REQUIRED:
-            if not field.is_required:
-                log.debug("Field '%s' is required", field.name)
-                field.set_required()
-        elif attribute == Field.OPTIONAL:
-            if not field.is_optional:
-                log.debug("Field '%s' is optional", field.name)
-                field.set_optional()
-        elif attribute == Field.CONSTANT:
-            if not field.is_constant:
-                log.debug("Field '%s' is constant", field.name)
-                field.set_constant()
-        elif attribute == Field.DISABLED:
-            if not field.is_disabled:
-                log.debug("Field '%s' is disabled", field.name)
-                field.set_disabled()
+        if attribute == Field.Mode.REQUIRED:
+            if field.is_required:
+                return
+            field.set_required()
+        elif attribute == Field.Mode.OPTIONAL:
+            if field.is_optional:
+                return
+            field.set_optional()
+        elif attribute == Field.Mode.DISABLED:
+            if field.is_disabled:
+                return
+            field.set_disabled()
+        else:
+            raise ValueError("Invalid attribute '{}'".format(attribute))
+        log.debug("Field '%s' is %s", field.name, attribute.name)
 
     def set_value(self, log, field, value):
         field.value = value
@@ -272,7 +272,7 @@ class TimeModeParser(FieldParser):
 
     def parse_scalar(self, log, field, value):
         self.parse_mode(log, field, value)
-        self.set_attribute(log, field, Field.REQUIRED)
+        self.set_attribute(log, field, Field.Mode.REQUIRED)
 
 class TSIParser(TimeModeParser):
     def __init__(self):

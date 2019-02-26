@@ -20,20 +20,22 @@ class PacketType(IntEnum):
     # 1000-1111 reserved for future VRT Packet types
 
 class Field:
-    DISABLED = 0
-    OPTIONAL = 1
-    REQUIRED = 2
-    CONSTANT = 3
+    class Mode(IntEnum):
+        DISABLED  = 0
+        OPTIONAL  = 1
+        REQUIRED  = 2
+        MANDATORY = 3
 
-    __slots__ = ('_enable')
-    def __init__(self):
-        self._enable = Field.DISABLED
+    __slots__ = ('_constant', '_enable')
+    def __init__(self, enable=Mode.DISABLED):
+        self._enable = enable
+        self._constant = False
 
     @property
     def is_set(self):
         if self.has_value:
             return True
-        return self._enable in (Field.REQUIRED, Field.CONSTANT)
+        return self.is_mandatory
 
     @property
     def has_value(self):
@@ -41,35 +43,51 @@ class Field:
 
     @property
     def is_enabled(self):
-        return self._enable != Field.DISABLED
+        return self._enable != Field.Mode.DISABLED
 
     @property
     def is_required(self):
-        return self._enable == Field.REQUIRED
+        return self._enable in (Field.Mode.REQUIRED, Field.Mode.MANDATORY)
 
     def set_required(self):
-        self._enable = Field.REQUIRED
+        if self.is_mandatory:
+            # Mandatory state cannot be overwritten
+            return
+        self._enable = Field.Mode.REQUIRED
 
     @property
     def is_optional(self):
-        return self._enable == Field.OPTIONAL
+        return self._enable == Field.Mode.OPTIONAL
 
     def set_optional(self):
-        self._enable = Field.OPTIONAL
+        if self.is_mandatory:
+            raise ValueError('field is mandatory')
+        self._enable = Field.Mode.OPTIONAL
 
     @property
-    def is_constant(self):
-        return self._enable == Field.CONSTANT
+    def is_mandatory(self):
+        return self._enable == Field.Mode.MANDATORY
 
-    def set_constant(self):
-        self._enable = Field.CONSTANT
+    def set_mandatory(self):
+        self._enable = Field.Mode.MANDATORY
 
     @property
     def is_disabled(self):
-        return self._enable == Field.DISABLED
+        return self._enable == Field.Mode.DISABLED
 
     def set_disabled(self):
-        self._enable = Field.DISABLED
+        if self.is_mandatory:
+            raise ValueError('field is mandatory')
+        self._enable = Field.Mode.DISABLED
+
+    @property
+    def is_constant(self):
+        return self._constant
+
+    def set_constant(self):
+        if not self.is_required:
+            self.set_required()
+        self._constant = True
 
     @property
     def enable_flag(self):
@@ -609,7 +627,7 @@ class VRTCIFPacket(VRTPacket):
     """
     def __init__(self, name):
         super().__init__(name)
-        self.stream_id.set_required()
+        self.stream_id.set_mandatory()
         self.cif = [CIF0(), CIF1()]
 
     def get_header_bytes(self):
