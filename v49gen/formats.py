@@ -22,6 +22,17 @@ class TSF(IntEnum):
     REAL_TIME    = 2
     FREE_RUNNING = 3
 
+class TSM(IntEnum):
+    """
+    Timestamp Mode (TSM) of context packets:
+      FINE   (0) - Timestamp conveys precise timing of events related to the
+                   Described Signal
+      COARSE (1) - Timestamp conveys general timing of events related to the
+                   Described Signal
+    """
+    FINE   = 0
+    COARSE = 1
+
 class SSI(IntEnum):
     """
     Start/Stop of Sample Frame Indication (SSI) Bits:

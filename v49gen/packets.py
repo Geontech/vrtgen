@@ -295,7 +295,7 @@ class VRTDataPacket(VRTPacket):
     @property
     def is_v49_0(self):
         # TBD: How to check?
-        return True
+        return False
 
     @property
     def has_trailer(self):
@@ -614,7 +614,7 @@ class VRTCIFPacket(VRTPacket):
 class VRTContextPacket(VRTCIFPacket):
     def __init__(self, name):
         super().__init__(name)
-        self.is_timestamp_mode = False
+        self.timestamp_mode = TSM.FINE
 
     def packet_type(self):
         return PacketType.CONTEXT
@@ -625,15 +625,15 @@ class VRTContextPacket(VRTCIFPacket):
         # (N)ot a V49.0 packet
         # Timestamp Mode (TSM)
         indicator = 0
-        if not self.is_v49_0():
+        if not self.is_v49_0:
             indicator |= 0x02
-        if self.is_timestamp_mode:
-            indicator |= 0x01
+        indicator |= self.timestamp_mode
         return indicator
 
+    @property
     def is_v49_0(self):
         # TBD: How to check?
-        return True
+        return False
 
 class VRTCommandPacket(VRTCIFPacket):
     def __init__(self, name):

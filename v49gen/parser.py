@@ -326,6 +326,18 @@ class ContextPacketParser(PacketParser):
     def parse_payload(self, packet, value):
         CIFPayloadParser(self.log, packet).parse(value)
 
+    def parse_option(self, packet, name, value):
+        if name.casefold() == 'timestamp mode':
+            try:
+                packet.timestamp_mode = {'fine': TSM.FINE, 'coarse': TSM.COARSE}[value.casefold()]
+            except KeyError:
+                self.log.error("Invalid Timestamp Mode '%s'", value)
+            else:
+                self.log.debug('Timestamp Mode = %s', packet.timestamp_mode)
+            return True
+        else:
+            return False
+
 class CommandPacketParser(PacketParser):
     def create_packet(self, name):
         return VRTCommandPacket(name)
