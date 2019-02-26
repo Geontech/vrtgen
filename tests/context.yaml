@@ -47,3 +47,7 @@ TestContext:
       Noise Figure: 0
     Index List:
       entry size: 16
+    Discrete I/O 32:
+      - name: AGC Enable
+        bits: 1
+        position: 31

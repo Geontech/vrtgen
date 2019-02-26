@@ -132,6 +132,10 @@ class UserDefinedField(Field):
         name = 'UserDefined{:d}Field'.format(bits)
         return type(name, (cls,), {'bits':bits})
 
+    def add_field(self, name, bits, word=None, position=None):
+        # TODO: validation of fields (overlap, size, etc.)
+        pass
+
 class SimpleField(Field):
     def __init__(self):
         Field.__init__(self)
@@ -446,7 +450,7 @@ class CIF0(FieldContainer):
     # Channel) and an option Asychronous-Channel tag list. Most, if not all,
     # of this should be handled at run-time, with the only code generation
     # support being to enable the field.
-    context_association_lists = ('Context Association Lists', 8)
+    context_association_lists = field_descriptor('Context Association Lists', UnimplementedField, 8)
 
     # Field Attributes Enable (CIF7)
     # Reserved
@@ -512,6 +516,12 @@ class IndexListOptions(Field):
         if size not in (None, 8, 16, 32):
             raise ValueError('Index list entries must be 8, 16 or 32 bits')
         self.__size = size
+
+class DiscreteIO32Field(UserDefinedField):
+    bits = 32
+
+class DiscreteIO64Field(UserDefinedField):
+    bits = 64
 
 class CIF1(FieldContainer):
     # Phase Offset (1/31): fixed-point 16/7, radians (upper 16 reserved)
@@ -591,10 +601,10 @@ class CIF1(FieldContainer):
     index_list = field_descriptor('Index List', IndexListOptions, 7)
 
     # Discrete I/O 32-bit (1/6): 32 additional bits of user-defined fields
-    discrete_io_32 = field_descriptor('Discrete I/O 32', UnimplementedField, 6)
+    discrete_io_32 = field_descriptor('Discrete I/O 32', DiscreteIO32Field, 6)
 
     # Discrete I/O 64-bit (1/7): 64 additional bits of user-defined fields
-    discrete_io_64 = field_descriptor('Discrete I/O 64', UnimplementedField, 5), # 64 user-defined bits
+    discrete_io_64 = field_descriptor('Discrete I/O 64', DiscreteIO64Field, 5)
 
     # Health Status (1/4): 16-bit identifier
     health_status = field_descriptor('Health Status', Int16Field, 4)

@@ -134,6 +134,50 @@ class GenericFieldParser(FieldParser):
         else:
             raise TypeError('must be boolean, 0 or 1')
 
+class UserDefinedFieldParser(FieldParser):
+    def parse_scalar_value(self, log, value):
+        raise TypeError('user-defined fields must be a sequence or mapping')
+
+    def parse_mapping_entry(self, log, field, name, value):
+        if name == 'fields':
+            if not isinstance(value, list):
+                raise TypeError('user-defined fields must be a sequence')
+            self.parse_sequence(log, field, value)
+            return True
+        else:
+            return False
+
+    def parse_sequence(self, log, field, value):
+        log = log.getChild(field.name)
+        for index, item in enumerate(value):
+            try:
+                self.parse_user_defined_field(log, field, item)
+            except (ValueError, TypeError) as exc:
+                log.error('Invalid user-defined field %d: %s', index, exc)
+
+    def parse_user_defined_field(self, log, field, value):
+        if not isinstance(value, dict):
+            raise TypeError('must be a mapping')
+        name = None
+        bits = 1
+        word = None
+        position = None
+        for attr_name, attr_value in value.items():
+            if attr_name == 'name':
+                name = attr_value
+            elif attr_name == 'bits':
+                bits = int(attr_value)
+            elif attr_name == 'position':
+                position = int(attr_value)
+            elif attr_name == 'word':
+                word = int(attr_value)
+            else:
+                raise ValueError('invalid attribute {}'.format(attr_name))
+        if name is None:
+            raise ValueError('no name given')
+        field.add_field(name, bits, word, position)
+        log.debug("'%s' bits=%d position=%s/%s", name, bits, word, position)
+
 class SectionParser:
     FIELD_PARSERS = {}
 
@@ -236,6 +280,8 @@ class IndexListParser(FieldParser):
         return True
 
 CIFPayloadParser.add_field_parser(CIF1.index_list, IndexListParser())
+CIFPayloadParser.add_field_parser(CIF1.discrete_io_32, UserDefinedFieldParser())
+CIFPayloadParser.add_field_parser(CIF1.discrete_io_64, UserDefinedFieldParser())
 
 class PrologueParser(SectionParser):
     def __init__(self, log, prologue):
