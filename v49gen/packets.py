@@ -370,6 +370,26 @@ class GeolocationField(StructField):
     track_angle = field_descriptor('Track Angle', GeolocationAngleField)
     magnetic_variation = field_descriptor('Magnetic Variation', GeolocationAngleField)
 
+CartesianCoordinateField = FixedPointField.create(32, 5)
+
+class EphemerisField(StructField):
+    tsi = field_descriptor('TSI', TSIField)
+    tsf = field_descriptor('TSF', TSFField)
+    manufacturer_oui = field_descriptor('Manufacturer OUI', OUIField)
+    # Integer timestamp should be 0xFFFFFFFF if TSI is 0
+    integer_timestamp = field_descriptor('Integer-second Timestamp', Int32Field)
+    # Fractional timestamp should be 0xFFFFFFFFFFFFFFFF if TSF is 0
+    fractional_timestamp = field_descriptor('Fractional-second Timestamp', Int64Field)
+    position_x = field_descriptor('Position X', CartesianCoordinateField)
+    position_y = field_descriptor('Position Y', CartesianCoordinateField)
+    position_z = field_descriptor('Position Z', CartesianCoordinateField)
+    attitude_alpha = field_descriptor('Attitude Alpha', GeolocationAngleField)
+    attitude_beta = field_descriptor('Attitude Beta', GeolocationAngleField)
+    attitude_phi = field_descriptor('Attitude Phi', GeolocationAngleField)
+    velocity_dx = field_descriptor('Velocity dX', FixedPointField.create(32, 16))
+    velocity_dy = field_descriptor('Velocity dY', FixedPointField.create(32, 16))
+    velocity_dz = field_descriptor('Velocity dZ', FixedPointField.create(32, 16))
+
 class CIF0(FieldContainer):
     # Context Field Change Indicator (0/31) is a binary flag that can be
     # set at run-time. No configuration is possible.
@@ -429,11 +449,11 @@ class CIF0(FieldContainer):
     formatted_ins = field_descriptor('Formatted INS', GeolocationField, 13)
 
     # ECEF Ephemeris (0/12): structured
-    ecef_ephemeris = field_descriptor('ECEF Ephemeris', UnimplementedField, 12)
+    ecef_ephemeris = field_descriptor('ECEF Ephemeris', EphemerisField, 12)
 
     # Relative Ephemeris (0/11): same format as ECEF Ephemeris
     # See also Ephemeris Reference Identifier
-    relative_ephemeris = field_descriptor('Relative Ephemeris', UnimplementedField, 11)
+    relative_ephemeris = field_descriptor('Relative Ephemeris', EphemerisField, 11)
 
     # Ephemeric Reference Identifier (0/10): Stream ID of context packet stream
     # whose ECEF Ephemeris is necessary to translate Relative Ephemeris
