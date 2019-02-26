@@ -173,6 +173,10 @@ class StructField(Field, FieldContainer):
     def __init__(self):
         Field.__init__(self)
         FieldContainer.__init__(self)
+        # By default, all struct fields are required. They can marked as
+        # optional or unused later.
+        for field in self.fields:
+            field.enable = Field.Mode.REQUIRED
 
     @property
     def has_value(self):
@@ -330,11 +334,6 @@ class VRTDataPacket(VRTPacket):
 class GainField(StructField):
     stage1 = field_descriptor('Stage 1', FixedPointField.create(16, 7))
     stage2 = field_descriptor('Stage 2', FixedPointField.create(16, 7))
-
-    def __init__(self):
-        super().__init__()
-        self.stage1.enable = Field.Mode.REQUIRED
-        self.stage2.enable = Field.Mode.REQUIRED
 
 class StateEventIndicators(StructField):
     calibrated_time = field_descriptor('Calibrated Time', BitField, 31)
