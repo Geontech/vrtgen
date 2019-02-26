@@ -28,7 +28,7 @@ class Field:
 
     __slots__ = ('_constant', '_enable')
     def __init__(self, enable=Mode.DISABLED):
-        self._enable = enable
+        self._enable = Field.Mode(enable)
         self._constant = False
 
     @property
@@ -46,39 +46,34 @@ class Field:
         return self._enable != Field.Mode.DISABLED
 
     @property
-    def is_required(self):
-        return self._enable in (Field.Mode.REQUIRED, Field.Mode.MANDATORY)
+    def enable(self):
+        return self._enable
 
-    def set_required(self):
+    @enable.setter
+    def enable(self, enabled):
+        enabled = Field.Mode(enabled)
         if self.is_mandatory:
             # Mandatory state cannot be overwritten
+            if enabled in (Field.Mode.DISABLED, Field.Mode.OPTIONAL):
+                raise ValueError('field is mandatory')
             return
-        self._enable = Field.Mode.REQUIRED
+        self._enabled = enabled
+
+    @property
+    def is_required(self):
+        return self._enable in (Field.Mode.REQUIRED, Field.Mode.MANDATORY)
 
     @property
     def is_optional(self):
         return self._enable == Field.Mode.OPTIONAL
 
-    def set_optional(self):
-        if self.is_mandatory:
-            raise ValueError('field is mandatory')
-        self._enable = Field.Mode.OPTIONAL
-
     @property
     def is_mandatory(self):
         return self._enable == Field.Mode.MANDATORY
 
-    def set_mandatory(self):
-        self._enable = Field.Mode.MANDATORY
-
     @property
     def is_disabled(self):
         return self._enable == Field.Mode.DISABLED
-
-    def set_disabled(self):
-        if self.is_mandatory:
-            raise ValueError('field is mandatory')
-        self._enable = Field.Mode.DISABLED
 
     @property
     def is_constant(self):
@@ -86,7 +81,7 @@ class Field:
 
     def set_constant(self):
         if not self.is_required:
-            self.set_required()
+            self.enable = Field.Mode.REQUIRED
         self._constant = True
 
     @property
@@ -332,8 +327,8 @@ class GainField(StructField):
 
     def __init__(self):
         super().__init__()
-        self.stage1.set_required()
-        self.stage2.set_required()
+        self.stage1.enable = Field.Mode.REQUIRED
+        self.stage2.enable = Field.Mode.REQUIRED
 
 class StateEventIndicators(StructField):
     calibrated_time = field_descriptor('Calibrated Time', BitField, 31)
@@ -627,7 +622,7 @@ class VRTCIFPacket(VRTPacket):
     """
     def __init__(self, name):
         super().__init__(name)
-        self.stream_id.set_mandatory()
+        self.stream_id.enable = Field.Mode.MANDATORY
         self.cif = [CIF0(), CIF1()]
 
     def get_header_bytes(self):

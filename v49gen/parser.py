@@ -39,22 +39,22 @@ class FieldParser:
         elif isinstance(value, list):
             self.parse_sequence(log, field, value)
         else:
-            attribute = self.parse_attribute(value)
-            if attribute is not None:
-                self.set_attribute(log, field, attribute)
+            enable = self.parse_enable(value)
+            if enable is not None:
+                self.set_enable(log, field, enable)
             else:
                 self.parse_scalar(log, field, value)
 
     def parse_mapping(self, log, field, mapping):
-        attribute = Field.Mode.REQUIRED
+        enable = Field.Mode.REQUIRED
         for key, value in mapping.items():
             if key == 'required':
                 if not value:
-                    attribute = Field.Mode.OPTIONAL
+                    enable = Field.Mode.OPTIONAL
             elif not self.parse_mapping_entry(log, field, key, value):
                 log.warn("Invalid option '%s' for field '%s'", key, field.name)
 
-        self.set_attribute(log, field, attribute)
+        self.set_enable(log, field, enable)
 
     def parse_mapping_entry(self, log, field, key, value):
         return False
@@ -73,7 +73,7 @@ class FieldParser:
     def parse_scalar_value(self, field, value):
         raise TypeError("{0} is not a valid value for field '{1}'".format(value, field.name))
 
-    def parse_attribute(self, value):
+    def parse_enable(self, value):
         if isinstance(value, str):
             return {
                 'required': Field.Mode.REQUIRED,
@@ -83,22 +83,12 @@ class FieldParser:
         else:
             return None
 
-    def set_attribute(self, log, field, attribute):
-        if attribute == Field.Mode.REQUIRED:
-            if field.is_required:
-                return
-            field.set_required()
-        elif attribute == Field.Mode.OPTIONAL:
-            if field.is_optional:
-                return
-            field.set_optional()
-        elif attribute == Field.Mode.DISABLED:
-            if field.is_disabled:
-                return
-            field.set_disabled()
-        else:
-            raise ValueError("Invalid attribute '{}'".format(attribute))
-        log.debug("Field '%s' is %s", field.name, attribute.name)
+    def set_enable(self, log, field, enable):
+        enable = Field.Mode(enable)
+        if enable == field.enable:
+            return
+        field.enable = enable
+        log.debug("Field '%s' is %s", field.name, enable.name)
 
     def set_value(self, log, field, value):
         field.value = value
@@ -272,7 +262,7 @@ class TimeModeParser(FieldParser):
 
     def parse_scalar(self, log, field, value):
         self.parse_mode(log, field, value)
-        self.set_attribute(log, field, Field.Mode.REQUIRED)
+        self.set_enable(log, field, Field.Mode.REQUIRED)
 
 class TSIParser(TimeModeParser):
     def __init__(self):
