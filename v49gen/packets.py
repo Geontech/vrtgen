@@ -214,11 +214,11 @@ class VRTPacket(object):
 
     @property
     def tsi(self):
-        return self.prologue.integer_timestamp
+        return self.prologue.integer_timestamp.mode
 
     @property
     def tsf(self):
-        return self.prologue.fractional_timestamp
+        return self.prologue.fractional_timestamp.mode
 
     def get_header_bytes(self):
         header = bytearray(4)
@@ -227,8 +227,8 @@ class VRTPacket(object):
         if self.class_id.is_set:
             header[0] |= 0x08
         header[0] |= self.packet_specific_bits()
-        header[1] = self.tsi.mode << 6
-        header[1] |= self.tsf.mode << 4
+        header[1] = self.tsi << 6
+        header[1] |= self.tsf << 4
 
         return header
 
