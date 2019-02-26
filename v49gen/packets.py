@@ -57,7 +57,7 @@ class Field:
             if enabled in (Field.Mode.DISABLED, Field.Mode.OPTIONAL):
                 raise ValueError('field is mandatory')
             return
-        self._enabled = enabled
+        self._enable = enabled
 
     @property
     def is_required(self):
@@ -190,17 +190,15 @@ class ClassIDField(StructField):
     information_class = field_descriptor('Information Class Code', Int16Field)
     packet_class = field_descriptor('Packet Class Code', Int16Field)
 
-class TSIField(Int32Field):
-    __slots__ = ('mode',)
+class TSIField(SimpleField):
     def __init__(self):
         super().__init__()
-        self.mode = TSI.NONE
+        self.value = TSI.NONE
 
-class TSFField(Int64Field):
-    __slots__ = ('mode',)
+class TSFField(SimpleField):
     def __init__(self):
         super().__init__()
-        self.mode = TSF.NONE
+        self.value = TSF.NONE
 
 class DeviceIDField(StructField):
     manufacturer_oui = field_descriptor('Manufacturer OUI', OUIField)
@@ -209,11 +207,15 @@ class DeviceIDField(StructField):
 class VRTPrologue(FieldContainer):
     stream_id = field_descriptor('Stream ID', StreamID)
     class_id = field_descriptor('Class ID', ClassIDField)
-    integer_timestamp = field_descriptor('TSI', TSIField)
-    fractional_timestamp = field_descriptor('TSF', TSFField)
+    tsi = field_descriptor('TSI', TSIField)
+    tsf = field_descriptor('TSF', TSFField)
+    integer_timestamp = field_descriptor('Integer Timestamp', Int32Field)
+    fractional_timestamp = field_descriptor('Fractional Timestamp', Int64Field)
 
     def __init__(self):
         super().__init__()
+        self.tsi.enable = Field.Mode.MANDATORY
+        self.tsf.enable = Field.Mode.MANDATORY
 
 class VRTPacket(object):
     def __init__(self, name):
@@ -234,11 +236,11 @@ class VRTPacket(object):
 
     @property
     def tsi(self):
-        return self.prologue.integer_timestamp.mode
+        return self.prologue.tsi.value
 
     @property
     def tsf(self):
-        return self.prologue.fractional_timestamp.mode
+        return self.prologue.tsf.value
 
     def get_header_bytes(self):
         header = bytearray(4)

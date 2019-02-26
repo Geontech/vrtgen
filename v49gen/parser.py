@@ -84,11 +84,8 @@ class FieldParser:
             return None
 
     def set_enable(self, log, field, enable):
-        enable = Field.Mode(enable)
-        if enable == field.enable:
-            return
         field.enable = enable
-        log.debug("Field '%s' is %s", field.name, enable.name)
+        log.debug("Field '%s' is %s", field.name, field.enable)
 
     def set_value(self, log, field, value):
         field.value = value
@@ -243,37 +240,6 @@ CIFPayloadParser.add_field_parser(CIF1.index_list, IndexListParser())
 class PrologueParser(SectionParser):
     def __init__(self, log, prologue):
         super().__init__(log.getChild('Prologue'), prologue)
-
-class TimeModeParser(FieldParser):
-    def __init__(self, func):
-        self.func = func
-
-    def parse_mode(self, log, field, value):
-        mode = self.func(value)
-        field.mode = mode
-        log.debug('%s mode is %s', field.name, mode)
-
-    def parse_mapping_entry(self, log, field, name, value):
-        if name == 'format':
-            self.parse_mode(log, field, value)
-        else:
-            return False
-        return True
-
-    def parse_scalar(self, log, field, value):
-        self.parse_mode(log, field, value)
-        self.set_enable(log, field, Field.Mode.REQUIRED)
-
-class TSIParser(TimeModeParser):
-    def __init__(self):
-        super().__init__(value_to_tsi)
-
-class TSFParser(TimeModeParser):
-    def __init__(self):
-        super().__init__(value_to_tsf)
-
-PrologueParser.add_field_parser(VRTPrologue.integer_timestamp, TSIParser())
-PrologueParser.add_field_parser(VRTPrologue.fractional_timestamp, TSFParser())
 
 class PacketParser:
     def __init__(self, name):

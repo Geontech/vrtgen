@@ -6,12 +6,10 @@ TestData:
   type: data
   prologue:
     Stream ID: required
-    TSI:
-      required: false
-      format: utc
-    TSF:
-      required: false
-      format: picoseconds
+    TSI: utc
+    TSF: picoseconds
+    Integer Timestamp: required
+    Fractional Timestamp: required
     Class ID:
       OUI: FF-FF-FF
       Information Class Code: 0x0001
