@@ -76,7 +76,8 @@ class FieldParser:
         if isinstance(value, str):
             return {
                 'required': Field.REQUIRED,
-                'optional': Field.OPTIONAL
+                'optional': Field.OPTIONAL,
+                'disabled': Field.DISABLED
             }.get(value.casefold(), None)
         else:
             return None
@@ -94,6 +95,10 @@ class FieldParser:
             if not field.is_constant:
                 log.debug("Field '%s' is constant", field.name)
                 field.set_constant()
+        elif attribute == Field.DISABLED:
+            if not field.is_disabled:
+                log.debug("Field '%s' is disabled", field.name)
+                field.set_disabled()
 
     def set_value(self, log, field, value):
         field.value = value

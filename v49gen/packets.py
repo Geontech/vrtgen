@@ -65,6 +65,13 @@ class Field:
         self._enable = Field.CONSTANT
 
     @property
+    def is_disabled(self):
+        return self._enable == Field.DISABLED
+
+    def set_disabled(self):
+        self._enable = Field.DISABLED
+
+    @property
     def enable_flag(self):
         return 1 << self.enable_bit
 
@@ -304,6 +311,11 @@ class VRTDataPacket(VRTPacket):
 class GainField(StructField):
     stage1 = field_descriptor('Stage 1', FixedPointField.create(16, 7))
     stage2 = field_descriptor('Stage 2', FixedPointField.create(16, 7))
+
+    def __init__(self):
+        super().__init__()
+        self.stage1.set_required()
+        self.stage2.set_required()
 
 class StateEventIndicators(StructField):
     calibrated_time = field_descriptor('Calibrated Time', BitField, 31)
