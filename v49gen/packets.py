@@ -318,6 +318,27 @@ class StateEventIndicators(StructField):
     # [7..0] User-Defined
     user_defined = field_descriptor('User-Defined', UserDefinedField.create(8))
 
+class GeolocationAngleField(FixedPointField):
+    bits = 32
+    radix = 22
+    UNSPECIFIED = 0x7FFFFFFF
+
+class GeolocationField(StructField):
+    tsi = field_descriptor('TSI', TSIField)
+    tsf = field_descriptor('TSF', TSFField)
+    manufacturer_oui = field_descriptor('Manufacturer OUI', OUIField)
+    # Integer timestamp should be 0xFFFFFFFF if TSI is 0
+    integer_timestamp = field_descriptor('Integer-second Timestamp', Int32Field)
+    # Fractional timestamp should be 0xFFFFFFFFFFFFFFFF if TSF is 0
+    fractional_timestamp = field_descriptor('Fractional-second Timestamp', Int64Field)
+    latitude = field_descriptor('Latitude', GeolocationAngleField)
+    longitude = field_descriptor('Longitude', GeolocationAngleField)
+    altitude = field_descriptor('Altitude', FixedPointField.create(32, 5))
+    ground_speed = field_descriptor('Speed Over Ground', FixedPointField.create(32,16))
+    heading_angle = field_descriptor('Heading Angle', GeolocationAngleField)
+    track_angle = field_descriptor('Track Angle', GeolocationAngleField)
+    magnetic_variation = field_descriptor('Magnetic Variation', GeolocationAngleField)
+
 class CIF0(FieldContainer):
     # Context Field Change Indicator (0/31) is a binary flag that can be
     # set at run-time. No configuration is possible.
@@ -371,10 +392,10 @@ class CIF0(FieldContainer):
     data_format = field_descriptor('Signal Data Packet Payload Format', UnimplementedField, 15)
 
     # Formatted GPS (0/14): structured
-    formatted_gps = field_descriptor('Formatted GPS', UnimplementedField, 14)
+    formatted_gps = field_descriptor('Formatted GPS', GeolocationField, 14)
 
     # Formatted INS (0/13): same format as GPS
-    formatted_ins = field_descriptor('Formatted INS', UnimplementedField, 13)
+    formatted_ins = field_descriptor('Formatted INS', GeolocationField, 13)
 
     # ECEF Ephemeris (0/12): structured
     ecef_ephemeris = field_descriptor('ECEF Ephemeris', UnimplementedField, 12)

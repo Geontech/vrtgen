@@ -4,6 +4,11 @@ TestContext:
     Class ID:
       OUI: FF-FF-FF
   payload:
+    Formatted GPS:
+      Manufacturer OUI: 12-34-56
+    Formatted INS:
+      TSI: utc
+      TSF: picoseconds
     Gain:
       required: False
       Stage 1: 0.0

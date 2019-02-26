@@ -5,6 +5,33 @@ import re
 
 import yaml
 
+
+TSI_VALUES = {
+    'none':  TSI.NONE,
+    'utc':   TSI.UTC,
+    'gps':   TSI.GPS,
+    'other': TSI.OTHER
+}
+
+def value_to_tsi(value):
+    try:
+        return TSI_VALUES[value.casefold()]
+    except KeyError:
+        raise ValueError(value)
+
+TSF_VALUES = {
+    'none':         TSF.NONE,
+    'samples':      TSF.SAMPLE_COUNT,
+    'picoseconds':  TSF.REAL_TIME,
+    'free running': TSF.FREE_RUNNING
+}
+
+def value_to_tsf(value):
+    try:
+        return TSF_VALUES[value.casefold()]
+    except KeyError:
+        raise ValueError(value)
+
 class FieldParser:
     def __call__(self, log, field, value):
         if isinstance(value, dict):
@@ -84,7 +111,11 @@ class GenericFieldParser(FieldParser):
     def parse_scalar_value(self, field, value):
         if isinstance(field, OUIField):
             return self.parse_oui(value)
-        if isinstance(field, BitField):
+        elif isinstance(field, TSIField):
+            return value_to_tsi(value)
+        elif isinstance(field, TSFField):
+            return value_to_tsf(value)
+        elif isinstance(field, BitField):
             return self.to_bool(value)
         elif isinstance(field, FixedPointField):
             return float(value)
@@ -219,13 +250,11 @@ class PrologueParser(SectionParser):
         super().__init__(log.getChild('Prologue'), prologue)
 
 class TimeModeParser(FieldParser):
-    def __init__(self, values):
-        self.values = values
+    def __init__(self, func):
+        self.func = func
 
     def parse_mode(self, log, field, value):
-        mode = self.values.get(value.casefold(), None)
-        if mode is None:
-            raise ValueError(value)
+        mode = self.func(value)
         field.mode = mode
         log.debug('%s mode is %s', field.name, mode)
 
@@ -242,23 +271,11 @@ class TimeModeParser(FieldParser):
 
 class TSIParser(TimeModeParser):
     def __init__(self):
-        values = {
-            'none':  TSI.NONE,
-            'utc':   TSI.UTC,
-            'gps':   TSI.GPS,
-            'other': TSI.OTHER
-        }
-        super().__init__(values)
+        super().__init__(value_to_tsi)
 
 class TSFParser(TimeModeParser):
     def __init__(self):
-        values = {
-            'none':         TSF.NONE,
-            'samples':      TSF.SAMPLE_COUNT,
-            'picoseconds':  TSF.REAL_TIME,
-            'free running': TSF.FREE_RUNNING
-        }
-        super().__init__(values)
+        super().__init__(value_to_tsf)
 
 PrologueParser.add_field_parser(VRTPrologue.integer_timestamp, TSIParser())
 PrologueParser.add_field_parser(VRTPrologue.fractional_timestamp, TSFParser())
