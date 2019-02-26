@@ -19,7 +19,7 @@ TestData:
   trailer:
     Calibrated Time:
       required: true
-      value: true
+      default: true
     Valid Data: true
     AGC/MGC: required
     Associated Context Packet Count: required

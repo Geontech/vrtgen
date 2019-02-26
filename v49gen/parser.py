@@ -132,7 +132,7 @@ class GenericFieldParser(FieldParser):
             raise NotImplementedError("unsupported field '{}'".format(field.name))
 
     def parse_mapping_entry(self, log, field, name, value):
-        if name == 'value':
+        if name == 'default':
             value = self.parse_scalar_value(field, value)
             self.set_value(log, field, value)
         else:
