@@ -1,4 +1,4 @@
-from .packets import *
+from .packet import *
 
 import logging
 import re
