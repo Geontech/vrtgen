@@ -7,6 +7,7 @@ import argparse
 import sys
 
 from v49gen.parser import FileParser
+from v49gen.backend.cpp import CppGenerator
 
 logging.basicConfig()
 
@@ -35,13 +36,14 @@ if __name__ == '__main__':
 
     for filename in args.filename:
         logging.debug('Parsing %s', filename)
+        generator = CppGenerator()
         for packet in FileParser().parse(filename):
-            prologue = packet.get_prologue_bytes()
             if args.verbose:
                 print('Packet ' + packet.name)
-                print('Prologue:')
+                prologue = packet.get_prologue_bytes()
                 dump_bytes(prologue, sys.stdout)
                 if packet.has_trailer:
                     trailer = packet.trailer.get_bytes()
                     print('Trailer:')
                     dump_bytes(trailer, sys.stdout)
+            generator.generate(packet)
