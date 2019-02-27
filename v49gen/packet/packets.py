@@ -60,7 +60,7 @@ class VRTPacket(object):
     def tsf(self):
         return self.prologue.tsf.value
 
-    def get_header_bytes(self):
+    def get_prologue_bytes(self):
         header = bytearray(4)
 
         header[0] = self.packet_type() << 4
@@ -70,7 +70,20 @@ class VRTPacket(object):
         header[1] = self.tsi << 6
         header[1] |= self.tsf << 4
 
-        return header
+        if self.tsi != TSI.NONE:
+            ts = self.prologue.integer_timestamp.value
+            if ts is None:
+                ts = 0
+            header += struct.pack('>I', ts)
+        if self.tsf != TSF.NONE:
+            ts = self.prologue.fractional_timestamp.value
+            if ts is None:
+                ts = 0
+            header += struct.pack('>Q', ts)
+        return header + self._get_prologue_bytes()
+
+    def _get_prologue_bytes(self):
+        return b''
 
     def validate(self):
         self.prologue.validate()
@@ -367,9 +380,8 @@ class VRTCIFPacket(VRTPacket):
         self.stream_id.enable = Field.Mode.MANDATORY
         self.cif = [CIF0(), CIF1()]
 
-    def get_header_bytes(self):
-        base = super().get_header_bytes()
-        return base + self.cif[0].get_prologue_bytes()
+    def _get_prologue_bytes(self):
+        return b''.join(cif.get_prologue_bytes() for cif in self.cif)
 
     def get_field(self, name):
         for cif in self.cif:

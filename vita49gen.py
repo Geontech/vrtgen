@@ -36,7 +36,7 @@ if __name__ == '__main__':
     for filename in args.filename:
         logging.debug('Parsing %s', filename)
         for packet in FileParser().parse(filename):
-            prologue = packet.get_header_bytes()
+            prologue = packet.get_prologue_bytes()
             if args.verbose:
                 print('Packet ' + packet.name)
                 print('Prologue:')
