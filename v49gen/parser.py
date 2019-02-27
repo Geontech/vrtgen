@@ -381,6 +381,8 @@ class FileParser:
             else:
                 logging.info('Processing packet %s', name)
                 try:
-                    yield self.parse_packet(name, value)
+                    packet = self.parse_packet(name, value)
+                    packet.validate()
+                    yield packet
                 except Exception as exc:
                     logging.exception("%s %s", name, str(exc))

@@ -32,6 +32,9 @@ class VRTPrologue(FieldContainer):
         self.tsi.enable = Field.Mode.MANDATORY
         self.tsf.enable = Field.Mode.MANDATORY
 
+    def validate(self):
+        pass
+
 class VRTPacket(object):
     def __init__(self, name):
         self.name = name
@@ -69,6 +72,9 @@ class VRTPacket(object):
 
         return header
 
+    def validate(self):
+        self.prologue.validate()
+
 class VRTDataTrailer(FieldContainer):
     calibrated_time = field_descriptor('Calibrated Time', BitField, 31)
     valid_data = field_descriptor('Valid Data', BitField, 30)
@@ -102,6 +108,9 @@ class VRTDataTrailer(FieldContainer):
     @property
     def is_enabled(self):
         return any(field.is_enabled for field in self.fields)
+
+    def validate(self):
+        pass
 
 class VRTDataPacket(VRTPacket):
     def __init__(self, name):
@@ -138,7 +147,22 @@ class VRTDataPacket(VRTPacket):
     def has_trailer(self):
         return self.trailer.is_enabled
 
-class CIF0(FieldContainer):
+    def validate(self):
+        super().validate()
+        self.trailer.validate()
+
+class ContextIndicatorFields(FieldContainer):
+    def get_prologue_bytes(self):
+        prologue = 0
+        for field in self.fields:
+            if field.is_set:
+                prologue |= 1 << field.enable_bit
+        return struct.pack('>I', prologue)
+
+    def validate(self):
+        pass
+
+class CIF0(ContextIndicatorFields):
     # Context Field Change Indicator (0/31) is a binary flag that can be
     # set at run-time. No configuration is possible.
 
@@ -229,14 +253,7 @@ class CIF0(FieldContainer):
     # CIF 1 Enable
     # Reserved
 
-    def get_prologue_bytes(self):
-        prologue = 0
-        for field in self.fields:
-            if field.is_set:
-                prologue |= 1 << field.enable_bit
-        return struct.pack('>I', prologue)
-
-class CIF1(FieldContainer):
+class CIF1(ContextIndicatorFields):
     # Phase Offset (1/31): fixed-point 16/7, radians (upper 16 reserved)
     phase_offset = field_descriptor('Phase Offset', FixedPointField.create(16, 7), 31)
 
@@ -360,6 +377,10 @@ class VRTCIFPacket(VRTPacket):
             if field is not None:
                 return field
         return None
+
+    def validate(self):
+        for cif in self.cif:
+            cif.validate()
 
 class VRTContextPacket(VRTCIFPacket):
     def __init__(self, name):
