@@ -1,3 +1,4 @@
+from v49gen.model.enums import *
 from v49gen.model.packets import *
 
 import jinja2

@@ -1,7 +1,7 @@
 from enum import IntEnum
 import struct
 
-from .formats import *
+from .enums import *
 from .field import *
 
 class PacketType(IntEnum):

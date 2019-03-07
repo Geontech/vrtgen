@@ -1,7 +1,7 @@
 from enum import IntEnum
 import inspect
 
-from .formats import *
+from .enums import *
 
 class Field:
     class Mode(IntEnum):

@@ -1,5 +1,5 @@
 from .model.field import *
-from .model.formats import *
+from .model.enums import TSI, TSF, SSI
 from .model.packets import *
 
 import logging
