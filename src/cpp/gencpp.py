@@ -1,4 +1,4 @@
-from v49gen.packet.packets import *
+from v49gen.model.packets import *
 
 import sys
 

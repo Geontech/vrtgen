@@ -1,6 +1,7 @@
 import jinja2
 
-from v49gen.packet import *
+from v49gen.model.field import *
+from v49gen.model.packets import *
 
 JINJA_OPTIONS = {
     'trim_blocks':           True,

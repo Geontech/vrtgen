@@ -1,4 +1,6 @@
-from .packet import *
+from .model.field import *
+from .model.formats import *
+from .model.packets import *
 
 import logging
 import re
