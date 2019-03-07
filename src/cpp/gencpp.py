@@ -1,57 +1,29 @@
 from v49gen.model.packets import *
 
+import jinja2
 import sys
 
-class IndentedWriter:
-    def __init__(self, stream, indent=4):
-        self._stream = stream
-        self._indent = indent
-        self._prefix = ''
+JINJA_OPTIONS = {
+    'trim_blocks':           True,
+    'line_statement_prefix': '//%',
+    'variable_start_string': '${',
+    'variable_end_string':   '}',
+    'block_start_string':    '/*{%',
+    'block_end_string':      '%}*/',
+    'comment_start_string':  '/*#',
+    'comment_end_string':    '#*/'
+}
 
-    def write(self, text):
-        if self._prefix:
-            self._stream.write(self._prefix)
-        self._stream.write(text)
-        self._stream.write('\n')
-
-    def push(self):
-        self._prefix += ' ' * self._indent
-
-    def pop(self):
-        self._prefix = self._prefix[:-self._indent]
-
-def docstring_to_comment(doc):
+def format_docstring(doc):
     if not doc:
         return
-    yield '/**'
     if doc.startswith('\n'):
         doc = doc[1:]
     indent = 0
     while doc[indent].isspace():
         indent += 1
     for line in doc.rstrip().split('\n'):
-        yield ' * ' + line[indent:]
-    yield ' */'
-
-def generate_enum(stream, enum, name=None, format=None):
-    stream.write('')
-    if name is None:
-        name = enum.__name__
-    stream.write("namespace {} {{".format(name))
-    stream.push()
-    for line in docstring_to_comment(enum.__doc__):
-        stream.write(line)
-    stream.write("enum Code {")
-    stream.push()
-    if format is None:
-        format = "{}"
-    fmt = "{} = " + format + ","
-    for item in enum:
-        stream.write(fmt.format(item.name, item.value))
-    stream.pop()
-    stream.write("};")
-    stream.pop()
-    stream.write("}")
+        yield line[indent:]
 
 def name_to_identifier(name):
     identifier = ''
@@ -60,61 +32,45 @@ def name_to_identifier(name):
             identifier += ch
     return identifier
 
-def generate_struct(stream, structdef, name=None):
-    stream.write('')
-    if name is None:
-        name = structdef.__name__
-    stream.write('struct {} {{'.format(name))
-    stream.push()
-    stream.write('uint32_t word;')
-    stream.write('};')
-    for attr, field in structdef.get_field_descriptors():
-        identifier = name_to_identifier(field.name)
-        bit = field.enable_bit
-        stream.write('')
+def format_enum(enum, format='{}'):
+    return {
+        'name': enum.__name__,
+        'doc': format_docstring(enum.__doc__),
+        'format': format.format,
+        'values': list(enum)
+    }
 
-        stream.write("bool get{}() const".format(identifier));
-        stream.write('{')
-        stream.push()
-        stream.write('return GET_BIT(word, {});'.format(bit))
-        stream.pop()
-        stream.write('}')
-
-        stream.write('')
-        stream.write("void set{}(bool enable)".format(identifier));
-        stream.write('{')
-        stream.push()
-        stream.write('SET_BIT(word, {}, enable);'.format(bit))
-        stream.pop()
-        stream.write('}')
-    stream.pop()
-    stream.write('};')
+def format_cif(cif):
+    fields = []
+    for attr, field in cif.get_field_descriptors():
+        fields.append({'name': name_to_identifier(field.name), 'bit': field.enable_bit})
+    return {
+        'name': cif.__name__,
+        'fields': fields
+    }
 
 def main():
-    with open('packing.hpp', 'w') as fp:
-        stream = IndentedWriter(fp)
-        stream.write('#ifndef _VRTGEN_PACKING_HPP_')
-        stream.write('#define _VRTGEN_PACKING_HPP_')
-        stream.write('')
-        stream.write('#include <inttypes.h>')
-        stream.write('')
-        stream.write('#define SET_BIT(x,bit,enable)')
-        stream.write('#define GET_BIT(x,bit) false')
-        stream.write('namespace vrtgen {')
-        stream.push()
-        generate_enum(stream, PacketType, format="0b{:04b}")
-        generate_enum(stream, TSI, format="0b{:02b}")
-        generate_enum(stream, TSF, format="0b{:02b}")
-        generate_enum(stream, SSI, format="0b{:02b}")
-        stream.write('namespace packing {')
-        stream.push()
-        generate_struct(stream, CIF0, name='CIF0Prologue')
-        generate_struct(stream, CIF1, name='CIF1Prologue')
-        stream.pop()
-        stream.write('}')
-        stream.pop()
-        stream.write('}')
-        stream.write('#endif // _VRTGEN_PACKING_HPP_')
+    loader = jinja2.FileSystemLoader('templates')
+    env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
+    template = env.get_template('enums.hpp')
+    enums = [
+        format_enum(PacketType, '0b{:04b}'),
+        format_enum(TSI, '0b{:02b}'),
+        format_enum(TSF, '0b{:02b}'),
+        format_enum(TSM),
+        format_enum(SSI, '0b{:02b}'),
+        format_enum(PackingMethod),
+        format_enum(DataSampleType, '0b{:02b}'),
+        format_enum(DataItemFormat, '0b{:05b}'),
+    ]
+    with open('enums.hpp', 'w') as fp:
+        fp.write(template.render({'enums': enums}))
+
+    template = env.get_template('cif.hpp')
+    for cif in [CIF0, CIF1]:
+        filename = cif.__name__.lower() + '.hpp'
+        with open(filename, 'w') as fp:
+            fp.write(template.render(format_cif(cif)))
 
 if __name__ == '__main__':
     main()
