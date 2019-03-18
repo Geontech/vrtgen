@@ -1,7 +1,7 @@
 import jinja2
 
-from v49gen.model.field import *
-from v49gen.model.packets import *
+from vrtgen.model.field import *
+from vrtgen.model.packets import *
 
 JINJA_OPTIONS = {
     'trim_blocks':           True,
@@ -34,7 +34,7 @@ class CppPacket:
 
 class CppGenerator:
     def __init__(self, standard='c++03'):
-        loader = jinja2.FileSystemLoader('v49gen/backend/templates')
+        loader = jinja2.FileSystemLoader('vrtgen/backend/templates')
         self.env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
         self.template = self.env.get_template('packet.hpp')
         self.standard = 'c++03'

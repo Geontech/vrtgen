@@ -1,5 +1,5 @@
-from v49gen.model.enums import *
-from v49gen.model.packets import *
+from vrtgen.model.enums import *
+from vrtgen.model.packets import *
 
 import jinja2
 import sys

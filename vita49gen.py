@@ -6,8 +6,8 @@ import logging
 import argparse
 import sys
 
-from v49gen.parser import FileParser
-from v49gen.backend.cpp import CppGenerator
+from vrtgen.parser import FileParser
+from vrtgen.backend.cpp import CppGenerator
 
 logging.basicConfig()
 
