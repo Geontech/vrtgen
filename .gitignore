@@ -1,2 +1,3 @@
 *.pyc
-src/cpp/*.hpp
+src/cpp/include/vrtgen/enums.hpp
+src/cpp/include/vrtgen/packing/*.hpp

@@ -4,8 +4,7 @@
 
 #include <inttypes.h>
 
-#define SET_BIT(x,bit,v)
-#define GET_BIT(x,bit) false
+#include <vrtgen/utils/macros.hpp>
 
 namespace vrtgen {
     namespace packing {
@@ -13,12 +12,12 @@ namespace vrtgen {
             uint32_t word;
 /*{% for field in fields %}*/
 
-            bool get${field.name}() const {
-                return GET_BIT(word, ${field.bit});
+            bool get${field.name}Enable() const {
+                return GET_BIT32(word, ${field.bit});
             }
 
-            void set${field.name}(bool enable) {
-                SET_BIT(word, ${field.bit}, enable);
+            void set${field.name}Enable(bool enable) {
+                SET_BIT32(word, ${field.bit}, enable);
             }
 /*{% endfor %}*/
         };

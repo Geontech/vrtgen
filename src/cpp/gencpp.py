@@ -3,6 +3,7 @@ from vrtgen.model.packets import *
 
 import jinja2
 import sys
+import os
 
 JINJA_OPTIONS = {
     'trim_blocks':           True,
@@ -64,13 +65,17 @@ def main():
         format_enum(DataSampleType, '0b{:02b}'),
         format_enum(DataItemFormat, '0b{:05b}'),
     ]
-    with open('enums.hpp', 'w') as fp:
+    includedir = 'include/vrtgen'
+    os.makedirs(includedir, exist_ok=True)
+    with open(os.path.join(includedir, 'enums.hpp'), 'w') as fp:
         fp.write(template.render({'enums': enums}))
 
+    includedir = 'include/vrtgen/packing'
+    os.makedirs(includedir, exist_ok=True)
     template = env.get_template('cif.hpp')
     for cif in [CIF0, CIF1]:
         filename = cif.__name__.lower() + '.hpp'
-        with open(filename, 'w') as fp:
+        with open(os.path.join(includedir, filename), 'w') as fp:
             fp.write(template.render(format_cif(cif)))
 
 if __name__ == '__main__':
