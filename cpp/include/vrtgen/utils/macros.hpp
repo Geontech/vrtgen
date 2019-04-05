@@ -10,7 +10,8 @@
 // time.
 #define _BIT_POS32(b) ((8*(3-(b/8)))+(b&0x7))
 #endif
-#define GET_BIT32(w,b) ((w >> _BIT_POS(b)) & 1)
-#define SET_BIT32(w,b) (w |= (1 << _BIT_POS(b)))
+#define _BIT_FLAG32(b) (1<<_BIT_POS32(b))
+#define GET_BIT32(w,b) ((w >> _BIT_POS32(b)) & 1)
+#define SET_BIT32(w,b,v) (w = (w & ~_BIT_FLAG32(b)) | (bool(v) << _BIT_POS32(b)))
 
 #endif // _VRTGEN_MACROS_HPP
