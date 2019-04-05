@@ -2,14 +2,13 @@
 #ifndef ${guard}
 #define ${guard}
 
-#include <inttypes.h>
-
+#include <vrtgen/types.hpp>
 #include <vrtgen/utils/macros.hpp>
 
 namespace vrtgen {
     namespace packing {
         struct ${name} {
-            uint32_t word;
+            vrtgen::word_t word;
 /*{% for field in fields %}*/
 
             bool get${field.name}Enable() const {
