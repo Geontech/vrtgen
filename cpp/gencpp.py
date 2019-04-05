@@ -1,4 +1,4 @@
-from vrtgen.model.enums import *
+from vrtgen.model import enums
 from vrtgen.model.packets import *
 
 import jinja2
@@ -55,20 +55,20 @@ def main():
     loader = jinja2.FileSystemLoader('templates')
     env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
     template = env.get_template('enums.hpp')
-    enums = [
-        format_enum(PacketType, '0b{:04b}'),
-        format_enum(TSI, '0b{:02b}'),
-        format_enum(TSF, '0b{:02b}'),
-        format_enum(TSM),
-        format_enum(SSI, '0b{:02b}'),
-        format_enum(PackingMethod),
-        format_enum(DataSampleType, '0b{:02b}'),
-        format_enum(DataItemFormat, '0b{:05b}'),
+    enum_types = [
+        format_enum(enums.PacketType, '0b{:04b}'),
+        format_enum(enums.TSI, '0b{:02b}'),
+        format_enum(enums.TSF, '0b{:02b}'),
+        format_enum(enums.TSM),
+        format_enum(enums.SSI, '0b{:02b}'),
+        format_enum(enums.PackingMethod),
+        format_enum(enums.DataSampleType, '0b{:02b}'),
+        format_enum(enums.DataItemFormat, '0b{:05b}'),
     ]
     includedir = 'include/vrtgen'
     os.makedirs(includedir, exist_ok=True)
     with open(os.path.join(includedir, 'enums.hpp'), 'w') as fp:
-        fp.write(template.render({'enums': enums}))
+        fp.write(template.render({'enums': enum_types}))
 
     includedir = 'include/vrtgen/packing'
     os.makedirs(includedir, exist_ok=True)

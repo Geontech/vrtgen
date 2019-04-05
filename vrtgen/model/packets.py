@@ -4,21 +4,6 @@ import struct
 from .enums import *
 from .field import *
 
-class PacketType(IntEnum):
-    """
-    Constants for the 4-bit Packet Type field in the VRT Packet Header.
-    Refer to VITA 49.2 Table 5.1.1-1.
-    """
-    SIGNAL_DATA              = 0 # 0000
-    SIGNAL_DATA_STREAM_ID    = 1 # 0001
-    EXTENSION_DATA           = 2 # 0010
-    EXTENSION_DATA_STREAM_ID = 3 # 0011
-    CONTEXT                  = 4 # 0100
-    EXTENSION_CONTEXT        = 5 # 0101
-    COMMAND                  = 6 # 0110
-    EXTENSION_COMMAND        = 7 # 0111
-    # 1000-1111 reserved for future VRT Packet types
-
 class VRTPrologue(FieldContainer):
     stream_id = field_descriptor('Stream ID', StreamID)
     class_id = field_descriptor('Class ID', ClassIDField)
