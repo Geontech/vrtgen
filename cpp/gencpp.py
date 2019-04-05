@@ -16,6 +16,17 @@ JINJA_OPTIONS = {
     'comment_end_string':    '#*/'
 }
 
+def int_type(bits):
+    if bits > 16:
+        return 'uint32_t'
+    elif bits > 8:
+        return 'uint16_t'
+    else:
+        return 'uint8_t'
+
+def enum_type(name):
+    return 'vrtgen::{}::Code'.format(name)
+
 def format_docstring(doc):
     if not doc:
         return
@@ -51,6 +62,46 @@ def format_cif(cif):
         'fields': fields
     }
 
+def format_enable_methods(field):
+    return {
+        'name': field.name,
+        'doc': 'enable state of ' + field.name,
+        'identifier': name_to_identifier(field.name + 'Enable'),
+        'position': field.enable_bit,
+        'type': 'bool',
+    }
+
+def format_value_methods(field):
+    identifier = name_to_identifier(field.name)
+    field_data = {
+        'name': field.name,
+        'doc': field.name,
+        'identifier': identifier,
+        'position': field.position,
+    }
+    if issubclass(field, EnumField):
+        field_data['type'] = enum_type(identifier)
+    elif issubclass(field, IntegerField):
+        field_data['type'] = int_type(field.bits)
+    return field_data
+
+def format_header():
+    fields = []
+    for attr, field in VRTHeader.get_field_descriptors():
+        identifier = name_to_identifier(field.name)
+        field_data = {
+            'name': field.name,
+            'identifier': identifier,
+        }
+        if hasattr(field, 'enable_bit'):
+            # Header word contains the bit flag to enable the field
+            field_data = format_enable_methods(field)
+        else:
+            # Header word contains the field's value
+            field_data = format_value_methods(field)
+        fields.append(field_data)
+    return fields
+
 def main():
     loader = jinja2.FileSystemLoader('templates')
     env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
@@ -72,6 +123,12 @@ def main():
 
     includedir = 'include/vrtgen/packing'
     os.makedirs(includedir, exist_ok=True)
+
+    template = env.get_template('header.hpp')
+    with open(os.path.join(includedir, 'header.hpp'), 'w') as fp:
+        fields = format_header()
+        fp.write(template.render({'fields': fields}))
+
     template = env.get_template('trailer.hpp')
     with open(os.path.join(includedir, 'trailer.hpp'), 'w') as fp:
         enables = []

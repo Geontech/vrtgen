@@ -131,9 +131,10 @@ class StructField(Field, FieldContainer):
 def field_descriptor(name, field, enable_bit=None, position=None):
     bases = (field,)
     namespace = {
-        'name': name,
-        'enable_bit': enable_bit
+        'name': name
     }
+    if enable_bit is not None:
+        namespace['enable_bit'] = enable_bit
     if position is not None:
         namespace['position'] = position
     return type(name, bases, namespace)
@@ -163,6 +164,9 @@ class FixedPointField(SimpleField):
         name = 'Fixed{:d}_{:d}Field'.format(bits, radix)
         return type(name, (cls,), {'bits':bits, 'radix':radix})
 
+class EnumField(IntegerField):
+    pass
+
 # Common field types
 
 StreamID = Identifier32
@@ -170,20 +174,31 @@ StreamID = Identifier32
 class OUIField(Int24Field):
     pass
 
+class PacketTypeField(EnumField):
+    bits = 4
+
 class ClassIDField(StructField):
     oui = field_descriptor('OUI', OUIField)
     information_class = field_descriptor('Information Class Code', Int16Field)
     packet_class = field_descriptor('Packet Class Code', Int16Field)
 
-class TSIField(SimpleField):
+class TSIField(EnumField):
+    bits = 2
     def __init__(self):
         super().__init__()
         self.value = TSI.NONE
 
-class TSFField(SimpleField):
+class TSFField(EnumField):
+    bits = 2
     def __init__(self):
         super().__init__()
         self.value = TSF.NONE
+
+class TSMField(EnumField):
+    bits = 1
+    def __init__(self):
+        super().__init__()
+        self.value = TSM.FINE
 
 class DeviceIDField(StructField):
     manufacturer_oui = field_descriptor('Manufacturer OUI', OUIField)

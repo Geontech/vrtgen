@@ -4,6 +4,32 @@ import struct
 from .enums import *
 from .field import *
 
+def indicator_field(name, position):
+    return field_descriptor(name, UnimplementedField, enable_bit=position)
+
+class VRTHeader(FieldContainer):
+    packet_type = field_descriptor('Packet Type', PacketTypeField, position=31)
+    class_id = field_descriptor('Class Identifier', ClassIDField, enable_bit=27)
+    tsi = field_descriptor('TSI', TSIField, position=23)
+    tsf = field_descriptor('TSF', TSFField, position=21)
+    packet_count = field_descriptor('Packet Count', IntegerField.create(4), position=19)
+    packet_size = field_descriptor('Packet Size', Int16Field, position=15)
+
+class VRTDataHeader(VRTHeader):
+    trailer_included = indicator_field('Trailer Included', 26)
+    not_v49_0 = indicator_field('Not a V49.0 Packet Indicator', 25)
+    spectrum = indicator_field('Signal Spectrum', 24)
+
+class VRTContextHeader(VRTHeader):
+    # reserved
+    not_v49_0 = indicator_field('Not a V49.0 Packet Indicator', 25)
+    timestamp_mode = field_descriptor('Timestamp Mode', TSMField, position=24)
+
+class VRTCommandHeader(VRTHeader):
+    acknowledge = indicator_field('Acknowledge Packet', 26)
+    # reserved
+    cancellation = indicator_field('Cancellation Packet', 24)
+
 class VRTPrologue(FieldContainer):
     stream_id = field_descriptor('Stream ID', StreamID)
     class_id = field_descriptor('Class ID', ClassIDField)
