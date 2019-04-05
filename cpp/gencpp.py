@@ -72,7 +72,19 @@ def main():
 
     includedir = 'include/vrtgen/packing'
     os.makedirs(includedir, exist_ok=True)
+    template = env.get_template('trailer.hpp')
+    with open(os.path.join(includedir, 'trailer.hpp'), 'w') as fp:
+        enables = []
+        fields = []
+        for attr, field in VRTDataTrailer.get_field_descriptors():
+            identifier = name_to_identifier(field.name)
+            enables.append({'name': field.name, 'identifier': identifier, 'enable_bit': field.enable_bit})
+            if issubclass(field, BitField):
+                fields.append({'name': field.name, 'identifier': identifier, 'position': field.position})
+        fp.write(template.render({'enables': enables, 'fields': fields}))
+
     template = env.get_template('cif.hpp')
+
     for cif in [CIF0, CIF1]:
         filename = cif.__name__.lower() + '.hpp'
         with open(os.path.join(includedir, filename), 'w') as fp:

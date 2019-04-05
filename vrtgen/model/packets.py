@@ -74,21 +74,21 @@ class VRTPacket(object):
         self.prologue.validate()
 
 class VRTDataTrailer(FieldContainer):
-    calibrated_time = field_descriptor('Calibrated Time', BitField, 31)
-    valid_data = field_descriptor('Valid Data', BitField, 30)
-    reference_lock = field_descriptor('Reference Lock', BitField, 29)
-    agc_mgc = field_descriptor('AGC/MGC', BitField, 28)
-    detected_signal = field_descriptor('Detected Signal', BitField, 27)
-    spectral_inversion = field_descriptor('Spectral Inversion', BitField, 26)
-    over_range = field_descriptor('Over-range', BitField, 25)
-    sample_loss = field_descriptor('Sample Loss', BitField, 24)
+    calibrated_time = field_descriptor('Calibrated Time', BitField, 31, 19)
+    valid_data = field_descriptor('Valid Data', BitField, 30, 18)
+    reference_lock = field_descriptor('Reference Lock', BitField, 29, 17)
+    agc_mgc = field_descriptor('AGC/MGC', BitField, 28, 16)
+    detected_signal = field_descriptor('Detected Signal', BitField, 27, 15)
+    spectral_inversion = field_descriptor('Spectral Inversion', BitField, 26, 14)
+    over_range = field_descriptor('Over-range', BitField, 25, 13)
+    sample_loss = field_descriptor('Sample Loss', BitField, 24, 12)
     # The Sample Frame field was added in V49.2, replacing 2 user-defined
     # bits. While the bits can still be user-defined for compatibility with
     # V49.0 implementations, the spec strongly discourages it, and it is
     # not supported here.
-    sample_frame = field_descriptor('Sample Frame', IntegerField.create(2), 23)
+    sample_frame = field_descriptor('Sample Frame', IntegerField.create(2), 23, 11)
     # [21..20], [9..8] User-Defined
-    context_packet_count = field_descriptor('Associated Context Packet Count', IntegerField.create(7), 7)
+    context_packet_count = field_descriptor('Associated Context Packet Count', IntegerField.create(7), 7, 6)
 
     def get_bytes(self):
         word = 0
@@ -98,9 +98,8 @@ class VRTDataTrailer(FieldContainer):
             word |= field.enable_flag
             if field.value:
                 # The enable and value bits are offset by 12
-                position = field.enable_bit - 12
                 value = int(field.value)
-                word |= value << position
+                word |= value << field.position
         return struct.pack('>I', word)
 
     @property

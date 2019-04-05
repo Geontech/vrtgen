@@ -128,12 +128,14 @@ class StructField(Field, FieldContainer):
     def has_value(self):
         return any(f.has_value for f in self.fields)
 
-def field_descriptor(name, field, enable_bit=None):
+def field_descriptor(name, field, enable_bit=None, position=None):
     bases = (field,)
     namespace = {
         'name': name,
         'enable_bit': enable_bit
     }
+    if position is not None:
+        namespace['position'] = position
     return type(name, bases, namespace)
 
 # Basic field types
