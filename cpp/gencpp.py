@@ -83,6 +83,8 @@ def format_value_methods(field):
         field_data['type'] = enum_type(identifier)
     elif issubclass(field, IntegerField):
         field_data['type'] = int_type(field.bits)
+    field_data['bits'] = field.bits
+    field_data['shift'] = field.position - field.bits + 1
     return field_data
 
 def format_header():

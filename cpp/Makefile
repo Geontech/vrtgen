@@ -8,14 +8,16 @@ CXXFLAGS = $(CPPFLAGS) -Wall
 GENERATED_SOURCES := include/vrtgen/enums.hpp
 GENERATED_SOURCES += include/vrtgen/packing/cif0.hpp
 GENERATED_SOURCES += include/vrtgen/packing/cif1.hpp
-GENERATED_SOURCES += include/vrtgen/packing/packing.hpp
 GENERATED_SOURCES += include/vrtgen/packing/header.hpp
 GENERATED_SOURCES += include/vrtgen/packing/trailer.hpp
 
-.PHONY: generate test
+.PHONY: generate check
 
-test: generate
-	$(CXX) $(CXXFLAGS) -c lib/test.cpp
+check: test
+	./test
+
+test: lib/test.cpp $(GENERATED_SOURCES)
+	$(CXX) $(CXXFLAGS) -o test lib/test.cpp
 
 generate: $(GENERATED_SOURCES)
 

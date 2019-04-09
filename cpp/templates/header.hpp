@@ -19,8 +19,7 @@ namespace vrtgen {
 //% if field.type == 'bool'
                 return GET_BIT32(word, ${field.position});
 //% else
-                // TODO
-                return (${field.type})0;
+                return (${field.type}) vrtgen::get_int(word, ${field.position}, ${field.bits});
 //% endif
             }
 
@@ -32,7 +31,7 @@ namespace vrtgen {
 //% if field.type == 'bool'
                 SET_BIT32(word, ${field.position}, value);
 //% else
-                // TODO
+                vrtgen::set_int(word, ${field.position}, ${field.bits}, value);
 //% endif
             }
 /*{% endfor %}*/
