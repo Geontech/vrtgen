@@ -16,8 +16,8 @@ GENERATED_SOURCES += include/vrtgen/packing/trailer.hpp
 check: test
 	./test
 
-test: lib/test.cpp $(GENERATED_SOURCES)
-	$(CXX) $(CXXFLAGS) -o test lib/test.cpp
+test: tests/test.cpp $(GENERATED_SOURCES)
+	$(CXX) $(CXXFLAGS) -o test tests/test.cpp
 
 generate: $(GENERATED_SOURCES)
 
@@ -25,4 +25,4 @@ $(GENERATED_SOURCES) : gencpp.py templates/enums.hpp templates/header.hpp templa
 	PYTHONPATH=$(top_srcdir) $(PYTHON) gencpp.py
 
 clean:
-	rm -f $(GENERATED_SOURCES)
+	rm -f $(GENERATED_SOURCES) test

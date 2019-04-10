@@ -6,6 +6,8 @@
 
 #include <iostream>
 
+#include <arpa/inet.h>
+
 int main(int argc, const char* argv[])
 {
     uint8_t data[] = {

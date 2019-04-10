@@ -1,3 +1,4 @@
 *.pyc
 cpp/include/vrtgen/enums.hpp
 cpp/include/vrtgen/packing/*.hpp
+cpp/test
