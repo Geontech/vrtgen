@@ -2,11 +2,14 @@
 #define _VRTGEN_TYPES_HPP
 
 #include <cstddef>
+#include <algorithm>
+
 #include <inttypes.h>
 
 namespace vrtgen {
     namespace detail {
-        static inline size_t adjust_pointer(const uint8_t*& ptr, size_t pos)
+        template <typename T>
+        static inline size_t adjust_pointer(T*& ptr, size_t pos)
         {
             ptr += 3 - (pos/8);
             return (7 - (pos & 0x7));
@@ -35,6 +38,39 @@ namespace vrtgen {
 
     void set_int(uint32_t& word, size_t pos, size_t bits, uint32_t value)
     {
+        // Shift the value up to the MSB
+        value = value << (32 - bits);
+
+        uint8_t* data = reinterpret_cast<uint8_t*>(&word);
+        size_t bit_offset = detail::adjust_pointer(data, pos);
+        // Unaligned start bit
+        if (bit_offset) {
+            size_t nbits = std::min(8 - bit_offset, bits);
+            const size_t shift = 8 - (bit_offset + nbits);
+            const uint8_t mask = detail::bitmask(nbits) << shift;
+            uint8_t src = value >> (32-nbits);
+            value <<= nbits;
+            *data = ((*data) & ~mask) | (src << shift);
+            ++data;
+            bits -= nbits;
+        }
+
+        // Byte-aligned case, store 8 bits at a time
+        for (size_t ii = 0; ii < (bits/8); ++ii, ++data) {
+            // Store the current most significant byte and move the next byte
+            // up
+            *data = (value >> 24);
+            value <<= 8;
+        }
+
+        // Less than a full byte (but aligned to the byte's MSB)
+        size_t remain = bits & 0x7;
+        if (remain) {
+            const size_t shift = 8 - remain;
+            const uint8_t mask = detail::bitmask(shift);
+            uint8_t src = value >> (32-remain);
+            *data = ((*data) & mask) | (src << shift);
+        }
     }
 }
 

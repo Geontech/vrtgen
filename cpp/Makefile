@@ -5,6 +5,9 @@ srcdir = .
 CPPFLAGS = -I $(srcdir)/include
 CXXFLAGS = $(CPPFLAGS) -Wall
 
+HEADERS := include/vrtgen/types.hpp
+HEADERS += include/vrtgen/utils/macros.hpp
+
 GENERATED_SOURCES := include/vrtgen/enums.hpp
 GENERATED_SOURCES += include/vrtgen/packing/cif0.hpp
 GENERATED_SOURCES += include/vrtgen/packing/cif1.hpp
@@ -16,7 +19,7 @@ GENERATED_SOURCES += include/vrtgen/packing/trailer.hpp
 check: test
 	./test
 
-test: tests/test.cpp $(GENERATED_SOURCES)
+test: tests/test.cpp $(GENERATED_SOURCES) $(HEADERS)
 	$(CXX) $(CXXFLAGS) -o test tests/test.cpp
 
 generate: $(GENERATED_SOURCES)

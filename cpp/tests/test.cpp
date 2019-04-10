@@ -6,12 +6,43 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <iomanip>
 
 #include <arpa/inet.h>
 
-#define ASSERT_EQUAL(x,y)                       \
-    if ((x) != (y)) {                           \
-        throw std::runtime_error(#x " != " #y); \
+class test_failure : public std::runtime_error
+{
+public:
+    test_failure(const std::string& file, int line, const char* msg) :
+        std::runtime_error(msg),
+        _M_file(file),
+        _M_line(line)
+    {
+    }
+
+    virtual ~test_failure() throw()
+    {
+    }
+
+
+    const std::string& file() const
+    {
+        return _M_file;
+    }
+
+    int line() const
+    {
+        return _M_line;
+    }
+
+private:
+    const std::string _M_file;
+    const int _M_line;
+};
+
+#define ASSERT_EQUAL(x,y)                               \
+    if ((x) != (y)) {                                   \
+        throw test_failure(__FILE__, __LINE__, #x " != " #y);     \
     }
 
 void test_header_get()
@@ -39,14 +70,33 @@ void test_header_set()
     Header& header = *reinterpret_cast<Header*>(data);
 
     header.setPacketType(vrtgen::PacketType::CONTEXT);
-    ASSERT_EQUAL(data[0] >> 4, 0x4);
+    ASSERT_EQUAL(data[0], 0x40);
+
+    header.setClassIdentifierEnable(true);
+    ASSERT_EQUAL(data[0], 0x48);
+
+    ASSERT_EQUAL(data[1], 0);
+    header.setTSI(vrtgen::TSI::GPS);
+    ASSERT_EQUAL(data[1], 0x80);
+
+    header.setTSF(vrtgen::TSF::REAL_TIME);
+    ASSERT_EQUAL(data[1], 0xA0);
+
+    header.setPacketCount(12);
+    ASSERT_EQUAL(data[1], 0xAC);
+
+    ASSERT_EQUAL(data[2], 0);
+    ASSERT_EQUAL(data[3], 0);
+    header.setPacketSize(0xCDEF);
+    ASSERT_EQUAL(data[2], 0xCD);
+    ASSERT_EQUAL(data[3], 0xEF);
 }
 
-#define RUN_TEST(x) std::cout << #x ": "; \
-    try { x(); std::cout << "OK" << std::endl; }  \
-    catch (const std::exception& exc) {           \
-        std::cout << "FAIL" << std::endl;         \
-        std::cerr << exc.what() << std::endl;     \
+#define RUN_TEST(x) std::cout << #x ": ";                               \
+    try { x(); std::cout << "OK" << std::endl; }                        \
+    catch (const test_failure& exc) {                                   \
+        std::cout << "FAIL" << std::endl;                               \
+        std::cerr << exc.file() << ":" << exc.line() << ": " << exc.what() << std::endl; \
     }
 
 int main(int argc, const char* argv[])
