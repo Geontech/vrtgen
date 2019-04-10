@@ -5,33 +5,53 @@
 #include <vrtgen/packing/trailer.hpp>
 
 #include <iostream>
+#include <stdexcept>
 
 #include <arpa/inet.h>
 
-int main(int argc, const char* argv[])
+#define ASSERT_EQUAL(x,y)                       \
+    if ((x) != (y)) {                           \
+        throw std::runtime_error(#x " != " #y); \
+    }
+
+void test_header_get()
 {
+    using vrtgen::packing::Header;
+
     uint8_t data[] = {
         0x10, 0x5c, 0x12, 0x34,
         0x12, 0x34, 0x56, 0x78,
     };
-    uint32_t* ptr = reinterpret_cast<uint32_t*>(data);
+    Header& header = *reinterpret_cast<Header*>(data);
+    ASSERT_EQUAL(header.getPacketType(), vrtgen::PacketType::SIGNAL_DATA_STREAM_ID);
+    ASSERT_EQUAL(header.getClassIdentifierEnable(), false);
+    ASSERT_EQUAL(header.getTSI(), vrtgen::TSI::UTC);
+    ASSERT_EQUAL(header.getTSF(), vrtgen::TSF::SAMPLE_COUNT);
+    ASSERT_EQUAL(header.getPacketCount(), 12);
+    ASSERT_EQUAL(header.getPacketSize(), 0x1234);
+}
+
+void test_header_set()
+{
     using vrtgen::packing::Header;
-    Header& header = *reinterpret_cast<Header*>(ptr);
-    ++ptr;
-    std::cout << "Packet type: " << header.getPacketType() << std::endl;
-    std::cout << "Has Class Identifier: " << header.getClassIdentifierEnable() << std::endl;
-    std::cout << "TSI: " << header.getTSI() << std::endl;
-    std::cout << "TSF: " << header.getTSF() << std::endl;
-    std::cout << "Packet count: " << (uint32_t) header.getPacketCount() << std::endl;
-    std::cout << "Packet size: " << std::hex << (uint32_t) header.getPacketSize() << std::endl;
-    switch (header.getPacketType()) {
-    case vrtgen::PacketType::SIGNAL_DATA:
-    case vrtgen::PacketType::EXTENSION_DATA:
-        break;
-    default:
-        std::cout << "Stream ID: " << ntohl(*ptr) /*vrtgen::get_int(*ptr, 31, 32)*/ << std::endl;
-        ++ptr;
-        break;
+
+    uint8_t data[] = { 0, 0, 0, 0 };
+    Header& header = *reinterpret_cast<Header*>(data);
+
+    header.setPacketType(vrtgen::PacketType::CONTEXT);
+    ASSERT_EQUAL(data[0] >> 4, 0x4);
+}
+
+#define RUN_TEST(x) std::cout << #x ": "; \
+    try { x(); std::cout << "OK" << std::endl; }  \
+    catch (const std::exception& exc) {           \
+        std::cout << "FAIL" << std::endl;         \
+        std::cerr << exc.what() << std::endl;     \
     }
+
+int main(int argc, const char* argv[])
+{
+    RUN_TEST(test_header_get);
+    RUN_TEST(test_header_set);
     return 0;
 }
