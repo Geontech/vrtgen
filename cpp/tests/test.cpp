@@ -55,7 +55,7 @@ void test_header_get()
     };
     Header& header = *reinterpret_cast<Header*>(data);
     ASSERT_EQUAL(header.getPacketType(), vrtgen::PacketType::SIGNAL_DATA_STREAM_ID);
-    ASSERT_EQUAL(header.getClassIdentifierEnable(), false);
+    ASSERT_EQUAL(header.isClassIdentifierEnabled(), false);
     ASSERT_EQUAL(header.getTSI(), vrtgen::TSI::UTC);
     ASSERT_EQUAL(header.getTSF(), vrtgen::TSF::SAMPLE_COUNT);
     ASSERT_EQUAL(header.getPacketCount(), 12);
@@ -72,7 +72,7 @@ void test_header_set()
     header.setPacketType(vrtgen::PacketType::CONTEXT);
     ASSERT_EQUAL(data[0], 0x40);
 
-    header.setClassIdentifierEnable(true);
+    header.setClassIdentifierEnabled(true);
     ASSERT_EQUAL(data[0], 0x48);
 
     ASSERT_EQUAL(data[1], 0);

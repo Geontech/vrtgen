@@ -112,7 +112,7 @@ class VRTDataTrailer(FieldContainer):
     # bits. While the bits can still be user-defined for compatibility with
     # V49.0 implementations, the spec strongly discourages it, and it is
     # not supported here.
-    sample_frame = field_descriptor('Sample Frame', IntegerField.create(2), 23, 11)
+    sample_frame = field_descriptor('Sample Frame', SSIField, 23, 11)
     # [21..20], [9..8] User-Defined
     context_packet_count = field_descriptor('Associated Context Packet Count', IntegerField.create(7), 7, 6)
 

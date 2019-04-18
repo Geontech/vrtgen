@@ -200,6 +200,12 @@ class TSMField(EnumField):
         super().__init__()
         self.value = TSM.FINE
 
+class SSIField(EnumField):
+    bits = 2
+    def __init__(self):
+        super().__init__()
+        self.value = SSI.SINGLE
+
 class DeviceIDField(StructField):
     manufacturer_oui = field_descriptor('Manufacturer OUI', OUIField)
     device_code = field_descriptor('Device Code', Int16Field)

@@ -24,7 +24,13 @@ def int_type(bits):
     else:
         return 'uint8_t'
 
-def enum_type(name):
+def enum_type(field):
+    if issubclass(field, SSIField):
+        # Workaround: The enum SSI is not derived from the field name "Sample
+        # Frame" unlike the others
+        name = 'SSI'
+    else:
+        name = name_to_identifier(field.name)
     return 'vrtgen::{}::Code'.format(name)
 
 def format_docstring(doc):
@@ -63,10 +69,18 @@ def format_cif(cif):
     }
 
 def format_enable_methods(field):
+    identifier = name_to_identifier(field.name + 'Enabled')
     return {
         'name': field.name,
         'doc': 'enable state of ' + field.name,
-        'identifier': name_to_identifier(field.name + 'Enable'),
+        'getter': {
+            'doc': 'Get enabled state of ' + field.name,
+            'name' : 'is'+identifier,
+        },
+        'setter': {
+            'doc': 'Set enabled state of ' + field.name,
+            'name' : 'set'+identifier,
+        },
         'position': field.enable_bit,
         'type': 'bool',
     }
@@ -75,16 +89,25 @@ def format_value_methods(field):
     identifier = name_to_identifier(field.name)
     field_data = {
         'name': field.name,
-        'doc': field.name,
-        'identifier': identifier,
+        'getter': {
+            'doc': 'Get current value of ' + field.name,
+            'name' : 'get'+identifier,
+        },
+        'setter': {
+            'doc': 'Set current value of ' + field.name,
+            'name' : 'set'+identifier,
+        },
         'position': field.position,
     }
     if issubclass(field, EnumField):
-        field_data['type'] = enum_type(identifier)
+        field_data['type'] = enum_type(field)
+        field_data['bits'] = field.bits
     elif issubclass(field, IntegerField):
         field_data['type'] = int_type(field.bits)
-    field_data['bits'] = field.bits
-    field_data['shift'] = field.position - field.bits + 1
+        field_data['bits'] = field.bits
+    elif issubclass(field, BitField):
+        field_data['type'] = 'bool'
+        field_data['bits'] = 1
     return field_data
 
 def format_header():
@@ -126,21 +149,18 @@ def main():
     includedir = 'include/vrtgen/packing'
     os.makedirs(includedir, exist_ok=True)
 
-    template = env.get_template('header.hpp')
+    template = env.get_template('struct.hpp')
     with open(os.path.join(includedir, 'header.hpp'), 'w') as fp:
         fields = format_header()
-        fp.write(template.render({'fields': fields}))
+        fp.write(template.render({'name': 'Header', 'fields': fields}))
 
-    template = env.get_template('trailer.hpp')
+    template = env.get_template('struct.hpp')
     with open(os.path.join(includedir, 'trailer.hpp'), 'w') as fp:
-        enables = []
         fields = []
         for attr, field in VRTDataTrailer.get_field_descriptors():
-            identifier = name_to_identifier(field.name)
-            enables.append({'name': field.name, 'identifier': identifier, 'enable_bit': field.enable_bit})
-            if issubclass(field, BitField):
-                fields.append({'name': field.name, 'identifier': identifier, 'position': field.position})
-        fp.write(template.render({'enables': enables, 'fields': fields}))
+            fields.append(format_enable_methods(field))
+            fields.append(format_value_methods(field))
+        fp.write(template.render({'name': 'Trailer', 'fields': fields}))
 
     template = env.get_template('cif.hpp')
 

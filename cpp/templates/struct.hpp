@@ -1,5 +1,6 @@
-#ifndef _VRTGEN_PACKING_HEADER_HPP_
-#define _VRTGEN_PACKING_HEADER_HPP_
+//% set guard = '_VRTGEN_PACKING_' + name.upper() + '_HPP_'
+#ifndef ${guard}
+#define ${guard}
 
 #include <vrtgen/types.hpp>
 #include <vrtgen/enums.hpp>
@@ -7,14 +8,14 @@
 
 namespace vrtgen {
     namespace packing {
-        struct Header {
+        struct ${name} {
             vrtgen::word_t word;
 /*{% for field in fields %}*/
 
             /**
-             * Get ${field.doc}.
+             * ${field.getter.doc}.
              */
-            ${field.type} get${field.identifier}() const
+            ${field.type} ${field.getter.name}() const
             {
 //% if field.type == 'bool'
                 return GET_BIT32(word, ${field.position});
@@ -24,9 +25,9 @@ namespace vrtgen {
             }
 
             /**
-             * Set ${field.doc}.
+             * ${field.setter.doc}.
              */
-            void set${field.identifier}(${field.type} value)
+            void ${field.setter.name}(${field.type} value)
             {
 //% if field.type == 'bool'
                 SET_BIT32(word, ${field.position}, value);
@@ -39,4 +40,4 @@ namespace vrtgen {
     }
 }
 
-#endif // _VRTGEN_PACKING_HEADER_HPP_
+#endif // ${guard}
