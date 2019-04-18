@@ -20,8 +20,8 @@ class PacketType(IntEnum):
     # 1000-1111 reserved for future VRT Packet types
 
 class VRTPrologue(FieldContainer):
-    stream_id = field_descriptor('Stream ID', StreamID)
-    class_id = field_descriptor('Class ID', ClassIDField)
+    stream_id = field_descriptor('Stream Identifier', StreamID)
+    class_id = field_descriptor('Class Identifier', ClassIDField)
     tsi = field_descriptor('TSI', TSIField)
     tsf = field_descriptor('TSF', TSFField)
     integer_timestamp = field_descriptor('Integer Timestamp', Int32Field)
