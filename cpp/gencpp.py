@@ -162,12 +162,15 @@ def main():
             fields.append(format_value_methods(field))
         fp.write(template.render({'name': 'Trailer', 'fields': fields}))
 
-    template = env.get_template('cif.hpp')
+    template = env.get_template('struct.hpp')
 
     for cif in [CIF0, CIF1]:
         filename = cif.__name__.lower() + '.hpp'
         with open(os.path.join(includedir, filename), 'w') as fp:
-            fp.write(template.render(format_cif(cif)))
+            fields = []
+            for attr, field in cif.get_field_descriptors():
+                fields.append(format_enable_methods(field))
+            fp.write(template.render({'name': cif.__name__, 'fields': fields}))
 
 if __name__ == '__main__':
     main()
