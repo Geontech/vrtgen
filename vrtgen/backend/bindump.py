@@ -1,5 +1,9 @@
 import sys
 
+from .generator import Generator
+
+__all__ = ('BinaryDumper')
+
 def group_bytes(data, size=8):
     for pos in range(0, len(data), size):
         yield data[pos:pos+size]
@@ -11,7 +15,7 @@ def dump_bytes(data, stream):
         stream.write('0x{0:04x} {1} {2}\n'.format(offset, data[:8], data[8:]))
         offset += 0x10
 
-class BinaryDumper:
+class BinaryDumper(Generator):
     def generate(self, packet):
         print('Packet ' + packet.name)
         prologue = packet.get_prologue_bytes()

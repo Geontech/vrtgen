@@ -7,6 +7,7 @@ import argparse
 import sys
 
 from vrtgen.parser import FileParser
+from vrtgen.backend import Generator
 
 logging.basicConfig()
 

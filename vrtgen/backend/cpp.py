@@ -3,6 +3,8 @@ import jinja2
 from vrtgen.model.field import *
 from vrtgen.model.packets import *
 
+from .generator import Generator
+
 JINJA_OPTIONS = {
     'trim_blocks':           True,
     'line_statement_prefix': '//%',
@@ -32,7 +34,7 @@ class CppPacket:
     def add_field(self, field):
         self.fields.append(field)
 
-class CppGenerator:
+class CppGenerator(Generator):
     def __init__(self, standard='c++03'):
         loader = jinja2.FileSystemLoader('vrtgen/backend/templates')
         self.env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
