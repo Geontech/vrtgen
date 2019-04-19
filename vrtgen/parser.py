@@ -182,6 +182,7 @@ class UserDefinedFieldParser(FieldParser):
 
 class SectionParser:
     FIELD_PARSERS = {}
+    FIELD_ALIASES = {}
 
     def __init__(self, log, context):
         self.log = log
@@ -193,10 +194,15 @@ class SectionParser:
         # can add or otherwise alter the parsers without affecting any other
         # classes in the hierarchy
         cls.FIELD_PARSERS = cls.FIELD_PARSERS.copy()
+        cls.FIELD_ALIASES = cls.FIELD_ALIASES.copy()
 
     @classmethod
     def add_field_parser(cls, field, parser):
         cls.FIELD_PARSERS[field.name.casefold()] = parser
+
+    @classmethod
+    def add_field_alias(cls, field, alias):
+        cls.FIELD_ALIASES[alias.casefold()] = field.name
 
     def get_field_parser(self, field):
         parser = self.FIELD_PARSERS.get(field.name.casefold(), None)
@@ -223,6 +229,7 @@ class SectionParser:
             if self.parse_option(field_name, field_value):
                 continue
 
+            field_name = self.FIELD_ALIASES.get(field_name.casefold(), field_name)
             field = self.context.get_field(field_name)
             if field is None:
                 self.log.error("Invalid field '%s'", field_name)
@@ -288,6 +295,9 @@ CIFPayloadParser.add_field_parser(CIF1.discrete_io_64, UserDefinedFieldParser())
 class PrologueParser(SectionParser):
     def __init__(self, log, prologue):
         super().__init__(log.getChild('Prologue'), prologue)
+
+PrologueParser.add_field_alias(VRTPrologue.stream_id, 'Stream ID')
+PrologueParser.add_field_alias(VRTPrologue.class_id, 'Class ID')
 
 class PacketParser:
     def __init__(self, name):
