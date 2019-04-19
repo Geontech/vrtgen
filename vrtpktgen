@@ -11,7 +11,7 @@ from vrtgen.backend import Generator
 
 logging.basicConfig()
 
-class NullGenerator:
+class NullGenerator(Generator):
     def generate(self, packet):
         pass
 
@@ -21,7 +21,9 @@ if __name__ == '__main__':
     arg_parser.add_argument('-v', '--verbose', action='store_true', default=False,
                             help='display debug messages')
     arg_parser.add_argument('--version', action='version', version='%(prog)s '+__version__)
-    arg_parser.add_argument('-b', '--backend', help='backend code generator to target')
+    arg_parser.add_argument('-b', '--backend', help='code generator backend to target')
+    arg_parser.add_argument('-o', '--option', action='append', default=[],
+                            help='options for code generator backend')
 
     args = arg_parser.parse_args()
 
@@ -34,8 +36,21 @@ if __name__ == '__main__':
     elif args.backend == 'cpp':
         from vrtgen.backend.cpp import CppGenerator
         generator = CppGenerator()
-    else:
+    elif args.backend == None:
         generator = NullGenerator()
+    else:
+        raise SystemExit("invalid backend '"+args.backend+"'")
+
+    for option in args.option:
+        if '=' in option:
+            name, value = option.split('=', 1)
+        else:
+            name = option
+            value = True
+        try:
+            generator.set_option(name ,value)
+        except Exception as exc:
+            raise SystemExit(str(exc))
 
     for filename in args.filename:
         logging.debug('Parsing %s', filename)
