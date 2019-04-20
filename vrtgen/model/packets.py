@@ -1,5 +1,3 @@
-import struct
-
 from .enums import *
 from .field import *
 
@@ -25,12 +23,27 @@ class VRTPacket(object):
         self.prologue = VRTPrologue()
 
     @property
+    def is_data(self):
+        return self.packet_type() in (PacketType.SIGNAL_DATA,
+                                      PacketType.SIGNAL_DATA_STREAM_ID,
+                                      PacketType.EXTENSION_DATA,
+                                      PacketType.EXTENSION_DATA_STREAM_ID)
+
+    @property
     def has_trailer(self):
         return False
 
     @property
+    def has_stream_id(self):
+        return self.prologue.stream_id.is_set
+
+    @property
     def stream_id(self):
         return self.prologue.stream_id
+
+    @property
+    def has_class_id(self):
+        return self.prologue.class_id.is_set
 
     @property
     def class_id(self):
@@ -43,31 +56,6 @@ class VRTPacket(object):
     @property
     def tsf(self):
         return self.prologue.tsf.value
-
-    def get_prologue_bytes(self):
-        header = bytearray(4)
-
-        header[0] = self.packet_type() << 4
-        if self.class_id.is_set:
-            header[0] |= 0x08
-        header[0] |= self.packet_specific_bits()
-        header[1] = self.tsi << 6
-        header[1] |= self.tsf << 4
-
-        if self.tsi != TSI.NONE:
-            ts = self.prologue.integer_timestamp.value
-            if ts is None:
-                ts = 0
-            header += struct.pack('>I', ts)
-        if self.tsf != TSF.NONE:
-            ts = self.prologue.fractional_timestamp.value
-            if ts is None:
-                ts = 0
-            header += struct.pack('>Q', ts)
-        return header + self._get_prologue_bytes()
-
-    def _get_prologue_bytes(self):
-        return b''
 
     def validate(self):
         self.prologue.validate()
@@ -88,18 +76,6 @@ class VRTDataTrailer(FieldContainer):
     sample_frame = field_descriptor('Sample Frame', SSIField, 23, 11)
     # [21..20], [9..8] User-Defined
     context_packet_count = field_descriptor('Associated Context Packet Count', IntegerField.create(7), 7, 6)
-
-    def get_bytes(self):
-        word = 0
-        for field in self.fields:
-            if not field.is_set:
-                continue
-            word |= field.enable_flag
-            if field.value:
-                # The enable and value bits are offset by 12
-                value = int(field.value)
-                word |= value << field.position
-        return struct.pack('>I', word)
 
     @property
     def is_enabled(self):
@@ -148,17 +124,19 @@ class VRTDataPacket(VRTPacket):
         self.trailer.validate()
 
 class ContextIndicatorFields(FieldContainer):
-    def get_prologue_bytes(self):
-        prologue = 0
-        for field in self.fields:
-            if field.is_set:
-                prologue |= 1 << field.enable_bit
-        return struct.pack('>I', prologue)
+    @property
+    def is_enabled(self):
+        return any(field.is_enabled for field in self.fields)
 
     def validate(self):
         pass
 
 class CIF0(ContextIndicatorFields):
+    @property
+    def is_enabled(self):
+        # CIF 0 is always present
+        return True
+
     # Context Field Change Indicator (0/31) is a binary flag that can be
     # set at run-time. No configuration is possible.
 
@@ -318,7 +296,7 @@ class CIF1(ContextIndicatorFields):
     # records configurable. There is an overall header, much of which is run-
     # time (e.g., number of records), with a bitfield to enable specific
     # subfields.
-    sector_scan_step = field_descriptor('Sector Scan/Step', UnimplementedField, 9),
+    sector_scan_step = field_descriptor('Sector Scan/Step', UnimplementedField, 9)
 
     # Reserved (1/8)
 
@@ -346,13 +324,6 @@ class CIF1(ContextIndicatorFields):
 
     # Reserved (1/0)
 
-    def get_prologue_bytes(self):
-        prologue = 0
-        for field in self.fields:
-            if field.is_set:
-                prologue |= 1 << field.enable_bit
-        return struct.pack('>I', prologue)
-
 class VRTCIFPacket(VRTPacket):
     """
     Common base class for VRT packets that include the CIF fields (i.e.,
@@ -362,9 +333,6 @@ class VRTCIFPacket(VRTPacket):
         super().__init__(name)
         self.stream_id.enable = Field.Mode.MANDATORY
         self.cif = [CIF0(), CIF1()]
-
-    def _get_prologue_bytes(self):
-        return b''.join(cif.get_prologue_bytes() for cif in self.cif)
 
     def get_field(self, name):
         for cif in self.cif:
