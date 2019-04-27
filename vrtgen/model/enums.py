@@ -1,21 +1,59 @@
-from enum import IntEnum
+from enum import IntEnum, EnumMeta
 
-class PacketType(IntEnum):
+class BinaryEnumMeta(EnumMeta):
+    """
+    Extended metaclass for binary enumerations, adding a default value for
+    instance creation.
+    """
+    def __new__(cls, name, bases, namespace, bits=None, **kwds):
+        # Discard keywords when calling EnumMeta's new method. Unlike type, it
+        # does not accept keywords, which also means that the __init_subclass__
+        # method will not receive keyword values (i.e., "bits").
+        enum_class = super().__new__(cls, name, bases, namespace)
+        if bits:
+            enum_class.bits = bits
+        return enum_class
+
+    def __call__(cls, value=0, *args, **kwds):
+        # Override the creation of enum instances to default to a value of 0
+        return super().__call__(value, *args, **kwds)
+
+    def __prepare__(name, bases, **kwds):
+        # Discard keywords (i.e., "bits") for EnumMeta
+        return EnumMeta.__prepare__(name, bases)
+
+class BinaryEnum(IntEnum, metaclass=BinaryEnumMeta):
+    """
+    Base class for integer-valued enumerations with a known bit size.
+    """
+    # This class ties together IntEnum and our custom metaclass, but does not
+    # add any functionality (see above re: __init_subclass__)
+    pass
+
+class PacketType(BinaryEnum, bits=4):
     """
     Constants for the 4-bit Packet Type field in the VRT Packet Header.
     Refer to VITA 49.2 Table 5.1.1-1.
     """
-    SIGNAL_DATA              = 0 # 0000
-    SIGNAL_DATA_STREAM_ID    = 1 # 0001
-    EXTENSION_DATA           = 2 # 0010
-    EXTENSION_DATA_STREAM_ID = 3 # 0011
-    CONTEXT                  = 4 # 0100
-    EXTENSION_CONTEXT        = 5 # 0101
-    COMMAND                  = 6 # 0110
-    EXTENSION_COMMAND        = 7 # 0111
+    SIGNAL_DATA              = 0b0000
+    SIGNAL_DATA_STREAM_ID    = 0b0001
+    EXTENSION_DATA           = 0b0010
+    EXTENSION_DATA_STREAM_ID = 0b0011
+    CONTEXT                  = 0b0100
+    EXTENSION_CONTEXT        = 0b0101
+    COMMAND                  = 0b0110
+    EXTENSION_COMMAND        = 0b0111
     # 1000-1111 reserved for future VRT Packet types
+    RESERVED_8               = 0b1000
+    RESERVED_9               = 0b1001
+    RESERVED_10              = 0b1010
+    RESERVED_11              = 0b1011
+    RESERVED_12              = 0b1100
+    RESERVED_13              = 0b1101
+    RESERVED_14              = 0b1110
+    RESERVED_15              = 0b1111
 
-class TSI(IntEnum):
+class TSI(BinaryEnum, bits=2):
     """
     TimeStamp-Integer (TSI) codes:
         NONE  (00) - No Integer-seconds Timestamp field included
@@ -28,7 +66,7 @@ class TSI(IntEnum):
     GPS   = 0b10
     OTHER = 0b11
 
-class TSF(IntEnum):
+class TSF(BinaryEnum, bits=2):
 
     """
     TimeStamp-Fractional (TSF) codes:
@@ -42,7 +80,7 @@ class TSF(IntEnum):
     REAL_TIME    = 0b10
     FREE_RUNNING = 0b11
 
-class TSM(IntEnum):
+class TSM(BinaryEnum, bits=1):
     """
     Timestamp Mode (TSM) of context packets:
         FINE   (0) - Timestamp conveys precise timing of events related to the
@@ -53,7 +91,7 @@ class TSM(IntEnum):
     FINE   = 0
     COARSE = 1
 
-class SSI(IntEnum):
+class SSI(BinaryEnum, bits=2):
     """
     Start/Stop of Sample Frame Indication (SSI) Bits:
         SINGLE (00) - Sample Frames are not applicable to data packets, or the
@@ -68,7 +106,7 @@ class SSI(IntEnum):
     MIDDLE = 0b10
     FINAL  = 0b11
 
-class PackingMethod(IntEnum):
+class PackingMethod(BinaryEnum, bits=1):
     """
     Data Format Packing Method flag:
         PROCESSING_EFFICIENT (0) - Items are padded as necessary such that they
@@ -78,7 +116,7 @@ class PackingMethod(IntEnum):
     PROCESSING_EFFICIENT = 0
     LINK_EFFICIENT       = 1
 
-class DataSampleType(IntEnum):
+class DataSampleType(BinaryEnum, bits=2):
     """
     Data Sample real/complex type:
         REAL              (00) - Real
@@ -89,8 +127,9 @@ class DataSampleType(IntEnum):
     REAL              = 0b00
     COMPLEX_CARTESIAN = 0b01
     COMPLEX_POLAR     = 0b10
+    RESERVED          = 0b11
 
-class DataItemFormat(IntEnum):
+class DataItemFormat(BinaryEnum, bits=5):
     """
     Data Item Format codes:
         SIGNED_FIXED                  (00000) - Signed Fixed-Point
@@ -134,6 +173,11 @@ class DataItemFormat(IntEnum):
     SIGNED_VRT_5                  = 0b00101
     SIGNED_VRT_6                  = 0b00110
     SIGNED_FIXED_NON_NORMALIZED   = 0b00111
+    RESERVED_8                    = 0b01000
+    RESERVED_9                    = 0b01001
+    RESERVED_10                   = 0b01010
+    RESERVED_11                   = 0b01011
+    RESERVED_12                   = 0b01100
     IEEE754_HALF_PRECISION        = 0b01101
     IEEE754_SINGLE_PRECISION      = 0b01110
     IEEE754_DOUBLE_PRECISION      = 0b01111
@@ -145,6 +189,14 @@ class DataItemFormat(IntEnum):
     UNSIGNED_VRT_5                = 0b10101
     UNSIGNED_VRT_6                = 0b10110
     UNSIGNED_FIXED_NON_NORMALIZED = 0b10111
+    RESERVED_24                   = 0b11000
+    RESERVED_25                   = 0b11001
+    RESERVED_26                   = 0b11010
+    RESERVED_27                   = 0b11011
+    RESERVED_28                   = 0b11100
+    RESERVED_29                   = 0b11101
+    RESERVED_30                   = 0b11110
+    RESERVED_31                   = 0b11111
 
     @property
     def is_signed(self):
