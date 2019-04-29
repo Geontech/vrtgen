@@ -36,6 +36,11 @@ class Field(StructEntry):
             self._initialize(instance)
         return getattr(instance, self._attr)
 
+    def __set__(self, instance, value):
+        if not isinstance(value, self.type):
+            value = self.type(value)
+        setattr(instance, self._attr, value)        
+
     @property
     def bits(self):
         return self.type.bits
