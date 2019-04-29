@@ -1,7 +1,7 @@
 from enum import IntEnum
 import inspect
 
-from .enums import *
+from vrtgen.types import enums
 
 class Field:
     class Mode(IntEnum):
@@ -165,7 +165,9 @@ class FixedPointField(SimpleField):
         return type(name, (cls,), {'bits':bits, 'radix':radix})
 
 class EnumField(IntegerField):
-    pass
+    def __init__(self):
+        super().__init__()
+        self.value = self.type()
 
 # Common field types
 
@@ -181,27 +183,19 @@ class ClassIDField(StructField):
 
 class TSIField(EnumField):
     bits = 2
-    def __init__(self):
-        super().__init__()
-        self.value = TSI.NONE
+    type = enums.TSI
 
 class TSFField(EnumField):
     bits = 2
-    def __init__(self):
-        super().__init__()
-        self.value = TSF.NONE
+    type = enums.TSF
 
 class TSMField(EnumField):
     bits = 1
-    def __init__(self):
-        super().__init__()
-        self.value = TSM.FINE
+    type = enums.TSM
 
 class SSIField(EnumField):
     bits = 2
-    def __init__(self):
-        super().__init__()
-        self.value = SSI.SINGLE
+    type = enums.SSI
 
 class DeviceIDField(StructField):
     manufacturer_oui = field_descriptor('Manufacturer OUI', OUIField)

@@ -1,7 +1,7 @@
 import sys
 import struct
 
-from vrtgen.model.enums import TSI, TSF
+from vrtgen.types.enums import TSI, TSF
 
 from .generator import Generator
 

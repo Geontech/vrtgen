@@ -1,12 +1,11 @@
-from .model.field import *
-from .model.enums import TSI, TSF, SSI
-from .model.packets import *
-
 import logging
 import re
 
 import yaml
 
+from .model.field import *
+from .model.packets import *
+from vrtgen.types.enums import TSI, TSF, SSI
 
 TSI_VALUES = {
     'none':  TSI.NONE,

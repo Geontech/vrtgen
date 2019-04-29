@@ -1,4 +1,4 @@
-from .enums import *
+from vrtgen.types.enums import *
 from .field import *
 
 class VRTPrologue(FieldContainer):
