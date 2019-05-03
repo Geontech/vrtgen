@@ -1,3 +1,8 @@
+class Boolean(type):
+    bits = 1
+    def __new__(cls, value=False):
+        return bool(value)
+
 class IntegerType(int):
     def __new__(cls, value=0):
         value = int.__new__(cls, value)
