@@ -4,6 +4,8 @@ class Boolean(type):
         return bool(value)
 
 class IntegerType(int):
+    __cached__ = {}
+
     def __new__(cls, value=0):
         value = int.__new__(cls, value)
         if value > cls.maxval:
@@ -23,12 +25,18 @@ class IntegerType(int):
             cls.minval = 0
             cls.maxval = (2**bits) - 1
 
-    @classmethod
-    def create(cls, bits, signed=True):
+    @staticmethod
+    def create(bits, signed=True):
+        key = (bits, signed)
+        existing = IntegerType.__cached__.get(key, None)
+        if existing:
+            return existing
         name = 'Int{:d}'.format(bits)
         if not signed:
             name = 'U'+name
-        return type(name, (cls,), {}, bits=bits, signed=signed)
+        newclass = type(name, (IntegerType,), {}, bits=bits, signed=signed)
+        IntegerType.__cached__[key] = newclass
+        return newclass
 
 class Integer64(IntegerType, bits=64): pass
 class Integer32(IntegerType, bits=32): pass
