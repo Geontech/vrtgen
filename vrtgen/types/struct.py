@@ -1,27 +1,17 @@
 import warnings
 
+from . import basic
+
 class StructEntry:
     """
     Base class for objects that require space in a binary structure.
     """
-    pass
-
-class Enable(StructEntry):
-    bits = 1
-    def __init__(self, name):
-        self.name = name
-
-class Reserved(StructEntry):
-    __slots__ = ('bits',)
-    name = '<reserved>'
-    def __init__(self, bits):
-        self.bits = bits
-
-class Field(StructEntry):
-    __slots__ = ('name', 'type', '_attr')
-    def __init__(self, name, type, unused=None):
+    __slots__ = ('name', 'type', 'word', 'offset', '_attr')
+    def __init__(self, name, type):
         self.name = name
         self.type = type
+        self.word = None
+        self.offset = None
 
     def __set_name__(self, cls, name):
         self._attr = '_' + name
@@ -44,6 +34,22 @@ class Field(StructEntry):
     @property
     def bits(self):
         return self.type.bits
+
+class Enable(StructEntry):
+    def __init__(self, name):
+        super().__init__(name, basic.Boolean)
+
+class Reserved(StructEntry):
+    def __init__(self, bits):
+        super().__init__('<reserved>', basic.IntegerType.create(bits))
+
+    def __set__(self, instance, value):
+        raise AttributeError('reserved fields cannot be set')
+
+class Field(StructEntry):
+    __slots__ = ('_attr',)
+    def __init__(self, name, type, unused=None):
+        super().__init__(name, type)
 
 class StructBuilder(type):
     def __init__(cls, name, bases, namespace):
