@@ -44,16 +44,30 @@ class Integer24(IntegerType, bits=24): pass
 class Integer16(IntegerType, bits=16): pass
 class Integer8(IntegerType, bits=8): pass
 
-class FixedPointType:
+class FixedPointType(float):
+    __cached__ = {}
+
+    def __new__(cls, value=0.0):
+        value = float.__new__(cls, value)
+        # TODO: range checking
+        return value
+
     def __init_subclass__(cls, bits, radix, **kwds):
         super().__init_subclass__(**kwds)
         cls.bits = bits
         cls.radix = radix
 
-    @classmethod
-    def create(cls, bits, radix):
+    @staticmethod
+    def create(bits, radix):
+        key = (bits, radix)
+        existing = FixedPointType.__cached__.get(key, None)
+        if existing:
+            return existing
         name = 'FixedPoint{:d}_{:d}'.format(bits, radix)
-        return type(name, (cls,), {}, bits=bits, radix=radix)
+        newclass = type(name, (FixedPointType,), {}, bits=bits, radix=radix)
+        FixedPointType.__cached__[key] = newclass
+        return newclass
+
 
 FixedPoint64_20 = FixedPointType.create(64, 20)
 FixedPoint32_16 = FixedPointType.create(32, 16)
