@@ -2,6 +2,8 @@ import re
 
 from vrtgen.model.field import *
 from vrtgen.types.enums import TSI, TSF, SSI
+from vrtgen.types import basic
+from vrtgen.types.header import ClassIdentifier
 
 TSI_VALUES = {
     'none':  TSI.NONE,
@@ -98,20 +100,18 @@ class GenericFieldParser(FieldParser):
         return int(''.join(match.groups()), 16)
 
     def parse_scalar_value(self, field, value):
-        if isinstance(field, OUIField):
+        if field.type == basic.OUI:
             return self.parse_oui(value)
-        elif isinstance(field, TSIField):
+        elif field.type == TSI:
             return value_to_tsi(value)
-        elif isinstance(field, TSFField):
+        elif field.type == TSF:
             return value_to_tsf(value)
-        elif isinstance(field, BitField):
+        elif field.type == basic.Boolean:
             return self.to_bool(value)
-        elif isinstance(field, FixedPointField):
+        elif issubclass(field.type, basic.FixedPointType):
             return float(value)
-        elif isinstance(field, IntegerField):
+        elif issubclass(field.type, basic.IntegerType):
             return int(value)
-        elif isinstance(field, UserDefinedField):
-            raise ValueError('user-defined fields are not implemented')
         else:
             raise NotImplementedError("unsupported field '{}'".format(field.name))
 
@@ -194,6 +194,12 @@ class StructFieldParser(FieldParser):
         except (ValueError, TypeError) as exc:
             log.error("Invalid definition for '%s': %s", subfield.name, exc)
         return True
+
+class ClassIDParser(StructFieldParser):
+    def parse_mapping_entry(self, log, field, name, value):
+        if name.casefold() == 'oui':
+            name = ClassIdentifier.oui.name
+        return super().parse_mapping_entry(log, field, name, value)
 
 class IndexListParser(FieldParser):
     def parse_mapping_entry(self, log, field, name, value):

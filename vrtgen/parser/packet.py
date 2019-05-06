@@ -3,7 +3,10 @@ import re
 
 from .field import *
 from vrtgen.model.packets import *
+from vrtgen.model import config
+
 from vrtgen.types.enums import TSI, TSF, SSI
+from vrtgen.types.struct import Struct
 
 class SectionParser:
     FIELD_PARSERS = {}
@@ -33,7 +36,7 @@ class SectionParser:
         parser = self.FIELD_PARSERS.get(field.name.casefold(), None)
         if parser is not None:
             return parser
-        elif isinstance(field, StructField):
+        elif issubclass(field.type, Struct):
             return StructFieldParser()
         else:
             return GenericFieldParser()
@@ -93,6 +96,7 @@ class PrologueParser(SectionParser):
         super().__init__(log.getChild('Prologue'), prologue)
 
 PrologueParser.add_field_alias(VRTPrologue.stream_id, 'Stream ID')
+PrologueParser.add_field_parser(VRTPrologue.class_id, ClassIDParser())
 PrologueParser.add_field_alias(VRTPrologue.class_id, 'Class ID')
 
 class PacketParser:
@@ -129,14 +133,15 @@ class PacketParser:
 
 class DataPacketParser(PacketParser):
     def create_packet(self, name):
-        return VRTDataPacket(name)
+        return config.DataPacketConfiguration(name)
 
     def parse_trailer(self, packet, value):
-        TrailerParser(self.log, packet.trailer).parse(value)
+        #TrailerParser(self.log, packet.trailer).parse(value)
+        pass
 
 class ContextPacketParser(PacketParser):
     def create_packet(self, name):
-        return VRTContextPacket(name)
+        return config.ContextPacketConfiguration(name)
 
     def parse_payload(self, packet, value):
         CIFPayloadParser(self.log, packet).parse(value)
@@ -155,7 +160,7 @@ class ContextPacketParser(PacketParser):
 
 class CommandPacketParser(PacketParser):
     def create_packet(self, name):
-        return VRTCommandPacket(name)
+        return config.CommandPacketConfiguration(name)
 
     def parse_payload(self, packet, value):
         CIFPayloadParser(self.log, packet).parse(value)
