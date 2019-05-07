@@ -1,6 +1,6 @@
 import re
 
-from vrtgen.model.field import *
+from vrtgen.model.config import Mode
 from vrtgen.types.enums import TSI, TSF, SSI
 from vrtgen.types import basic
 from vrtgen.types.header import ClassIdentifier
@@ -45,11 +45,11 @@ class FieldParser:
                 self.parse_scalar(log, field, value)
 
     def parse_mapping(self, log, field, mapping):
-        enable = Field.Mode.REQUIRED
+        enable = Mode.REQUIRED
         for key, value in mapping.items():
             if key == 'required':
                 if not value:
-                    enable = Field.Mode.OPTIONAL
+                    enable = Mode.OPTIONAL
             elif not self.parse_mapping_entry(log, field, key, value):
                 log.warn("Invalid option '%s' for field '%s'", key, field.name)
 
@@ -75,9 +75,9 @@ class FieldParser:
     def parse_enable(self, value):
         if isinstance(value, str):
             return {
-                'required': Field.Mode.REQUIRED,
-                'optional': Field.Mode.OPTIONAL,
-                'disabled': Field.Mode.DISABLED
+                'required': Mode.REQUIRED,
+                'optional': Mode.OPTIONAL,
+                'disabled': Mode.DISABLED
             }.get(value.casefold(), None)
         else:
             return None
