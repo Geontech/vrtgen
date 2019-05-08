@@ -1,6 +1,23 @@
-from .struct import Struct, StructEntry, Enable, Field, Reserved
+"""
+CIF field metadata classes.
+"""
+from .struct import Struct, StructBuilder, StructEntry, Enable, Field, Reserved
+
+__all__ = ('ContextIndicatorFields',)
 
 class ContextIndicatorFields:
+    """
+    Container class for CIF fields.
+
+    An instance represents a particular set of fields. The intended use is to
+    create a ContextIndicatorFields instance and then set attributes for each
+    field, including reserved bits. For example:
+
+        CIF0 = ContextIndicatorFields('CIF0')
+        CIF0.change_indicator = Enable('...')
+
+    A matching bitwise enable struct can be generated from the set of fields.
+    """
     def __init__(self, name):
         self.name = name
         self._contents = []
@@ -24,7 +41,7 @@ class ContextIndicatorFields:
         Returns an iterator over the CIF fields that can be present in a
         Context/Command packet payload.
         """
-        for attr, value in self._contents:
+        for _, value in self._contents:
             # Only return contents that are defined as fields. Some CIF0 bits
             # are simple indicators, and there are a handful of reserved bits;
             # don't report these.
@@ -44,4 +61,4 @@ class ContextIndicatorFields:
             else:
                 entry = Enable(field.name)
             namespace[attr] = entry
-        return Struct.__class__(self.name + 'Enables', (Struct,), namespace)
+        return StructBuilder(self.name + 'Enables', (Struct,), namespace)

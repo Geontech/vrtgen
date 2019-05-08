@@ -1,5 +1,5 @@
 """
-Types used for CIF1 fields.
+Types and definitions for CIF1 fields.
 """
 from . import basic
 from .struct import Struct, Field, Reserved
@@ -7,18 +7,30 @@ from .cifmeta import ContextIndicatorFields
 from .cif0 import Gain
 
 class Polarization(Struct):
+    """
+    Antenna polarization [9.4.8].
+    """
     tilt = Field('Tilt Angle', basic.FixedPoint16_13)
     ellipticity = Field('Ellipticity Angle', basic.FixedPoint16_13)
 
 class PointingVector(Struct):
+    """
+    3-D Pointing Vector [9.4.1.1].
+    """
     elevation = Field('Elevation Angle', basic.FixedPoint16_7)
     azimuthal = Field('Azimuthal Angle', basic.FixedPoint16_7)
 
 class BeamWidths(Struct):
+    """
+    Beam Widths [9.4.2].
+    """
     horizontal = Field('Horizontal', basic.FixedPoint16_7)
     vertical = Field('Vertical', basic.FixedPoint16_7)
 
 class EbNoBER(Struct):
+    """
+    Energy per Bit to Noise Density Ratio (Eb/No) and Bit Error Rate [9.5.17].
+    """
     # Energy per Bit to Noise Density ratio (Eb/No)
     # Maximum positive value (0x7FFF) signifies "unused"
     ebno = Field('Eb/No', basic.FixedPoint16_7)
@@ -28,14 +40,23 @@ class EbNoBER(Struct):
     ber = Field('BER', basic.FixedPoint16_7)
 
 class Threshold(Struct):
+    """
+    Signal threshold level [9.5.13].
+    """
     stage1 = Field('Stage 1', basic.FixedPoint16_7)
     stage2 = Field('Stage 2', basic.FixedPoint16_7)
 
 class InterceptPoints(Struct):
+    """
+    Second and Third Order Intercept points [9.5.6].
+    """
     second_order = Field('Input 2nd Order Intercept', basic.FixedPoint16_7)
     third_order = Field('Input 3rd Order Intercept', basic.FixedPoint16_7)
 
 class SNRNoise(Struct):
+    """
+    Signal-to-Noise Ratio (SNR) and Noise Figure [9.5.7].
+    """
     # Signal-to-Noise Ratio (dB)
     # Maximum positive value (0x7FFF) signifies "unused"
     snr = Field('SNR', basic.FixedPoint16_7)
@@ -45,10 +66,16 @@ class SNRNoise(Struct):
     noise = Field('Noise Figure', basic.FixedPoint16_7)
 
 class HealthStatus(Struct):
+    """
+    Health Status [9.10.2].
+    """
     reserved = Reserved(16)
     identifier = Field('Identifier', basic.Identifier16)
 
 class VersionInformation(Struct):
+    """
+    Version Information [9.10.4].
+    """
     year = Field('Year', basic.IntegerType.create(7))
     day = Field('Day', basic.IntegerType.create(9))
     revision = Field('Revision', basic.IntegerType.create(6))
@@ -56,6 +83,9 @@ class VersionInformation(Struct):
     user = Reserved(10)
 
 class BufferSize(Struct):
+    """
+    Buffer Status [9.10.7].
+    """
     buffer_size = Field('Buffer Size', basic.Integer32)
     reserved = Reserved(16)
     level = Field('Level', basic.Integer8)

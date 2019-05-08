@@ -1,5 +1,5 @@
 """
-Types used for CIF0 fields.
+Types and defintions for CIF0 fields.
 """
 from . import basic
 from . import enums
@@ -7,22 +7,43 @@ from .struct import Struct, Field, Reserved, Enable
 from .cifmeta import ContextIndicatorFields
 
 class GeolocationAngle(basic.FixedPointType, bits=32, radix=22):
+    """
+    Geolocation Angle Format [Definition 9.4.5-1].
+    """
     pass
 
 class CartesianCoordinate(basic.FixedPointType, bits=32, radix=5):
+    """
+    Position coordinate format for ECEF Ephermeris [Rule 9.4.3-5].
+    """
+    pass
+
+class VelocityCoordinate(basic.FixedPointType, bits=32, radix=16):
+    """
+    Velocity coordinate format for ECEF Ephemeris [Rule 9.4.3-7].
+    """
     pass
 
 class Gain(Struct):
+    """
+    Gain/Attenuation [9.5.3].
+    """
     stage_1 = Field('Stage 1', basic.FixedPoint16_7)
     stage_2 = Field('Stage 2', basic.FixedPoint16_7)
 
 class DeviceIdentifier(Struct):
+    """
+    Device Identifier [9.10.1].
+    """
     reserved_1 = Reserved(8)
     manufacturer_oui = Field('Manufacturer OUI', basic.OUI)
     reserved_2 = Reserved(16)
     device_code = Field('Device Code', basic.Integer16)
 
 class Geolocation(Struct):
+    """
+    Formatted GPS Geolocation [9.4.5) and INS Geolocation (9.4.6].
+    """
     reserved = Reserved(4)
     tsi = Field('TSI', enums.TSI)
     tsf = Field('TSF', enums.TSF)
@@ -34,12 +55,15 @@ class Geolocation(Struct):
     latitude = Field('Latitude', GeolocationAngle)
     longitude = Field('Longitude', GeolocationAngle)
     altitude = Field('Altitude', basic.FixedPointType.create(32, 5))
-    ground_speed = Field('Speed Over Ground', basic.FixedPointType.create(32,16))
+    ground_speed = Field('Speed Over Ground', basic.FixedPointType.create(32, 16))
     heading_angle = Field('Heading Angle', GeolocationAngle)
     track_angle = Field('Track Angle', GeolocationAngle)
     magnetic_variation = Field('Magnetic Variation', GeolocationAngle)
 
 class Ephemeris(Struct):
+    """
+    ECEF Ephemeris [9.4.3] and Relative Ephemeris [9.4.9].
+    """
     reserved = Reserved(4)
     tsi = Field('TSI', enums.TSI)
     tsf = Field('TSF', enums.TSF)
@@ -54,9 +78,9 @@ class Ephemeris(Struct):
     attitude_alpha = Field('Attitude Alpha', GeolocationAngle)
     attitude_beta = Field('Attitude Beta', GeolocationAngle)
     attitude_phi = Field('Attitude Phi', GeolocationAngle)
-    velocity_dx = Field('Velocity dX', basic.FixedPoint32_16)
-    velocity_dy = Field('Velocity dY', basic.FixedPoint32_16)
-    velocity_dz = Field('Velocity dZ', basic.FixedPoint32_16)
+    velocity_dx = Field('Velocity dX', VelocityCoordinate)
+    velocity_dy = Field('Velocity dY', VelocityCoordinate)
+    velocity_dz = Field('Velocity dZ', VelocityCoordinate)
 
 CIF0Fields = ContextIndicatorFields('CIF0')
 
@@ -107,10 +131,10 @@ CIF0Fields.temperature = Field('Temperature', basic.FixedPointType.create(16, 6)
 CIF0Fields.device_id = Field('Device Identifier', DeviceIdentifier)
 
 # State/Event Indicators (0/16): 32 bits, bit flags
-CIF0Fields.state_event_indicators = Field('State/Event Indicators', basic.Integer32)#StateEventIndicators)
+CIF0Fields.state_event_indicators = Field('State/Event Indicators', basic.Integer32)
 
-# Data Payload Format (0/15): structured
-CIF0Fields.data_format = Field('Signal Data Packet Payload Format', None) # not implemented
+# Data Payload Format (0/15): structured (TODO: not implemented)
+CIF0Fields.data_format = Field('Signal Data Packet Payload Format', None)
 
 # Formatted GPS (0/14): structured
 CIF0Fields.formatted_gps = Field('Formatted GPS', Geolocation)
@@ -140,7 +164,7 @@ CIF0Fields.gps_ascii = Field('GPS ASCII', None) # not implemented
 # Channel) and an option Asychronous-Channel tag list. Most, if not all,
 # of this should be handled at run-time, with the only code generation
 # support being to enable the field.
-CIF0Fields.context_association_lists = Field('Context Association Lists', None) # not implemented
+CIF0Fields.context_association_lists = Field('Context Association Lists', None)
 
 # Field Attributes Enable (CIF7)
 CIF0Fields.cif7_enable = Enable('CIF 7 Enable')

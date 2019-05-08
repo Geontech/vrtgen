@@ -1,7 +1,14 @@
+"""
+Types used for VITA 49 packet headers.
+"""
+
 from .struct import Struct, Field, Reserved
 from . import basic, enums
 
 class ClassIdentifier(Struct):
+    """
+    Class Identifier (5.1.3).
+    """
     pad_bits = Field('Pad Bit Count', basic.IntegerType.create(5))
     reserved_1 = Reserved(3)
     oui = Field('Organizationally Unique Identifier', basic.OUI)
@@ -9,6 +16,9 @@ class ClassIdentifier(Struct):
     packet_code = Field('Packet Class Code', basic.Integer16)
 
 class Header(Struct):
+    """
+    VRT Packet Header (5.1.1).
+    """
     packet_type = Field('Packet Type', enums.PacketType)
     class_id_enable = Field('Class Identifier', basic.Boolean)
     packet_specific_26 = Reserved(1)

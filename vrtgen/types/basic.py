@@ -1,9 +1,22 @@
-class Boolean(type):
+"""
+Basic data types used in VITA 49 structures and fields.
+"""
+
+class Boolean(object):
+    """
+    One-bit boolean value type.
+    """
     bits = 1
     def __new__(cls, value=False):
         return bool(value)
 
 class IntegerType(int):
+    """
+    Base class for signed and unsigned integer types with specific bit widths.
+
+    Extends the built-in integer type with the size and sign information, and
+    provides range checking at construction time.
+    """
     __cached__ = {}
 
     def __new__(cls, value=0):
@@ -45,6 +58,12 @@ class Integer16(IntegerType, bits=16): pass
 class Integer8(IntegerType, bits=8): pass
 
 class FixedPointType(float):
+    """
+    Base class for fixed-point types, mapping to Python float for the actual
+    value.
+
+    Extends the built-in float type with the bits and radix information.
+    """
     __cached__ = {}
 
     def __new__(cls, value=0.0):
@@ -59,6 +78,10 @@ class FixedPointType(float):
 
     @staticmethod
     def create(bits, radix):
+        """
+        Creates an fixed-point type with the requested bits and radix point,
+        returning a previously-created type if one exists.
+        """
         key = (bits, radix)
         existing = FixedPointType.__cached__.get(key, None)
         if existing:
@@ -77,7 +100,15 @@ FixedPoint16_13 = FixedPointType.create(16, 13)
 Identifier32 = Integer32
 Identifier16 = Integer16
 
-class StreamIdentifier(IntegerType, bits=32, signed=False): pass
+class StreamIdentifier(IntegerType, bits=32, signed=False):
+    """
+    A Stream Identifier (Stream ID) is a 32-bit number assigned to a VRT
+    Packet Stream [5.1.2].
+    """
+    pass
 
 class OUI(IntegerType, bits=24):
+    """
+    Organizationally Unique Identifier.
+    """
     pass
