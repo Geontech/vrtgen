@@ -6,7 +6,7 @@ from vrtgen.model import config
 
 from vrtgen.types.enums import TSI, TSF, SSI
 from vrtgen.types.struct import Struct
-from vrtgen.types.cif1 import CIF1Fields
+from vrtgen.types.cif1 import CIF1
 
 class SectionParser:
     FIELD_PARSERS = {}
@@ -91,9 +91,9 @@ class CIFPayloadParser(SectionParser):
     def __init__(self, log, packet):
         super().__init__(log.getChild('Payload'), packet)
 
-CIFPayloadParser.add_field_parser(CIF1Fields.index_list, IndexListParser())
-CIFPayloadParser.add_field_parser(CIF1Fields.discrete_io_32, UserDefinedFieldParser())
-CIFPayloadParser.add_field_parser(CIF1Fields.discrete_io_64, UserDefinedFieldParser())
+CIFPayloadParser.add_field_parser(CIF1.index_list, IndexListParser())
+CIFPayloadParser.add_field_parser(CIF1.discrete_io_32, UserDefinedFieldParser())
+CIFPayloadParser.add_field_parser(CIF1.discrete_io_64, UserDefinedFieldParser())
 
 class PrologueParser(SectionParser):
     def __init__(self, log, prologue):

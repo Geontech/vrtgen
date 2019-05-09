@@ -3,8 +3,8 @@ import warnings
 
 from vrtgen.types.struct import Field
 from vrtgen.types import basic, enums, header
-from vrtgen.types.cif0 import CIF0Fields
-from vrtgen.types.cif1 import CIF1Fields
+from vrtgen.types.cif0 import CIF0
+from vrtgen.types.cif1 import CIF1
 
 from .field import FieldConfiguration, Mode
 
@@ -19,8 +19,8 @@ class FieldContainer:
 class CIFPayloadConfiguration(FieldContainer):
     def __init__(self):
         super().__init__()
-        self._add_cif_fields(CIF0Fields)
-        self._add_cif_fields(CIF1Fields)
+        self._add_cif_fields(CIF0)
+        self._add_cif_fields(CIF1)
 
     def _add_cif_fields(self, cif):
         for name, value in inspect.getmembers(cif, lambda x: isinstance(x, Field)):
