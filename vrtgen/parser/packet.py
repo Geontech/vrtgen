@@ -2,11 +2,11 @@ import logging
 import re
 
 from .field import *
-from vrtgen.model.packets import *
 from vrtgen.model import config
 
 from vrtgen.types.enums import TSI, TSF, SSI
 from vrtgen.types.struct import Struct
+from vrtgen.types.cif1 import CIF1Fields
 
 class SectionParser:
     FIELD_PARSERS = {}
@@ -26,11 +26,15 @@ class SectionParser:
 
     @classmethod
     def add_field_parser(cls, field, parser):
-        cls.FIELD_PARSERS[field.name.casefold()] = parser
+        if not isinstance(field, str):
+            field = field.name
+        cls.FIELD_PARSERS[field.casefold()] = parser
 
     @classmethod
     def add_field_alias(cls, field, alias):
-        cls.FIELD_ALIASES[alias.casefold()] = field.name
+        if not isinstance(field, str):
+            field = field.name
+        cls.FIELD_ALIASES[alias.casefold()] = field
 
     def get_field_parser(self, field):
         parser = self.FIELD_PARSERS.get(field.name.casefold(), None)
@@ -81,23 +85,23 @@ class TrailerParser(SectionParser):
         else:
             return super().parse_option(name, value)
 
-TrailerParser.add_field_parser(VRTDataTrailer.sample_frame, SSIParser())
+TrailerParser.add_field_parser(config.SAMPLE_FRAME, SSIParser())
 
 class CIFPayloadParser(SectionParser):
     def __init__(self, log, packet):
         super().__init__(log.getChild('Payload'), packet)
 
-CIFPayloadParser.add_field_parser(CIF1.index_list, IndexListParser())
-CIFPayloadParser.add_field_parser(CIF1.discrete_io_32, UserDefinedFieldParser())
-CIFPayloadParser.add_field_parser(CIF1.discrete_io_64, UserDefinedFieldParser())
+CIFPayloadParser.add_field_parser(CIF1Fields.index_list, IndexListParser())
+CIFPayloadParser.add_field_parser(CIF1Fields.discrete_io_32, UserDefinedFieldParser())
+CIFPayloadParser.add_field_parser(CIF1Fields.discrete_io_64, UserDefinedFieldParser())
 
 class PrologueParser(SectionParser):
     def __init__(self, log, prologue):
         super().__init__(log.getChild('Prologue'), prologue)
 
-PrologueParser.add_field_alias(VRTPrologue.stream_id, 'Stream ID')
-PrologueParser.add_field_parser(VRTPrologue.class_id, ClassIDParser())
-PrologueParser.add_field_alias(VRTPrologue.class_id, 'Class ID')
+PrologueParser.add_field_alias(config.STREAM_ID, 'Stream ID')
+PrologueParser.add_field_parser(config.CLASS_ID, ClassIDParser())
+PrologueParser.add_field_alias(config.CLASS_ID, 'Class ID')
 
 class PacketParser:
     def __init__(self, name):

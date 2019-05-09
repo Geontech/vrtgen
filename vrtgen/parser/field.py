@@ -1,6 +1,6 @@
 import re
 
-from vrtgen.model.config import Mode
+from vrtgen.model.field import Mode
 from vrtgen.types.enums import TSI, TSF, SSI
 from vrtgen.types import basic
 from vrtgen.types.header import ClassIdentifier
