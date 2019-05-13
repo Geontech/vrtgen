@@ -13,6 +13,7 @@ test:
 lint:
     stage: test
     before_script:
+        - pip install -r requirements.txt
         - apk add gcc musl-dev
         - pip install pylint
     script:
