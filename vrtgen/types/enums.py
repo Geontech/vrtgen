@@ -8,30 +8,46 @@ class BinaryEnumMeta(EnumMeta):
     Extended metaclass for binary enumerations, adding a default value for
     instance creation.
     """
-    def __new__(cls, name, bases, namespace, bits=None, **kwds):
+    #pylint: disable=arguments-differ
+    def __new__(cls, name, bases, namespace, **kwds):
         # Discard keywords when calling EnumMeta's new method. Unlike type, it
         # does not accept keywords, which also means that the __init_subclass__
         # method will not receive keyword values (i.e., "bits").
         enum_class = super().__new__(cls, name, bases, namespace)
-        if bits:
-            enum_class.bits = bits
+        # Dispatch to __init_subclass__ with the expected keywords. This is a
+        # minor deviation from the way it normally works, because it looks up
+        # __init_subclass__ in the class as opposed to its first base class,
+        # but works normally as long as only the base BinaryEnum class defines
+        # __init_subclass__.
+        getattr(enum_class, '__init_subclass__')(**kwds)
         return enum_class
 
-    def __call__(cls, value=0, *args, **kwds):
+    def __call__(cls, *args, **kwds):
         # Override the creation of enum instances to default to a value of 0
-        return super().__call__(value, *args, **kwds)
+        # when called with no arguments
+        if not args and not kwds:
+            args = (0,)
+        return super().__call__(*args, **kwds)
 
-    def __prepare__(name, bases, **kwds):
+    def __prepare__(name, bases, **kwds): #pylint: disable=bad-mcs-method-argument
         # Discard keywords (i.e., "bits") for EnumMeta
+        del kwds
         return EnumMeta.__prepare__(name, bases)
 
 class BinaryEnum(IntEnum, metaclass=BinaryEnumMeta):
     """
     Base class for integer-valued enumerations with a known bit size.
     """
-    # This class ties together IntEnum and our custom metaclass, but does not
-    # add any functionality (see above re: __init_subclass__)
-    pass
+    # This class ties together IntEnum and our custom metaclass
+    def __init_subclass__(cls, bits=None, **kwds):
+        # This method will be called twice--first by EnumMeta.__new__ without
+        # keywords, and then by BinaryEnumMeta.__new__ with keywords. This is
+        # necessary to work around the lack of keyword support in EnumMeta.
+        # If bits is None, assume that it's the first call and return early.
+        if bits is None:
+            return
+        super().__init_subclass__(**kwds)
+        cls.bits = bits
 
 class PacketType(BinaryEnum, bits=4):
     """
