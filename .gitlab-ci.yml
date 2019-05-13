@@ -16,4 +16,7 @@ lint:
         - apk add gcc musl-dev
         - pip install pylint
     script:
-        - pylint vrtgen
+        # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
+        # Unfortunately, even if the command completely fails (e.g., invalid
+        # path) it still exits with 0.
+        - pylint -f colorized --exit-zero vrtgen
