@@ -7,8 +7,9 @@ test:
     stage: test
     before_script:
         - pip install -r requirements.txt
+        - pip install pytest
     script:
-        - ./vrtpktgen -v test.yaml
+        - python -m pytest tests/
 
 lint:
     stage: test

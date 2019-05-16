@@ -25,7 +25,10 @@ class FileParser:
 
     def parse(self, filename):
         with open(filename, 'r') as fp:
-            document = yaml.load(fp)
+            yield from self.parse_stream(fp)
+
+    def parse_stream(self, stream):
+        document = yaml.safe_load(stream)
 
         for name, value in document.items():
             if name.startswith('.'):
