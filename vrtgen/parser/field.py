@@ -1,35 +1,13 @@
-import re
+"""
+Parsers for handling packet fields.
+"""
 
 from vrtgen.model.field import Mode
-from vrtgen.types.enums import TSI, TSF, SSI
+from vrtgen.types import enums
 from vrtgen.types import basic
 from vrtgen.types.header import ClassIdentifier
 
-TSI_VALUES = {
-    'none':  TSI.NONE,
-    'utc':   TSI.UTC,
-    'gps':   TSI.GPS,
-    'other': TSI.OTHER
-}
-
-def value_to_tsi(value):
-    try:
-        return TSI_VALUES[value.casefold()]
-    except KeyError:
-        raise ValueError(value)
-
-TSF_VALUES = {
-    'none':         TSF.NONE,
-    'samples':      TSF.SAMPLE_COUNT,
-    'picoseconds':  TSF.REAL_TIME,
-    'free running': TSF.FREE_RUNNING
-}
-
-def value_to_tsf(value):
-    try:
-        return TSF_VALUES[value.casefold()]
-    except KeyError:
-        raise ValueError(value)
+from . import value as value_parser
 
 class FieldParser:
     def __call__(self, log, field, value):
@@ -91,23 +69,15 @@ class FieldParser:
         log.debug("Field '%s' = %s", field.name, value)
 
 class GenericFieldParser(FieldParser):
-    HEX_DIGIT = r'[0-9a-zA-Z]'
-    OUI_RE = re.compile(r'({0})-({0})-({0})$'.format(HEX_DIGIT*2))
-    def parse_oui(self, value):
-        match = self.OUI_RE.match(str(value))
-        if not match:
-            raise ValueError('OUI format must be XX-XX-XX')
-        return int(''.join(match.groups()), 16)
-
     def parse_scalar_value(self, field, value):
         if field.type == basic.OUI:
-            return self.parse_oui(value)
-        elif field.type == TSI:
-            return value_to_tsi(value)
-        elif field.type == TSF:
-            return value_to_tsf(value)
+            return value_parser.parse_oui(value)
+        elif field.type == enums.TSI:
+            return value_parser.parse_tsi(value)
+        elif field.type == enums.TSF:
+            return value_parser.parse_tsf(value)
         elif field.type == basic.Boolean:
-            return self.to_bool(value)
+            return value_parser.parse_boolean(value)
         elif issubclass(field.type, basic.FixedPointType):
             return float(value)
         elif issubclass(field.type, basic.IntegerType):
@@ -122,14 +92,6 @@ class GenericFieldParser(FieldParser):
         else:
             return False
         return True
-
-    def to_bool(self, value):
-        if value in (0, False):
-            return False
-        elif value in (1, True):
-            return True
-        else:
-            raise TypeError('must be boolean, 0 or 1')
 
 class UserDefinedFieldParser(FieldParser):
     def parse_scalar_value(self, log, value):
@@ -177,10 +139,7 @@ class UserDefinedFieldParser(FieldParser):
 
 class SSIParser(FieldParser):
     def parse_scalar_value(self, log, field, value):
-        ssi = getattr(SSI, value.upper(), None)
-        if ssi is None:
-            raise ValueError(value)
-        return ssi
+        return value_parser.parse_ssi(value)
 
 class StructFieldParser(FieldParser):
     def parse_mapping_entry(self, log, field, name, value):
