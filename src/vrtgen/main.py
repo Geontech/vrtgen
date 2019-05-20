@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
-
-__version__ = '0.1'
-
+"""
+Command-line interface for vrtpktgen.
+"""
 import logging
 import argparse
 import sys
@@ -9,18 +8,20 @@ import sys
 from vrtgen.parser import FileParser
 from vrtgen.backend import Generator
 
-logging.basicConfig()
+from . import version
 
 class NullGenerator(Generator):
     def generate(self, packet):
         pass
 
-if __name__ == '__main__':
+def main():
+    logging.basicConfig()
+
     arg_parser = argparse.ArgumentParser(description='Generate VITA 49.2 packet classes.')
     arg_parser.add_argument('filename', nargs='+', help='VRT YAML definition file')
     arg_parser.add_argument('-v', '--verbose', action='store_true', default=False,
                             help='display debug messages')
-    arg_parser.add_argument('--version', action='version', version='%(prog)s '+__version__)
+    arg_parser.add_argument('--version', action='version', version='%(prog)s '+version.__version__)
     arg_parser.add_argument('-b', '--backend', help='code generator backend to target')
     arg_parser.add_argument('-o', '--option', action='append', default=[],
                             help='options for code generator backend')
