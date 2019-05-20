@@ -1,4 +1,6 @@
 __pycache__/
 *.pyc
+*.egg-info
+.eggs/
 src/cpp/include/vrtgen/enums.hpp
 src/cpp/include/vrtgen/packing/*.hpp

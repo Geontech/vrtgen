@@ -6,16 +6,16 @@ image: python:3.6-alpine
 test:
     stage: test
     before_script:
-        - pip install -r requirements.txt
+        - pip install -e .
         - pip install pytest
     script:
-        - python -m pytest tests/
+        - pytest
 
 lint:
     stage: test
     before_script:
-        - pip install -r requirements.txt
         - apk add gcc musl-dev
+        - pip install -e .
         - pip install pylint
     script:
         # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
