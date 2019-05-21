@@ -5,12 +5,14 @@ from .field import *
 from vrtgen.model import config
 
 from vrtgen.types.enums import TSI, TSF, SSI
-from vrtgen.types.struct import Struct
+from vrtgen.types.struct import Struct, Field
+from vrtgen.types.cif0 import CIF0
 from vrtgen.types.cif1 import CIF1
+from vrtgen.types.header import Header
 
 class SectionParser:
-    FIELD_PARSERS = {}
-    FIELD_ALIASES = {}
+    __PARSERS__ = {}
+    __ALIASES__ = {}
 
     def __init__(self, log, context):
         self.log = log
@@ -21,29 +23,31 @@ class SectionParser:
         # Copy the class-wide parser tables on subclass creation so that they
         # can add or otherwise alter the parsers without affecting any other
         # classes in the hierarchy
-        cls.FIELD_PARSERS = cls.FIELD_PARSERS.copy()
-        cls.FIELD_ALIASES = cls.FIELD_ALIASES.copy()
+        cls.__PARSERS__ = cls.__PARSERS__.copy()
+        cls.__ALIASES__ = cls.__ALIASES__.copy()
 
     @classmethod
-    def add_field_parser(cls, field, parser):
-        if not isinstance(field, str):
-            field = field.name
-        cls.FIELD_PARSERS[field.casefold()] = parser
+    def add_parser(cls, name, parser, alias=None):
+        assert parser is not None
+        cls.__PARSERS__[name.casefold()] = parser
+        if alias:
+            cls.__ALIASES__[alias.casefold()] = name
 
     @classmethod
-    def add_field_alias(cls, field, alias):
-        if not isinstance(field, str):
-            field = field.name
-        cls.FIELD_ALIASES[alias.casefold()] = field
+    def add_field_parser(cls, field, parser=None, alias=None):
+        if parser is None:
+            assert field.type is not None
+            if issubclass(field.type, Struct):
+                parser = StructFieldParser()
+            else:
+                parser = GenericFieldParser()
+        cls.add_parser(field.name, parser, alias)
 
     def get_field_parser(self, field):
-        parser = self.FIELD_PARSERS.get(field.name.casefold(), None)
-        if parser is not None:
-            return parser
-        elif issubclass(field.type, Struct):
-            return StructFieldParser()
-        else:
-            return GenericFieldParser()
+        parser = self.__PARSERS__.get(field.name.casefold(), None)
+        if parser is None:
+            raise ValueError("Unsupported field '{}'".format(field.name))
+        return parser
 
     def parse_field(self, field, value):
         self.log.debug("Parsing field '%s'", field.name)
@@ -61,7 +65,7 @@ class SectionParser:
             if self.parse_option(field_name, field_value):
                 continue
 
-            field_name = self.FIELD_ALIASES.get(field_name.casefold(), field_name)
+            field_name = self.__ALIASES__.get(field_name.casefold(), field_name)
             field = self.context.get_field(field_name)
             if field is None:
                 self.log.error("Invalid field '%s'", field_name)
@@ -85,23 +89,65 @@ class TrailerParser(SectionParser):
         else:
             return super().parse_option(name, value)
 
-TrailerParser.add_field_parser(config.SAMPLE_FRAME, SSIParser())
+TrailerParser.add_parser(config.SAMPLE_FRAME, SSIParser())
 
 class CIFPayloadParser(SectionParser):
     def __init__(self, log, packet):
         super().__init__(log.getChild('Payload'), packet)
 
-CIFPayloadParser.add_field_parser(CIF1.index_list, IndexListParser())
-CIFPayloadParser.add_field_parser(CIF1.discrete_io_32, UserDefinedFieldParser())
-CIFPayloadParser.add_field_parser(CIF1.discrete_io_64, UserDefinedFieldParser())
+CIFPayloadParser.add_field_parser(CIF0.reference_point_id)
+CIFPayloadParser.add_field_parser(CIF0.bandwidth)
+CIFPayloadParser.add_field_parser(CIF0.if_frequency)
+CIFPayloadParser.add_field_parser(CIF0.rf_frequency)
+CIFPayloadParser.add_field_parser(CIF0.rf_frequency_offset)
+CIFPayloadParser.add_field_parser(CIF0.if_band_offset)
+CIFPayloadParser.add_field_parser(CIF0.reference_level)
+CIFPayloadParser.add_field_parser(CIF0.gain)
+CIFPayloadParser.add_field_parser(CIF0.over_range_count)
+CIFPayloadParser.add_field_parser(CIF0.sample_rate)
+CIFPayloadParser.add_field_parser(CIF0.timestamp_calibration_time)
+CIFPayloadParser.add_field_parser(CIF0.temperature)
+CIFPayloadParser.add_field_parser(CIF0.device_id)
+# Not implemented: CIF0.state_event_indicators
+# Not implemented: CIF0.data_format
+CIFPayloadParser.add_field_parser(CIF0.formatted_gps)
+CIFPayloadParser.add_field_parser(CIF0.formatted_ins)
+CIFPayloadParser.add_field_parser(CIF0.ecef_ephemeris)
+CIFPayloadParser.add_field_parser(CIF0.relative_ephemeris)
+CIFPayloadParser.add_field_parser(CIF0.ephemeris_ref_id)
+# Not implemented: CIF0.gps_ascii
+# Not implemented: CIF0.context_association_lists
+
+CIFPayloadParser.add_field_parser(CIF1.phase_offset)
+CIFPayloadParser.add_field_parser(CIF1.polarization)
+CIFPayloadParser.add_field_parser(CIF1.pointing_vector)
+CIFPayloadParser.add_field_parser(CIF1.spatial_scan_type)
+CIFPayloadParser.add_field_parser(CIF1.beam_widths)
+CIFPayloadParser.add_field_parser(CIF1.range)
+CIFPayloadParser.add_field_parser(CIF1.ebno_ber)
+CIFPayloadParser.add_field_parser(CIF1.threshold)
+CIFPayloadParser.add_field_parser(CIF1.compression_point)
+CIFPayloadParser.add_field_parser(CIF1.snr_noise_figure)
+CIFPayloadParser.add_field_parser(CIF1.aux_frequency)
+CIFPayloadParser.add_field_parser(CIF1.aux_gain)
+CIFPayloadParser.add_field_parser(CIF1.aux_bandwidth)
+CIFPayloadParser.add_parser(CIF1.index_list.name, IndexListParser())
+CIFPayloadParser.add_parser(CIF1.discrete_io_32.name, UserDefinedFieldParser())
+CIFPayloadParser.add_parser(CIF1.discrete_io_64.name, UserDefinedFieldParser())
+CIFPayloadParser.add_field_parser(CIF1.health_status)
+CIFPayloadParser.add_field_parser(CIF1.version_build_code)
+CIFPayloadParser.add_field_parser(CIF1.buffer_size)
 
 class PrologueParser(SectionParser):
     def __init__(self, log, prologue):
         super().__init__(log.getChild('Prologue'), prologue)
 
-PrologueParser.add_field_alias(config.STREAM_ID, 'Stream ID')
-PrologueParser.add_field_parser(config.CLASS_ID, ClassIDParser())
-PrologueParser.add_field_alias(config.CLASS_ID, 'Class ID')
+PrologueParser.add_parser(config.STREAM_ID, GenericFieldParser(), alias='Stream ID')
+PrologueParser.add_parser(config.CLASS_ID, ClassIDParser(), alias='Class ID')
+PrologueParser.add_field_parser(Header.tsi)
+PrologueParser.add_field_parser(Header.tsf)
+PrologueParser.add_parser(config.INTEGER_TIMESTAMP, GenericFieldParser())
+PrologueParser.add_parser(config.FRACTIONAL_TIMESTAMP, GenericFieldParser())
 
 class PacketParser:
     def __init__(self, name):

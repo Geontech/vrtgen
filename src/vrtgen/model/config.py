@@ -34,6 +34,8 @@ class CIFPayloadConfiguration(FieldContainer):
 # Header field name constants
 STREAM_ID = 'Stream Identifier'
 CLASS_ID = 'Class Identifier'
+INTEGER_TIMESTAMP = 'Integer Timestamp'
+FRACTIONAL_TIMESTAMP = 'Fractional Timestamp'
 
 # Trailer field name constants
 SAMPLE_FRAME = 'Sample Frame'
