@@ -1,41 +1,33 @@
 import logging
-import re
 
-from .field import *
 from vrtgen.model import config
 
-from vrtgen.types.enums import TSI, TSF, SSI
-from vrtgen.types.struct import Struct, Field
-from vrtgen.types.cif0 import CIF0
-from vrtgen.types.cif1 import CIF1
+from vrtgen.types.enums import TSM
 from vrtgen.types.header import Header
 
-from .section import SectionParser
+from . import field
 from .cif import CIFPayloadParser
+from .section import SectionParser
 
 class TrailerParser(SectionParser):
-    def __init__(self, log, trailer):
-        super().__init__(log.getChild('Trailer'), trailer)
-
-    def parse_option(self, name, value):
+    def parse_option(self, log, name, value):
         if name.casefold() == 'user-defined':
-            self.log.warn('User-defined bits not implemented')
+            log.warn('User-defined bits not implemented')
             return True
         else:
-            return super().parse_option(name, value)
+            return super().parse_option(log, name, value)
 
-TrailerParser.add_parser(config.SAMPLE_FRAME, SSIParser())
+TrailerParser.add_parser(config.SAMPLE_FRAME, field.SSIParser())
 
 class PrologueParser(SectionParser):
-    def __init__(self, log, prologue):
-        super().__init__(log.getChild('Prologue'), prologue)
+    pass
 
-PrologueParser.add_parser(config.STREAM_ID, GenericFieldParser(), alias='Stream ID')
-PrologueParser.add_parser(config.CLASS_ID, ClassIDParser(), alias='Class ID')
+PrologueParser.add_parser(config.STREAM_ID, field.GenericFieldParser(), alias='Stream ID')
+PrologueParser.add_parser(config.CLASS_ID, field.ClassIDParser(), alias='Class ID')
 PrologueParser.add_field_parser(Header.tsi)
 PrologueParser.add_field_parser(Header.tsf)
-PrologueParser.add_parser(config.INTEGER_TIMESTAMP, GenericFieldParser())
-PrologueParser.add_parser(config.FRACTIONAL_TIMESTAMP, GenericFieldParser())
+PrologueParser.add_parser(config.INTEGER_TIMESTAMP, field.GenericFieldParser())
+PrologueParser.add_parser(config.FRACTIONAL_TIMESTAMP, field.GenericFieldParser())
 
 class PacketParser:
     def __init__(self, name):
@@ -43,7 +35,7 @@ class PacketParser:
         self.log = logging.getLogger(name)
 
     def parse_prologue(self, packet, value):
-        PrologueParser(self.log, packet.prologue).parse(value)
+        PrologueParser().parse(self.log.getChild('Prologue'), packet.prologue, value)
 
     def parse_trailer(self, packet, value):
         self.log.error('Only data packets can have a trailer')
@@ -69,12 +61,15 @@ class PacketParser:
 
         return packet
 
+    def create_packet(self, name):
+        raise NotImplementedError()
+
 class DataPacketParser(PacketParser):
     def create_packet(self, name):
         return config.DataPacketConfiguration(name)
 
     def parse_trailer(self, packet, value):
-        #TrailerParser(self.log, packet.trailer).parse(value)
+        #TrailerParser().parse(self.log.getChild('Trailer'), packet.trailer, value)
         pass
 
 class ContextPacketParser(PacketParser):
@@ -82,7 +77,7 @@ class ContextPacketParser(PacketParser):
         return config.ContextPacketConfiguration(name)
 
     def parse_payload(self, packet, value):
-        CIFPayloadParser(self.log, packet).parse(value)
+        CIFPayloadParser().parse(self.log.getChild('Payload'), packet, value)
 
     def parse_option(self, packet, name, value):
         if name.casefold() == 'timestamp mode':
@@ -101,4 +96,4 @@ class CommandPacketParser(PacketParser):
         return config.CommandPacketConfiguration(name)
 
     def parse_payload(self, packet, value):
-        CIFPayloadParser(self.log, packet).parse(value)
+        CIFPayloadParser().parse(self.log.getChild('Payload'), packet, value)

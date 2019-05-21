@@ -16,10 +16,6 @@ class SectionParser:
     __PARSERS__ = {}
     __ALIASES__ = {}
 
-    def __init__(self, log, context):
-        self.log = log
-        self.context = context
-
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         # Copy the class-wide parser tables on subclass creation so that they
@@ -57,31 +53,31 @@ class SectionParser:
             raise ValueError("Unsupported field '{}'".format(field.name))
         return parser
 
-    def parse_field(self, field, value):
-        self.log.debug("Parsing field '%s'", field.name)
+    def parse_field(self, log, field, value):
+        log.debug("Parsing field '%s'", field.name)
         parser = self.get_field_parser(field)
         try:
-            parser(self.log, field, value)
+            parser(log, field, value)
         except (TypeError, ValueError) as exc:
-            self.log.error("Invalid definition for '%s': %s", field.name, exc)
+            log.error("Invalid definition for '%s': %s", field.name, exc)
 
-    def parse_option(self, name, value):
+    def parse_option(self, log, name, value):
         return False
 
-    def parse(self, value):
+    def parse(self, log, context, value):
         for field_name, field_value in value.items():
-            if self.parse_option(field_name, field_value):
+            if self.parse_option(log, field_name, field_value):
                 continue
 
             field_name = self.__ALIASES__.get(field_name.casefold(), field_name)
-            field = self.context.get_field(field_name)
+            field = context.get_field(field_name)
             if field is None:
-                self.log.error("Invalid field '%s'", field_name)
+                log.error("Invalid field '%s'", field_name)
                 continue
 
             try:
-                self.parse_field(field, field_value)
+                self.parse_field(log, field, field_value)
             except (TypeError, ValueError) as exc:
-                self.log.error("Invalid value for field '%s': %s", field_name, exc)
+                log.error("Invalid value for field '%s': %s", field_name, exc)
             except Exception as exc:
-                self.log.exception("Field '%s': %s", field_name, exc)
+                log.exception("Field '%s': %s", field_name, exc)

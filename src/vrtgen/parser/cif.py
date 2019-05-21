@@ -12,8 +12,7 @@ class CIFPayloadParser(SectionParser):
     """
     Parses YAML configuration for CIF payload fields.
     """
-    def __init__(self, log, packet):
-        super().__init__(log.getChild('Payload'), packet)
+    pass #pylint: disable=unnecessary-pass
 
 CIFPayloadParser.add_field_parser(CIF0.reference_point_id)
 CIFPayloadParser.add_field_parser(CIF0.bandwidth)
