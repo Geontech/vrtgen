@@ -10,73 +10,8 @@ from vrtgen.types.cif0 import CIF0
 from vrtgen.types.cif1 import CIF1
 from vrtgen.types.header import Header
 
-class SectionParser:
-    __PARSERS__ = {}
-    __ALIASES__ = {}
-
-    def __init__(self, log, context):
-        self.log = log
-        self.context = context
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        # Copy the class-wide parser tables on subclass creation so that they
-        # can add or otherwise alter the parsers without affecting any other
-        # classes in the hierarchy
-        cls.__PARSERS__ = cls.__PARSERS__.copy()
-        cls.__ALIASES__ = cls.__ALIASES__.copy()
-
-    @classmethod
-    def add_parser(cls, name, parser, alias=None):
-        assert parser is not None
-        cls.__PARSERS__[name.casefold()] = parser
-        if alias:
-            cls.__ALIASES__[alias.casefold()] = name
-
-    @classmethod
-    def add_field_parser(cls, field, parser=None, alias=None):
-        if parser is None:
-            assert field.type is not None
-            if issubclass(field.type, Struct):
-                parser = StructFieldParser()
-            else:
-                parser = GenericFieldParser()
-        cls.add_parser(field.name, parser, alias)
-
-    def get_field_parser(self, field):
-        parser = self.__PARSERS__.get(field.name.casefold(), None)
-        if parser is None:
-            raise ValueError("Unsupported field '{}'".format(field.name))
-        return parser
-
-    def parse_field(self, field, value):
-        self.log.debug("Parsing field '%s'", field.name)
-        parser = self.get_field_parser(field)
-        try:
-            parser(self.log, field, value)
-        except (TypeError, ValueError) as exc:
-            self.log.error("Invalid definition for '%s': %s", field.name, exc)
-
-    def parse_option(self, name, value):
-        return False
-
-    def parse(self, value):
-        for field_name, field_value in value.items():
-            if self.parse_option(field_name, field_value):
-                continue
-
-            field_name = self.__ALIASES__.get(field_name.casefold(), field_name)
-            field = self.context.get_field(field_name)
-            if field is None:
-                self.log.error("Invalid field '%s'", field_name)
-                continue
-
-            try:
-                self.parse_field(field, field_value)
-            except (TypeError, ValueError) as exc:
-                self.log.error("Invalid value for field '%s': %s", field_name, exc)
-            except Exception as exc:
-                self.log.exception("Field '%s': %s", field_name, exc)
+from .section import SectionParser
+from .cif import CIFPayloadParser
 
 class TrailerParser(SectionParser):
     def __init__(self, log, trailer):
@@ -90,53 +25,6 @@ class TrailerParser(SectionParser):
             return super().parse_option(name, value)
 
 TrailerParser.add_parser(config.SAMPLE_FRAME, SSIParser())
-
-class CIFPayloadParser(SectionParser):
-    def __init__(self, log, packet):
-        super().__init__(log.getChild('Payload'), packet)
-
-CIFPayloadParser.add_field_parser(CIF0.reference_point_id)
-CIFPayloadParser.add_field_parser(CIF0.bandwidth)
-CIFPayloadParser.add_field_parser(CIF0.if_frequency)
-CIFPayloadParser.add_field_parser(CIF0.rf_frequency)
-CIFPayloadParser.add_field_parser(CIF0.rf_frequency_offset)
-CIFPayloadParser.add_field_parser(CIF0.if_band_offset)
-CIFPayloadParser.add_field_parser(CIF0.reference_level)
-CIFPayloadParser.add_field_parser(CIF0.gain)
-CIFPayloadParser.add_field_parser(CIF0.over_range_count)
-CIFPayloadParser.add_field_parser(CIF0.sample_rate)
-CIFPayloadParser.add_field_parser(CIF0.timestamp_calibration_time)
-CIFPayloadParser.add_field_parser(CIF0.temperature)
-CIFPayloadParser.add_field_parser(CIF0.device_id)
-# Not implemented: CIF0.state_event_indicators
-# Not implemented: CIF0.data_format
-CIFPayloadParser.add_field_parser(CIF0.formatted_gps)
-CIFPayloadParser.add_field_parser(CIF0.formatted_ins)
-CIFPayloadParser.add_field_parser(CIF0.ecef_ephemeris)
-CIFPayloadParser.add_field_parser(CIF0.relative_ephemeris)
-CIFPayloadParser.add_field_parser(CIF0.ephemeris_ref_id)
-# Not implemented: CIF0.gps_ascii
-# Not implemented: CIF0.context_association_lists
-
-CIFPayloadParser.add_field_parser(CIF1.phase_offset)
-CIFPayloadParser.add_field_parser(CIF1.polarization)
-CIFPayloadParser.add_field_parser(CIF1.pointing_vector)
-CIFPayloadParser.add_field_parser(CIF1.spatial_scan_type)
-CIFPayloadParser.add_field_parser(CIF1.beam_widths)
-CIFPayloadParser.add_field_parser(CIF1.range)
-CIFPayloadParser.add_field_parser(CIF1.ebno_ber)
-CIFPayloadParser.add_field_parser(CIF1.threshold)
-CIFPayloadParser.add_field_parser(CIF1.compression_point)
-CIFPayloadParser.add_field_parser(CIF1.snr_noise_figure)
-CIFPayloadParser.add_field_parser(CIF1.aux_frequency)
-CIFPayloadParser.add_field_parser(CIF1.aux_gain)
-CIFPayloadParser.add_field_parser(CIF1.aux_bandwidth)
-CIFPayloadParser.add_parser(CIF1.index_list.name, IndexListParser())
-CIFPayloadParser.add_parser(CIF1.discrete_io_32.name, UserDefinedFieldParser())
-CIFPayloadParser.add_parser(CIF1.discrete_io_64.name, UserDefinedFieldParser())
-CIFPayloadParser.add_field_parser(CIF1.health_status)
-CIFPayloadParser.add_field_parser(CIF1.version_build_code)
-CIFPayloadParser.add_field_parser(CIF1.buffer_size)
 
 class PrologueParser(SectionParser):
     def __init__(self, log, prologue):
