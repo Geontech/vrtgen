@@ -3,7 +3,17 @@ Classes for parsing sections of a VITA 49 packet definition.
 """
 from vrtgen.types.struct import Struct
 
-from .field import StructFieldParser, GenericFieldParser
+from .field import StructFieldParser, SimpleFieldParser
+
+class FieldContextParser:
+    def __init__(self, name, parser):
+        self.name = name
+        self.parser = parser
+
+    def __call__(self, log, context, value):
+        field = context.get_field(self.name)
+        log.debug("Parsing field '%s'", field.name)
+        return self.parser(log, field, value)
 
 class SectionParser:
     """
@@ -39,44 +49,32 @@ class SectionParser:
         """
         Registers a parser for a specific VITA 49 field.
         """
-        if parser is None:
+        if isinstance(field, str):
+            assert parser is not None
+            name = field
+        else:
             assert field.type is not None
             if issubclass(field.type, Struct):
-                parser = StructFieldParser()
+                if parser is None:
+                    parser = StructFieldParser()
             else:
-                parser = GenericFieldParser()
-        cls.add_parser(field.name, parser, alias)
-
-    def get_field_parser(self, field):
-        parser = self.__PARSERS__.get(field.name.casefold(), None)
-        if parser is None:
-            raise ValueError("Unsupported field '{}'".format(field.name))
-        return parser
-
-    def parse_field(self, log, field, value):
-        log.debug("Parsing field '%s'", field.name)
-        parser = self.get_field_parser(field)
-        try:
-            parser(log, field, value)
-        except (TypeError, ValueError) as exc:
-            log.error("Invalid definition for '%s': %s", field.name, exc)
-
-    def parse_option(self, log, name, value):
-        return False
+                if parser is None:
+                    parser = SimpleFieldParser.factory(field)
+                else:
+                    parser = SimpleFieldParser(parser)
+            name = field.name
+        cls.add_parser(name, FieldContextParser(name, parser), alias)
 
     def parse(self, log, context, value):
-        for field_name, field_value in value.items():
-            if self.parse_option(log, field_name, field_value):
-                continue
-
-            field_name = self.__ALIASES__.get(field_name.casefold(), field_name)
-            field = context.get_field(field_name)
-            if field is None:
-                log.error("Invalid field '%s'", field_name)
+        for name, field_value in value.items():
+            field_name = self.__ALIASES__.get(name.casefold(), name)
+            parser = self.__PARSERS__.get(field_name.casefold(), None)
+            if parser is None:
+                log.error("Invalid field '{}'".format(name))
                 continue
 
             try:
-                self.parse_field(log, field, field_value)
+                parser(log, context, field_value)
             except (TypeError, ValueError) as exc:
                 log.error("Invalid value for field '%s': %s", field_name, exc)
             except Exception as exc:

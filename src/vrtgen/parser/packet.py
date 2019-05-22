@@ -4,30 +4,35 @@ from vrtgen.model import config
 
 from vrtgen.types.enums import TSM
 from vrtgen.types.header import Header
+from vrtgen.types.basic import StreamIdentifier, Integer32, Integer64
 
 from . import field
+from . import value
 from .cif import CIFPayloadParser
 from .section import SectionParser
 
 class TrailerParser(SectionParser):
-    def parse_option(self, log, name, value):
-        if name.casefold() == 'user-defined':
-            log.warn('User-defined bits not implemented')
-            return True
-        else:
-            return super().parse_option(log, name, value)
+    pass
 
-TrailerParser.add_parser(config.SAMPLE_FRAME, field.SSIParser())
+class UnimplementedParser:
+    def __init__(self, name):
+        self.name = name
+
+    def __call__(self, log, *args):
+        log.warn('%s not implemented', self.name)
+
+TrailerParser.add_parser('User-Defined', UnimplementedParser('User-defined bits'))
+TrailerParser.add_field_parser(config.SAMPLE_FRAME, value.parse_ssi)
 
 class PrologueParser(SectionParser):
     pass
 
-PrologueParser.add_parser(config.STREAM_ID, field.GenericFieldParser(), alias='Stream ID')
-PrologueParser.add_parser(config.CLASS_ID, field.ClassIDParser(), alias='Class ID')
-PrologueParser.add_field_parser(Header.tsi)
-PrologueParser.add_field_parser(Header.tsf)
-PrologueParser.add_parser(config.INTEGER_TIMESTAMP, field.GenericFieldParser())
-PrologueParser.add_parser(config.FRACTIONAL_TIMESTAMP, field.GenericFieldParser())
+PrologueParser.add_field_parser(config.STREAM_ID, field.SimpleFieldParser(StreamIdentifier), alias='Stream ID')
+PrologueParser.add_field_parser(config.CLASS_ID, field.ClassIDParser(), alias='Class ID')
+PrologueParser.add_field_parser(Header.tsi, value.parse_tsi)
+PrologueParser.add_field_parser(Header.tsf, value.parse_tsf)
+PrologueParser.add_field_parser(config.INTEGER_TIMESTAMP, field.SimpleFieldParser(Integer32))
+PrologueParser.add_field_parser(config.FRACTIONAL_TIMESTAMP, field.SimpleFieldParser(Integer64))
 
 class PacketParser:
     def __init__(self, name):
@@ -69,8 +74,7 @@ class DataPacketParser(PacketParser):
         return config.DataPacketConfiguration(name)
 
     def parse_trailer(self, packet, value):
-        #TrailerParser().parse(self.log.getChild('Trailer'), packet.trailer, value)
-        pass
+        TrailerParser().parse(self.log.getChild('Trailer'), packet.trailer, value)
 
 class ContextPacketParser(PacketParser):
     def create_packet(self, name):

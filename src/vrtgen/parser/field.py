@@ -40,15 +40,7 @@ class FieldParser:
         raise TypeError("Field '"+field.name+"' cannot be defined with a sequence")
 
     def parse_scalar(self, log, field, value):
-        value = self.parse_scalar_value(field, value)
-        self.set_value(log, field, value)
-        # If a value is given with no other qualifiers, consider the
-        # field value to be constant
-        log.debug("Field '%s' is CONSTANT", field.name)
-        field.set_constant()
-
-    def parse_scalar_value(self, field, value):
-        raise TypeError("{0} is not a valid value for field '{1}'".format(value, field.name))
+        raise TypeError("Field '"+field.name+"' cannot be defined with a scalar value")
 
     def parse_enable(self, value):
         if isinstance(value, str):
@@ -64,37 +56,40 @@ class FieldParser:
         field.enable = enable
         log.debug("Field '%s' is %s", field.name, field.enable)
 
-    def set_value(self, log, field, value):
-        field.value = value
-        log.debug("Field '%s' = %s", field.name, value)
+class SimpleFieldParser(FieldParser):
+    def __init__(self, parser):
+        self.parser = parser
 
-class GenericFieldParser(FieldParser):
-    def parse_scalar_value(self, field, value):
-        if field.type == basic.OUI:
-            return value_parser.parse_oui(value)
-        elif field.type == enums.TSI:
-            return value_parser.parse_tsi(value)
-        elif field.type == enums.TSF:
-            return value_parser.parse_tsf(value)
-        elif field.type == basic.Boolean:
-            return value_parser.parse_boolean(value)
-        elif issubclass(field.type, basic.FixedPointType):
-            return float(value)
-        elif issubclass(field.type, basic.IntegerType):
-            return int(value)
-        else:
-            raise NotImplementedError("unsupported field '{}'".format(field.name))
+    def parse_scalar(self, log, field, value):
+        value = self.parser(value)
+        self.set_value(log, field, value)
+        # If a value is given with no other qualifiers, consider the
+        # field value to be constant
+        log.debug("Field '%s' is CONSTANT", field.name)
+        field.set_constant()
 
     def parse_mapping_entry(self, log, field, name, value):
         if name == 'default':
-            value = self.parse_scalar_value(field, value)
+            value = self.parser(value)
             self.set_value(log, field, value)
         else:
             return False
         return True
 
+    def set_value(self, log, field, value):
+        field.value = value
+        log.debug("Field '%s' = %s", field.name, value)
+
+    @staticmethod
+    def factory(field):
+        if field.type == basic.OUI:
+            parser = value_parser.parse_oui
+        else:
+            parser = field.type
+        return SimpleFieldParser(parser)
+
 class UserDefinedFieldParser(FieldParser):
-    def parse_scalar_value(self, log, value):
+    def parse_scalar(self, log, value):
         raise TypeError('user-defined fields must be a sequence or mapping')
 
     def parse_mapping_entry(self, log, field, name, value):
@@ -137,16 +132,12 @@ class UserDefinedFieldParser(FieldParser):
         field.add_field(name, bits, word, position)
         log.debug("'%s' bits=%d position=%s/%s", name, bits, word, position)
 
-class SSIParser(FieldParser):
-    def parse_scalar_value(self, log, field, value):
-        return value_parser.parse_ssi(value)
-
 class StructFieldParser(FieldParser):
     def parse_mapping_entry(self, log, field, name, value):
         subfield = field.get_field(name)
         if subfield is None:
             return False
-        parser = GenericFieldParser()
+        parser = SimpleFieldParser.factory(subfield)
         log = log.getChild(field.name)
         try:
             parser(log, subfield, value)
