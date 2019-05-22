@@ -37,7 +37,7 @@ def main():
     elif args.backend == 'cpp':
         from vrtgen.backend.cpp import CppGenerator
         generator = CppGenerator()
-    elif args.backend == None:
+    elif args.backend is None:
         generator = NullGenerator()
     else:
         raise SystemExit("invalid backend '"+args.backend+"'")
@@ -49,7 +49,7 @@ def main():
             name = option
             value = True
         try:
-            generator.set_option(name ,value)
+            generator.set_option(name, value)
         except Exception as exc:
             raise SystemExit(str(exc))
 

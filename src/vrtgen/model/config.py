@@ -24,7 +24,7 @@ class FieldContainer:
 
             # User the same Python-friendly attribute name for easy lookup
             if hasattr(self, name):
-                warnings.warn('Duplicate attribute name {}.{}'.format(cif.__name__, name))
+                warnings.warn('Duplicate attribute name {}.{}'.format(container.__name__, name))
             setattr(self, name, field)
 
 class CIFPayloadConfiguration(FieldContainer):
