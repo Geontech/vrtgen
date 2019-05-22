@@ -2,7 +2,9 @@ import inspect
 import warnings
 
 from vrtgen.types.struct import Field
-from vrtgen.types import basic, enums, header
+from vrtgen.types import basic, enums
+from vrtgen.types.prologue import Prologue, Header
+from vrtgen.types.trailer import Trailer
 from vrtgen.types.cif0 import CIF0
 from vrtgen.types.cif1 import CIF1
 
@@ -16,14 +18,8 @@ class FieldContainer:
                 return field
         return None
 
-class CIFPayloadConfiguration(FieldContainer):
-    def __init__(self):
-        super().__init__()
-        self._add_cif_fields(CIF0)
-        self._add_cif_fields(CIF1)
-
-    def _add_cif_fields(self, cif):
-        for name, value in inspect.getmembers(cif, lambda x: isinstance(x, Field)):
+    def _add_fields(self, container):
+        for name, value in inspect.getmembers(container, lambda x: isinstance(x, Field)):
             field = FieldConfiguration.create(value)
 
             # User the same Python-friendly attribute name for easy lookup
@@ -31,31 +27,28 @@ class CIFPayloadConfiguration(FieldContainer):
                 warnings.warn('Duplicate attribute name {}.{}'.format(cif.__name__, name))
             setattr(self, name, field)
 
-# Header field name constants
-STREAM_ID = 'Stream Identifier'
-CLASS_ID = 'Class Identifier'
-INTEGER_TIMESTAMP = 'Integer Timestamp'
-FRACTIONAL_TIMESTAMP = 'Fractional Timestamp'
-
-# Trailer field name constants
-SAMPLE_FRAME = 'Sample Frame'
+class CIFPayloadConfiguration(FieldContainer):
+    def __init__(self):
+        super().__init__()
+        self._add_fields(CIF0)
+        self._add_fields(CIF1)
 
 class PrologueConfiguration(FieldContainer):
     def __init__(self):
         super().__init__()
 
-        self.tsi = FieldConfiguration.create(header.Header.tsi, Mode.MANDATORY)
+        self.tsi = FieldConfiguration.create(Header.tsi, Mode.MANDATORY)
         self.tsi.value = enums.TSI()
-        self.tsf = FieldConfiguration.create(header.Header.tsf, Mode.MANDATORY)
+        self.tsf = FieldConfiguration.create(Header.tsf, Mode.MANDATORY)
         self.tsf.value = enums.TSF()
-        self.stream_id = self._create_field(STREAM_ID, basic.Identifier32)
-        self.class_id = self._create_field(CLASS_ID, header.ClassIdentifier)
-        self.integer_timestamp = self._create_field('Integer Timestamp', basic.Integer32)
-        self.fractional_timestamp = self._create_field('Fractional Timestamp', basic.Integer64)
 
-    def _create_field(self, name, type, **kwds):
-        field = Field(name, type, **kwds)
-        return FieldConfiguration.create(field)
+        self._add_fields(Prologue)
+
+class TrailerConfiguration(FieldContainer):
+    def __init__(self):
+        super().__init__()
+        self._add_fields(Trailer)
+
 
 class PacketConfiguration:
     def __init__(self, name):
@@ -71,7 +64,7 @@ class PacketConfiguration:
 class DataPacketConfiguration(PacketConfiguration):
     def __init__(self, name):
         super().__init__(name)
-        self.trailer = None
+        self.trailer = TrailerConfiguration()
 
 class ContextPacketConfiguration(PacketConfiguration):
     def __init__(self, name):

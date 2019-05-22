@@ -5,7 +5,7 @@ Parsers for handling packet fields.
 from vrtgen.model.field import Mode
 from vrtgen.types import enums
 from vrtgen.types import basic
-from vrtgen.types.header import ClassIdentifier
+from vrtgen.types.prologue import ClassIdentifier
 
 from . import value as value_parser
 

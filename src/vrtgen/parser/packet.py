@@ -1,10 +1,9 @@
 import logging
 
 from vrtgen.model import config
-
 from vrtgen.types.enums import TSM
-from vrtgen.types.header import Header
-from vrtgen.types.basic import StreamIdentifier, Integer32, Integer64
+from vrtgen.types.prologue import Header, Prologue
+from vrtgen.types.trailer import Trailer
 
 from . import field
 from . import value
@@ -21,18 +20,27 @@ class UnimplementedParser:
     def __call__(self, log, *args):
         log.warn('%s not implemented', self.name)
 
-TrailerParser.add_parser('User-Defined', UnimplementedParser('User-defined bits'))
-TrailerParser.add_field_parser(config.SAMPLE_FRAME, value.parse_ssi)
+TrailerParser.add_field_parser(Trailer.calibrated_time)
+TrailerParser.add_field_parser(Trailer.valid_data)
+TrailerParser.add_field_parser(Trailer.reference_lock)
+TrailerParser.add_field_parser(Trailer.agc_mgc)
+TrailerParser.add_field_parser(Trailer.detected_signal)
+TrailerParser.add_field_parser(Trailer.spectral_inversion)
+TrailerParser.add_field_parser(Trailer.over_range)
+TrailerParser.add_field_parser(Trailer.sample_loss)
+TrailerParser.add_field_parser(Trailer.sample_frame, value.parse_ssi)
+TrailerParser.add_parser(Trailer.user_defined.name, UnimplementedParser('User-defined bits'))
+TrailerParser.add_field_parser(Trailer.associated_context_packets)
 
 class PrologueParser(SectionParser):
     pass
 
-PrologueParser.add_field_parser(config.STREAM_ID, field.SimpleFieldParser(StreamIdentifier), alias='Stream ID')
-PrologueParser.add_field_parser(config.CLASS_ID, field.ClassIDParser(), alias='Class ID')
+PrologueParser.add_field_parser(Prologue.stream_id, alias='Stream ID')
+PrologueParser.add_field_parser(Prologue.class_id, field.ClassIDParser(), alias='Class ID')
 PrologueParser.add_field_parser(Header.tsi, value.parse_tsi)
 PrologueParser.add_field_parser(Header.tsf, value.parse_tsf)
-PrologueParser.add_field_parser(config.INTEGER_TIMESTAMP, field.SimpleFieldParser(Integer32))
-PrologueParser.add_field_parser(config.FRACTIONAL_TIMESTAMP, field.SimpleFieldParser(Integer64))
+PrologueParser.add_field_parser(Prologue.integer_timestamp)
+PrologueParser.add_field_parser(Prologue.fractional_timestamp)
 
 class PacketParser:
     def __init__(self, name):

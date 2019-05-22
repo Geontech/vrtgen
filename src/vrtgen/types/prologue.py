@@ -1,5 +1,5 @@
 """
-Types used for VITA 49 packet headers.
+Types used for VITA 49 packet prologues.
 """
 
 from .struct import Struct, Field, Reserved
@@ -28,3 +28,12 @@ class Header(Struct):
     tsf = Field('TSF', enums.TSF)
     packet_count = Field('Packet Count', basic.IntegerType.create(4))
     packet_size = Field('Packet Size', basic.Integer16)
+
+class Prologue:
+    """
+    VRT Packet Prologue (5).
+    """
+    stream_id = Field('Stream Identifier', basic.StreamIdentifier)
+    class_id = Field('Class Identifier', ClassIdentifier)
+    integer_timestamp = Field('Integer Timestamp', basic.Integer32)
+    fractional_timestamp = Field('Fractional Timestamp', basic.Integer64)

@@ -223,3 +223,12 @@ class DataItemFormat(BinaryEnum, bits=5):
         True if this data format includes a sign bit.
         """
         return not bool(self.value & 0b10000)
+
+class AGCMode(BinaryEnum, bits=1):
+    """
+    AGC/MGC Indicator:
+        MGC (0) - Manual Gain Control
+        AGC (1) - Automatic Gain Control active
+    """
+    MGC = 0
+    AGC = 1

@@ -46,8 +46,13 @@ class Enable(StructEntry):
     """
     Boolean flag to enable or disable a feature.
     """
-    def __init__(self, name):
-        super().__init__(name, basic.Boolean)
+    def __init__(self, name, bits=1):
+        if bits == 1:
+            datatype = basic.Boolean
+        else:
+            # TODO: Handle multi-bit enable indicators better
+            datatype = basic.IntegerType.create(bits)
+        super().__init__(name, datatype)
 
 class Reserved(StructEntry):
     """
