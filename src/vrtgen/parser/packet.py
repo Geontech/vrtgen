@@ -28,7 +28,7 @@ TrailerParser.add_field_parser(Trailer.detected_signal)
 TrailerParser.add_field_parser(Trailer.spectral_inversion)
 TrailerParser.add_field_parser(Trailer.over_range)
 TrailerParser.add_field_parser(Trailer.sample_loss)
-TrailerParser.add_field_parser(Trailer.sample_frame, value.parse_ssi)
+TrailerParser.add_field_parser(Trailer.sample_frame)
 TrailerParser.add_parser(Trailer.user_defined.name, UnimplementedParser('User-defined bits'))
 TrailerParser.add_field_parser(Trailer.associated_context_packets)
 
@@ -37,8 +37,8 @@ class PrologueParser(SectionParser):
 
 PrologueParser.add_field_parser(Prologue.stream_id, alias='Stream ID')
 PrologueParser.add_field_parser(Prologue.class_id, field.ClassIDParser(), alias='Class ID')
-PrologueParser.add_field_parser(Header.tsi, value.parse_tsi)
-PrologueParser.add_field_parser(Header.tsf, value.parse_tsf)
+PrologueParser.add_field_parser(Header.tsi)
+PrologueParser.add_field_parser(Header.tsf)
 PrologueParser.add_field_parser(Prologue.integer_timestamp)
 PrologueParser.add_field_parser(Prologue.fractional_timestamp)
 

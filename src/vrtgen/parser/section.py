@@ -12,8 +12,9 @@ class FieldContextParser:
 
     def __call__(self, log, context, value):
         field = context.get_field(self.name)
+        assert field is not None
         log.debug("Parsing field '%s'", field.name)
-        return self.parser(log, field, value)
+        return self.parser(log.getChild(field.name), field, value)
 
 class SectionParser:
     """
@@ -56,7 +57,9 @@ class SectionParser:
             assert field.type is not None
             if issubclass(field.type, Struct):
                 if parser is None:
-                    parser = StructFieldParser()
+                    parser = StructFieldParser.factory(field)
+                else:
+                    parser = StructFieldParser(parser)
             else:
                 if parser is None:
                     parser = SimpleFieldParser.factory(field)

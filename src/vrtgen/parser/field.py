@@ -57,6 +57,8 @@ class FieldParser:
         log.debug("Field '%s' is %s", field.name, field.enable)
 
 class SimpleFieldParser(FieldParser):
+    __TYPES__ = {}
+
     def __init__(self, parser):
         self.parser = parser
 
@@ -80,13 +82,20 @@ class SimpleFieldParser(FieldParser):
         field.value = value
         log.debug("Field '%s' = %s", field.name, value)
 
-    @staticmethod
-    def factory(field):
-        if field.type == basic.OUI:
-            parser = value_parser.parse_oui
-        else:
-            parser = field.type
-        return SimpleFieldParser(parser)
+    @classmethod
+    def register_type(cls, datatype, parser):
+        cls.__TYPES__[datatype] = parser
+
+    @classmethod
+    def factory(cls, field):
+        parser = cls.__TYPES__.get(field.type, field.type)
+        return cls(parser)
+
+SimpleFieldParser.register_type(basic.Boolean, value_parser.parse_boolean)
+SimpleFieldParser.register_type(basic.OUI, value_parser.parse_oui)
+SimpleFieldParser.register_type(enums.TSI, value_parser.parse_tsi)
+SimpleFieldParser.register_type(enums.TSF, value_parser.parse_tsf)
+SimpleFieldParser.register_type(enums.SSI, value_parser.parse_ssi)
 
 class UserDefinedFieldParser(FieldParser):
     def parse_scalar(self, log, value):
@@ -133,23 +142,51 @@ class UserDefinedFieldParser(FieldParser):
         log.debug("'%s' bits=%d position=%s/%s", name, bits, word, position)
 
 class StructFieldParser(FieldParser):
+    def __init__(self, parser):
+        self.parser = parser
+
     def parse_mapping_entry(self, log, field, name, value):
-        subfield = field.get_field(name)
-        if subfield is None:
-            return False
-        parser = SimpleFieldParser.factory(subfield)
-        log = log.getChild(field.name)
         try:
-            parser(log, subfield, value)
+            self.parser(log, field, {name:value})
+        except KeyError:
+            log.error("Invalid field '%s'", name)
         except (ValueError, TypeError) as exc:
-            log.error("Invalid definition for '%s': %s", subfield.name, exc)
+            log.error("Invalid definition for '%s': %s", name, exc)
         return True
 
-class ClassIDParser(StructFieldParser):
-    def parse_mapping_entry(self, log, field, name, value):
-        if name.casefold() == 'oui':
-            name = ClassIdentifier.oui.name
-        return super().parse_mapping_entry(log, field, name, value)
+    @classmethod
+    def factory(cls, field):
+        parser = StructValueParser(field.type)
+        return cls(parser)
+
+class StructValueParser:
+    def __init__(self, struct):
+        super().__init__()
+        self._parsers = {}
+        self._aliases = {}
+        for field in struct.get_fields():
+            self._parsers[field.name.casefold()] = SimpleFieldParser.factory(field)
+
+    def __call__(self, log, context, value):
+        if not isinstance(value, dict):
+            raise TypeError('Struct values must be a dictionary')
+
+        for field_name, field_value in value.items():
+            name = self._aliases.get(field_name.casefold(), field_name)
+            parser = self._parsers.get(name.casefold(), None)
+            if parser is None:
+                raise KeyError(field_name)
+            field = context.get_field(name)
+            assert field is not None
+            parser(log.getChild(field.name), field, field_value)
+
+    def add_alias(self, name, alias):
+        self._aliases[alias.casefold()] = name
+
+class ClassIDParser(StructValueParser):
+    def __init__(self):
+        super().__init__(ClassIdentifier)
+        self.add_alias(ClassIdentifier.oui.name, 'OUI')
 
 class IndexListParser(FieldParser):
     def parse_mapping_entry(self, log, field, name, value):
