@@ -5,7 +5,7 @@ import logging
 import argparse
 import sys
 
-from vrtgen.parser import FileParser
+from vrtgen import parser
 from vrtgen.backend import Generator
 
 from . import version
@@ -55,5 +55,5 @@ def main():
 
     for filename in args.filename:
         logging.debug('Parsing %s', filename)
-        for packet in FileParser().parse(filename):
+        for packet in parser.parse_file(filename):
             generator.generate(packet)

@@ -1,8 +1,7 @@
 from vrtgen.types import enums
-from vrtgen.parser import FileParser
+from vrtgen import parser
 
 def parse_single(document):
-    parser = FileParser()
     packets = list(parser.parse_stream(document))
     assert len(packets) == 1
     return packets[0]
