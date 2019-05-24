@@ -166,13 +166,13 @@ class StructFieldConfiguration(FieldConfiguration):
             # optional or unused later.
             subfield = FieldConfiguration.create(value, Mode.REQUIRED)
             setattr(self, name, subfield)
-            self._fields[subfield.name] = subfield
+            self._fields[subfield.name.casefold()] = subfield
 
     def get_field(self, name):
         """
         Returns the configuration for a subfield by VITA 49.2 name.
         """
-        return self._fields.get(name, None)
+        return self._fields.get(name.casefold(), None)
 
     @property
     def has_value(self):
