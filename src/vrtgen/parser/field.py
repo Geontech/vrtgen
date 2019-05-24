@@ -11,30 +11,47 @@ from . import value as value_parser
 
 class FieldParser:
     def __call__(self, log, field, value):
-        if isinstance(value, dict):
-            self.parse_mapping(log, field, value)
-        elif isinstance(value, list):
-            self.parse_sequence(log, field, value)
+        # Check for a simple enable setting first ("required" or "optional")
+        enable = self.parse_enable(value)
+        if enable is not None:
+            field.mode = enable
         else:
-            enable = self.parse_enable(value)
-            if enable is not None:
-                self.set_enable(log, field, enable)
+            # Default to required, may be overridden in extract_keywords()
+            field.mode = Mode.REQUIRED
+            if isinstance(value, dict):
+                value = self.extract_keywords(log, field, value)
+
+            self.parse_value(log, field, value)
+
+        log.debug("Field '%s' is %s", field.name, field.mode)
+
+    def extract_keywords(self, log, field, mapping):
+        result = dict()
+        for key, value in mapping.items():
+            if key.casefold() == 'required':
+                if not value:
+                    field.mode = Mode.OPTIONAL
             else:
-                self.parse_scalar(log, field, value)
+                result[key] = value
+        return result
+
+    def parse_value(self, log, field, value):
+        if isinstance(value, list):
+            self.parse_sequence(log, field, value)
+        elif isinstance(value, dict):
+            self.parse_mapping(log, field, value)
+        else:
+            self.parse_scalar(log, field, value)
 
     def parse_mapping(self, log, field, mapping):
-        enable = Mode.REQUIRED
-        for key, value in mapping.items():
-            if key == 'required':
-                if not value:
-                    enable = Mode.OPTIONAL
-            elif not self.parse_mapping_entry(log, field, key, value):
-                log.warn("Invalid option '%s' for field '%s'", key, field.name)
+        for name, value in mapping.items():
+            try:
+                self.parse_option(log, field, name, value)
+            except (ValueError, TypeError) as exc:
+                log.warning("Invalid value for option '%s': %s", name, exc)
 
-        self.set_enable(log, field, enable)
-
-    def parse_mapping_entry(self, log, field, key, value):
-        return False
+    def parse_option(self, log, field, name, value):
+        log.warn("Invalid option '%s'", name)
 
     def parse_sequence(self, log, field, value):
         raise TypeError("Field '"+field.name+"' cannot be defined with a sequence")
@@ -70,13 +87,12 @@ class SimpleFieldParser(FieldParser):
         log.debug("Field '%s' is CONSTANT", field.name)
         field.set_constant()
 
-    def parse_mapping_entry(self, log, field, name, value):
-        if name == 'default':
+    def parse_option(self, log, field, name, value):
+        if name.casefold() == 'default':
             value = self.parser(value)
             self.set_value(log, field, value)
         else:
-            return False
-        return True
+            super().parse_option(log, field, name, value)
 
     def set_value(self, log, field, value):
         field.value = value
@@ -98,17 +114,16 @@ SimpleFieldParser.register_type(enums.TSF, value_parser.parse_tsf)
 SimpleFieldParser.register_type(enums.SSI, value_parser.parse_ssi)
 
 class UserDefinedFieldParser(FieldParser):
-    def parse_scalar(self, log, value):
+    def parse_scalar(self, log, field, value):
         raise TypeError('user-defined fields must be a sequence or mapping')
 
-    def parse_mapping_entry(self, log, field, name, value):
-        if name == 'fields':
+    def parse_option(self, log, field, name, value):
+        if name.casefold() == 'fields':
             if not isinstance(value, list):
                 raise TypeError('user-defined fields must be a sequence')
             self.parse_sequence(log, field, value)
-            return True
         else:
-            return False
+            super().parse_option(log, field, name, value)
 
     def parse_sequence(self, log, field, value):
         log = log.getChild(field.name)
@@ -145,14 +160,8 @@ class StructFieldParser(FieldParser):
     def __init__(self, parser):
         self.parser = parser
 
-    def parse_mapping_entry(self, log, field, name, value):
-        try:
-            self.parser(log, field, {name:value})
-        except KeyError:
-            log.error("Invalid field '%s'", name)
-        except (ValueError, TypeError) as exc:
-            log.error("Invalid definition for '%s': %s", name, exc)
-        return True
+    def parse_mapping(self, log, field, mapping):
+        self.parser(log, field, mapping)
 
     @classmethod
     def factory(cls, field):
@@ -189,10 +198,9 @@ class ClassIDParser(StructValueParser):
         self.add_alias(ClassIdentifier.oui.name, 'OUI')
 
 class IndexListParser(FieldParser):
-    def parse_mapping_entry(self, log, field, name, value):
+    def parse_option(self, log, field, name, value):
         if name.casefold() == 'entry size':
             field.entry_size = int(value)
             log.debug("Index List entry size is %d", value)
         else:
-            return False
-        return True
+            super().parse_option(log, field, name, value)
