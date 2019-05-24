@@ -10,6 +10,9 @@ from vrtgen.types.prologue import ClassIdentifier
 from . import value as value_parser
 
 class FieldParser:
+    """
+    Base class for parsers that configure a VITA 49 field from YAML.
+    """
     def __call__(self, log, field, value):
         # Check for a simple enable setting first ("required" or "optional")
         enable = self.parse_enable(value)
@@ -19,13 +22,19 @@ class FieldParser:
             # Default to required, may be overridden in extract_keywords()
             field.mode = Mode.REQUIRED
             if isinstance(value, dict):
-                value = self.extract_keywords(log, field, value)
+                value = self.extract_keywords(field, value)
 
             self.parse_value(log, field, value)
 
         log.debug("Field '%s' is %s", field.name, field.mode)
 
-    def extract_keywords(self, log, field, mapping):
+    @staticmethod
+    def extract_keywords(field, mapping):
+        """
+        Processes field configuration keywords from a mapping.
+
+        Returns an updated mapping with the configuration keywords removed.
+        """
         result = dict()
         for key, value in mapping.items():
             if key.casefold() == 'required':
@@ -36,6 +45,12 @@ class FieldParser:
         return result
 
     def parse_value(self, log, field, value):
+        """
+        Parses a field value.
+
+        The value may be a mapping, sequence or scalar. Derived classes may
+        implement their own processing for each type.
+        """
         if isinstance(value, list):
             self.parse_sequence(log, field, value)
         elif isinstance(value, dict):
@@ -44,40 +59,75 @@ class FieldParser:
             self.parse_scalar(log, field, value)
 
     def parse_mapping(self, log, field, mapping):
+        """
+        Parses a mapping as a field value.
+        """
+        # Default implementation handles the key-value pairs as options.
+        # Subclasses that accept mappings as values (i.e., struct parsers)
+        # should override.
         for name, value in mapping.items():
             try:
                 self.parse_option(log, field, name, value)
             except (ValueError, TypeError) as exc:
                 log.warning("Invalid value for option '%s': %s", name, exc)
+            except KeyError as exc:
+                log.warning('Invalid option %s', exc)
 
-    def parse_option(self, log, field, name, value):
-        log.warn("Invalid option '%s'", name)
+    @staticmethod
+    def parse_option(log, field, name, value):
+        """
+        Parses an option.
+        """
+        # Default implementation raises a KeyError. Subclasses may override to
+        # provide their own option processing.
+        raise KeyError(name)
 
-    def parse_sequence(self, log, field, value):
+    @staticmethod
+    def parse_sequence(log, field, value):
+        """
+        Parses a sequence as a field value.
+        """
+        # Default implementation raises a TypeError. Subclasses that support
+        # configuration from sequences should override.
         raise TypeError("Field '"+field.name+"' cannot be defined with a sequence")
 
-    def parse_scalar(self, log, field, value):
+    @staticmethod
+    def parse_scalar(log, field, value):
+        """
+        Parses a scalar as a field value.
+        """
+        # Default implementation raises a TypeError. Subclasses that support
+        # configuration from scalars should override.
         raise TypeError("Field '"+field.name+"' cannot be defined with a scalar value")
 
-    def parse_enable(self, value):
-        if isinstance(value, str):
-            return {
-                'required': Mode.REQUIRED,
-                'optional': Mode.OPTIONAL,
-                'disabled': Mode.DISABLED
-            }.get(value.casefold(), None)
-        else:
+    @staticmethod
+    def parse_enable(value):
+        """
+        Parses a value as a field enablement mode.
+
+        If value cannot be interpreted as an enablement mode, returns None.
+        """
+        if not isinstance(value, str):
             return None
 
+        return {
+            'required': Mode.REQUIRED,
+            'optional': Mode.OPTIONAL,
+            'disabled': Mode.DISABLED
+        }.get(value.casefold(), None)
+
 class SimpleFieldParser(FieldParser):
+    """
+    Parser for handling simple field configuration.
+    """
     __TYPES__ = {}
 
     def __init__(self, parser):
-        self.parser = parser
+        self.value_parser = parser
 
     def parse_scalar(self, log, field, value):
-        value = self.parser(value)
-        self.set_value(log, field, value)
+        field.value = self.value_parser(value)
+        log.debug("Field '%s' = %s", field.name, field.value)
         # If a value is given with no other qualifiers, consider the
         # field value to be constant
         log.debug("Field '%s' is CONSTANT", field.name)
@@ -85,21 +135,23 @@ class SimpleFieldParser(FieldParser):
 
     def parse_option(self, log, field, name, value):
         if name.casefold() == 'default':
-            value = self.parser(value)
-            self.set_value(log, field, value)
+            field.value = self.value_parser(value)
+            log.debug("Field '%s' = %s", field.name, field.value)
         else:
             super().parse_option(log, field, name, value)
 
-    def set_value(self, log, field, value):
-        field.value = value
-        log.debug("Field '%s' = %s", field.name, value)
-
     @classmethod
     def register_type(cls, datatype, parser):
+        """
+        Registers a default value parser for a Python type.
+        """
         cls.__TYPES__[datatype] = parser
 
     @classmethod
     def factory(cls, field):
+        """
+        Creates a simple parser for a given VITA 49 field.
+        """
         parser = cls.__TYPES__.get(field.type, field.type)
         return cls(parser)
 
@@ -110,6 +162,9 @@ SimpleFieldParser.register_type(enums.TSF, value_parser.parse_tsf)
 SimpleFieldParser.register_type(enums.SSI, value_parser.parse_ssi)
 
 class UserDefinedFieldParser(FieldParser):
+    """
+    Parser for configuring user-defined fields.
+    """
     def parse_scalar(self, log, field, value):
         raise TypeError('user-defined fields must be a sequence or mapping')
 
@@ -129,7 +184,11 @@ class UserDefinedFieldParser(FieldParser):
             except (ValueError, TypeError) as exc:
                 log.error('Invalid user-defined field %d: %s', index, exc)
 
-    def parse_user_defined_field(self, log, field, value):
+    @staticmethod
+    def parse_user_defined_field(log, field, value):
+        """
+        Parses a definition for a user-defined field.
+        """
         if not isinstance(value, dict):
             raise TypeError('must be a mapping')
         name = None
@@ -153,6 +212,11 @@ class UserDefinedFieldParser(FieldParser):
         log.debug("'%s' bits=%d position=%s/%s", name, bits, word, position)
 
 class StructFieldParser(FieldParser):
+    """
+    Parser for handling struct field configuration.
+
+    Binds struct value parsing with base field configuration.
+    """
     def __init__(self, parser):
         self.parser = parser
 
@@ -161,10 +225,19 @@ class StructFieldParser(FieldParser):
 
     @classmethod
     def factory(cls, field):
+        """
+        Creates a struct parser for a given VITA 49 field.
+        """
         parser = StructValueParser(field.type)
         return cls(parser)
 
 class StructValueParser:
+    """
+    Parser for struct values.
+
+    Struct values in YAML must be a mapping, where each key corresponds to a
+    subfield.
+    """
     def __init__(self, struct):
         super().__init__()
         self._parsers = {}
@@ -208,11 +281,17 @@ class StructValueParser:
         return parser
 
 class ClassIDParser(StructValueParser):
+    """
+    Parser for ClassIdentifier structs.
+    """
     def __init__(self):
         super().__init__(ClassIdentifier)
         self.add_alias(ClassIdentifier.oui.name, 'OUI')
 
 class IndexListParser(FieldParser):
+    """
+    Parser for index lists.
+    """
     def parse_option(self, log, field, name, value):
         if name.casefold() == 'entry size':
             field.entry_size = int(value)
