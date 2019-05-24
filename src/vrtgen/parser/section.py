@@ -5,16 +5,17 @@ from vrtgen.types.struct import Struct
 
 from .field import StructFieldParser, SimpleFieldParser
 
-class FieldContextParser:
-    def __init__(self, name, parser):
-        self.name = name
-        self.parser = parser
-
-    def __call__(self, log, context, value):
-        field = context.get_field(self.name)
+def bind_parser(name, parser):
+    """
+    Wraps a field value parser to fetch the target field from the incoming
+    context.
+    """
+    def wrapped_parse(log, context, value):
+        field = context.get_field(name)
         assert field is not None
         log.debug("Parsing field '%s'", field.name)
-        return self.parser(log.getChild(field.name), field, value)
+        return parser(log.getChild(field.name), field, value)
+    return wrapped_parse
 
 class SectionParser:
     """
@@ -66,7 +67,7 @@ class SectionParser:
                 else:
                     parser = SimpleFieldParser(parser)
             name = field.name
-        cls.add_parser(name, FieldContextParser(name, parser), alias)
+        cls.add_parser(name, bind_parser(name, parser), alias)
 
     def parse(self, log, context, value):
         for name, field_value in value.items():
