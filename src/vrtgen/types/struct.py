@@ -152,6 +152,20 @@ class Struct(metaclass=StructBuilder):
         # base class contents
         cls._contents = cls._contents[:]
 
+    def get_value(self, name):
+        """
+        Returns a field value by its VITA 49 name.
+        """
+        field = self.get_field(name)
+        return field.__get__(self, type(self))
+
+    def set_value(self, name, value):
+        """
+        Sets a field value by its VITA 49 name.
+        """
+        field = self.get_field(name)
+        field.__set__(self, value)
+
     @classmethod
     def get_contents(cls):
         """
@@ -168,3 +182,16 @@ class Struct(metaclass=StructBuilder):
         Reserved bits and enable flags are excluded.
         """
         return [field for field in cls.get_contents() if isinstance(field, Field)]
+
+    @classmethod
+    def get_field(cls, name):
+        """
+        Finds a field by its VITA 49 name.
+
+        Raises a KeyError if no such field exists.
+        """
+        field_name = name.casefold()
+        for field in cls.get_fields():
+            if field.name.casefold() == field_name:
+                return field
+        raise KeyError(name)
