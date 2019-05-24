@@ -51,22 +51,18 @@ class SectionParser:
         """
         Registers a parser for a specific VITA 49 field.
         """
-        if isinstance(field, str):
-            assert parser is not None
-            name = field
-        else:
-            assert field.type is not None
-            if issubclass(field.type, Struct):
-                if parser is None:
-                    parser = StructFieldParser.factory(field)
-                else:
-                    parser = StructFieldParser(parser)
+        assert field.type is not None
+        if issubclass(field.type, Struct):
+            if parser is None:
+                parser = StructFieldParser.factory(field)
             else:
-                if parser is None:
-                    parser = SimpleFieldParser.factory(field)
-                else:
-                    parser = SimpleFieldParser(parser)
-            name = field.name
+                parser = StructFieldParser(parser)
+        else:
+            if parser is None:
+                parser = SimpleFieldParser.factory(field)
+            else:
+                parser = SimpleFieldParser(parser)
+        name = field.name
         cls.add_parser(name, bind_parser(name, parser), alias)
 
     def parse(self, log, context, value):
