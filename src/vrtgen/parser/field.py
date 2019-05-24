@@ -69,10 +69,6 @@ class FieldParser:
         else:
             return None
 
-    def set_enable(self, log, field, enable):
-        field.enable = enable
-        log.debug("Field '%s' is %s", field.name, field.enable)
-
 class SimpleFieldParser(FieldParser):
     __TYPES__ = {}
 
@@ -181,16 +177,35 @@ class StructValueParser:
             raise TypeError('Struct values must be a dictionary')
 
         for field_name, field_value in value.items():
-            name = self._aliases.get(field_name.casefold(), field_name)
-            parser = self._parsers.get(name.casefold(), None)
-            if parser is None:
-                raise KeyError(field_name)
+            name = self.get_field_name(field_name)
+            parser = self.get_field_parser(name)
+
+            # If parser lookup succeeded, field lookup must succeed
             field = context.get_field(name)
             assert field is not None
+
             parser(log.getChild(field.name), field, field_value)
 
     def add_alias(self, name, alias):
+        """
+        Registers an alias for a field name.
+        """
         self._aliases[alias.casefold()] = name
+
+    def get_field_name(self, name):
+        """
+        Resolves an alias for a field name.
+        """
+        return self._aliases.get(name.casefold(), name)
+
+    def get_field_parser(self, name):
+        """
+        Returns the parser for a field.
+        """
+        parser = self._parsers.get(name.casefold(), None)
+        if parser is None:
+            raise KeyError(name)
+        return parser
 
 class ClassIDParser(StructValueParser):
     def __init__(self):
