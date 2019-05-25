@@ -3,7 +3,8 @@ CIF field metadata classes.
 """
 import inspect
 
-from .struct import Struct, StructBuilder, StructEntry, Enable, Reserved
+from .struct import Struct, StructBuilder, StructEntry, Field, Reserved
+from . import basic
 
 __all__ = ('CIFMeta',)
 
@@ -13,7 +14,7 @@ class CIFMeta(type):
     """
     def __new__(cls, name, bases, namespace):
         cif = type.__new__(cls, name, bases, namespace)
-        cif.Enables = CIFMeta._create_enables(cls)
+        cif.Enables = CIFMeta._create_enables(cif)
         return cif
 
     @staticmethod
@@ -25,6 +26,6 @@ class CIFMeta(type):
             if isinstance(field, Reserved):
                 entry = Reserved(1)
             else:
-                entry = Enable(field.name)
+                entry = Field(field.name, basic.Boolean)
             namespace[attr] = entry
         return StructBuilder('Enables', (Struct,), namespace)
