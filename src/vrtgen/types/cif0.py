@@ -10,26 +10,23 @@ class GeolocationAngle(basic.FixedPointType, bits=32, radix=22):
     """
     Geolocation Angle Format [Definition 9.4.5-1].
     """
-    pass
 
 class CartesianCoordinate(basic.FixedPointType, bits=32, radix=5):
     """
     Position coordinate format for ECEF Ephermeris [Rule 9.4.3-5].
     """
-    pass
 
 class VelocityCoordinate(basic.FixedPointType, bits=32, radix=16):
     """
     Velocity coordinate format for ECEF Ephemeris [Rule 9.4.3-7].
     """
-    pass
 
 class Gain(Struct):
     """
     Gain/Attenuation [9.5.3].
     """
-    stage_1 = Field('Stage 1', basic.FixedPoint16_7)
-    stage_2 = Field('Stage 2', basic.FixedPoint16_7)
+    stage_1 = Field('Stage 1', basic.FixedPoint16r7)
+    stage_2 = Field('Stage 2', basic.FixedPoint16r7)
 
 class DeviceIdentifier(Struct):
     """
@@ -94,22 +91,22 @@ class CIF0(metaclass=CIFMeta):
     reference_point_id = Field('Reference Point Identifier', basic.StreamIdentifier)
 
     # Bandwidth (0/29) fixed-point 64/20, Hz
-    bandwidth = Field('Bandwidth', basic.FixedPoint64_20)
+    bandwidth = Field('Bandwidth', basic.FixedPoint64r20)
 
     # IF Reference Frequency (0/28): fixed-point 64/20, Hz
-    if_frequency = Field('IF Reference Frequency', basic.FixedPoint64_20)
+    if_frequency = Field('IF Reference Frequency', basic.FixedPoint64r20)
 
     # RF Reference Frequency (0/27): fixed-point 64/20, Hz
-    rf_frequency = Field('RF Reference Frequency', basic.FixedPoint64_20)
+    rf_frequency = Field('RF Reference Frequency', basic.FixedPoint64r20)
 
     # RF Reference Frequency Offset (0/26): fixed-point 64/20, Hz
-    rf_frequency_offset = Field('RF Reference Frequency Offset', basic.FixedPoint64_20)
+    rf_frequency_offset = Field('RF Reference Frequency Offset', basic.FixedPoint64r20)
 
     # IF Band Offset (0/25): fixed-point 64/20, Hz
-    if_band_offset = Field('IF Band Offset', basic.FixedPoint64_20)
+    if_band_offset = Field('IF Band Offset', basic.FixedPoint64r20)
 
     # Reference Level (0/24): fixed-point 16/7 dBm (upper 16 reserved)
-    reference_level = Field('Reference Level', basic.FixedPoint16_7)
+    reference_level = Field('Reference Level', basic.FixedPoint16r7)
 
     # Gain (0/23): [stage2 (optional), stage1], fixed-point 16/7, dB
     gain = Field('Gain', Gain)
@@ -118,7 +115,7 @@ class CIF0(metaclass=CIFMeta):
     over_range_count = Field('Over-Range Count', basic.Integer32)
 
     # Sample Rate (0/21): fixed-point 64/20, Hz
-    sample_rate = Field('Sample Rate', basic.FixedPoint64_20)
+    sample_rate = Field('Sample Rate', basic.FixedPoint64r20)
 
     # Timestamp Adjustment (0/20): fractional time (integer 64)
     timestamp_adjustment = Field('Timestamp Adjustment', basic.Integer64)

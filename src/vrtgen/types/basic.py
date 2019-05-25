@@ -2,7 +2,7 @@
 Basic data types used in VITA 49 structures and fields.
 """
 
-class Boolean(object):
+class Boolean:
     """
     One-bit boolean value type.
     """
@@ -23,7 +23,7 @@ class IntegerType(int):
         value = int.__new__(cls, value)
         if value > cls.maxval:
             raise ValueError('{} cannot exceed {:d}'.format(cls.__name__, cls.maxval))
-        elif value < cls.minval:
+        if value < cls.minval:
             raise ValueError('{} cannot be less than {:d}'.format(cls.__name__, cls.minval))
         return value
 
@@ -31,15 +31,29 @@ class IntegerType(int):
         super().__init_subclass__(**kwds)
         cls.bits = bits
         cls.signed = signed
+        cls.minval, cls.maxval = IntegerType.range(bits, signed)
+
+    @staticmethod
+    def range(bits, signed):
+        """
+        Returns the minimum and maximum values for an integer type.
+        """
         if signed:
-            cls.minval = -(2**(bits-1))
-            cls.maxval = -cls.minval - 1
+            minval = -(2**(bits-1))
+            maxval = -minval - 1
         else:
-            cls.minval = 0
-            cls.maxval = (2**bits) - 1
+            minval = 0
+            maxval = (2**bits) - 1
+        return (minval, maxval)
 
     @staticmethod
     def create(bits, signed=True):
+        """
+        Creates new integer types dynamically.
+
+        If an integer type has already been created with the same number of
+        bits and sign, returns the existing class object.
+        """
         key = (bits, signed)
         existing = IntegerType.__cached__.get(key, None)
         if existing:
@@ -51,11 +65,30 @@ class IntegerType(int):
         IntegerType.__cached__[key] = newclass
         return newclass
 
-class Integer64(IntegerType, bits=64): pass
-class Integer32(IntegerType, bits=32): pass
-class Integer24(IntegerType, bits=24): pass
-class Integer16(IntegerType, bits=16): pass
-class Integer8(IntegerType, bits=8): pass
+class Integer64(IntegerType, bits=64):
+    """
+    64-bit signed integer type.
+    """
+
+class Integer32(IntegerType, bits=32):
+    """
+    32-bit signed integer type.
+    """
+
+class Integer24(IntegerType, bits=24):
+    """
+    24-bit signed integer type.
+    """
+
+class Integer16(IntegerType, bits=16):
+    """
+    16-bit signed integer type.
+    """
+
+class Integer8(IntegerType, bits=8):
+    """
+    8-bit signed integer type.
+    """
 
 class FixedPointType(float):
     """
@@ -68,47 +101,79 @@ class FixedPointType(float):
 
     def __new__(cls, value=0.0):
         value = float.__new__(cls, value)
-        # TODO: range checking
+        if value > cls.maxval:
+            raise ValueError('{} cannot exceed {:d}'.format(cls.__name__, cls.maxval))
+        if value < cls.minval:
+            raise ValueError('{} cannot be less than {:d}'.format(cls.__name__, cls.minval))
         return value
 
     def __init_subclass__(cls, bits, radix, **kwds):
         super().__init_subclass__(**kwds)
         cls.bits = bits
         cls.radix = radix
+        cls.resolution = 1 / (2**radix)
+        minval, maxval = IntegerType.range(bits, signed=True)
+        cls.minval = minval * cls.resolution
+        cls.maxval = maxval * cls.resolution
 
     @staticmethod
     def create(bits, radix):
         """
-        Creates an fixed-point type with the requested bits and radix point,
-        returning a previously-created type if one exists.
+        Creates new fixed-point types dynamically.
+
+        If a fixed-point type has already been created with the same number of
+        bits and radix point, returns the existing class object.
         """
         key = (bits, radix)
         existing = FixedPointType.__cached__.get(key, None)
         if existing:
             return existing
-        name = 'FixedPoint{:d}_{:d}'.format(bits, radix)
+        name = 'FixedPoint{:d}r{:d}'.format(bits, radix)
         newclass = type(name, (FixedPointType,), {}, bits=bits, radix=radix)
         FixedPointType.__cached__[key] = newclass
         return newclass
 
+# Common fixed-point types
+class FixedPoint64r20(FixedPointType, bits=64, radix=20):
+    """
+    64-bit fixed-point type with 20 fractional bits.
+    """
 
-FixedPoint64_20 = FixedPointType.create(64, 20)
-FixedPoint32_16 = FixedPointType.create(32, 16)
-FixedPoint16_7 = FixedPointType.create(16, 7)
-FixedPoint16_13 = FixedPointType.create(16, 13)
+class FixedPoint32r16(FixedPointType, bits=32, radix=16):
+    """
+    32-bit fixed-point type with 16 fractional bits.
+    """
 
-Identifier32 = Integer32
-Identifier16 = Integer16
+class FixedPoint16r7(FixedPointType, bits=16, radix=7):
+    """
+    16-bit fixed-point type with 7 fractional bits.
+    """
+
+class FixedPoint16r13(FixedPointType, bits=16, radix=13):
+    """
+    16-bit fixed-point type with 13 fractional bits.
+    """
+
+class Identifier32(IntegerType, bits=32, signed=False):
+    """
+    32-bit generic identifier.
+    """
+
+class Identifier16(IntegerType, bits=16, signed=False):
+    """
+    16-bit generic identifier.
+    """
 
 class StreamIdentifier(IntegerType, bits=32, signed=False):
     """
     A Stream Identifier (Stream ID) is a 32-bit number assigned to a VRT
     Packet Stream [5.1.2].
     """
-    pass
 
-class OUI(IntegerType, bits=24):
+class OUI(IntegerType, bits=24, signed=False):
     """
     Organizationally Unique Identifier.
     """
-    pass
+    def __str__(self):
+        octets = ((self >> n) & 0xFF for n in (16, 8, 0))
+        return '-'.join('{:02X}'.format(x) for x in octets)

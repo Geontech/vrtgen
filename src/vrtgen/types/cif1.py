@@ -10,22 +10,22 @@ class Polarization(Struct):
     """
     Antenna polarization [9.4.8].
     """
-    tilt = Field('Tilt Angle', basic.FixedPoint16_13)
-    ellipticity = Field('Ellipticity Angle', basic.FixedPoint16_13)
+    tilt = Field('Tilt Angle', basic.FixedPoint16r13)
+    ellipticity = Field('Ellipticity Angle', basic.FixedPoint16r13)
 
 class PointingVector(Struct):
     """
     3-D Pointing Vector [9.4.1.1].
     """
-    elevation = Field('Elevation Angle', basic.FixedPoint16_7)
-    azimuthal = Field('Azimuthal Angle', basic.FixedPoint16_7)
+    elevation = Field('Elevation Angle', basic.FixedPoint16r7)
+    azimuthal = Field('Azimuthal Angle', basic.FixedPoint16r7)
 
 class BeamWidths(Struct):
     """
     Beam Widths [9.4.2].
     """
-    horizontal = Field('Horizontal', basic.FixedPoint16_7)
-    vertical = Field('Vertical', basic.FixedPoint16_7)
+    horizontal = Field('Horizontal', basic.FixedPoint16r7)
+    vertical = Field('Vertical', basic.FixedPoint16r7)
 
 class EbNoBER(Struct):
     """
@@ -33,25 +33,25 @@ class EbNoBER(Struct):
     """
     # Energy per Bit to Noise Density ratio (Eb/No)
     # Maximum positive value (0x7FFF) signifies "unused"
-    ebno = Field('Eb/No', basic.FixedPoint16_7)
+    ebno = Field('Eb/No', basic.FixedPoint16r7)
 
     # Bit Error Rate (BER)
     # Maximum positive value (0x7FFF) signifies "unused"
-    ber = Field('BER', basic.FixedPoint16_7)
+    ber = Field('BER', basic.FixedPoint16r7)
 
 class Threshold(Struct):
     """
     Signal threshold level [9.5.13].
     """
-    stage1 = Field('Stage 1', basic.FixedPoint16_7)
-    stage2 = Field('Stage 2', basic.FixedPoint16_7)
+    stage1 = Field('Stage 1', basic.FixedPoint16r7)
+    stage2 = Field('Stage 2', basic.FixedPoint16r7)
 
 class InterceptPoints(Struct):
     """
     Second and Third Order Intercept points [9.5.6].
     """
-    second_order = Field('Input 2nd Order Intercept', basic.FixedPoint16_7)
-    third_order = Field('Input 3rd Order Intercept', basic.FixedPoint16_7)
+    second_order = Field('Input 2nd Order Intercept', basic.FixedPoint16r7)
+    third_order = Field('Input 3rd Order Intercept', basic.FixedPoint16r7)
 
 class SNRNoise(Struct):
     """
@@ -59,11 +59,11 @@ class SNRNoise(Struct):
     """
     # Signal-to-Noise Ratio (dB)
     # Maximum positive value (0x7FFF) signifies "unused"
-    snr = Field('SNR', basic.FixedPoint16_7)
+    snr = Field('SNR', basic.FixedPoint16r7)
 
     # Noise Figure (db)
     # O signifies "unused"
-    noise = Field('Noise Figure', basic.FixedPoint16_7)
+    noise = Field('Noise Figure', basic.FixedPoint16r7)
 
 class HealthStatus(Struct):
     """
@@ -96,7 +96,7 @@ class CIF1(metaclass=CIFMeta):
     CIF1 Fields.
     """
     # Phase Offset (1/31): fixed-point 16/7, radians (upper 16 reserved)
-    phase_offset = Field('Phase Offset', basic.FixedPoint16_7)
+    phase_offset = Field('Phase Offset', basic.FixedPoint16r7)
 
     # Polarization (1/30): [tilt, ellipticity], fixed-point 16/13, radians
     polarization = Field('Polarization', Polarization)
@@ -134,7 +134,7 @@ class CIF1(metaclass=CIFMeta):
 
     # Compression Point (1/18): fixed-point 16/7, dBm
     # NOTE: Also called "1 dB Compression Point" and "1-dB Compression Point"
-    compression_point = Field('Compression Point', basic.FixedPoint16_7)
+    compression_point = Field('Compression Point', basic.FixedPoint16r7)
 
     # Intercept Points (1/17): [2IIP, 3IIP], fixed-point 16/7, dBm
     intercept_points = Field('Intercept Points', InterceptPoints)
@@ -143,13 +143,13 @@ class CIF1(metaclass=CIFMeta):
     snr_noise_figure = Field('SNR/Noise Figure', SNRNoise)
 
     # Aux Frequency (1/15): fixed-point 64/20, Hz
-    aux_frequency = Field('Aux Frequency', basic.FixedPoint64_20)
+    aux_frequency = Field('Aux Frequency', basic.FixedPoint64r20)
 
     # Aux Gain (1/14): [stage2 (optional), stage1], fixed-point 16/7, dB
     aux_gain = Field('Aux Gain', Gain)
 
     # Aux Bandidth (1/13): fixed-point 64/20, Hz
-    aux_bandwidth = Field('Aux Bandwidth', basic.FixedPointType.create(64, 20))
+    aux_bandwidth = Field('Aux Bandwidth', basic.FixedPoint64r20)
 
     # Reserved (1/12)
     reserved_12 = Reserved(1)
