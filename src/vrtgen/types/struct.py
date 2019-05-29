@@ -47,12 +47,21 @@ class Enable(StructEntry):
     Boolean flag to enable or disable a feature.
     """
     def __init__(self, name, bits=1):
-        if bits == 1:
-            datatype = basic.Boolean
-        else:
-            # TODO: Handle multi-bit enable indicators better
-            datatype = basic.IntegerType.create(bits)
-        super().__init__(name, datatype)
+        # In some cases, such as Sample Frame in the data trailer, an enable
+        # may be more than one bit. All bits must be set or clear to indicate
+        # the state of the enable.
+        super().__init__(name, basic.IntegerType.create(bits))
+
+    def __get__(self, instance, owner):
+        value = super().__get__(instance, owner)
+        if value is None:
+            return None
+        return bool(value)
+
+    def __set__(self, instance, value):
+        # -1 is a shortcut to "all bits set" for signed integers
+        intval = -1 if value else 0
+        super().__set__(instance, intval)
 
 class Reserved(StructEntry):
     """
