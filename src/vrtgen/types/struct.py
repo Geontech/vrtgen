@@ -100,6 +100,9 @@ class StructBuilder(type):
         """
         Adds a field to a struct class definition.
         """
+        # Disable the "no member" warning because in this case cls is an
+        # instance of the class we are constructing, which has a bits member
+        # pylint: disable=no-member
         word = cls.bits // 32
         offset = 31 - (cls.bits % 32)
         if not cls.check_alignment(offset, field.bits):
@@ -116,33 +119,36 @@ class StructBuilder(type):
         Returns true if a field  is naturally aligned within a struct based on
         its starting offset.
         """
+        # No alignment concerns for sub-byte fields
+        if bits < 8:
+            return True
+
         # Adjust from 0-based to 1-based indexing to determine alignment
         pos = offset + 1
-        if bits < 8:
-            # No alignment concerns for sub-byte fields
-            return True
-        elif bits in (8, 16, 32):
+        if bits in (8, 16, 32):
             # Common power-of-two integer sizes should be naturally aligned
             return (pos % bits) == 0
-        elif bits == 24:
+        if bits == 24:
             # 24-bit integers just need to be 8-bit aligned, presumably since
             # they are not a "natural" register size
             return (pos % 8) == 0
-        elif bits == 64:
+        if bits == 64:
             # 64-bit ints must be at least aligned to a 32-bit word boundary,
             # but full 64-bit alignment does not appear to be a concern
             return pos == 32
-        else:
-            # Other cases TBD
-            return True
+
+        # Other cases TBD
+        return True
 
     def check_size(cls):
         """
         Checks that a struct class is an exact multiple of the VITA 49 word
         size (32 bits).
         """
-        if cls.bits % 32:
-            msg = '{} does not end on a word boundary'.format(cls.__name__)
+        # Disable the "no member" warning because in this case cls is an
+        # instance of the class we are constructing, which has a bits member
+        if cls.bits % 32: # pylint: disable=no-member
+            msg = '{}.{} does not end on a word boundary'.format(cls.__module__, cls.__qualname__)
             warnings.warn(msg)
 
 class Struct(metaclass=StructBuilder):
