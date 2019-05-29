@@ -166,7 +166,7 @@ class CIF0(metaclass=CIFMeta):
     context_association_lists = Field('Context Association Lists', None)
 
     # Field Attributes Enable (CIF7)
-    cif7_enable = Enable('CIF 7 Enable')
+    cif7_enable = Enable('Field Attributes Enable')
 
     # Reserved (0/6 to 0/4)
     reserved_6 = Reserved(1)
