@@ -1,8 +1,6 @@
 """
 CIF field metadata classes.
 """
-import inspect
-
 from .struct import Struct, StructBuilder, StructEntry, Field, Reserved
 from . import basic
 
@@ -14,14 +12,16 @@ class CIFMeta(type):
     """
     def __new__(cls, name, bases, namespace):
         cif = type.__new__(cls, name, bases, namespace)
-        cif.Enables = CIFMeta._create_enables(cif)
+        cif.Enables = CIFMeta._create_enables(namespace)
         return cif
 
     @staticmethod
-    def _create_enables(cif):
+    def _create_enables(cifdict):
         # Dynamically create a struct class for the CIF prologue structure
         namespace = {}
-        for attr, field in inspect.getmembers(cif, lambda x: isinstance(x, StructEntry)):
+        for attr, field in cifdict.items():
+            if not isinstance(field, StructEntry):
+                continue
             # Turn all non-reserved CIF bits into enable flags
             if isinstance(field, Reserved):
                 entry = Reserved(1)
