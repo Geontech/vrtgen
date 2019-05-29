@@ -4,7 +4,7 @@ Types and defintions for CIF0 fields.
 from . import basic
 from . import enums
 from .struct import Struct, Field, Reserved, Enable
-from .cifmeta import CIFMeta
+from .cifmeta import CIFFields
 
 class GeolocationAngle(basic.FixedPointType, bits=32, radix=22):
     """
@@ -79,7 +79,7 @@ class Ephemeris(Struct):
     velocity_dy = Field('Velocity dY', VelocityCoordinate)
     velocity_dz = Field('Velocity dZ', VelocityCoordinate)
 
-class CIF0(metaclass=CIFMeta):
+class CIF0(CIFFields):
     """
     CIF 0 Fields.
     """

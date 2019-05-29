@@ -3,7 +3,7 @@ Types and definitions for CIF1 fields.
 """
 from . import basic
 from .struct import Struct, Field, Reserved
-from .cifmeta import CIFMeta
+from .cifmeta import CIFFields
 from .cif0 import Gain
 
 class Polarization(Struct):
@@ -91,7 +91,7 @@ class BufferSize(Struct):
     level = Field('Level', basic.Integer8)
     status = Field('Status', basic.Integer8)
 
-class CIF1(metaclass=CIFMeta):
+class CIF1(CIFFields):
     """
     CIF1 Fields.
     """

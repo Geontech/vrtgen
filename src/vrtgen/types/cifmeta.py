@@ -1,12 +1,13 @@
 """
 CIF field metadata classes.
 """
-from .struct import Struct, StructBuilder, StructEntry, Field, Reserved
+from .container import Container, ContainerMeta, ContainerItem
+from .struct import Struct, Field, Reserved
 from . import basic
 
 __all__ = ('CIFMeta',)
 
-class CIFMeta(type):
+class CIFMeta(ContainerMeta):
     """
     Metaclass for CIF fields.
     """
@@ -21,7 +22,7 @@ class CIFMeta(type):
         """
         namespace = {}
         for attr, field in cifdict.items():
-            if not isinstance(field, StructEntry):
+            if not isinstance(field, ContainerItem):
                 continue
             # Turn all non-reserved CIF bits into enable flags
             if isinstance(field, Reserved):
@@ -38,6 +39,11 @@ class CIFMeta(type):
         #   * The qualified name does not appear to be set when dynamically
         #     creating a class
         qualname = name+'.Enables'
-        cls = StructBuilder(qualname, (Struct,), namespace)
+        cls = ContainerMeta(qualname, (Struct,), namespace)
         cls.__name__ = 'Enables'
         return cls
+
+class CIFFields(Container, metaclass=CIFMeta):
+    """
+    Base class for CIF fields.
+    """
