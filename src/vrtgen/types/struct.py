@@ -63,6 +63,12 @@ class Enable(StructItem):
         intval = -1 if value else 0
         super().__set__(instance, intval)
 
+    def link(self, *args, **kwds):
+        """
+        Creates a field associated with this enable.
+        """
+        return Field(self.name, *args, enable=self, **kwds)
+
 class Reserved(StructItem):
     """
     Reserved bits in a struct. Always 0.
@@ -77,10 +83,11 @@ class Field(StructItem):
     """
     Data field in a struct.
     """
-    __slots__ = ('_unused',)
-    def __init__(self, name, datatype, unused=None):
+    __slots__ = ('_unused', 'enable')
+    def __init__(self, name, datatype, unused=None, enable=None):
         super().__init__(name, datatype, True)
         self._unused = unused
+        self.enable = enable
 
 class Struct(Container):
     """
