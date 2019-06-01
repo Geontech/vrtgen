@@ -10,30 +10,11 @@ class StructItem(ContainerItem):
     """
     Base class for objects that require space in a binary structure.
     """
-    __slots__ = ('word', 'offset', '_attr')
+    __slots__ = ('word', 'offset')
     def __init__(self, name, datatype, editable):
         super().__init__(name, datatype, editable)
         self.word = None
         self.offset = None
-        self._attr = None
-
-    def __set_name__(self, owner, name):
-        self._attr = '_' + name
-
-    def _initialize(self, instance):
-        setattr(instance, self._attr, self.type())
-
-    def __get__(self, instance, owner):
-        if instance is None:
-            return self
-        if not hasattr(instance, self._attr):
-            self._initialize(instance)
-        return getattr(instance, self._attr)
-
-    def __set__(self, instance, value):
-        if not isinstance(value, self.type):
-            value = self.type(value)
-        setattr(instance, self._attr, value)
 
     @property
     def bits(self):

@@ -2,17 +2,47 @@
 Base container class.
 """
 
+__all__ = (
+    'ContainerItem',
+    'ContainerMeta',
+    'Container',
+)
+
 class ContainerItem:
     """
-    Base class for objects that require space in a binary structure.
+    Base class for named fields in a container.
     """
-    __slots__ = ('name', 'type', 'editable')
+    __slots__ = ('name', 'type', 'editable', '_attr')
     def __init__(self, name, datatype, editable):
         self.name = name
         self.type = datatype
         self.editable = editable
+        self._attr = None
+
+    def __set_name__(self, owner, name):
+        self._attr = '_' + name
+
+    def _initialize(self, instance):
+        if self._attr is None:
+            return
+        setattr(instance, self._attr, self.type())
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        if not hasattr(instance, self._attr):
+            self._initialize(instance)
+        return getattr(instance, self._attr)
+
+    def __set__(self, instance, value):
+        if not isinstance(value, self.type):
+            value = self.type(value)
+        setattr(instance, self._attr, value)
 
 class ContainerMeta(type):
+    """
+    Metaclass for constructing container classes.
+    """
     def __init__(cls, name, bases, namespace):
         type.__init__(cls, name, bases, namespace)
         for attr, value in namespace.items():
@@ -26,6 +56,9 @@ class ContainerMeta(type):
         return
 
 class Container(metaclass=ContainerMeta):
+    """
+    Base class for container types that support dynamic field lookup by name.
+    """
     # Initialize contents to empty, subclasses will extend
     _contents = []
 
@@ -37,6 +70,7 @@ class Container(metaclass=ContainerMeta):
 
     @classmethod
     def _add_field(cls, attr, field):
+        # pylint: disable=unused-argument
         cls._contents.append(field)
 
     def get_value(self, name):

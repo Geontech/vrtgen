@@ -5,7 +5,10 @@ from .container import Container, ContainerMeta, ContainerItem
 from .struct import Struct, Field, Reserved
 from . import basic
 
-__all__ = ('CIFMeta',)
+__all__ = (
+    'CIFMeta',
+    'CIFFields',
+)
 
 class CIFMeta(ContainerMeta):
     """
