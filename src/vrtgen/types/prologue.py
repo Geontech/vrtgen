@@ -3,6 +3,7 @@ Types used for VITA 49 packet prologues.
 """
 
 from .struct import Struct, Field, Reserved
+from .container import Container
 from . import basic, enums
 
 class ClassIdentifier(Struct):
@@ -29,7 +30,7 @@ class Header(Struct):
     packet_count = Field('Packet Count', basic.IntegerType.create(4))
     packet_size = Field('Packet Size', basic.Integer16)
 
-class Prologue:
+class Prologue(Container):
     """
     VRT Packet Prologue (5).
     """
