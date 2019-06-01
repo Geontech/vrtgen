@@ -78,7 +78,7 @@ class Struct(Container):
     bits = 0
 
     @classmethod
-    def _add_field(cls, attr, field):
+    def _add_field(cls, field):
         """
         Adds a field to a struct class definition.
         """
@@ -86,12 +86,12 @@ class Struct(Container):
         word = cls.bits // 32
         offset = 31 - (cls.bits % 32)
         if not cls.check_alignment(offset, field.bits):
-            msg = '{}.{} is not naturally aligned'.format(cls.__name__, attr)
+            msg = '{}.{} is not naturally aligned'.format(cls.__name__, field.attr)
             warnings.warn(msg)
         field.word = word
         field.offset = offset
         cls.bits += field.bits
-        super()._add_field(attr, field)
+        super()._add_field(field)
 
     @staticmethod
     def check_alignment(offset, bits):

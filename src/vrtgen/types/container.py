@@ -12,43 +12,50 @@ class ContainerItem:
     """
     Base class for named fields in a container.
     """
-    __slots__ = ('name', 'type', 'editable', '_attr')
+    __slots__ = ('name', 'type', 'editable', 'attr')
     def __init__(self, name, datatype, editable):
         self.name = name
         self.type = datatype
         self.editable = editable
-        self._attr = None
+        self.attr = str()
 
     def __set_name__(self, owner, name):
-        self._attr = '_' + name
+        self.attr = name
 
     def _initialize(self, instance):
-        if self._attr is None:
+        if not self.attr:
             return
-        setattr(instance, self._attr, self.type())
+        setattr(instance, self._varname, self.type())
 
     def __get__(self, instance, owner):
         if instance is None:
             return self
-        if not hasattr(instance, self._attr):
+        if not hasattr(instance, self._varname):
             self._initialize(instance)
-        return getattr(instance, self._attr)
+        return getattr(instance, self._varname)
 
     def __set__(self, instance, value):
         if not isinstance(value, self.type):
             value = self.type(value)
-        setattr(instance, self._attr, value)
+        setattr(instance, self._varname, value)
+
+    @property
+    def _varname(self):
+        return '_' + self.attr
 
 class ContainerMeta(type):
     """
     Metaclass for constructing container classes.
     """
     def __init__(cls, name, bases, namespace):
-        type.__init__(cls, name, bases, namespace)
-        for attr, value in namespace.items():
+        super().__init__(name, bases, namespace)
+        # Fields are collected in __init__ instead of __new__ because the
+        # superclass __init__ will call __set_name__ on all of the fields,
+        # which is useful for warning messages, etc.
+        for value in namespace.values():
             if not isinstance(value, ContainerItem):
                 continue
-            cls._add_field(attr, value)
+            cls._add_field(value)
         cls._validate()
 
     @staticmethod
@@ -69,8 +76,7 @@ class Container(metaclass=ContainerMeta):
         cls._contents = cls._contents[:]
 
     @classmethod
-    def _add_field(cls, attr, field):
-        # pylint: disable=unused-argument
+    def _add_field(cls, field):
         cls._contents.append(field)
 
     def get_value(self, name):
