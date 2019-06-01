@@ -1,6 +1,7 @@
 """
 Classes for defining struct data types.
 """
+import struct
 import warnings
 
 from . import basic
@@ -129,3 +130,26 @@ class Struct(Container):
         if cls.bits % 32:
             msg = '{}.{} does not end on a word boundary'.format(cls.__module__, cls.__qualname__)
             warnings.warn(msg)
+
+    def pack(self):
+        """
+        Packs field values into binary format.
+        """
+        data = bytes()
+        bits = 0
+        word = 0
+        for field in self.get_contents():
+            value = getattr(self, field.attr)
+            word = (word << field.bits) | value
+            bits += field.bits
+            if bits % 32:
+                # Only pack on word boundaries
+                continue
+            if bits == 32:
+                fmt = 'L'
+            elif bits == 64:
+                fmt = 'Q'
+            data += struct.pack('>'+fmt, word)
+            word = 0
+            bits = 0
+        return data
