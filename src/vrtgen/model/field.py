@@ -3,9 +3,8 @@ Types for configuration of packet fields and subfields.
 """
 
 from enum import IntEnum
-import inspect
 
-from vrtgen.types.struct import Field, Struct
+from vrtgen.types.struct import Struct
 
 class Mode(IntEnum):
     """
@@ -139,8 +138,7 @@ class FieldConfiguration:
         # The type may be none for unimplemented CIF fields
         if field.type is not None and issubclass(field.type, Struct):
             return StructFieldConfiguration(field, mode=mode)
-        else:
-            return SimpleFieldConfiguration(field, mode=mode)
+        return SimpleFieldConfiguration(field, mode=mode)
 
 class SimpleFieldConfiguration(FieldConfiguration):
     """
@@ -161,12 +159,12 @@ class StructFieldConfiguration(FieldConfiguration):
     def __init__(self, field, mode=Mode.DISABLED):
         super().__init__(field, mode)
         self._fields = {}
-        for name, value in inspect.getmembers(field.type, lambda x: isinstance(x, Field)):
+        for subfield in field.type.get_fields():
             # By default, all struct fields are required. They can marked as
             # optional or unused later.
-            subfield = FieldConfiguration.create(value, Mode.REQUIRED)
-            setattr(self, name, subfield)
-            self._fields[subfield.name.casefold()] = subfield
+            config = FieldConfiguration.create(subfield, Mode.REQUIRED)
+            setattr(self, subfield.attr, config)
+            self._fields[subfield.name.casefold()] = config
 
     def get_field(self, name):
         """

@@ -89,7 +89,7 @@ class ContextPacketParser(PacketParser):
         return config.ContextPacketConfiguration(name)
 
     def parse_payload(self, packet, value):
-        CIFPayloadParser().parse(self.log.getChild('Payload'), packet, value)
+        CIFPayloadParser().parse(self.log.getChild('Payload'), packet.payload, value)
 
     def parse_option(self, packet, name, value):
         if name.casefold() == 'timestamp mode':
@@ -108,4 +108,4 @@ class CommandPacketParser(PacketParser):
         return config.CommandPacketConfiguration(name)
 
     def parse_payload(self, packet, value):
-        CIFPayloadParser().parse(self.log.getChild('Payload'), packet, value)
+        CIFPayloadParser().parse(self.log.getChild('Payload'), packet.payload, value)
