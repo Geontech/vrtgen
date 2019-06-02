@@ -140,6 +140,8 @@ class Struct(Container):
         word = 0
         for field in self.get_contents():
             value = getattr(self, field.attr)
+            if hasattr(value, 'to_binary'):
+                value = value.to_binary()
             word = (word << field.bits) | value
             bits += field.bits
             if bits % 32:

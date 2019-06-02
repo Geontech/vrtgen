@@ -1,7 +1,6 @@
 """
 Basic data types used in VITA 49 structures and fields.
 """
-
 class Boolean:
     """
     One-bit boolean value type.
@@ -102,19 +101,45 @@ class FixedPointType(float):
     def __new__(cls, value=0.0):
         value = float.__new__(cls, value)
         if value > cls.maxval:
-            raise ValueError('{} cannot exceed {:d}'.format(cls.__name__, cls.maxval))
+            raise ValueError('{} cannot exceed {}'.format(cls.__name__, cls.maxval))
         if value < cls.minval:
-            raise ValueError('{} cannot be less than {:d}'.format(cls.__name__, cls.minval))
+            raise ValueError('{} cannot be less than {}'.format(cls.__name__, cls.minval))
         return value
 
     def __init_subclass__(cls, bits, radix, **kwds):
         super().__init_subclass__(**kwds)
         cls.bits = bits
         cls.radix = radix
-        cls.resolution = 1 / (2**radix)
+        cls.mask = (1 << cls.bits) - 1
+        cls.scale = 1 << cls.radix
         minval, maxval = IntegerType.range(bits, signed=True)
-        cls.minval = minval * cls.resolution
-        cls.maxval = maxval * cls.resolution
+        cls.minval = minval / cls.scale
+        cls.maxval = maxval / cls.scale
+
+    def to_binary(self):
+        """
+        Converts this fixed-point value to its binary representation as an
+        unsigned integer.
+        """
+        # Shift radix point up so the least significant fractional bit is in
+        # the ones place, then round and truncate to int. Then, mask the value
+        # to convert it to unsigned.
+        return int(round(self * self.scale)) & self.mask
+
+    @classmethod
+    def from_binary(cls, value):
+        """
+        Converts an unsigned binary representation to a fixed-point value.
+        """
+        if value < 0:
+            raise ValueError('binary value must be unsigned')
+        if value >= (1 << cls.bits):
+            raise ValueError('binary value {} too large for {}'.format(value, cls.__name__))
+        # If the sign bit is set, convert to a negative number by sign
+        # extension (OR-ing all high bits).
+        if value & (1 << (cls.bits - 1)):
+            value |= ~cls.mask
+        return cls(value / cls.scale)
 
     @staticmethod
     def create(bits, radix):
