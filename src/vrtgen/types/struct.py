@@ -61,6 +61,15 @@ class Reserved(StructItem):
     def __set__(self, instance, value):
         raise AttributeError('reserved fields cannot be set')
 
+    def rebind(self, field):
+        """
+        Replaces these reserved bits with another field.
+        """
+        assert self.bits == field.bits
+        field.word = self.word
+        field.offset = self.offset
+        return field
+
 class Field(StructItem):
     """
     Data field in a struct.
@@ -84,6 +93,14 @@ class Struct(Container):
         Adds a field to a struct class definition.
         """
         assert isinstance(field, StructItem)
+
+        # Check for rebound fields, usually from a base class
+        if field.offset is not None:
+            # If one is set, both must be
+            assert field.word is not None
+            cls._replace_field(field)
+            return
+
         word = cls.bits // 32
         offset = 31 - (cls.bits % 32)
         if not cls.check_alignment(offset, field.bits):
@@ -93,6 +110,21 @@ class Struct(Container):
         field.offset = offset
         cls.bits += field.bits
         super()._add_field(field)
+
+    @classmethod
+    def _replace_field(cls, field):
+        index, current = cls._find_field(field.word, field.offset)
+        assert current is not None
+        cls._contents[index] = field
+        setattr(cls, current.attr, field)
+
+    @classmethod
+    def _find_field(cls, word, offset):
+        for index in range(len(cls._contents)):
+            current = cls._contents[index]
+            if current.word == word and current.offset == offset:
+                return index, current
+        return -1, None
 
     @staticmethod
     def check_alignment(offset, bits):
