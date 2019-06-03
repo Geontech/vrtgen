@@ -83,3 +83,14 @@ def test_parse_ssi(literal, expected):
 def test_parse_ssi_error():
     with pytest.raises(ValueError):
         value.parse_ssi('invalid')
+
+@parametrize_literals(
+    ('fine', enums.TSM.FINE),
+    ('coarse', enums.TSM.COARSE),
+)
+def test_parse_tsm(literal, expected):
+    assert value.parse_tsm(literal) == expected
+
+def test_parse_tsm_error():
+    with pytest.raises(ValueError):
+        value.parse_tsm('invalid')

@@ -1,12 +1,10 @@
 import logging
 
 from vrtgen.model import config
-from vrtgen.types.enums import TSM
-from vrtgen.types.prologue import Header, Prologue
+from vrtgen.types.prologue import Header, ContextHeader, Prologue
 from vrtgen.types.trailer import Trailer
 
 from . import field
-from . import value
 from .cif import CIFPayloadParser
 from .section import SectionParser
 
@@ -33,7 +31,9 @@ TrailerParser.add_parser(Trailer.user_defined.name, UnimplementedParser('User-de
 TrailerParser.add_field_parser(Trailer.associated_context_packets)
 
 class PrologueParser(SectionParser):
-    pass
+    """
+    Base parser for packet prologue configuration.
+    """
 
 PrologueParser.add_field_parser(Prologue.stream_id, alias='Stream ID')
 PrologueParser.add_field_parser(Prologue.class_id, field.ClassIDParser(), alias='Class ID')
@@ -41,6 +41,13 @@ PrologueParser.add_field_parser(Header.tsi)
 PrologueParser.add_field_parser(Header.tsf)
 PrologueParser.add_field_parser(Prologue.integer_timestamp)
 PrologueParser.add_field_parser(Prologue.fractional_timestamp)
+
+class ContextPrologueParser(PrologueParser):
+    """
+    Parser for context packet prologue configuration.
+    """
+
+ContextPrologueParser.add_field_parser(ContextHeader.timestamp_mode)
 
 class PacketParser:
     def __init__(self, name):
@@ -56,9 +63,6 @@ class PacketParser:
     def parse_payload(self, packet, value):
         raise NotImplementedError('Payload processing not implemented')
 
-    def parse_option(self, packet, name, value):
-        return False
-
     def parse(self, value):
         packet = self.create_packet(self.name)
 
@@ -69,8 +73,8 @@ class PacketParser:
                 self.parse_trailer(packet, field_value)
             elif field_name == 'payload':
                 self.parse_payload(packet, field_value)
-            elif not self.parse_option(packet, field_name, field_value):
-                self.log.error("Invalid option '%s'", field_name)
+            else:
+                self.log.error("Invalid section '%s'", field_name)
 
         return packet
 
@@ -88,20 +92,11 @@ class ContextPacketParser(PacketParser):
     def create_packet(self, name):
         return config.ContextPacketConfiguration(name)
 
+    def parse_prologue(self, packet, value):
+        ContextPrologueParser().parse(self.log.getChild('Prologue'), packet.prologue, value)
+
     def parse_payload(self, packet, value):
         CIFPayloadParser().parse(self.log.getChild('Payload'), packet.payload, value)
-
-    def parse_option(self, packet, name, value):
-        if name.casefold() == 'timestamp mode':
-            try:
-                packet.timestamp_mode = {'fine': TSM.FINE, 'coarse': TSM.COARSE}[value.casefold()]
-            except KeyError:
-                self.log.error("Invalid Timestamp Mode '%s'", value)
-            else:
-                self.log.debug('Timestamp Mode = %s', packet.timestamp_mode)
-            return True
-        else:
-            return False
 
 class CommandPacketParser(PacketParser):
     def create_packet(self, name):

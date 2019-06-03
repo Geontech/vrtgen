@@ -1,7 +1,7 @@
 import warnings
 
 from vrtgen.types import enums
-from vrtgen.types.prologue import Prologue, Header
+from vrtgen.types.prologue import Prologue, Header, ContextHeader
 from vrtgen.types.trailer import Trailer
 from vrtgen.types.cif0 import CIF0
 from vrtgen.types.cif1 import CIF1
@@ -22,14 +22,20 @@ class FieldContainer:
                 return field
         raise KeyError(name)
 
-    def _add_field(self, field, *args, **kwds):
+    def add_field(self, field, *args, **kwds):
+        """
+        Adds a configuration for the given field.
+        """
         config = FieldConfiguration.create(field, *args, **kwds)
         self._fields.append(config)
         return config
 
-    def _add_fields(self, container):
+    def add_fields(self, container):
+        """
+        Adds configurations for all the fields in a container.
+        """
         for value in container.get_fields():
-            field = self._add_field(value)
+            field = self.add_field(value)
 
             # User the same Python-friendly attribute name for easy lookup
             name = value.attr
@@ -40,24 +46,24 @@ class FieldContainer:
 class CIFPayloadConfiguration(FieldContainer):
     def __init__(self):
         super().__init__()
-        self._add_fields(CIF0)
-        self._add_fields(CIF1)
+        self.add_fields(CIF0)
+        self.add_fields(CIF1)
 
 class PrologueConfiguration(FieldContainer):
     def __init__(self):
         super().__init__()
 
-        self.tsi = self._add_field(Header.tsi, Mode.MANDATORY)
+        self.tsi = self.add_field(Header.tsi, Mode.MANDATORY)
         self.tsi.value = enums.TSI()
-        self.tsf = self._add_field(Header.tsf, Mode.MANDATORY)
+        self.tsf = self.add_field(Header.tsf, Mode.MANDATORY)
         self.tsf.value = enums.TSF()
 
-        self._add_fields(Prologue)
+        self.add_fields(Prologue)
 
 class TrailerConfiguration(FieldContainer):
     def __init__(self):
         super().__init__()
-        self._add_fields(Trailer)
+        self.add_fields(Trailer)
 
 
 class PacketConfiguration:
@@ -77,6 +83,7 @@ class ContextPacketConfiguration(PacketConfiguration):
     def __init__(self, name):
         super().__init__(name)
         self.prologue.stream_id.mode = Mode.MANDATORY # pylint: disable=no-member
+        self.prologue.add_field(ContextHeader.timestamp_mode, Mode.MANDATORY)
         self.payload = CIFPayloadConfiguration()
 
 class CommandPacketConfiguration(PacketConfiguration):

@@ -160,6 +160,7 @@ SimpleFieldParser.register_type(basic.OUI, value_parser.parse_oui)
 SimpleFieldParser.register_type(enums.TSI, value_parser.parse_tsi)
 SimpleFieldParser.register_type(enums.TSF, value_parser.parse_tsf)
 SimpleFieldParser.register_type(enums.SSI, value_parser.parse_ssi)
+SimpleFieldParser.register_type(enums.TSM, value_parser.parse_tsm)
 
 class UserDefinedFieldParser(FieldParser):
     """

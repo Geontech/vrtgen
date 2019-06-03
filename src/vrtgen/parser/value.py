@@ -42,7 +42,7 @@ def parse_oui(value):
 
 def parse_tsi(value):
     """
-    Parses a TSI literal.
+    Parses a TimeStamp-Integer (TSI) literal.
 
     Valid values are 'none', 'utc', 'gps' and 'other'. Case is ignored.
     """
@@ -60,7 +60,7 @@ _TSF_VALUES = {
 
 def parse_tsf(value):
     """
-    Parses a TSF literal.
+    Parses a TimeStamp-Fractional (TSF) literal.
 
     Valid values are 'none', 'samples', 'picoseconds' and 'free running'. Case
     is ignored.
@@ -72,11 +72,22 @@ def parse_tsf(value):
 
 def parse_ssi(value):
     """
-    Parses an SSI literal.
+    Parses a Start/Stop of Sample Frame Indication (SSI) literal.
 
     Valid values are 'single', 'first', 'middle' and 'final'. Case is ignored.
     """
     try:
         return getattr(enums.SSI, value.upper())
+    except AttributeError:
+        raise ValueError(value)
+
+def parse_tsm(value):
+    """
+    Parses a Timestamp Mode (TSM) literal.
+
+    Valid values are 'fine' and 'coarse'. Case is ignored.
+    """
+    try:
+        return getattr(enums.TSM, value.upper())
     except AttributeError:
         raise ValueError(value)
