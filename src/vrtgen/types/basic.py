@@ -89,6 +89,31 @@ class Integer8(IntegerType, bits=8):
     8-bit signed integer type.
     """
 
+class UInteger64(IntegerType, bits=64, signed=False):
+    """
+    64-bit unsigned integer type.
+    """
+
+class UInteger32(IntegerType, bits=32, signed=False):
+    """
+    32-bit unsigned integer type.
+    """
+
+class UInteger24(IntegerType, bits=24, signed=False):
+    """
+    24-bit unsigned integer type.
+    """
+
+class UInteger16(IntegerType, bits=16, signed=False):
+    """
+    16-bit unsigned integer type.
+    """
+
+class UInteger8(IntegerType, bits=8, signed=False):
+    """
+    8-bit unsigned integer type.
+    """
+
 class FixedPointType(float):
     """
     Base class for fixed-point types, mapping to Python float for the actual
