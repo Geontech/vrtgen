@@ -77,6 +77,12 @@ class PacketConfiguration:
         # Override or extend in subclasses to check for invalid combinations
         # of field configurations.
 
+    def packet_type(self):
+        """
+        Returns the Packet Type Code for this packet configuration.
+        """
+        raise NotImplementedError('packet_type')
+
 class DataPacketConfiguration(PacketConfiguration):
     """
     Configuration for a Data Packet.
@@ -86,10 +92,16 @@ class DataPacketConfiguration(PacketConfiguration):
 
         self._add_fields(Trailer, Scope.TRAILER)
 
+    def packet_type(self):
+        if self.stream_id.is_enabled: # pylint: disable=no-member
+            return enums.PacketType.SIGNAL_DATA_STREAM_ID
+        return enums.PacketType.SIGNAL_DATA
+
 class CIFPacketConfiguration(PacketConfiguration):
     """
     Base class for packet types that contain Context Information Fields.
     """
+    # pylint: disable=abstract-method
     def __init__(self, name):
         super().__init__(name)
 
@@ -106,7 +118,12 @@ class ContextPacketConfiguration(CIFPacketConfiguration):
         super()._add_prologue_fields()
         self._add_field(ContextHeader.timestamp_mode, Scope.PROLOGUE, Mode.MANDATORY)
 
+    def packet_type(self):
+        return enums.PacketType.CONTEXT
+
 class CommandPacketConfiguration(CIFPacketConfiguration):
     """
     Configuration for a Command Packet.
     """
+    def packet_type(self):
+        return enums.PacketType.COMMAND

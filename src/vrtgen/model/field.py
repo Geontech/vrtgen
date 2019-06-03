@@ -88,7 +88,7 @@ class FieldConfiguration:
         """
         if self.has_value:
             return True
-        return self.is_mandatory
+        return self.is_required
 
     @property
     def is_required(self):
@@ -141,6 +141,19 @@ class FieldConfiguration:
         """
         raise NotImplementedError('has_value')
 
+    @property
+    def value(self):
+        """
+        The current configured value of this field.
+        """
+        if not self.is_set:
+            return None
+        return self._get_value()
+
+    @value.setter
+    def value(self, newval):
+        self._set_value(newval)
+
     @staticmethod
     def create(field, scope, mode=Mode.DISABLED):
         """
@@ -152,17 +165,33 @@ class FieldConfiguration:
             return StructFieldConfiguration(field, scope, mode=mode)
         return SimpleFieldConfiguration(field, scope, mode=mode)
 
+    def _get_value(self):
+        raise NotImplementedError('_get_value')
+
+    def _set_value(self, value):
+        raise NotImplementedError('_set_value')
+
 class SimpleFieldConfiguration(FieldConfiguration):
     """
     Configuration for a simple field type (integer, fixed-point, etc.).
     """
     def __init__(self, field, scope, mode=Mode.DISABLED):
         super().__init__(field, scope, mode)
-        self.value = None
+        self._value = None
 
     @property
     def has_value(self):
-        return self.value is not None
+        return self._value is not None
+
+    def _get_value(self):
+        if not self.is_set:
+            return None
+        if self._value is None:
+            return self.field.type()
+        return self._value
+
+    def _set_value(self, value):
+        self._value = value
 
 class StructFieldConfiguration(FieldConfiguration):
     """
@@ -187,3 +216,14 @@ class StructFieldConfiguration(FieldConfiguration):
     @property
     def has_value(self):
         return any(f.has_value for f in self._fields.values())
+
+    def _get_value(self):
+        result = self.field.type()
+        for field in self._fields.values():
+            if not field.has_value:
+                continue
+            result.set_value(field.name, field.value)
+        return result
+
+    def _set_value(self, value):
+        raise AttributeError('cannot set struct value')
