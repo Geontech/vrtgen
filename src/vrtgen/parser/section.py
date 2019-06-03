@@ -65,7 +65,7 @@ class SectionParser:
         name = field.name
         cls.add_parser(name, bind_parser(name, parser), alias)
 
-    def parse(self, log, context, value):
+    def __call__(self, log, context, value):
         for name, field_value in value.items():
             field_name = self.__ALIASES__.get(name.casefold(), name)
             parser = self.__PARSERS__.get(field_name.casefold(), None)
@@ -77,5 +77,5 @@ class SectionParser:
                 parser(log, context, field_value)
             except (TypeError, ValueError) as exc:
                 log.error("Invalid value for field '%s': %s", field_name, exc)
-            except Exception as exc:
+            except RuntimeError as exc:
                 log.exception("Field '%s': %s", field_name, exc)
