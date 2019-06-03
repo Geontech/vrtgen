@@ -55,7 +55,7 @@ class PacketParser:
         self.log = logging.getLogger(name)
 
     def parse_prologue(self, packet, value):
-        PrologueParser().parse(self.log.getChild('Prologue'), packet.prologue, value)
+        PrologueParser().parse(self.log.getChild('Prologue'), packet, value)
 
     def parse_trailer(self, packet, value):
         self.log.error('Only data packets can have a trailer')
@@ -86,21 +86,21 @@ class DataPacketParser(PacketParser):
         return config.DataPacketConfiguration(name)
 
     def parse_trailer(self, packet, value):
-        TrailerParser().parse(self.log.getChild('Trailer'), packet.trailer, value)
+        TrailerParser().parse(self.log.getChild('Trailer'), packet, value)
 
 class ContextPacketParser(PacketParser):
     def create_packet(self, name):
         return config.ContextPacketConfiguration(name)
 
     def parse_prologue(self, packet, value):
-        ContextPrologueParser().parse(self.log.getChild('Prologue'), packet.prologue, value)
+        ContextPrologueParser().parse(self.log.getChild('Prologue'), packet, value)
 
     def parse_payload(self, packet, value):
-        CIFPayloadParser().parse(self.log.getChild('Payload'), packet.payload, value)
+        CIFPayloadParser().parse(self.log.getChild('Payload'), packet, value)
 
 class CommandPacketParser(PacketParser):
     def create_packet(self, name):
         return config.CommandPacketConfiguration(name)
 
     def parse_payload(self, packet, value):
-        CIFPayloadParser().parse(self.log.getChild('Payload'), packet.payload, value)
+        CIFPayloadParser().parse(self.log.getChild('Payload'), packet, value)

@@ -13,10 +13,10 @@ TestData:
 """
     packet = parse_single(document)
     assert packet.name == 'TestData'
-    assert packet.prologue.tsi.value == enums.TSI.NONE
-    assert packet.prologue.tsf.value == enums.TSF.NONE
-    assert packet.prologue.stream_id.is_disabled
-    assert packet.prologue.class_id.is_disabled
+    assert packet.tsi.value == enums.TSI.NONE
+    assert packet.tsf.value == enums.TSF.NONE
+    assert packet.stream_id.is_disabled
+    assert packet.class_id.is_disabled
 
 def test_context_defaults():
     document = """
@@ -25,10 +25,10 @@ TestContext:
 """
     packet = parse_single(document)
     assert packet.name == 'TestContext'
-    assert packet.prologue.tsi.value == enums.TSI.NONE
-    assert packet.prologue.tsf.value == enums.TSF.NONE
-    assert packet.prologue.stream_id.is_mandatory
-    assert packet.prologue.class_id.is_disabled
+    assert packet.tsi.value == enums.TSI.NONE
+    assert packet.tsf.value == enums.TSF.NONE
+    assert packet.stream_id.is_mandatory
+    assert packet.class_id.is_disabled
 
 def test_command_defaults():
     document = """
@@ -37,7 +37,7 @@ TestCommand:
 """
     packet = parse_single(document)
     assert packet.name == 'TestCommand'
-    assert packet.prologue.tsi.value == enums.TSI.NONE
-    assert packet.prologue.tsf.value == enums.TSF.NONE
-    assert packet.prologue.stream_id.is_mandatory
-    assert packet.prologue.class_id.is_disabled
+    assert packet.tsi.value == enums.TSI.NONE
+    assert packet.tsf.value == enums.TSF.NONE
+    assert packet.stream_id.is_mandatory
+    assert packet.class_id.is_disabled

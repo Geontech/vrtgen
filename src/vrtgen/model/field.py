@@ -2,11 +2,11 @@
 Types for configuration of packet fields and subfields.
 """
 
-from enum import IntEnum
+from enum import Enum, auto
 
 from vrtgen.types.struct import Struct
 
-class Mode(IntEnum):
+class Mode(Enum):
     """
     Defines the usage of a field or subfield:
         DISABLED: Field is never present.
@@ -14,18 +14,30 @@ class Mode(IntEnum):
         REQUIRED: Field is always present.
         MANDATORY: Field is present and cannot and be disabled or optional.
     """
-    DISABLED = 0
-    OPTIONAL = 1
-    REQUIRED = 2
-    MANDATORY = 3
+    DISABLED = auto()
+    OPTIONAL = auto()
+    REQUIRED = auto()
+    MANDATORY = auto()
+
+class Scope(Enum):
+    """
+    Defines the section of the packet in which a field resides:
+        PROLOGUE: Packet prologue.
+        PAYLOAD: Packet payload (Context and Command Packets).
+        TRAILER: Packet trailer (Data Packet only).
+    """
+    PROLOGUE = auto()
+    PAYLOAD = auto()
+    TRAILER = auto()
 
 class FieldConfiguration:
     """
     Base class to represent the packet-specific configuration of a particular
     field or subfield.
     """
-    def __init__(self, field, mode=Mode.DISABLED):
+    def __init__(self, field, scope, mode=Mode.DISABLED):
         self.field = field
+        self.scope = scope
         self._mode = mode
         self._constant = False
 
@@ -130,22 +142,22 @@ class FieldConfiguration:
         raise NotImplementedError('has_value')
 
     @staticmethod
-    def create(field, mode=Mode.DISABLED):
+    def create(field, scope, mode=Mode.DISABLED):
         """
         Creates the correct subclass of FieldConfiguration for a given field
         instance.
         """
         # The type may be none for unimplemented CIF fields
         if field.type is not None and issubclass(field.type, Struct):
-            return StructFieldConfiguration(field, mode=mode)
-        return SimpleFieldConfiguration(field, mode=mode)
+            return StructFieldConfiguration(field, scope, mode=mode)
+        return SimpleFieldConfiguration(field, scope, mode=mode)
 
 class SimpleFieldConfiguration(FieldConfiguration):
     """
     Configuration for a simple field type (integer, fixed-point, etc.).
     """
-    def __init__(self, field, mode=Mode.DISABLED):
-        super().__init__(field, mode)
+    def __init__(self, field, scope, mode=Mode.DISABLED):
+        super().__init__(field, scope, mode)
         self.value = None
 
     @property
@@ -156,13 +168,13 @@ class StructFieldConfiguration(FieldConfiguration):
     """
     Configuration for a structured field type.
     """
-    def __init__(self, field, mode=Mode.DISABLED):
-        super().__init__(field, mode)
+    def __init__(self, field, scope, mode=Mode.DISABLED):
+        super().__init__(field, scope, mode)
         self._fields = {}
         for subfield in field.type.get_fields():
             # By default, all struct fields are required. They can marked as
             # optional or unused later.
-            config = FieldConfiguration.create(subfield, Mode.REQUIRED)
+            config = FieldConfiguration.create(subfield, self.scope, Mode.REQUIRED)
             setattr(self, subfield.attr, config)
             self._fields[subfield.name.casefold()] = config
 
