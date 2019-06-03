@@ -28,16 +28,18 @@ class Enable(StructItem):
     """
     Boolean flag to enable or disable a feature.
     """
-    def __init__(self, name, bits=1):
+    __slots__ = ('indicator',)
+    def __init__(self, bits=1):
         # In some cases, such as Sample Frame in the data trailer, an enable
         # may be more than one bit. All bits must be set or clear to indicate
         # the state of the enable.
-        super().__init__(name, basic.IntegerType.create(bits), False)
+        super().__init__(None, basic.IntegerType.create(bits), False)
+        self.indicator = None
 
     def __get__(self, instance, owner):
+        if instance is None:
+            return self
         value = super().__get__(instance, owner)
-        if value is None:
-            return None
         return bool(value)
 
     def __set__(self, instance, value):
@@ -45,11 +47,19 @@ class Enable(StructItem):
         intval = -1 if value else 0
         super().__set__(instance, intval)
 
-    def link(self, *args, **kwds):
+    def __set_name__(self, owner, name):
+        # By the time the attribute name is being set (i.e., after the class
+        # namespace is complete), there must be a linked indicator field.
+        assert self.indicator is not None
+        super().__set_name__(owner, name)
+
+    def link(self, field):
         """
         Creates a field associated with this enable.
         """
-        return Field(self.name, *args, enable=self, **kwds)
+        assert self.indicator is None
+        self.name = field.name + ' Enable'
+        self.indicator = field
 
 class Reserved(StructItem):
     """
@@ -79,6 +89,8 @@ class Field(StructItem):
         super().__init__(name, datatype, True)
         self._unused = unused
         self.enable = enable
+        if enable is not None:
+            enable.link(self)
 
 class Struct(Container):
     """

@@ -3,7 +3,7 @@ Types and defintions for CIF0 fields.
 """
 from . import basic
 from . import enums
-from .struct import Struct, Field, Reserved, Enable
+from .struct import Struct, Field, Reserved
 from .cifmeta import CIFFields
 
 class GeolocationAngle(basic.FixedPointType, bits=32, radix=22):
@@ -85,7 +85,7 @@ class CIF0(CIFFields):
     """
     # Context Field Change Indicator (0/31) is a binary flag that can be set at
     # run-time. No configuration is possible.
-    change_indicator = Enable('Context Field Change Indicator')
+    change_indicator = Field('Context Field Change Indicator', basic.Boolean)
 
     # Reference Point Identifier (0/30): Stream ID
     reference_point_id = Field('Reference Point Identifier', basic.StreamIdentifier)
@@ -166,7 +166,7 @@ class CIF0(CIFFields):
     context_association_lists = Field('Context Association Lists', None)
 
     # Field Attributes Enable (CIF7)
-    cif7_enable = Enable('Field Attributes Enable')
+    cif7_enable = Field('Field Attributes Enable', basic.Boolean)
 
     # Reserved (0/6 to 0/4)
     reserved_6 = Reserved(1)
@@ -174,13 +174,13 @@ class CIF0(CIFFields):
     reserved_4 = Reserved(1)
 
     # CIF 3 Enable
-    cif3_enable = Enable('CIF 3 Enable')
+    cif3_enable = Field('CIF 3 Enable', basic.Boolean)
 
     # CIF 2 Enable
-    cif2_enable = Enable('CIF 2 Enable')
+    cif2_enable = Field('CIF 2 Enable', basic.Boolean)
 
     # CIF 1 Enable
-    cif1_enable = Enable('CIF 1 Enable')
+    cif1_enable = Field('CIF 1 Enable', basic.Boolean)
 
     # Reserved
     reserved_0 = Reserved(1)
