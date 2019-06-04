@@ -1,21 +1,78 @@
-from enum import IntEnum
+"""
+Enumeration types used in VITA 49.
+"""
+from enum import IntEnum, EnumMeta
 
-class PacketType(IntEnum):
+class BinaryEnumMeta(EnumMeta):
+    """
+    Extended metaclass for binary enumerations, adding a default value for
+    instance creation.
+    """
+    #pylint: disable=arguments-differ
+    def __new__(cls, name, bases, namespace, **kwds):
+        # Discard keywords when calling EnumMeta's new method. Unlike type, it
+        # does not accept keywords, which also means that the __init_subclass__
+        # method will not receive keyword values (i.e., "bits").
+        enum_class = super().__new__(cls, name, bases, namespace)
+        # Dispatch to __init_subclass__ with the expected keywords. This is a
+        # minor deviation from the way it normally works, because it looks up
+        # __init_subclass__ in the class as opposed to its first base class,
+        # but works normally as long as only the base BinaryEnum class defines
+        # __init_subclass__.
+        getattr(enum_class, '__init_subclass__')(**kwds)
+        return enum_class
+
+    def __call__(cls, *args, **kwds):
+        # Override the creation of enum instances to default to a value of 0
+        # when called with no arguments
+        if not args and not kwds:
+            args = (0,)
+        return super().__call__(*args, **kwds)
+
+    def __prepare__(name, bases, **kwds): #pylint: disable=bad-mcs-method-argument
+        # Discard keywords (i.e., "bits") for EnumMeta
+        del kwds
+        return EnumMeta.__prepare__(name, bases)
+
+class BinaryEnum(IntEnum, metaclass=BinaryEnumMeta):
+    """
+    Base class for integer-valued enumerations with a known bit size.
+    """
+    # This class ties together IntEnum and our custom metaclass
+    def __init_subclass__(cls, bits=None, **kwds):
+        # This method will be called twice--first by EnumMeta.__new__ without
+        # keywords, and then by BinaryEnumMeta.__new__ with keywords. This is
+        # necessary to work around the lack of keyword support in EnumMeta.
+        # If bits is None, assume that it's the first call and return early.
+        if bits is None:
+            return
+        super().__init_subclass__(**kwds)
+        cls.bits = bits
+
+class PacketType(BinaryEnum, bits=4):
     """
     Constants for the 4-bit Packet Type field in the VRT Packet Header.
     Refer to VITA 49.2 Table 5.1.1-1.
     """
-    SIGNAL_DATA              = 0 # 0000
-    SIGNAL_DATA_STREAM_ID    = 1 # 0001
-    EXTENSION_DATA           = 2 # 0010
-    EXTENSION_DATA_STREAM_ID = 3 # 0011
-    CONTEXT                  = 4 # 0100
-    EXTENSION_CONTEXT        = 5 # 0101
-    COMMAND                  = 6 # 0110
-    EXTENSION_COMMAND        = 7 # 0111
+    SIGNAL_DATA = 0b0000
+    SIGNAL_DATA_STREAM_ID = 0b0001
+    EXTENSION_DATA = 0b0010
+    EXTENSION_DATA_STREAM_ID = 0b0011
+    CONTEXT = 0b0100
+    EXTENSION_CONTEXT = 0b0101
+    COMMAND = 0b0110
+    EXTENSION_COMMAND = 0b0111
     # 1000-1111 reserved for future VRT Packet types
+    RESERVED_8 = 0b1000
+    RESERVED_9 = 0b1001
+    RESERVED_10 = 0b1010
+    RESERVED_11 = 0b1011
+    RESERVED_12 = 0b1100
+    RESERVED_13 = 0b1101
+    RESERVED_14 = 0b1110
+    RESERVED_15 = 0b1111
 
-class TSI(IntEnum):
+class TSI(BinaryEnum, bits=2):
     """
     TimeStamp-Integer (TSI) codes:
         NONE  (00) - No Integer-seconds Timestamp field included
@@ -23,12 +80,12 @@ class TSI(IntEnum):
         GPS   (10) - GPS time
         OTHER (11) - Other, must be documented
     """
-    NONE  = 0b00
-    UTC   = 0b01
-    GPS   = 0b10
+    NONE = 0b00
+    UTC = 0b01
+    GPS = 0b10
     OTHER = 0b11
 
-class TSF(IntEnum):
+class TSF(BinaryEnum, bits=2):
 
     """
     TimeStamp-Fractional (TSF) codes:
@@ -37,12 +94,12 @@ class TSF(IntEnum):
         REAL_TIME    (10) - Real-Time (Picoseconds) Timestamp
         FREE_RUNNING (11) - Free Running Count Timestamp
     """
-    NONE         = 0b00
+    NONE = 0b00
     SAMPLE_COUNT = 0b01
-    REAL_TIME    = 0b10
+    REAL_TIME = 0b10
     FREE_RUNNING = 0b11
 
-class TSM(IntEnum):
+class TSM(BinaryEnum, bits=1):
     """
     Timestamp Mode (TSM) of context packets:
         FINE   (0) - Timestamp conveys precise timing of events related to the
@@ -50,10 +107,10 @@ class TSM(IntEnum):
         COARSE (1) - Timestamp conveys general timing of events related to the
                      Described Signal
     """
-    FINE   = 0
+    FINE = 0
     COARSE = 1
 
-class SSI(IntEnum):
+class SSI(BinaryEnum, bits=2):
     """
     Start/Stop of Sample Frame Indication (SSI) Bits:
         SINGLE (00) - Sample Frames are not applicable to data packets, or the
@@ -64,11 +121,11 @@ class SSI(IntEnum):
         FINAL  (11) - Final data packet of current Sample Frame
     """
     SINGLE = 0b00
-    FIRST  = 0b01
+    FIRST = 0b01
     MIDDLE = 0b10
-    FINAL  = 0b11
+    FINAL = 0b11
 
-class PackingMethod(IntEnum):
+class PackingMethod(BinaryEnum, bits=1):
     """
     Data Format Packing Method flag:
         PROCESSING_EFFICIENT (0) - Items are padded as necessary such that they
@@ -76,9 +133,9 @@ class PackingMethod(IntEnum):
         LINK_EFFICIENT       (1) - No padding of items
     """
     PROCESSING_EFFICIENT = 0
-    LINK_EFFICIENT       = 1
+    LINK_EFFICIENT = 1
 
-class DataSampleType(IntEnum):
+class DataSampleType(BinaryEnum, bits=2):
     """
     Data Sample real/complex type:
         REAL              (00) - Real
@@ -86,11 +143,12 @@ class DataSampleType(IntEnum):
         COMPLEX_POLAR     (10) - Complex, Polar
                           (11) - Reserved
     """
-    REAL              = 0b00
+    REAL = 0b00
     COMPLEX_CARTESIAN = 0b01
-    COMPLEX_POLAR     = 0b10
+    COMPLEX_POLAR = 0b10
+    RESERVED = 0b11
 
-class DataItemFormat(IntEnum):
+class DataItemFormat(BinaryEnum, bits=5):
     """
     Data Item Format codes:
         SIGNED_FIXED                  (00000) - Signed Fixed-Point
@@ -126,26 +184,51 @@ class DataItemFormat(IntEnum):
                                       (11110) - Reserved
                                       (11111) - Reserved
     """
-    SIGNED_FIXED                  = 0b00000
-    SIGNED_VRT_1                  = 0b00001
-    SIGNED_VRT_2                  = 0b00010
-    SIGNED_VRT_3                  = 0b00011
-    SIGNED_VRT_4                  = 0b00100
-    SIGNED_VRT_5                  = 0b00101
-    SIGNED_VRT_6                  = 0b00110
-    SIGNED_FIXED_NON_NORMALIZED   = 0b00111
-    IEEE754_HALF_PRECISION        = 0b01101
-    IEEE754_SINGLE_PRECISION      = 0b01110
-    IEEE754_DOUBLE_PRECISION      = 0b01111
-    UNSIGNED_FIXED                = 0b10000
-    UNSIGNED_VRT_1                = 0b10001
-    UNSIGNED_VRT_2                = 0b10010
-    UNSIGNED_VRT_3                = 0b10011
-    UNSIGNED_VRT_4                = 0b10100
-    UNSIGNED_VRT_5                = 0b10101
-    UNSIGNED_VRT_6                = 0b10110
+    SIGNED_FIXED = 0b00000
+    SIGNED_VRT_1 = 0b00001
+    SIGNED_VRT_2 = 0b00010
+    SIGNED_VRT_3 = 0b00011
+    SIGNED_VRT_4 = 0b00100
+    SIGNED_VRT_5 = 0b00101
+    SIGNED_VRT_6 = 0b00110
+    SIGNED_FIXED_NON_NORMALIZED = 0b00111
+    RESERVED_8 = 0b01000
+    RESERVED_9 = 0b01001
+    RESERVED_10 = 0b01010
+    RESERVED_11 = 0b01011
+    RESERVED_12 = 0b01100
+    IEEE754_HALF_PRECISION = 0b01101
+    IEEE754_SINGLE_PRECISION = 0b01110
+    IEEE754_DOUBLE_PRECISION = 0b01111
+    UNSIGNED_FIXED = 0b10000
+    UNSIGNED_VRT_1 = 0b10001
+    UNSIGNED_VRT_2 = 0b10010
+    UNSIGNED_VRT_3 = 0b10011
+    UNSIGNED_VRT_4 = 0b10100
+    UNSIGNED_VRT_5 = 0b10101
+    UNSIGNED_VRT_6 = 0b10110
     UNSIGNED_FIXED_NON_NORMALIZED = 0b10111
+    RESERVED_24 = 0b11000
+    RESERVED_25 = 0b11001
+    RESERVED_26 = 0b11010
+    RESERVED_27 = 0b11011
+    RESERVED_28 = 0b11100
+    RESERVED_29 = 0b11101
+    RESERVED_30 = 0b11110
+    RESERVED_31 = 0b11111
 
     @property
     def is_signed(self):
+        """
+        True if this data format includes a sign bit.
+        """
         return not bool(self.value & 0b10000)
+
+class AGCMode(BinaryEnum, bits=1):
+    """
+    AGC/MGC Indicator:
+        MGC (0) - Manual Gain Control
+        AGC (1) - Automatic Gain Control active
+    """
+    MGC = 0
+    AGC = 1

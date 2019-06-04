@@ -1,0 +1,24 @@
+stages:
+    - test
+
+image: python:3.6-alpine
+
+test:
+    stage: test
+    before_script:
+        - pip install -e .
+        - pip install pytest
+    script:
+        - pytest
+
+lint:
+    stage: test
+    before_script:
+        - apk add gcc musl-dev
+        - pip install -e .
+        - pip install pylint
+    script:
+        # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
+        # Unfortunately, even if the command completely fails (e.g., invalid
+        # path) it still exits with 0.
+        - pylint -f colorized --exit-zero vrtgen

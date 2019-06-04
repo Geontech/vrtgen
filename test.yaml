@@ -30,6 +30,11 @@ TestMerge:
   prologue:
     <<: *defaults
 
+TestTSM:
+  type: context
+  prologue:
+    Timestamp Mode: coarse
+
 TestClassID:
   type: context
   prologue:
