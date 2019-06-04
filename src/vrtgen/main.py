@@ -5,14 +5,29 @@ import logging
 import argparse
 import sys
 
+import pkg_resources
+
 from vrtgen import parser
 from vrtgen.backend import Generator
 
 from . import version
 
+ENTRY_POINT_ID = 'vrtgen.backend.packet'
+
 class NullGenerator(Generator):
     def generate(self, packet):
         pass
+
+def load_generator(name):
+    if name is None:
+        return NullGenerator()
+
+    for entry_point in pkg_resources.iter_entry_points(ENTRY_POINT_ID):
+        if entry_point.name == name:
+            generator = entry_point.load()
+            return generator()
+
+    raise KeyError(name)
 
 def main():
     logging.basicConfig()
@@ -31,15 +46,9 @@ def main():
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    if args.backend == 'bindump':
-        from vrtgen.backend.bindump import BinaryDumper
-        generator = BinaryDumper()
-    elif args.backend == 'cpp':
-        from vrtgen.backend.cpp import CppGenerator
-        generator = CppGenerator()
-    elif args.backend is None:
-        generator = NullGenerator()
-    else:
+    try:
+        generator = load_generator(args.backend)
+    except KeyError:
         raise SystemExit("invalid backend '"+args.backend+"'")
 
     for option in args.option:

@@ -22,5 +22,8 @@ setup(
         'console_scripts': [
             'vrtpktgen=vrtgen.main:main',
         ],
+        'vrtgen.backend.packet': [
+            'bindump=vrtgen.backend.bindump:BinaryDumper',
+        ],
     },
 )
