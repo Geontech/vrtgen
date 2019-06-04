@@ -2,5 +2,7 @@ __pycache__/
 *.pyc
 *.egg-info
 .eggs/
+.pytest_cache/
 cpp/include/vrtgen/enums.hpp
 cpp/include/vrtgen/packing/*.hpp
+cpp/test

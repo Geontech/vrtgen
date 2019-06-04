@@ -1,9 +1,13 @@
-from vrtgen.model import enums
-from vrtgen.model.packets import *
-
 import jinja2
 import sys
 import os
+
+from vrtgen.types import basic
+from vrtgen.types import enums
+from vrtgen.types import prologue
+from vrtgen.types import trailer
+from vrtgen.types import cif0
+from vrtgen.types import cif1
 
 JINJA_OPTIONS = {
     'trim_blocks':           True,
@@ -25,12 +29,7 @@ def int_type(bits):
         return 'uint8_t'
 
 def enum_type(field):
-    if issubclass(field, SSIField):
-        # Workaround: The enum SSI is not derived from the field name "Sample
-        # Frame" unlike the others
-        name = 'SSI'
-    else:
-        name = name_to_identifier(field.name)
+    name = name_to_identifier(field.type.__name__)
     return 'vrtgen::{}::Code'.format(name)
 
 def format_docstring(doc):
@@ -70,6 +69,10 @@ def format_cif(cif):
 
 def format_enable_methods(field):
     identifier = name_to_identifier(field.name + 'Enabled')
+    if field.enable is None:
+        offset = field.offset
+    else:
+        offset = field.enable.offset
     return {
         'name': field.name,
         'doc': 'enable state of ' + field.name,
@@ -81,7 +84,7 @@ def format_enable_methods(field):
             'doc': 'Set enabled state of ' + field.name,
             'name' : 'set'+identifier,
         },
-        'position': field.enable_bit,
+        'position': offset,
         'type': 'bool',
     }
 
@@ -97,32 +100,30 @@ def format_value_methods(field):
             'doc': 'Set current value of ' + field.name,
             'name' : 'set'+identifier,
         },
-        'position': field.position,
+        'position': field.offset,
     }
-    if issubclass(field, EnumField):
+    if issubclass(field.type, enums.BinaryEnum):
         field_data['type'] = enum_type(field)
         field_data['bits'] = field.bits
-    elif issubclass(field, IntegerField):
+    elif issubclass(field.type, basic.IntegerType):
         field_data['type'] = int_type(field.bits)
         field_data['bits'] = field.bits
-    elif issubclass(field, BitField):
+    elif field.type == basic.Boolean:
         field_data['type'] = 'bool'
         field_data['bits'] = 1
     return field_data
 
 def format_header():
     fields = []
-    for attr, field in VRTHeader.get_field_descriptors():
+    for field in prologue.Header.get_fields():
         identifier = name_to_identifier(field.name)
         field_data = {
             'name': field.name,
             'identifier': identifier,
         }
-        if hasattr(field, 'enable_bit'):
-            # Header word contains the bit flag to enable the field
+        if field == prologue.Header.class_id_enable:
             field_data = format_enable_methods(field)
         else:
-            # Header word contains the field's value
             field_data = format_value_methods(field)
         fields.append(field_data)
     return fields
@@ -137,6 +138,7 @@ def main():
         format_enum(enums.TSF, '0b{:02b}'),
         format_enum(enums.TSM),
         format_enum(enums.SSI, '0b{:02b}'),
+        format_enum(enums.AGCMode),
         format_enum(enums.PackingMethod),
         format_enum(enums.DataSampleType, '0b{:02b}'),
         format_enum(enums.DataItemFormat, '0b{:05b}'),
@@ -157,18 +159,20 @@ def main():
     template = env.get_template('struct.hpp')
     with open(os.path.join(includedir, 'trailer.hpp'), 'w') as fp:
         fields = []
-        for attr, field in VRTDataTrailer.get_field_descriptors():
+        for field in trailer.Trailer.get_fields():
             fields.append(format_enable_methods(field))
             fields.append(format_value_methods(field))
         fp.write(template.render({'name': 'Trailer', 'fields': fields}))
 
     template = env.get_template('struct.hpp')
 
-    for cif in [CIF0, CIF1]:
+    for cif in [cif0.CIF0, cif1.CIF1]:
         filename = cif.__name__.lower() + '.hpp'
         with open(os.path.join(includedir, filename), 'w') as fp:
             fields = []
-            for attr, field in cif.get_field_descriptors():
+            for field in cif.Enables.get_fields():
+                if field.type is None:
+                    continue
                 fields.append(format_enable_methods(field))
             fp.write(template.render({'name': cif.__name__, 'fields': fields}))
 
