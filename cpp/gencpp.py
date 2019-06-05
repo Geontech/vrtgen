@@ -87,22 +87,22 @@ def format_enum(enum):
         'values': list(enum)
     }
 
-def format_enable_methods(field, enable=None):
-    if enable is None:
-        enable = field
-    identifier = name_to_identifier(field.name + 'Enabled')
+def format_enable_methods(field, name=None):
+    if name is None:
+        name = field.name
+    identifier = name_to_identifier(name + 'Enabled')
     return {
-        'name': field.name,
+        'name': name,
         'getter': {
-            'doc': 'Get enabled state of ' + field.name,
+            'doc': 'Get enabled state of ' + name,
             'name' : 'is'+identifier,
         },
         'setter': {
-            'doc': 'Set enabled state of ' + field.name,
+            'doc': 'Set enabled state of ' + name,
             'name' : 'set'+identifier,
         },
-        'word': enable.word,
-        'offset': enable.offset,
+        'word': field.word,
+        'offset': field.offset,
         'type': 'bool',
     }
 
@@ -147,7 +147,7 @@ class CppStruct:
 
     def add_field(self, field):
         if field.enable is not None:
-            self.fields.append(format_enable_methods(field, field.enable))
+            self.fields.append(format_enable_methods(field.enable, name=field.name))
         self.fields.append(format_value_methods(field))
 
 class CppHeaderStruct(CppStruct):
