@@ -72,6 +72,23 @@ namespace vrtgen {
             *data = ((*data) & mask) | (src << shift);
         }
     }
+
+    /**
+     * Placeholder class for fixed point types.
+     * TODO: Implement class and/or replace with float conversion 
+     */
+    template <size_t bits, size_t radix>
+    struct fixed
+    {
+        fixed(uint32_t)
+        {
+        }
+
+        operator uint32_t () const
+        {
+            return 0;
+        }
+    };
 }
 
 #endif // _VRTGEN_TYPES_HPP

@@ -10,6 +10,7 @@ from vrtgen.types import prologue
 from vrtgen.types import trailer
 from vrtgen.types import cif0
 from vrtgen.types import cif1
+from vrtgen.types.struct import Struct
 
 JINJA_OPTIONS = {
     'trim_blocks':           True,
@@ -30,6 +31,13 @@ def is_enum(obj):
     # filter out abstract base classes (just BinaryEnum at present)
     return bool(obj.__members__)
 
+def get_structs(module):
+    def is_struct(obj):
+        if not inspect.isclass(obj) or not issubclass(obj, Struct):
+            return False
+        return obj.__module__ == module.__name__
+    return [cls for _, cls in inspect.getmembers(module, is_struct)]
+
 def int_type(bits, signed):
     if bits > 32:
         ctype = 'int64_t'
@@ -42,6 +50,10 @@ def int_type(bits, signed):
     if not signed:
         ctype = 'u' + ctype
     return ctype
+
+def fixed_type(bits, radix):
+    #return int_type(bits, True)
+    return 'fixed<{},{}>'.format(bits, radix)
 
 def enum_type(datatype):
     name = name_to_identifier(datatype.__name__)
@@ -91,7 +103,8 @@ def format_enable_methods(field, enable=None):
             'doc': 'Set enabled state of ' + field.name,
             'name' : 'set'+identifier,
         },
-        'position': enable.offset,
+        'word': enable.word,
+        'offset': enable.offset,
         'type': 'bool',
     }
 
@@ -107,7 +120,8 @@ def format_value_methods(field):
             'doc': 'Set current value of ' + field.name,
             'name' : 'set'+identifier,
         },
-        'position': field.offset,
+        'word': field.word,
+        'offset': field.offset,
     }
     datatype = field.type
     if issubclass(datatype, enums.BinaryEnum):
@@ -115,6 +129,9 @@ def format_value_methods(field):
         field_data['bits'] = datatype.bits
     elif issubclass(datatype, basic.IntegerType):
         field_data['type'] = int_type(datatype.bits, datatype.signed)
+        field_data['bits'] = datatype.bits
+    elif issubclass(datatype, basic.FixedPointType):
+        field_data['type'] = fixed_type(datatype.bits, datatype.radix)
         field_data['bits'] = datatype.bits
     elif datatype == basic.Boolean:
         field_data['type'] = 'bool'
@@ -125,16 +142,30 @@ def format_header():
     fields = []
     for field in prologue.Header.get_fields():
         identifier = name_to_identifier(field.name)
-        field_data = {
-            'name': field.name,
-            'identifier': identifier,
-        }
         if field == prologue.Header.class_id_enable:
             field_data = format_enable_methods(field)
         else:
             field_data = format_value_methods(field)
         fields.append(field_data)
     return fields
+
+def format_struct(structdef, fields, bits=None):
+    if bits is None:
+        bits = structdef.bits
+    return {
+        'name': structdef.__name__,
+        'doc': format_docstring(structdef.__doc__),
+        'words': bits // 32,
+        'fields': fields,
+    }
+
+def format_cif_struct(structdef):
+    fields = []
+    for field in structdef.get_fields():
+        identifier = name_to_identifier(field.name)
+        field_data = format_value_methods(field)
+        fields.append(field_data)
+    return format_struct(structdef, fields)
 
 def main():
     loader = jinja2.FileSystemLoader('templates')
@@ -151,8 +182,12 @@ def main():
 
     template = env.get_template('struct.hpp')
     with open(os.path.join(includedir, 'header.hpp'), 'w') as fp:
-        fields = format_header()
-        fp.write(template.render({'name': 'Header', 'fields': fields}))
+        structs = [format_struct(prologue.Header, format_header())]
+        structs.append(format_cif_struct(prologue.ClassIdentifier))
+        fp.write(template.render({
+            'name': 'header',
+            'structs': structs,
+        }))
 
     template = env.get_template('struct.hpp')
     with open(os.path.join(includedir, 'trailer.hpp'), 'w') as fp:
@@ -160,17 +195,27 @@ def main():
         for field in trailer.Trailer.get_fields():
             fields.append(format_enable_methods(field, field.enable))
             fields.append(format_value_methods(field))
-        fp.write(template.render({'name': 'Trailer', 'fields': fields}))
+        fp.write(template.render({
+            'name': 'trailer',
+            'structs': [format_struct(trailer.Trailer, fields)],
+        }))
 
     template = env.get_template('struct.hpp')
 
-    for cif in [cif0.CIF0, cif1.CIF1]:
+    for module, cif in [(cif0, cif0.CIF0), (cif1, cif1.CIF1)]:
         filename = cif.__name__.lower() + '.hpp'
         with open(os.path.join(includedir, filename), 'w') as fp:
+            structs = []
             fields = []
             for field in cif.Enables.get_fields():
                 fields.append(format_enable_methods(field))
-            fp.write(template.render({'name': cif.__name__, 'fields': fields}))
+            structs.append(format_struct(cif, fields, bits=cif.Enables.bits))
+            for structdef in get_structs(module):
+                structs.append(format_cif_struct(structdef))
+            fp.write(template.render({
+                'name': cif.__name__,
+                'structs': structs,
+            }))
 
 if __name__ == '__main__':
     main()
