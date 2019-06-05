@@ -1,6 +1,8 @@
-import jinja2
-import sys
+import inspect
 import os
+import sys
+
+import jinja2
 
 from vrtgen.types import basic
 from vrtgen.types import enums
@@ -19,6 +21,14 @@ JINJA_OPTIONS = {
     'comment_start_string':  '/*#',
     'comment_end_string':    '#*/'
 }
+
+def is_enum(obj):
+    # Ignore anything that isn't a BinaryEnum class
+    if not inspect.isclass(obj) or not issubclass(obj, enums.BinaryEnum):
+        return False
+    # Only return concrete enums (i.e., those that have values defined) to
+    # filter out abstract base classes (just BinaryEnum at present)
+    return bool(obj.__members__)
 
 def int_type(bits):
     if bits > 16:
@@ -50,11 +60,14 @@ def name_to_identifier(name):
             identifier += ch
     return identifier
 
-def format_enum(enum, format='{}'):
+def format_enum(enum):
+    # Create a format string that returns a binary constant zero-padded to the
+    # number of bits, e.g.: "0b0001"
+    format_string = '0b{{:0{}b}}'.format(enum.bits)
     return {
         'name': enum.__name__,
         'doc': format_docstring(enum.__doc__),
-        'format': format.format,
+        'format': format_string.format,
         'values': list(enum)
     }
 
@@ -132,17 +145,7 @@ def main():
     loader = jinja2.FileSystemLoader('templates')
     env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
     template = env.get_template('enums.hpp')
-    enum_types = [
-        format_enum(enums.PacketType, '0b{:04b}'),
-        format_enum(enums.TSI, '0b{:02b}'),
-        format_enum(enums.TSF, '0b{:02b}'),
-        format_enum(enums.TSM),
-        format_enum(enums.SSI, '0b{:02b}'),
-        format_enum(enums.AGCMode),
-        format_enum(enums.PackingMethod),
-        format_enum(enums.DataSampleType, '0b{:02b}'),
-        format_enum(enums.DataItemFormat, '0b{:05b}'),
-    ]
+    enum_types = [format_enum(en) for _, en in inspect.getmembers(enums, is_enum)]
     includedir = 'include/vrtgen'
     os.makedirs(includedir, exist_ok=True)
     with open(os.path.join(includedir, 'enums.hpp'), 'w') as fp:
