@@ -30,16 +30,21 @@ def is_enum(obj):
     # filter out abstract base classes (just BinaryEnum at present)
     return bool(obj.__members__)
 
-def int_type(bits):
-    if bits > 16:
-        return 'uint32_t'
+def int_type(bits, signed):
+    if bits > 32:
+        ctype = 'int64_t'
+    elif bits > 32:
+        ctype = 'int32_t'
     elif bits > 8:
-        return 'uint16_t'
+        ctype = 'int16_t'
     else:
-        return 'uint8_t'
+        ctype = 'int8_t'
+    if not signed:
+        ctype = 'u' + ctype
+    return ctype
 
-def enum_type(field):
-    name = name_to_identifier(field.type.__name__)
+def enum_type(datatype):
+    name = name_to_identifier(datatype.__name__)
     return 'vrtgen::{}::Code'.format(name)
 
 def format_docstring(doc):
@@ -115,13 +120,14 @@ def format_value_methods(field):
         },
         'position': field.offset,
     }
-    if issubclass(field.type, enums.BinaryEnum):
-        field_data['type'] = enum_type(field)
-        field_data['bits'] = field.bits
-    elif issubclass(field.type, basic.IntegerType):
-        field_data['type'] = int_type(field.bits)
-        field_data['bits'] = field.bits
-    elif field.type == basic.Boolean:
+    datatype = field.type
+    if issubclass(datatype, enums.BinaryEnum):
+        field_data['type'] = enum_type(datatype)
+        field_data['bits'] = datatype.bits
+    elif issubclass(datatype, basic.IntegerType):
+        field_data['type'] = int_type(datatype.bits, datatype.signed)
+        field_data['bits'] = datatype.bits
+    elif datatype == basic.Boolean:
         field_data['type'] = 'bool'
         field_data['bits'] = 1
     return field_data
