@@ -173,51 +173,60 @@ class CppEnableStruct(CppStruct):
         else:
             self.fields.append(format_enable_methods(field))
 
-def main():
-    loader = jinja2.FileSystemLoader('templates')
-    env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
+def generate_enums(env, filename):
     template = env.get_template('enums.hpp')
     enum_types = [format_enum(en) for _, en in inspect.getmembers(enums, is_enum)]
-    includedir = 'include/vrtgen'
-    os.makedirs(includedir, exist_ok=True)
-    with open(os.path.join(includedir, 'enums.hpp'), 'w') as fp:
+
+    with open(filename, 'w') as fp:
         fp.write(template.render({'enums': enum_types}))
 
-    includedir = 'include/vrtgen/packing'
-    os.makedirs(includedir, exist_ok=True)
-
+def generate_header(env, filename):
     template = env.get_template('struct.hpp')
-    with open(os.path.join(includedir, 'header.hpp'), 'w') as fp:
+    with open(filename, 'w') as fp:
         structs = [CppHeaderStruct(prologue.Header), CppStruct(prologue.ClassIdentifier)]
         fp.write(template.render({
             'name': 'header',
             'structs': structs,
         }))
 
+def generate_trailer(env, filename):
     template = env.get_template('struct.hpp')
-    with open(os.path.join(includedir, 'trailer.hpp'), 'w') as fp:
+    with open(filename, 'w') as fp:
         fp.write(template.render({
             'name': 'trailer',
             'structs': [CppStruct(trailer.Trailer)],
         }))
 
+def generate_cif(env, module, cif, filename):
     template = env.get_template('struct.hpp')
+    with open(filename, 'w') as fp:
+        structs = []
+        enable = CppEnableStruct(cif.Enables)
+        # Override name and docstring from parent CIFFields class
+        enable.name = cif.__name__ + 'Enables'
+        enable.doc = format_docstring(cif.__doc__)
+        structs.append(enable)
+        for structdef in get_structs(module):
+            structs.append(CppStruct(structdef))
+        fp.write(template.render({
+            'name': cif.__name__,
+            'structs': structs,
+        }))
 
-    for module, cif in [(cif0, cif0.CIF0), (cif1, cif1.CIF1)]:
-        filename = cif.__name__.lower() + '.hpp'
-        with open(os.path.join(includedir, filename), 'w') as fp:
-            structs = []
-            enable = CppEnableStruct(cif.Enables)
-            # Override name and docstring from parent CIFFields class
-            enable.name = cif.__name__ + 'Enables'
-            enable.doc = format_docstring(cif.__doc__)
-            structs.append(enable)
-            for structdef in get_structs(module):
-                structs.append(CppStruct(structdef))
-            fp.write(template.render({
-                'name': cif.__name__,
-                'structs': structs,
-            }))
+def main():
+    loader = jinja2.FileSystemLoader('templates')
+    env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
+
+    includedir = 'include/vrtgen'
+    os.makedirs(includedir, exist_ok=True)
+    generate_enums(env, 'include/vrtgen/enums.hpp')
+
+    includedir = 'include/vrtgen/packing'
+    os.makedirs(includedir, exist_ok=True)
+    generate_header(env, os.path.join(includedir, 'header.hpp'))
+    generate_trailer(env, os.path.join(includedir, 'trailer.hpp'))
+    generate_cif(env, cif0, cif0.CIF0, os.path.join(includedir, 'cif0.hpp'))
+    generate_cif(env, cif1, cif1.CIF1, os.path.join(includedir, 'cif1.hpp'))
 
 if __name__ == '__main__':
     main()
