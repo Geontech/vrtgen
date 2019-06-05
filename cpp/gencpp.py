@@ -52,7 +52,6 @@ def int_type(bits, signed):
     return ctype
 
 def fixed_type(bits, radix):
-    #return int_type(bits, True)
     return 'fixed<{},{}>'.format(bits, radix)
 
 def enum_type(datatype):
@@ -94,7 +93,6 @@ def format_enable_methods(field, enable=None):
     identifier = name_to_identifier(field.name + 'Enabled')
     return {
         'name': field.name,
-        'doc': 'enable state of ' + field.name,
         'getter': {
             'doc': 'Get enabled state of ' + field.name,
             'name' : 'is'+identifier,
@@ -138,34 +136,42 @@ def format_value_methods(field):
         field_data['bits'] = 1
     return field_data
 
-def format_header():
-    fields = []
-    for field in prologue.Header.get_fields():
-        identifier = name_to_identifier(field.name)
+class CppStruct:
+    def __init__(self, structdef):
+        self.name = structdef.__name__
+        self.doc = format_docstring(structdef.__doc__)
+        self.words = structdef.bits // 32
+        self.fields = []
+        for field in structdef.get_fields():
+            self.add_field(field)
+
+    def add_field(self, field):
+        if field.enable is not None:
+            self.fields.append(format_enable_methods(field, field.enable))
+        self.fields.append(format_value_methods(field))
+
+class CppHeaderStruct(CppStruct):
+    def add_field(self, field):
         if field == prologue.Header.class_id_enable:
-            field_data = format_enable_methods(field)
+            self.fields.append(format_enable_methods(field))
         else:
-            field_data = format_value_methods(field)
-        fields.append(field_data)
-    return fields
+            super().add_field(field)
 
-def format_struct(structdef, fields, bits=None):
-    if bits is None:
-        bits = structdef.bits
-    return {
-        'name': structdef.__name__,
-        'doc': format_docstring(structdef.__doc__),
-        'words': bits // 32,
-        'fields': fields,
-    }
-
-def format_cif_struct(structdef):
-    fields = []
-    for field in structdef.get_fields():
-        identifier = name_to_identifier(field.name)
-        field_data = format_value_methods(field)
-        fields.append(field_data)
-    return format_struct(structdef, fields)
+class CppEnableStruct(CppStruct):
+    # Special fields that are already defined enables in the CIF prologue,
+    # and so can be treated as values.
+    FIELDS = (
+        cif0.CIF0.Enables.change_indicator,
+        cif0.CIF0.Enables.cif7_enable,
+        cif0.CIF0.Enables.cif3_enable,
+        cif0.CIF0.Enables.cif2_enable,
+        cif0.CIF0.Enables.cif1_enable,
+    )
+    def add_field(self, field):
+        if field in self.FIELDS:
+            self.fields.append(format_value_methods(field))
+        else:
+            self.fields.append(format_enable_methods(field))
 
 def main():
     loader = jinja2.FileSystemLoader('templates')
@@ -182,8 +188,7 @@ def main():
 
     template = env.get_template('struct.hpp')
     with open(os.path.join(includedir, 'header.hpp'), 'w') as fp:
-        structs = [format_struct(prologue.Header, format_header())]
-        structs.append(format_cif_struct(prologue.ClassIdentifier))
+        structs = [CppHeaderStruct(prologue.Header), CppStruct(prologue.ClassIdentifier)]
         fp.write(template.render({
             'name': 'header',
             'structs': structs,
@@ -191,13 +196,9 @@ def main():
 
     template = env.get_template('struct.hpp')
     with open(os.path.join(includedir, 'trailer.hpp'), 'w') as fp:
-        fields = []
-        for field in trailer.Trailer.get_fields():
-            fields.append(format_enable_methods(field, field.enable))
-            fields.append(format_value_methods(field))
         fp.write(template.render({
             'name': 'trailer',
-            'structs': [format_struct(trailer.Trailer, fields)],
+            'structs': [CppStruct(trailer.Trailer)],
         }))
 
     template = env.get_template('struct.hpp')
@@ -206,12 +207,13 @@ def main():
         filename = cif.__name__.lower() + '.hpp'
         with open(os.path.join(includedir, filename), 'w') as fp:
             structs = []
-            fields = []
-            for field in cif.Enables.get_fields():
-                fields.append(format_enable_methods(field))
-            structs.append(format_struct(cif, fields, bits=cif.Enables.bits))
+            enable = CppEnableStruct(cif.Enables)
+            # Override name and docstring from parent CIFFields class
+            enable.name = cif.__name__ + 'Enables'
+            enable.doc = format_docstring(cif.__doc__)
+            structs.append(enable)
             for structdef in get_structs(module):
-                structs.append(format_cif_struct(structdef))
+                structs.append(CppStruct(structdef))
             fp.write(template.render({
                 'name': cif.__name__,
                 'structs': structs,
