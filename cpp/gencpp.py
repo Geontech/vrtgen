@@ -76,21 +76,10 @@ def format_enum(enum):
         'values': list(enum)
     }
 
-def format_cif(cif):
-    fields = []
-    for attr, field in cif.get_field_descriptors():
-        fields.append({'name': name_to_identifier(field.name), 'bit': field.enable_bit})
-    return {
-        'name': cif.__name__,
-        'fields': fields
-    }
-
-def format_enable_methods(field):
+def format_enable_methods(field, enable=None):
+    if enable is None:
+        enable = field
     identifier = name_to_identifier(field.name + 'Enabled')
-    if field.enable is None:
-        offset = field.offset
-    else:
-        offset = field.enable.offset
     return {
         'name': field.name,
         'doc': 'enable state of ' + field.name,
@@ -102,7 +91,7 @@ def format_enable_methods(field):
             'doc': 'Set enabled state of ' + field.name,
             'name' : 'set'+identifier,
         },
-        'position': offset,
+        'position': enable.offset,
         'type': 'bool',
     }
 
@@ -169,7 +158,7 @@ def main():
     with open(os.path.join(includedir, 'trailer.hpp'), 'w') as fp:
         fields = []
         for field in trailer.Trailer.get_fields():
-            fields.append(format_enable_methods(field))
+            fields.append(format_enable_methods(field, field.enable))
             fields.append(format_value_methods(field))
         fp.write(template.render({'name': 'Trailer', 'fields': fields}))
 
@@ -180,8 +169,6 @@ def main():
         with open(os.path.join(includedir, filename), 'w') as fp:
             fields = []
             for field in cif.Enables.get_fields():
-                if field.type is None:
-                    continue
                 fields.append(format_enable_methods(field))
             fp.write(template.render({'name': cif.__name__, 'fields': fields}))
 
