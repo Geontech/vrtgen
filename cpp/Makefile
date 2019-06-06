@@ -25,7 +25,7 @@ test: tests/test.cpp $(GENERATED_SOURCES) $(HEADERS)
 generate: $(GENERATED_SOURCES)
 
 $(GENERATED_SOURCES) : gencpp.py templates/enums.hpp templates/struct.hpp
-	PYTHONPATH=$(top_srcdir) $(PYTHON) gencpp.py
+	$(PYTHON) gencpp.py
 
 clean:
 	rm -f $(GENERATED_SOURCES) test
