@@ -41,7 +41,7 @@ def get_structs(module):
 def int_type(bits, signed):
     if bits > 32:
         ctype = 'int64_t'
-    elif bits > 32:
+    elif bits > 16:
         ctype = 'int32_t'
     elif bits > 8:
         ctype = 'int16_t'
