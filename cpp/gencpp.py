@@ -58,6 +58,17 @@ def enum_type(datatype):
     name = name_to_identifier(datatype.__name__)
     return 'vrtgen::{}::Code'.format(name)
 
+def cpp_type(datatype):
+    if issubclass(datatype, enums.BinaryEnum):
+        return enum_type(datatype)
+    if issubclass(datatype, basic.IntegerType):
+        return int_type(datatype.bits, datatype.signed)
+    if issubclass(datatype, basic.FixedPointType):
+        return fixed_type(datatype.bits, datatype.radix)
+    if datatype == basic.Boolean:
+        return 'bool'
+    raise NotImplementedError(datatype.__name__)
+
 def format_docstring(doc):
     if not doc:
         return
@@ -87,7 +98,7 @@ def format_enum(enum):
         'values': list(enum)
     }
 
-def format_enable_methods(field, name=None):
+def format_enable_methods(field, member, name=None):
     if name is None:
         name = field.name
     identifier = name_to_identifier(name + 'Enabled')
@@ -104,9 +115,10 @@ def format_enable_methods(field, name=None):
         'word': field.word,
         'offset': field.offset,
         'type': 'bool',
+        'member': member.name,
     }
 
-def format_value_methods(field):
+def format_value_methods(field, member):
     identifier = name_to_identifier(field.name)
     field_data = {
         'name': field.name,
@@ -120,6 +132,7 @@ def format_value_methods(field):
         },
         'word': field.word,
         'offset': field.offset,
+        'member': member.name,
     }
     datatype = field.type
     if issubclass(datatype, enums.BinaryEnum):
@@ -136,26 +149,125 @@ def format_value_methods(field):
         field_data['bits'] = 1
     return field_data
 
+class Member:
+    def __init__(self, name, ctype):
+        self.name = 'm_' + name
+        self.type = ctype
+        self.doc = []
+
+    def link_field(self, field):
+        self.doc.append('{} {}/{}'.format(field.name, field.word, field.offset))
+
+class Reserved:
+    def __init__(self, field):
+        self.name = ':{}'.format(field.bits)
+        self.type = 'int'
+        self.doc = ['Reserved {}/{}'.format(field.word, field.offset)]
+
+class Packed(Member):
+    def __init__(self, name, offset):
+        super().__init__(name, 'uint8_t')
+        self.offset = offset
+        self.bits = 0
+
+    def full(self):
+        assert self.offset >= 0
+        return (1 + self.offset - self.bits) == 0
+
+    def link_field(self, field):
+        super().link_field(field)
+        # Check for wraparound into the next word
+        assert self.offset - self.bits == field.offset
+        self.bits += field.bits
+        self.type = int_type(self.bits, False)
+
 class CppStruct:
     def __init__(self, structdef):
         self.name = structdef.__name__
         self.doc = format_docstring(structdef.__doc__)
-        self.words = structdef.bits // 32
         self.fields = []
-        for field in structdef.get_fields():
-            self.add_field(field)
+        self.members = []
+        self._packed = None
+        self._packed_fields = 0
+        for field in structdef.get_contents():
+            self._process_field(field)
 
-    def add_field(self, field):
+    def _process_field(self, field):
+        align = 31 - field.offset
+        if field.bits % 8 or field.bits == 24:
+            # Field does not necessarily need to be byte-aligned, pack it into
+            # a larger data member
+            if self._packed is None:
+                # The data member does have to be byte-aligned
+                assert align % 8 == 0
+                self._add_packed(field.offset)
+            member = self._packed
+            remain = self._packed.offset - self._packed.bits
+        else:
+            # Everything else should be byte-aligned
+            assert align % 8 == 0
+            # There is a packed field being collected, "close" it and add the
+            # member variable
+            if self._packed:
+                self._close_packed()
+
+            if field.bits % 32 == 0:
+                assert align == 0
+                ctype = cpp_type(field.type)
+            else:
+                assert align % field.bits == 0
+                ctype = cpp_type(field.type)
+
+            # Non-editable fields large enough to require their own member must
+            # be reserved bits. These are handled differently so the compiler
+            # doesn't issue warnings about unused private fields.
+            if not field.editable:
+                self.members.append(Reserved(field))
+                return
+
+            member = self._add_member(field.name, ctype)
+
+        member.link_field(field)
+
+        if field.editable:
+            self._map_field(field, member)
+
+        if self._packed and self._packed.full():
+            self._close_packed()
+
+    def _add_packed(self, offset):
+        name = 'packed_' + str(self._packed_fields)
+        self._packed_fields += 1
+        self._packed = Packed(name, offset)
+        self.members.append(self._packed)
+
+    def _close_packed(self):
+        assert self._packed.bits % 8 == 0
+        self._packed = None
+
+    def _add_member(self, name, ctype):
+        name = name_to_identifier(name)
+        if name == 'reserved':
+            name = '{}_{}'.format(name, self._reserved_fields)
+            self._reserved_fields += 1
+        member = Member(name, ctype)
+        self.members.append(member)
+        return member
+
+    def _map_field(self, field, member):
         if field.enable is not None:
-            self.fields.append(format_enable_methods(field.enable, name=field.name))
-        self.fields.append(format_value_methods(field))
+            methods = format_enable_methods(field.enable, member, name=field.name)
+            self.fields.append(methods)
+        methods = format_value_methods(field, member)
+        self.fields.append(methods)
 
 class CppHeaderStruct(CppStruct):
-    def add_field(self, field):
+    def _map_field(self, field, member):
         if field == prologue.Header.class_id_enable:
-            self.fields.append(format_enable_methods(field))
+            methods = format_enable_methods(field, member)
+            self.fields.append(methods)
         else:
-            super().add_field(field)
+            super()._map_field(field, member)
 
 class CppEnableStruct(CppStruct):
     # Special fields that are already defined enables in the CIF prologue,
@@ -167,11 +279,12 @@ class CppEnableStruct(CppStruct):
         cif0.CIF0.Enables.cif2_enable,
         cif0.CIF0.Enables.cif1_enable,
     )
-    def add_field(self, field):
+    def _map_field(self, field, member):
         if field in self.FIELDS:
-            self.fields.append(format_value_methods(field))
+            methods = format_value_methods(field, member)
         else:
-            self.fields.append(format_enable_methods(field))
+            methods = format_enable_methods(field, member)
+        self.fields.append(methods)
 
 def generate_enums(env, filename):
     template = env.get_template('enums.hpp')

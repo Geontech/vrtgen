@@ -5,19 +5,21 @@
 //% endfor
  */
 struct ${struct.name} {
-    vrtgen::word_t word[${struct.words}];
 /*{% for field in struct.fields %}*/
-
     /**
      * ${field.getter.doc}.
      */
     ${field.type} ${field.getter.name}() const
     {
-//% if field.type == 'bool'
-        return GET_BIT32(word[${field.word}], ${field.offset});
-//% else
-        return (${field.type}) vrtgen::get_int(word[${field.word}], ${field.offset}, ${field.bits});
-//% endif
+//%     if field.type == 'bool'
+        return GET_BIT32(${field.member}, ${field.offset});
+//%     elif field.bits == 8
+        return ${field.member};
+//%     elif field.bits in (64, 32, 16)
+        return vrtgen::swap${field.bits}(${field.member});
+//%     else
+        return (${field.type}) vrtgen::get_int(${field.member}, ${field.offset}, ${field.bits});
+//%     endif
     }
 
     /**
@@ -25,12 +27,29 @@ struct ${struct.name} {
      */
     void ${field.setter.name}(${field.type} value)
     {
-//% if field.type == 'bool'
-        SET_BIT32(word[${field.word}], ${field.offset}, value);
-//% else
-        vrtgen::set_int(word[${field.word}], ${field.offset}, ${field.bits}, value);
-//% endif
+//%     if field.type == 'bool'
+        SET_BIT32(${field.member}, ${field.offset}, value);
+//%     elif field.bits == 8
+        ${field.member} = value;
+//%     elif field.bits in (64, 32, 16)
+        ${field.member} = vrtgen::swap${field.bits}(value);
+//%     else
+        vrtgen::set_int(${field.member}, ${field.offset}, ${field.bits}, value);
+//%     endif
     }
+
+/*{% endfor %}*/
+private:
+/*{% for member in struct.members %}*/
+    /**
+//%      for line in member.doc
+     * ${line}
+//%      endfor
+     */
+    ${member.type} ${member.name};
+/*{%     if not loop.last %}*/
+
+/*{%     endif %}*/
 /*{% endfor %}*/
 };
 //% endmacro
@@ -45,9 +64,9 @@ struct ${struct.name} {
 namespace vrtgen {
     namespace packing {
 /*{% for struct in structs %}*/
-/*{% if not loop.first %}*/
+/*{%     if not loop.first %}*/
 
-/*{% endif %}*/
+/*{%     endif %}*/
         ${define_struct(struct)|indent(8)}
 /*{% endfor %}*/
     }

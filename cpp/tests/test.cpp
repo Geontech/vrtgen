@@ -8,8 +8,6 @@
 #include <stdexcept>
 #include <iomanip>
 
-#include <arpa/inet.h>
-
 class test_failure : public std::runtime_error
 {
 public:
@@ -92,6 +90,27 @@ void test_header_set()
     ASSERT_EQUAL(data[3], 0xEF);
 }
 
+void test_swap16()
+{
+    int16_t swapped = vrtgen::swap16(0xBA5E);
+    ASSERT_EQUAL(swapped, 0x5EBA);
+    ASSERT_EQUAL(vrtgen::swap16(swapped), 0xBA5E);
+}
+
+void test_swap32()
+{
+    int32_t swapped = vrtgen::swap32(0xDEADBEEF);
+    ASSERT_EQUAL(swapped, 0xEFBEADDE);
+    ASSERT_EQUAL(vrtgen::swap32(swapped), 0xDEADBEEF);
+}
+
+void test_swap64()
+{
+    int64_t swapped = vrtgen::swap64(0x0123456789ABCDEF);
+    ASSERT_EQUAL(swapped, 0xEFCDAB8967452301);
+    ASSERT_EQUAL(vrtgen::swap64(swapped), 0x0123456789ABCDEF);
+}
+
 #define RUN_TEST(x) std::cout << #x ": ";                               \
     try { x(); std::cout << "OK" << std::endl; }                        \
     catch (const test_failure& exc) {                                   \
@@ -103,5 +122,8 @@ int main(int argc, const char* argv[])
 {
     RUN_TEST(test_header_get);
     RUN_TEST(test_header_set);
+    RUN_TEST(test_swap16);
+    RUN_TEST(test_swap32);
+    RUN_TEST(test_swap64);
     return 0;
 }
