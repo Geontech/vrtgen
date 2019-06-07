@@ -19,8 +19,16 @@ GENERATED_SOURCES += include/vrtgen/packing/trailer.hpp
 check: test
 	./test
 
-test: tests/test.cpp $(GENERATED_SOURCES) $(HEADERS)
-	$(CXX) $(CXXFLAGS) -o test tests/test.cpp
+TEST_SOURCES := tests/test.o
+TEST_SOURCES += tests/main.o
+
+test: $(TEST_SOURCES)
+	$(CXX) $(LDFLAGS) -o test $(TEST_SOURCES)
+
+tests/test.cpp: $(GENERATED_SOURCES) $(HEADERS)
+
+.cpp.o:
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 generate: $(GENERATED_SOURCES)
 
