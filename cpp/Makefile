@@ -1,5 +1,4 @@
 PYTHON = python3
-top_srcdir = ..
 srcdir = .
 
 CPPFLAGS = -I $(srcdir)/include
@@ -14,16 +13,17 @@ GENERATED_SOURCES += include/vrtgen/packing/cif1.hpp
 GENERATED_SOURCES += include/vrtgen/packing/header.hpp
 GENERATED_SOURCES += include/vrtgen/packing/trailer.hpp
 
-.PHONY: generate check
-
-check: test
-	./test
-
+TEST_PROGRAM = test_libvrtgen
 TEST_SOURCES := tests/test.o
 TEST_SOURCES += tests/main.o
 
-test: $(TEST_SOURCES)
-	$(CXX) $(LDFLAGS) -o test $(TEST_SOURCES)
+.PHONY: generate check
+
+check: $(TEST_PROGRAM)
+	./$(TEST_PROGRAM) $(TEST_OPTIONS)
+
+$(TEST_PROGRAM): $(TEST_SOURCES)
+	$(CXX) $(LDFLAGS) -o $@ $(TEST_SOURCES)
 
 tests/test.cpp: $(GENERATED_SOURCES) $(HEADERS)
 
@@ -36,4 +36,6 @@ $(GENERATED_SOURCES) : gencpp.py templates/enums.hpp templates/struct.hpp
 	$(PYTHON) gencpp.py
 
 clean:
-	rm -f $(GENERATED_SOURCES) test
+	rm -f $(GENERATED_SOURCES)
+	rm -f $(TEST_PROGRAM)
+	rm -f tests/*.o

@@ -5,4 +5,4 @@ __pycache__/
 .pytest_cache/
 cpp/include/vrtgen/enums.hpp
 cpp/include/vrtgen/packing/*.hpp
-cpp/test
+cpp/test_libvrtgen
