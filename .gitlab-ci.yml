@@ -34,10 +34,4 @@ test:cpp:
         - wget -P /usr/include/catch ${catch_header}
     script:
         - cd cpp
-        # Output JUnit format results with successful tests included
-        - make check TEST_OPTIONS="-s -r junit -o test-results.xml"
-    artifacts:
-        paths:
-            - cpp/test-results.xml
-        reports:
-            junit: cpp/test-results.xml
+        - make check TEST_OPTIONS="-s"
