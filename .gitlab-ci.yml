@@ -30,8 +30,6 @@ test:cpp:
     before_script:
         - apk add g++ make
         - pip install -e .
-        - mkdir /usr/include/catch
-        - wget -P /usr/include/catch ${catch_header}
     script:
         - cd cpp
-        - make check TEST_OPTIONS="-s"
+        - make check TEST_OPTIONS="-s -r compact"
