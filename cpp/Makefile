@@ -2,7 +2,7 @@ PYTHON = python3
 srcdir = .
 
 CPPFLAGS = -I $(srcdir)/include
-CXXFLAGS = $(CPPFLAGS) -Wall
+CXXFLAGS = $(CPPFLAGS) -Wall -std=c++11
 
 HEADERS := include/vrtgen/types.hpp
 HEADERS += include/vrtgen/utils/macros.hpp

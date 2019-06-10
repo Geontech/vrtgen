@@ -32,4 +32,4 @@ test:cpp:
         - pip install -e .
     script:
         - cd cpp
-        - make check TEST_OPTIONS="-s -r compact"
+        - make check TEST_OPTIONS="-s --force-colour"
