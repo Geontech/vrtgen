@@ -16,6 +16,8 @@ GENERATED_SOURCES += include/vrtgen/packing/trailer.hpp
 TEST_PROGRAM = test_libvrtgen
 TEST_SOURCES := tests/test.o
 TEST_SOURCES += tests/main.o
+TEST_HEADERS := $(HEADERS)
+TEST_HEADERS += tests/utils.hpp
 
 .PHONY: generate check
 
@@ -25,7 +27,7 @@ check: $(TEST_PROGRAM)
 $(TEST_PROGRAM): $(TEST_SOURCES)
 	$(CXX) $(LDFLAGS) -o $@ $(TEST_SOURCES)
 
-tests/test.cpp: $(GENERATED_SOURCES) $(HEADERS)
+tests/test.o: $(GENERATED_SOURCES) $(TEST_HEADERS)
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c -o $@ $<

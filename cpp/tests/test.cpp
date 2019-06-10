@@ -7,21 +7,8 @@
 #include <vrtgen/packing/header.hpp>
 #include <vrtgen/packing/trailer.hpp>
 
-namespace Catch {
-    template <size_t N>
-    struct StringMaker< std::array<uint8_t, N> >
-    {
-        static std::string convert(const std::array<uint8_t, N>& value)
-        {
-            std::ostringstream oss;
-            oss << "0x" << std::hex << std::setfill('0') << std::setiosflags(std::ios::uppercase);
-            for (auto item : value) {
-                oss << std::setw(2) << static_cast<unsigned>(item);
-            }
-            return oss.str();
-        }
-    };
-}
+#include <array>
+#include "utils.hpp"
 
 TEST_CASE("Header getter methods")
 {
@@ -56,38 +43,31 @@ TEST_CASE("Header setter methods")
     using vrtgen::packing::Header;
 
     std::array<uint8_t,4> data = {}; // zero-initialize
-    std::array<uint8_t,4> expected;
     Header& header = *reinterpret_cast<Header*>(data.data());
 
     SECTION("Packet Type") {
-        expected = { 0x40, 0x00, 0x00, 0x00 };
         header.setPacketType(vrtgen::PacketType::CONTEXT);
-        REQUIRE(data == expected);
+        REQUIRE(data == bytes(0x40, 0x00, 0x00, 0x00));
     }
     SECTION("Class Identifier Enable") {
-        expected = { 0x08, 0x00, 0x00, 0x00 };
         header.setClassIdentifierEnabled(true);
-        REQUIRE(data == expected);
+        REQUIRE(data == bytes(0x08, 0x00, 0x00, 0x00));
     }
     SECTION("TSI") {
-        expected = { 0x00, 0x80, 0x00, 0x00 };
         header.setTSI(vrtgen::TSI::GPS);
-        REQUIRE(data == expected);
+        REQUIRE(data == bytes(0x00, 0x80, 0x00, 0x00));
     }
     SECTION("TSF") {
-        expected = { 0x00, 0x20, 0x00, 0x00 };
         header.setTSF(vrtgen::TSF::REAL_TIME);
-        REQUIRE(data == expected);
+        REQUIRE(data == bytes(0x00, 0x20, 0x00, 0x00));
     }
     SECTION("Packet Count") {
-        expected = { 0x00, 0x0C, 0x00, 0x00 };
         header.setPacketCount(12);
-        REQUIRE(data == expected);
+        REQUIRE(data == bytes(0x00, 0x0C, 0x00, 0x00));
     }
     SECTION("Packet Size") {
-        expected = { 0x00, 0x00, 0xCD, 0xEF };
         header.setPacketSize(0xCDEF);
-        REQUIRE(data == expected);
+        REQUIRE(data == bytes(0x00, 0x00, 0xCD, 0xEF));
     }
 }
 
