@@ -7,14 +7,13 @@
 #include <vrtgen/packing/header.hpp>
 #include <vrtgen/packing/trailer.hpp>
 
-#include <array>
 #include "utils.hpp"
 
 TEST_CASE("Header getter methods")
 {
     using vrtgen::packing::Header;
 
-    std::array<uint8_t,4> data = {
+    bytes data = {
         0x10, 0x5c, 0x12, 0x34,
     };
     Header& header = *reinterpret_cast<Header*>(data.data());
@@ -42,32 +41,32 @@ TEST_CASE("Header setter methods")
 {
     using vrtgen::packing::Header;
 
-    std::array<uint8_t,4> data = {}; // zero-initialize
+    bytes data = {0, 0, 0, 0}; // zero-initialize
     Header& header = *reinterpret_cast<Header*>(data.data());
 
     SECTION("Packet Type") {
         header.setPacketType(vrtgen::PacketType::CONTEXT);
-        REQUIRE(data == bytes(0x40, 0x00, 0x00, 0x00));
+        REQUIRE(data == bytes({0x40, 0x00, 0x00, 0x00}));
     }
     SECTION("Class Identifier Enable") {
         header.setClassIdentifierEnabled(true);
-        REQUIRE(data == bytes(0x08, 0x00, 0x00, 0x00));
+        REQUIRE(data == bytes({0x08, 0x00, 0x00, 0x00}));
     }
     SECTION("TSI") {
         header.setTSI(vrtgen::TSI::GPS);
-        REQUIRE(data == bytes(0x00, 0x80, 0x00, 0x00));
+        REQUIRE(data == bytes({0x00, 0x80, 0x00, 0x00}));
     }
     SECTION("TSF") {
         header.setTSF(vrtgen::TSF::REAL_TIME);
-        REQUIRE(data == bytes(0x00, 0x20, 0x00, 0x00));
+        REQUIRE(data == bytes({0x00, 0x20, 0x00, 0x00}));
     }
     SECTION("Packet Count") {
         header.setPacketCount(12);
-        REQUIRE(data == bytes(0x00, 0x0C, 0x00, 0x00));
+        REQUIRE(data == bytes({0x00, 0x0C, 0x00, 0x00}));
     }
     SECTION("Packet Size") {
         header.setPacketSize(0xCDEF);
-        REQUIRE(data == bytes(0x00, 0x00, 0xCD, 0xEF));
+        REQUIRE(data == bytes({0x00, 0x00, 0xCD, 0xEF}));
     }
 }
 

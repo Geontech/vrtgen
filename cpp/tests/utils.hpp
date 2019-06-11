@@ -1,35 +1,28 @@
 #ifndef _UTILS_HPP
 #define _UTILS_HPP
 
-#include <array>
+#include <vector>
+#include <sstream>
+#include <iomanip>
 
 #include <catch/catch.hpp>
 
 /**
- * Utility function to create an array of bytes from a variable argument list
- * of values. Useful for creating comparison-capable data structures in a
- * test condition, e.g.:
+ * Typedef to abstract a comparison-capable data structure for use in testing
+ * binary data, e.g.:
  *
- *     REQUIRE(value == bytes(1,2,3,4));
- *
- * Due to limitations in argument handling, integer constants are promoted to
- * at least `int`, so range-checking on conversion to `uint8_t` is lost.
+ *     REQUIRE(value == bytes({1, 2, 3, 4}));
  */
-template <typename... Args>
-std::array<uint8_t, sizeof...(Args)> bytes(const Args&&... args)
-{
-    return { static_cast<uint8_t>(args)... };
-}
+typedef std::vector<uint8_t> bytes;
 
 namespace Catch {
     /**
-     * Override string conversion for std::array with an element type of
-     * `uint8_t` to display as a hexadecimal value.
+     * Override string conversion for byte data to display hexadecimal values.
      */
-    template <size_t N>
-    struct StringMaker< std::array<uint8_t, N> >
+    template <>
+    struct StringMaker<bytes>
     {
-        static std::string convert(const std::array<uint8_t, N>& value)
+        static std::string convert(const bytes& value)
         {
             std::ostringstream oss;
             oss << "0x" << std::hex << std::setfill('0') << std::setiosflags(std::ios::uppercase);
