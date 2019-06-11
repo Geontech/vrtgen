@@ -1,5 +1,5 @@
-#ifndef _UTILS_HPP
-#define _UTILS_HPP
+#ifndef _BYTES_HPP
+#define _BYTES_HPP
 
 #include <vector>
 #include <sstream>
@@ -34,4 +34,4 @@ namespace Catch {
     };
 }
 
-#endif // _UTILS_HPP
+#endif // _BYTES_HPP

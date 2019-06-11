@@ -9,18 +9,18 @@
 namespace vrtgen {
     namespace detail {
         template <typename T>
-        static inline size_t adjust_pointer(T*& ptr, size_t pos)
+        inline size_t adjust_pointer(T*& ptr, size_t pos)
         {
             ptr += 3 - (pos/8);
             return (7 - (pos & 0x7));
         }
 
-        static inline uint32_t bitmask(uint8_t nbits)
+        inline uint32_t bitmask(uint8_t nbits)
         {
             return (1 << nbits) - 1;
         }
 
-        static inline void set_int(uint8_t* data, size_t offset, size_t bits, uint32_t value)
+        inline void set_int(uint8_t* data, size_t offset, size_t bits, uint32_t value)
         {
             // Shift the value up to the MSB
             value = value << (32 - bits);
@@ -95,14 +95,14 @@ namespace vrtgen {
         return (value >> shift) & detail::bitmask(bits);
     }
 
-    void set_int(uint32_t& word, size_t pos, size_t bits, uint32_t value)
+    inline void set_int(uint32_t& word, size_t pos, size_t bits, uint32_t value)
     {
         uint8_t* data = reinterpret_cast<uint8_t*>(&word);
         size_t bit_offset = detail::adjust_pointer(data, pos);
         detail::set_int(data, bit_offset, bits, value);
     }
 
-    void set_int(uint16_t& hword, size_t pos, size_t bits, uint32_t value)
+    inline void set_int(uint16_t& hword, size_t pos, size_t bits, uint32_t value)
     {
         uint8_t* data = reinterpret_cast<uint8_t*>(&hword);
         size_t bit_offset = detail::adjust_pointer(data, pos);
