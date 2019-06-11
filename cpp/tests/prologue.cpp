@@ -69,3 +69,119 @@ TEST_CASE("Header setter methods")
         REQUIRE(data == bytes({0x00, 0x00, 0xCD, 0xEF}));
     }
 }
+
+TEST_CASE("Data Header getter methods")
+{
+    using vrtgen::packing::DataHeader;
+
+    bytes data = {0, 0, 0, 0};
+    DataHeader& header = *reinterpret_cast<DataHeader*>(data.data());
+
+    SECTION("Trailer Included") {
+        data[0] = 0x04;
+        REQUIRE(header.getTrailerIncluded());
+    }
+    SECTION("Not a V49.0 Packet") {
+        data[0] = 0x02;
+        REQUIRE(header.getNotaV49_0Packet());
+    }
+    SECTION("Signal Spectrum or Signal Time Data Packet") {
+        data[0] = 0x01;
+        REQUIRE(header.getSignalSpectrumorSignalTimeDataPacket());
+    }
+}
+
+TEST_CASE("Data Header setter methods")
+{
+    using vrtgen::packing::DataHeader;
+
+    bytes data = {0, 0, 0, 0};
+    DataHeader& header = *reinterpret_cast<DataHeader*>(data.data());
+
+    SECTION("Trailer Included") {
+        header.setTrailerIncluded(true);
+        REQUIRE(data == bytes({0x04, 0x00, 0x00, 0x00}));
+    }
+    SECTION("Not a V49.0 Packet") {
+        header.setNotaV49_0Packet(true);
+        REQUIRE(data == bytes({0x02, 0x00, 0x00, 0x00}));
+    }
+    SECTION("Signal Spectrum or Signal Time Data Packet") {
+        header.setSignalSpectrumorSignalTimeDataPacket(true);
+        REQUIRE(data == bytes({0x01, 0x00, 0x00, 0x00}));
+    }
+}
+
+TEST_CASE("Context Header getter methods")
+{
+    using vrtgen::packing::ContextHeader;
+
+    bytes data = {0, 0, 0, 0};
+    ContextHeader& header = *reinterpret_cast<ContextHeader*>(data.data());
+
+    SECTION("Not a V49.0 Packet") {
+        CHECK_FALSE(header.getNotaV49_0Packet());
+        data[0] = 0x02;
+        REQUIRE(header.getNotaV49_0Packet());
+    }
+    SECTION("Timestamp Mode") {
+        CHECK(header.getTimestampMode() == vrtgen::TSM::FINE);
+        data[0] = 0x01;
+        CHECK(header.getTimestampMode() == vrtgen::TSM::COARSE);
+    }
+}
+
+TEST_CASE("Context Header setter methods")
+{
+    using vrtgen::packing::ContextHeader;
+
+    bytes data = {0, 0, 0, 0};
+    ContextHeader& header = *reinterpret_cast<ContextHeader*>(data.data());
+
+    SECTION("Not a V49.0 Packet") {
+        header.setNotaV49_0Packet(true);
+        REQUIRE(data == bytes({0x02, 0x00, 0x00, 0x00}));
+    }
+    SECTION("Timestamp Mode") {
+        header.setTimestampMode(vrtgen::TSM::COARSE);
+        CHECK(data == bytes({0x01, 0x00, 0x00, 0x00}));
+        header.setTimestampMode(vrtgen::TSM::FINE);
+        CHECK(data == bytes({0x00, 0x00, 0x00, 0x00}));
+    }
+}
+
+TEST_CASE("Command Header getter methods")
+{
+    using vrtgen::packing::CommandHeader;
+
+    bytes data = {0, 0, 0, 0};
+    CommandHeader& header = *reinterpret_cast<CommandHeader*>(data.data());
+
+    SECTION("Acknowledge") {
+        CHECK_FALSE(header.getAcknowledgePacket());
+        data[0] = 0x04;
+        CHECK(header.getAcknowledgePacket());
+    }
+    SECTION("Cancellation") {
+        CHECK_FALSE(header.getCancellationPacket());
+        data[0] = 0x01;
+        CHECK(header.getCancellationPacket());
+    }
+}
+
+TEST_CASE("Command Header setter methods")
+{
+    using vrtgen::packing::CommandHeader;
+
+    bytes data = {0, 0, 0, 0};
+    CommandHeader& header = *reinterpret_cast<CommandHeader*>(data.data());
+
+    SECTION("Acknowledge") {
+        header.setAcknowledgePacket(true);
+        REQUIRE(data == bytes({0x04, 0x00, 0x00, 0x00}));
+    }
+    SECTION("Cancellation") {
+        header.setCancellationPacket(true);
+        REQUIRE(data == bytes({0x01, 0x00, 0x00, 0x00}));
+    }
+}

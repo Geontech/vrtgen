@@ -85,6 +85,8 @@ def name_to_identifier(name):
     for ch in name:
         if ch.isalnum():
             identifier += ch
+        elif ch in '.':
+            identifier += '_'
     return identifier
 
 def format_enum(enum):
@@ -296,7 +298,13 @@ def generate_enums(env, filename):
 def generate_header(env, filename):
     template = env.get_template('struct.hpp')
     with open(filename, 'w') as fp:
-        structs = [CppHeaderStruct(prologue.Header), CppStruct(prologue.ClassIdentifier)]
+        structs = [
+            CppHeaderStruct(prologue.Header),
+            CppHeaderStruct(prologue.DataHeader),
+            CppHeaderStruct(prologue.ContextHeader),
+            CppHeaderStruct(prologue.CommandHeader),
+            CppStruct(prologue.ClassIdentifier)
+        ]
         fp.write(template.render({
             'name': 'header',
             'structs': structs,
