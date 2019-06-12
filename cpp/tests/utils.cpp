@@ -1,6 +1,6 @@
-#include <catch/catch.hpp>
+#include "catch/catch.hpp"
 
-#include <vrtgen/types.hpp>
+#include "vrtgen/types.hpp"
 
 TEST_CASE("swap16", "[swap]")
 {

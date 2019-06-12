@@ -335,7 +335,7 @@ def generate_cif(env, module, cif, filename):
         }))
 
 def main():
-    loader = jinja2.FileSystemLoader('templates')
+    loader = jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates'))
     env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
 
     includedir = 'include/vrtgen'

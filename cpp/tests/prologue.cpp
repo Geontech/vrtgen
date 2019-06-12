@@ -1,11 +1,11 @@
 
-#include <catch/catch.hpp>
+#include "catch/catch.hpp"
 
-#include <vrtgen/enums.hpp>
-#include <vrtgen/packing/cif0.hpp>
-#include <vrtgen/packing/cif1.hpp>
-#include <vrtgen/packing/header.hpp>
-#include <vrtgen/packing/trailer.hpp>
+#include "vrtgen/enums.hpp"
+#include "vrtgen/packing/cif0.hpp"
+#include "vrtgen/packing/cif1.hpp"
+#include "vrtgen/packing/header.hpp"
+#include "vrtgen/packing/trailer.hpp"
 
 #include "bytes.hpp"
 

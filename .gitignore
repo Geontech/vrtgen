@@ -3,6 +3,10 @@ __pycache__/
 *.egg-info
 .eggs/
 .pytest_cache/
+CMakeFiles/
+cpp/Makefile
 cpp/include/vrtgen/enums.hpp
 cpp/include/vrtgen/packing/*.hpp
 cpp/test_libvrtgen
+CMakeCache.txt
+cmake_install.cmake
