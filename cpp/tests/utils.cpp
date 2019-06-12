@@ -9,6 +9,13 @@ TEST_CASE("swap16", "[swap]")
     REQUIRE(vrtgen::swap16(swapped) == 0xBA5E);
 }
 
+TEST_CASE("swap24", "[swap]")
+{
+    int32_t swapped = vrtgen::swap24(0xBADC0D);
+    REQUIRE(swapped == 0x0DDCBA);
+    REQUIRE(vrtgen::swap24(swapped) == 0xBADC0D);
+}
+
 TEST_CASE("swap32", "[swap]")
 {
     int32_t swapped = vrtgen::swap32(0xDEADBEEF);

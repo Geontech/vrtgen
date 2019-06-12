@@ -61,6 +61,13 @@ namespace vrtgen {
         return (value << 8) | (value >> 8);
     }
 
+    inline uint32_t swap24(uint32_t value)
+    {
+        return (((value & 0xFF) << 16) |
+                (value & (0xFF << 8)) |
+                ((value >> 16) & 0xFF));
+    }
+
     inline uint32_t swap32(uint32_t value)
     {
         return ((value << 24) |
