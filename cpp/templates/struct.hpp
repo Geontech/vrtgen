@@ -15,7 +15,7 @@ struct ${struct.name} {
         return GET_BIT32(${field.member}, ${field.offset});
 //%     elif field.bits == 8
         return ${field.member};
-//%     elif field.bits in (64, 32, 16)
+//%     elif field.bits in (64, 32, 24, 16)
         return vrtgen::swap${field.bits}(${field.member});
 //%     else
         return (${field.type}) vrtgen::get_int(${field.member}, ${field.offset}, ${field.bits});
@@ -31,7 +31,7 @@ struct ${struct.name} {
         SET_BIT32(${field.member}, ${field.offset}, value);
 //%     elif field.bits == 8
         ${field.member} = value;
-//%     elif field.bits in (64, 32, 16)
+//%     elif field.bits in (64, 32, 24, 16)
         ${field.member} = vrtgen::swap${field.bits}(value);
 //%     else
         vrtgen::set_int(${field.member}, ${field.offset}, ${field.bits}, value);
@@ -46,7 +46,7 @@ private:
      * ${line}
 //%      endfor
      */
-    ${member.type} ${member.name};
+    ${member.decl};
 /*{%     if not loop.last %}*/
 
 /*{%     endif %}*/

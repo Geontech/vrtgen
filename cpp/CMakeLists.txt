@@ -22,6 +22,8 @@ add_custom_command(
         python3 ${CMAKE_CURRENT_SOURCE_DIR}/gencpp.py
     DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/gencpp.py
+        ${CMAKE_CURRENT_SOURCE_DIR}/templates/enums.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/templates/struct.hpp
 )
 
 add_library(vrtgen INTERFACE)

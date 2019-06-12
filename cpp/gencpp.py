@@ -152,36 +152,65 @@ def format_value_methods(field, member):
     return field_data
 
 class Member:
-    def __init__(self, name, ctype):
+    def __init__(self, name):
         self.name = 'm_' + name
-        self.type = ctype
         self.doc = []
 
-    def link_field(self, field):
+    @property
+    def decl(self):
+        return '{} {}'.format(self.type, self.name)
+
+    def _add_field_doc(self, field):
         self.doc.append('{} {}/{}'.format(field.name, field.word, field.offset))
+
+class BasicMember(Member):
+    def __init__(self, name, field):
+        super().__init__(name)
+        self.field = field
+        # TODO: Fix hack to use a C-style packed field for 24-bit ints
+        if field.bits == 24:
+            if field.type.signed:
+                self.type = 'int'
+            else:
+                self.type = 'unsigned'
+        else:
+            self.type = cpp_type(field.type)
+        self._add_field_doc(field)
+
+    @property
+    def decl(self):
+        decl = super().decl
+        # TODO: See above
+        if self.field.bits == 24:
+            decl += ':24'
+        return decl
 
 class Reserved:
     def __init__(self, field):
-        self.name = ':{}'.format(field.bits)
+        self.name = ''
         self.type = 'int'
+        self.decl = '{} {}:{}'.format(self.type, self.name, field.bits)
         self.doc = ['Reserved {}/{}'.format(field.word, field.offset)]
 
 class Packed(Member):
     def __init__(self, name, offset):
-        super().__init__(name, 'uint8_t')
+        super().__init__(name)
         self.offset = offset
         self.bits = 0
+
+    @property
+    def type(self):
+        return int_type(self.bits, False)
 
     def full(self):
         assert self.offset >= 0
         return (1 + self.offset - self.bits) == 0
 
     def link_field(self, field):
-        super().link_field(field)
         # Check for wraparound into the next word
         assert self.offset - self.bits == field.offset
         self.bits += field.bits
-        self.type = int_type(self.bits, False)
+        self._add_field_doc(field)
 
 class CppStruct:
     def __init__(self, structdef):
@@ -196,7 +225,7 @@ class CppStruct:
 
     def _process_field(self, field):
         align = 31 - field.offset
-        if field.bits % 8 or field.bits == 24:
+        if field.bits % 8:
             # Field does not necessarily need to be byte-aligned, pack it into
             # a larger data member
             if self._packed is None:
@@ -205,6 +234,7 @@ class CppStruct:
                 self._add_packed(field.offset)
             member = self._packed
             remain = self._packed.offset - self._packed.bits
+            member.link_field(field)
         else:
             # Everything else should be byte-aligned
             assert align % 8 == 0
@@ -215,10 +245,8 @@ class CppStruct:
 
             if field.bits % 32 == 0:
                 assert align == 0
-                ctype = cpp_type(field.type)
-            else:
+            elif field.bits != 24:
                 assert align % field.bits == 0
-                ctype = cpp_type(field.type)
 
             # Non-editable fields large enough to require their own member must
             # be reserved bits. These are handled differently so the compiler
@@ -227,9 +255,7 @@ class CppStruct:
                 self.members.append(Reserved(field))
                 return
 
-            member = self._add_member(field.name, ctype)
-
-        member.link_field(field)
+            member = self._add_member(field)
 
         if field.editable:
             self._map_field(field, member)
@@ -247,12 +273,9 @@ class CppStruct:
         assert self._packed.bits % 8 == 0
         self._packed = None
 
-    def _add_member(self, name, ctype):
-        name = name_to_identifier(name)
-        if name == 'reserved':
-            name = '{}_{}'.format(name, self._reserved_fields)
-            self._reserved_fields += 1
-        member = Member(name, ctype)
+    def _add_member(self, field):
+        name = name_to_identifier(field.name)
+        member = BasicMember(name, field)
         self.members.append(member)
         return member
 

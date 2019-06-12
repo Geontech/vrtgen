@@ -116,6 +116,13 @@ namespace vrtgen {
         detail::set_int(data, bit_offset, bits, value);
     }
 
+    inline void set_int(uint8_t& dest, size_t pos, size_t bits, uint32_t value)
+    {
+        uint8_t* data = &dest;
+        size_t bit_offset = detail::adjust_pointer(data, pos);
+        detail::set_int(data, bit_offset, bits, value);
+    }
+
     /**
      * Placeholder class for fixed point types.
      * TODO: Implement class and/or replace with float conversion
