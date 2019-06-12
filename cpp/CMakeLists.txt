@@ -30,8 +30,8 @@ target_sources(vrtgen INTERFACE
     ${generated_header_files}
 )
 target_include_directories(vrtgen INTERFACE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 install(TARGETS vrtgen)
