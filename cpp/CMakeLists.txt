@@ -48,6 +48,9 @@ add_executable(test_libvrtgen
     tests/prologue.cpp
     tests/utils.cpp
 )
+target_include_directories(test_libvrtgen PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/Catch2/include
+)
 target_link_libraries(test_libvrtgen vrtgen)
 target_compile_options(test_libvrtgen PRIVATE -Wall)
 target_compile_features(test_libvrtgen PRIVATE cxx_std_11)
