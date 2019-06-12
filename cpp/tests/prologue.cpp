@@ -185,3 +185,50 @@ TEST_CASE("Command Header setter methods")
         REQUIRE(data == bytes({0x01, 0x00, 0x00, 0x00}));
     }
 }
+
+TEST_CASE("ClassIdentifier getter methods")
+{
+    using vrtgen::packing::ClassIdentifier;
+
+    bytes data = {0x28, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF};
+    ClassIdentifier& class_id = *reinterpret_cast<ClassIdentifier*>(data.data());
+    CHECK(sizeof(class_id) == data.size());
+
+    SECTION("Pad Bit Count") {
+        REQUIRE(class_id.getPadBitCount() == 5);
+    }
+    SECTION("Organizationally Unique Identifier") {
+        REQUIRE(class_id.getOrganizationallyUniqueIdentifier() == 0x234567);
+    }
+    SECTION("Information Class Code") {
+        REQUIRE(class_id.getInformationClassCode() == 0x89AB);
+    }
+    SECTION("Packet Class Code") {
+        REQUIRE(class_id.getPacketClassCode() == 0xCDEF);
+    }
+}
+
+TEST_CASE("ClassIdentifier setter methods")
+{
+    using vrtgen::packing::ClassIdentifier;
+
+    bytes data = {0, 0, 0, 0, 0, 0, 0, 0};
+    ClassIdentifier& class_id = *reinterpret_cast<ClassIdentifier*>(data.data());
+
+    SECTION("Pad Bit Count") {
+        class_id.setPadBitCount(0x13);
+        REQUIRE(data == bytes({0x98, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}));
+    }
+    SECTION("Organizationally Unique Identifier") {
+        class_id.setOrganizationallyUniqueIdentifier(0x5307C0);
+        REQUIRE(data == bytes({0x00, 0x53, 0x07, 0xC0, 0x00, 0x00, 0x00, 0x00}));
+    }
+    SECTION("Information Class Code") {
+        class_id.setInformationClassCode(0x916F);
+        REQUIRE(data == bytes({0x00, 0x00, 0x00, 0x00, 0x91, 0x6F, 0x00, 0x00}));
+    }
+    SECTION("Packet Class Code") {
+        class_id.setPacketClassCode(0x1234);
+        REQUIRE(data == bytes({0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34}));
+    }
+}
