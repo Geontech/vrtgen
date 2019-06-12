@@ -25,14 +25,12 @@ lint:
 
 test:cpp:
     stage: test
-    variables:
-        catch_header: https://github.com/philsquared/Catch/releases/download/v1.12.2/catch.hpp
     before_script:
         - apk add g++ make cmake
         - pip install -e .
+        - cmake -S cpp -B build
+        - cd build
+        - NCPUS=$(nproc)
+        - make -j $NCPUS
     script:
-        - mkdir cpp/build
-        - cd cpp/build
-        - cmake ..
-        - make -j
-        - ./test_librtgen -s --force-colour
+        - ./test_libvrtgen -s --use-colour=yes
