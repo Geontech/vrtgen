@@ -123,21 +123,49 @@ namespace vrtgen {
         detail::set_int(data, bit_offset, bits, value);
     }
 
-    /**
-     * Placeholder class for fixed point types.
-     * TODO: Implement class and/or replace with float conversion
-     */
+    namespace detail {
+        template <size_t bits>
+        struct fixed_traits;
+
+        template <>
+        struct fixed_traits<16>
+        {
+            typedef int16_t int_type;
+            typedef float float_type;
+        };
+
+        template <>
+        struct fixed_traits<32>
+        {
+            typedef int32_t int_type;
+            typedef double float_type;
+        };
+
+        template <>
+        struct fixed_traits<64>
+        {
+            typedef int64_t int_type;
+            typedef double float_type;
+        };
+    }
+
     template <size_t bits, size_t radix>
     struct fixed
     {
-        fixed(uint32_t)
+        typedef typename detail::fixed_traits<bits>::int_type int_type;
+        typedef typename detail::fixed_traits<bits>::float_type float_type;
+
+        static int_type to_int(float_type value)
         {
+            return static_cast<int_type>(std::round(value * SCALE));
         }
 
-        operator uint32_t () const
+        static float_type from_int(int_type value)
         {
-            return 0;
+            return value / SCALE;
         }
+    private:
+        static constexpr float_type SCALE = (1 << radix);
     };
 }
 

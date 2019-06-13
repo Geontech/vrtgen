@@ -64,7 +64,7 @@ def cpp_type(datatype):
     if issubclass(datatype, basic.IntegerType):
         return int_type(datatype.bits, datatype.signed)
     if issubclass(datatype, basic.FixedPointType):
-        return fixed_type(datatype.bits, datatype.radix)
+        return fixed_type(datatype.bits, datatype.radix) + '::int_type'
     if datatype == basic.Boolean:
         return 'bool'
     raise NotImplementedError(datatype.__name__)
@@ -144,8 +144,9 @@ def format_value_methods(field, member):
         field_data['type'] = int_type(datatype.bits, datatype.signed)
         field_data['bits'] = datatype.bits
     elif issubclass(datatype, basic.FixedPointType):
-        field_data['type'] = fixed_type(datatype.bits, datatype.radix)
+        field_data['type'] = fixed_type(datatype.bits, datatype.radix) + '::float_type'
         field_data['bits'] = datatype.bits
+        field_data['radix'] = datatype.radix
     elif datatype == basic.Boolean:
         field_data['type'] = 'bool'
         field_data['bits'] = 1
