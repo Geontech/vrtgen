@@ -45,14 +45,17 @@ install(
         ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
+add_library(Catch2 INTERFACE)
+target_include_directories(Catch2 INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/Catch2/include
+)
+
 add_executable(test_libvrtgen
     tests/main.cpp
     tests/prologue.cpp
     tests/utils.cpp
 )
-target_include_directories(test_libvrtgen PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/Catch2/include
-)
 target_link_libraries(test_libvrtgen vrtgen)
+target_link_libraries(test_libvrtgen Catch2)
 target_compile_options(test_libvrtgen PRIVATE -Wall)
 target_compile_features(test_libvrtgen PRIVATE cxx_std_11)
