@@ -30,9 +30,9 @@ TEST_CASE("swap64", "[swap]")
     REQUIRE(vrtgen::swap64(swapped) == 0x0123456789ABCDEF);
 }
 
-TEST_CASE("Fixed 16.7 conversion", "[fixed]")
+TEST_CASE("Q9.7 fixed-point conversion", "[fixed]")
 {
-    typedef vrtgen::fixed<16,7> fixed_type;
+    typedef vrtgen::fixed<int16_t,7> fixed_type;
 
     // Check radix point
     CHECK(fixed_type::to_int(1.0) == 0x0080);
@@ -59,10 +59,30 @@ TEST_CASE("Fixed 16.7 conversion", "[fixed]")
     CHECK(fixed_type::from_int(0xFFFF) == -1.0/128.0);
 }
 
-
-TEST_CASE("Fixed 32.16 conversion", "[fixed]")
+TEST_CASE("UQ27.5 fixed-point conversion", "[fixed]")
 {
-    typedef vrtgen::fixed<32,16> fixed_type;
+    typedef vrtgen::fixed<uint32_t,5> fixed_type;
+
+    // Check radix point
+    CHECK(fixed_type::to_int(1.0) == 0x00000020);
+    CHECK(fixed_type::from_int(0x00000020) == 1.0);
+
+    // Maximum positive integer
+    CHECK(fixed_type::to_int(134217727.0) == 0xFFFFFFE0);
+    CHECK(fixed_type::from_int(0xFFFFFFE0) == 134217727.0);
+
+    // Smallest fraction
+    CHECK(fixed_type::to_int(1.0/32.0) == 0x00000001);
+    CHECK(fixed_type::from_int(0x00000001) == 1.0/32.0);
+
+    // Maximum positive value
+    CHECK(fixed_type::to_int(134217728.0 - 1.0/32.0) == 0xFFFFFFFF);
+    CHECK(fixed_type::from_int(0xFFFFFFFF) == (134217728.0 - 1.0/32.0));
+}
+
+TEST_CASE("Q16.16 fixed-point conversion", "[fixed]")
+{
+    typedef vrtgen::fixed<int32_t,16> fixed_type;
 
     // Check radix point
     CHECK(fixed_type::to_int(1.0) == 0x00010000);

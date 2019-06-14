@@ -52,7 +52,7 @@ def int_type(bits, signed):
     return ctype
 
 def fixed_type(bits, radix):
-    return 'fixed<{},{}>'.format(bits, radix)
+    return 'fixed<{},{}>'.format(int_type(bits, True), radix)
 
 def enum_type(datatype):
     name = name_to_identifier(datatype.__name__)
@@ -64,7 +64,7 @@ def cpp_type(datatype):
     if issubclass(datatype, basic.IntegerType):
         return int_type(datatype.bits, datatype.signed)
     if issubclass(datatype, basic.FixedPointType):
-        return fixed_type(datatype.bits, datatype.radix) + '::int_type'
+        return fixed_type(datatype.bits, datatype.radix)
     if datatype == basic.Boolean:
         return 'bool'
     raise NotImplementedError(datatype.__name__)

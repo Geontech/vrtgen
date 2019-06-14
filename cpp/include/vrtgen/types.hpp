@@ -124,36 +124,42 @@ namespace vrtgen {
     }
 
     namespace detail {
-        template <size_t bits>
+        template <size_t bytes>
         struct fixed_traits;
 
         template <>
-        struct fixed_traits<16>
+        struct fixed_traits<2>
         {
-            typedef int16_t int_type;
             typedef float float_type;
         };
 
         template <>
-        struct fixed_traits<32>
+        struct fixed_traits<4>
         {
-            typedef int32_t int_type;
             typedef double float_type;
         };
 
         template <>
-        struct fixed_traits<64>
+        struct fixed_traits<8>
         {
-            typedef int64_t int_type;
             typedef double float_type;
         };
     }
 
-    template <size_t bits, size_t radix>
+    template <typename IntT, size_t radix>
     struct fixed
     {
-        typedef typename detail::fixed_traits<bits>::int_type int_type;
-        typedef typename detail::fixed_traits<bits>::float_type float_type;
+        typedef IntT int_type;
+        typedef typename detail::fixed_traits<sizeof(int_type)>::float_type float_type;
+
+        float_type get() const
+        {
+            return 0;
+        }
+
+        void set(int_type value)
+        {
+        }
 
         static int_type to_int(float_type value)
         {
@@ -166,6 +172,7 @@ namespace vrtgen {
         }
     private:
         static constexpr float_type SCALE = (1 << radix);
+        int_type m_value;
     };
 }
 

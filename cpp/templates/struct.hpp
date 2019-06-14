@@ -14,7 +14,7 @@ struct ${struct.name} {
 //%     if field.type == 'bool'
         return GET_BIT32(${field.member}, ${field.offset});
 //%     elif field.type.startswith('fixed')
-        return fixed<${field.bits},${field.radix}>::from_int(vrtgen::swap${field.bits}(${field.member}));
+        return ${field.member}.get();
 //%     elif field.bits == 8
         return ${field.member};
 //%     elif field.bits in (64, 32, 24, 16)
@@ -32,7 +32,7 @@ struct ${struct.name} {
 //%     if field.type == 'bool'
         SET_BIT32(${field.member}, ${field.offset}, value);
 //%     elif field.type.startswith('fixed')
-        ${field.member} = fixed<${field.bits},${field.radix}>::to_int(vrtgen::swap${field.bits}(value));
+        ${field.member}.set(value);
 //%     elif field.bits == 8
         ${field.member} = value;
 //%     elif field.bits in (64, 32, 24, 16)
