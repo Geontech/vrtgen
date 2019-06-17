@@ -6,21 +6,20 @@
  */
 struct ${struct.name} {
 /*{% for field in struct.fields %}*/
+//%     set member = field.member
     /**
      * ${field.getter.doc}.
      */
     ${field.type} ${field.getter.name}() const
     {
 //%     if field.type == 'bool'
-        return GET_BIT32(${field.member}, ${field.offset});
-//%     elif field.type.startswith('fixed')
-        return ${field.member}.get();
-//%     elif field.bits == 8
-        return ${field.member};
-//%     elif field.bits in (64, 32, 24, 16)
-        return vrtgen::swap${field.bits}(${field.member});
+        return GET_BIT32(${member.name}, ${field.offset});
+//%     elif field.bits == 24
+        return vrtgen::swap24(${member.name});
+//%     elif field.bits % 8 == 0
+        return ${member.name}.get();
 //%     else
-        return (${field.type}) vrtgen::get_int(${field.member}, ${field.offset}, ${field.bits});
+        return (${field.type}) vrtgen::get_int(${member.name}, ${field.offset}, ${field.bits});
 //%     endif
     }
 
@@ -30,15 +29,13 @@ struct ${struct.name} {
     void ${field.setter.name}(${field.type} value)
     {
 //%     if field.type == 'bool'
-        SET_BIT32(${field.member}, ${field.offset}, value);
-//%     elif field.type.startswith('fixed')
-        ${field.member}.set(value);
-//%     elif field.bits == 8
-        ${field.member} = value;
-//%     elif field.bits in (64, 32, 24, 16)
-        ${field.member} = vrtgen::swap${field.bits}(value);
+        SET_BIT32(${member.name}, ${field.offset}, value);
+//%     elif field.bits == 24
+        ${member.name} = vrtgen::swap24(value);
+//%     elif field.bits % 8 == 0
+        ${member.name}.set(value);
 //%     else
-        vrtgen::set_int(${field.member}, ${field.offset}, ${field.bits}, value);
+        vrtgen::set_int(${member.name}, ${field.offset}, ${field.bits}, value);
 //%     endif
     }
 

@@ -51,8 +51,9 @@ def int_type(bits, signed):
         ctype = 'u' + ctype
     return ctype
 
-def fixed_type(bits, radix):
-    return 'fixed<{},{}>'.format(int_type(bits, True), radix)
+def fixed_type(bits, radix, signed=True):
+    packed_type = int_type(bits, signed)
+    return 'vrtfixed<{},{}>'.format(packed_type, radix)
 
 def enum_type(datatype):
     name = name_to_identifier(datatype.__name__)
@@ -62,7 +63,8 @@ def cpp_type(datatype):
     if issubclass(datatype, enums.BinaryEnum):
         return enum_type(datatype)
     if issubclass(datatype, basic.IntegerType):
-        return int_type(datatype.bits, datatype.signed)
+        base_type = int_type(datatype.bits, datatype.signed)
+        return 'vrtint<{}>'.format(base_type)
     if issubclass(datatype, basic.FixedPointType):
         return fixed_type(datatype.bits, datatype.radix)
     if datatype == basic.Boolean:
@@ -117,7 +119,7 @@ def format_enable_methods(field, member, name=None):
         'word': field.word,
         'offset': field.offset,
         'type': 'bool',
-        'member': member.name,
+        'member': member,
     }
 
 def format_value_methods(field, member):
@@ -134,7 +136,7 @@ def format_value_methods(field, member):
         },
         'word': field.word,
         'offset': field.offset,
-        'member': member.name,
+        'member': member,
     }
     datatype = field.type
     if issubclass(datatype, enums.BinaryEnum):
@@ -144,7 +146,7 @@ def format_value_methods(field, member):
         field_data['type'] = int_type(datatype.bits, datatype.signed)
         field_data['bits'] = datatype.bits
     elif issubclass(datatype, basic.FixedPointType):
-        field_data['type'] = fixed_type(datatype.bits, datatype.radix) + '::float_type'
+        field_data['type'] = fixed_type(datatype.bits, datatype.radix) + '::value_type'
         field_data['bits'] = datatype.bits
         field_data['radix'] = datatype.radix
     elif datatype == basic.Boolean:

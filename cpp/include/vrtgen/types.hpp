@@ -152,15 +152,6 @@ namespace vrtgen {
         typedef IntT int_type;
         typedef typename detail::fixed_traits<sizeof(int_type)>::float_type float_type;
 
-        float_type get() const
-        {
-            return 0;
-        }
-
-        void set(int_type value)
-        {
-        }
-
         static int_type to_int(float_type value)
         {
             return static_cast<int_type>(std::round(value * SCALE));
@@ -173,6 +164,150 @@ namespace vrtgen {
     private:
         static constexpr float_type SCALE = (1 << radix);
         int_type m_value;
+    };
+
+    namespace detail {
+        template <unsigned int bytes>
+        struct byte_swap;
+
+        template <>
+        struct byte_swap<1>
+        {
+            typedef uint8_t int_type;
+            static inline int_type swap(int_type value)
+            {
+                return value;
+            }
+        };
+
+        template <>
+        struct byte_swap<2>
+        {
+            typedef uint16_t int_type;
+            static inline int_type swap(int_type value)
+            {
+                return swap16(value);
+            }
+        };
+
+        template <>
+        struct byte_swap<3>
+        {
+            typedef uint32_t int_type;
+            static inline int_type swap(int_type value)
+            {
+                return swap24(value);
+            }
+        };
+
+        template <>
+        struct byte_swap<4>
+        {
+            typedef uint32_t int_type;
+            static inline int_type swap(int_type value)
+            {
+                return swap32(value);
+            }
+        };
+
+        template <>
+        struct byte_swap<8>
+        {
+            typedef uint64_t int_type;
+            static inline int_type swap(int_type value)
+            {
+                return swap64(value);
+            }
+        };
+
+        template <typename IntT, typename FloatT, unsigned int radix>
+        struct fixed_converter
+        {
+            typedef IntT int_type;
+            typedef FloatT float_type;
+
+            static inline int_type to_int(float_type value)
+            {
+                return static_cast<int_type>(std::round(value * SCALE));
+            }
+
+            static inline float_type from_int(int_type value)
+            {
+                return value / SCALE;
+            }
+        private:
+            static constexpr float_type SCALE = (1 << radix);
+        };
+
+        template <typename T>
+        struct int_traits
+        {
+            typedef T packed_type;
+            typedef T value_type;
+            typedef byte_swap<sizeof(T)> swap_type;
+
+            static inline packed_type pack(value_type value)
+            {
+                return swap_type::swap(value);
+            }
+
+            static inline packed_type unpack(value_type value)
+            {
+                return swap_type::swap(value);
+            }
+        };
+
+        template <typename IntT, unsigned int radix>
+        struct fp_traits
+        {
+            typedef IntT packed_type;
+            typedef typename fixed_traits<sizeof(IntT)>::float_type value_type;
+
+            typedef fixed_converter<packed_type, value_type, radix> converter_type;
+            typedef byte_swap<sizeof(IntT)> swap_type;
+
+            static inline packed_type pack(value_type value)
+            {
+                return swap_type::swap(converter_type::to_int(value));
+            }
+
+            static inline value_type unpack(packed_type value)
+            {
+                return converter_type::from_int(swap_type::swap(value));
+            }
+        };
+    }
+
+    template <typename Traits>
+    struct field
+    {
+    public:
+        typedef Traits converter;
+        typedef typename converter::value_type value_type;
+        typedef typename converter::packed_type packed_type;
+
+        value_type get() const
+        {
+            return converter::unpack(m_value);
+        }
+
+        void set(value_type value)
+        {
+            m_value = converter::pack(value);
+        }
+
+    private:
+        packed_type m_value;
+    };
+
+    template <typename T>
+    struct vrtint : public field<detail::int_traits<T>>
+    {
+    };
+
+    template <typename IntT, unsigned int radix>
+    struct vrtfixed : public field<detail::fp_traits<IntT,radix>>
+    {
     };
 }
 
