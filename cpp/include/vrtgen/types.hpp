@@ -124,49 +124,6 @@ namespace vrtgen {
     }
 
     namespace detail {
-        template <size_t bytes>
-        struct fixed_traits;
-
-        template <>
-        struct fixed_traits<2>
-        {
-            typedef float float_type;
-        };
-
-        template <>
-        struct fixed_traits<4>
-        {
-            typedef double float_type;
-        };
-
-        template <>
-        struct fixed_traits<8>
-        {
-            typedef double float_type;
-        };
-    }
-
-    template <typename IntT, size_t radix>
-    struct fixed
-    {
-        typedef IntT int_type;
-        typedef typename detail::fixed_traits<sizeof(int_type)>::float_type float_type;
-
-        static int_type to_int(float_type value)
-        {
-            return static_cast<int_type>(std::round(value * SCALE));
-        }
-
-        static float_type from_int(int_type value)
-        {
-            return value / SCALE;
-        }
-    private:
-        static constexpr float_type SCALE = (1 << radix);
-        int_type m_value;
-    };
-
-    namespace detail {
         template <unsigned int bytes>
         struct byte_swap;
 
@@ -257,11 +214,32 @@ namespace vrtgen {
             }
         };
 
+        template <size_t bytes>
+        struct fixed_type;
+
+        template <>
+        struct fixed_type<2>
+        {
+            typedef float float_type;
+        };
+
+        template <>
+        struct fixed_type<4>
+        {
+            typedef double float_type;
+        };
+
+        template <>
+        struct fixed_type<8>
+        {
+            typedef double float_type;
+        };
+
         template <typename IntT, unsigned int radix>
-        struct fp_traits
+        struct fixed_traits
         {
             typedef IntT packed_type;
-            typedef typename fixed_traits<sizeof(IntT)>::float_type value_type;
+            typedef typename fixed_type<sizeof(packed_type)>::float_type value_type;
 
             typedef fixed_converter<packed_type, value_type, radix> converter_type;
             typedef byte_swap<sizeof(IntT)> swap_type;
@@ -301,12 +279,12 @@ namespace vrtgen {
     };
 
     template <typename T>
-    struct vrtint : public field<detail::int_traits<T>>
+    struct integer : public field<detail::int_traits<T>>
     {
     };
 
     template <typename IntT, unsigned int radix>
-    struct vrtfixed : public field<detail::fp_traits<IntT,radix>>
+    struct fixed : public field<detail::fixed_traits<IntT,radix>>
     {
     };
 }

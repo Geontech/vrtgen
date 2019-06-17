@@ -32,7 +32,7 @@ TEST_CASE("swap64", "[swap]")
 
 TEST_CASE("Q9.7 fixed-point conversion", "[fixed]")
 {
-    typedef vrtgen::fixed<int16_t,7> fixed_type;
+    typedef vrtgen::detail::fixed_converter<int16_t,float,7> fixed_type;
 
     // Check radix point
     CHECK(fixed_type::to_int(1.0) == 0x0080);
@@ -61,7 +61,7 @@ TEST_CASE("Q9.7 fixed-point conversion", "[fixed]")
 
 TEST_CASE("UQ27.5 fixed-point conversion", "[fixed]")
 {
-    typedef vrtgen::fixed<uint32_t,5> fixed_type;
+    typedef vrtgen::detail::fixed_converter<uint32_t,double,5> fixed_type;
 
     // Check radix point
     CHECK(fixed_type::to_int(1.0) == 0x00000020);
@@ -82,7 +82,7 @@ TEST_CASE("UQ27.5 fixed-point conversion", "[fixed]")
 
 TEST_CASE("Q16.16 fixed-point conversion", "[fixed]")
 {
-    typedef vrtgen::fixed<int32_t,16> fixed_type;
+    typedef vrtgen::detail::fixed_converter<int32_t,double,16> fixed_type;
 
     // Check radix point
     CHECK(fixed_type::to_int(1.0) == 0x00010000);

@@ -53,7 +53,7 @@ def int_type(bits, signed):
 
 def fixed_type(bits, radix, signed=True):
     packed_type = int_type(bits, signed)
-    return 'vrtfixed<{},{}>'.format(packed_type, radix)
+    return 'fixed<{},{}>'.format(packed_type, radix)
 
 def enum_type(datatype):
     name = name_to_identifier(datatype.__name__)
@@ -64,7 +64,7 @@ def cpp_type(datatype):
         return enum_type(datatype)
     if issubclass(datatype, basic.IntegerType):
         base_type = int_type(datatype.bits, datatype.signed)
-        return 'vrtint<{}>'.format(base_type)
+        return 'integer<{}>'.format(base_type)
     if issubclass(datatype, basic.FixedPointType):
         return fixed_type(datatype.bits, datatype.radix)
     if datatype == basic.Boolean:
