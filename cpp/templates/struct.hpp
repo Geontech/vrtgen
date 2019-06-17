@@ -14,8 +14,6 @@ struct ${struct.name} {
     {
 //%     if field.type == 'bool'
         return GET_BIT32(${member.name}, ${field.offset});
-//%     elif field.bits == 24
-        return vrtgen::swap24(${member.name});
 //%     elif field.bits % 8 == 0
         return ${member.name}.get();
 //%     else
@@ -30,8 +28,6 @@ struct ${struct.name} {
     {
 //%     if field.type == 'bool'
         SET_BIT32(${member.name}, ${field.offset}, value);
-//%     elif field.bits == 24
-        ${member.name} = vrtgen::swap24(value);
 //%     elif field.bits % 8 == 0
         ${member.name}.set(value);
 //%     else

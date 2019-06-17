@@ -60,6 +60,8 @@ def enum_type(datatype):
     return 'vrtgen::{}::Code'.format(name)
 
 def cpp_type(datatype):
+    if datatype == basic.OUI:
+        return 'OUI'
     if issubclass(datatype, enums.BinaryEnum):
         return enum_type(datatype)
     if issubclass(datatype, basic.IntegerType):
@@ -137,21 +139,20 @@ def format_value_methods(field, member):
         'word': field.word,
         'offset': field.offset,
         'member': member,
+        'bits': field.type.bits,
     }
     datatype = field.type
     if issubclass(datatype, enums.BinaryEnum):
         field_data['type'] = enum_type(datatype)
-        field_data['bits'] = datatype.bits
+    elif datatype == basic.OUI:
+        field_data['type'] = 'OUI::int_type'
     elif issubclass(datatype, basic.IntegerType):
         field_data['type'] = int_type(datatype.bits, datatype.signed)
-        field_data['bits'] = datatype.bits
     elif issubclass(datatype, basic.FixedPointType):
         field_data['type'] = fixed_type(datatype.bits, datatype.radix) + '::value_type'
-        field_data['bits'] = datatype.bits
         field_data['radix'] = datatype.radix
     elif datatype == basic.Boolean:
         field_data['type'] = 'bool'
-        field_data['bits'] = 1
     return field_data
 
 class Member:
@@ -170,23 +171,8 @@ class BasicMember(Member):
     def __init__(self, name, field):
         super().__init__(name)
         self.field = field
-        # TODO: Fix hack to use a C-style packed field for 24-bit ints
-        if field.bits == 24:
-            if field.type.signed:
-                self.type = 'int'
-            else:
-                self.type = 'unsigned'
-        else:
-            self.type = cpp_type(field.type)
+        self.type = cpp_type(field.type)
         self._add_field_doc(field)
-
-    @property
-    def decl(self):
-        decl = super().decl
-        # TODO: See above
-        if self.field.bits == 24:
-            decl += ':24'
-        return decl
 
 class Reserved:
     def __init__(self, field):
