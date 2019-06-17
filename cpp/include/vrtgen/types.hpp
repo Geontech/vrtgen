@@ -177,7 +177,7 @@ namespace vrtgen {
             }
         };
 
-        template <typename IntT, typename FloatT, unsigned int radix>
+        template <typename IntT, unsigned int radix, typename FloatT=double>
         struct fixed_converter
         {
             typedef IntT int_type;
@@ -195,97 +195,49 @@ namespace vrtgen {
         private:
             static constexpr float_type SCALE = (1 << radix);
         };
-
-        template <typename T>
-        struct int_traits
-        {
-            typedef T packed_type;
-            typedef T value_type;
-            typedef byte_swap<sizeof(T)> swap_type;
-
-            static inline packed_type pack(value_type value)
-            {
-                return swap_type::swap(value);
-            }
-
-            static inline packed_type unpack(value_type value)
-            {
-                return swap_type::swap(value);
-            }
-        };
-
-        template <size_t bytes>
-        struct fixed_type;
-
-        template <>
-        struct fixed_type<2>
-        {
-            typedef float float_type;
-        };
-
-        template <>
-        struct fixed_type<4>
-        {
-            typedef double float_type;
-        };
-
-        template <>
-        struct fixed_type<8>
-        {
-            typedef double float_type;
-        };
-
-        template <typename IntT, unsigned int radix>
-        struct fixed_traits
-        {
-            typedef IntT packed_type;
-            typedef typename fixed_type<sizeof(packed_type)>::float_type value_type;
-
-            typedef fixed_converter<packed_type, value_type, radix> converter_type;
-            typedef byte_swap<sizeof(IntT)> swap_type;
-
-            static inline packed_type pack(value_type value)
-            {
-                return swap_type::swap(converter_type::to_int(value));
-            }
-
-            static inline value_type unpack(packed_type value)
-            {
-                return converter_type::from_int(swap_type::swap(value));
-            }
-        };
     }
 
-    template <typename Traits>
-    struct field
+    template <typename T>
+    struct big_endian
     {
     public:
-        typedef Traits converter;
-        typedef typename converter::value_type value_type;
-        typedef typename converter::packed_type packed_type;
+        typedef T value_type;
+        typedef detail::byte_swap<sizeof(T)> swap_type;
 
-        value_type get() const
+        inline value_type get() const
         {
-            return converter::unpack(m_value);
+            return swap_type::swap(m_value);
         }
 
-        void set(value_type value)
+        inline void set(value_type value)
         {
-            m_value = converter::pack(value);
+            m_value = swap_type::swap(value);
         }
 
     private:
-        packed_type m_value;
+        value_type m_value;
     };
 
-    template <typename T>
-    struct integer : public field<detail::int_traits<T>>
+    template <typename IntT, unsigned int radix, typename FloatT=double>
+    struct fixed
     {
-    };
+    public:
+        typedef IntT int_type;
+        typedef FloatT float_type;
+        typedef detail::fixed_converter<int_type,radix,float_type> converter_type;
 
-    template <typename IntT, unsigned int radix>
-    struct fixed : public field<detail::fixed_traits<IntT,radix>>
-    {
+        inline float_type get() const
+        {
+            return converter_type::from_int(m_value.get());
+        }
+
+        inline void set(float_type value)
+        {
+            m_value.set(converter_type::to_int(value));
+        }
+
+    private:
+        big_endian<int_type> m_value;
     };
 
     class OUI

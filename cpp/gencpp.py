@@ -52,8 +52,13 @@ def int_type(bits, signed):
     return ctype
 
 def fixed_type(bits, radix, signed=True):
-    packed_type = int_type(bits, signed)
-    return 'fixed<{},{}>'.format(packed_type, radix)
+    return 'fixed<{},{},{}>'.format(int_type(bits, signed), radix, float_type(bits))
+
+def float_type(bits):
+    if bits >= 32:
+        return 'double'
+    else:
+        return 'float'
 
 def enum_type(datatype):
     name = name_to_identifier(datatype.__name__)
@@ -66,7 +71,7 @@ def cpp_type(datatype):
         return enum_type(datatype)
     if issubclass(datatype, basic.IntegerType):
         base_type = int_type(datatype.bits, datatype.signed)
-        return 'integer<{}>'.format(base_type)
+        return 'big_endian<{}>'.format(base_type)
     if issubclass(datatype, basic.FixedPointType):
         return fixed_type(datatype.bits, datatype.radix)
     if datatype == basic.Boolean:
@@ -149,7 +154,7 @@ def format_value_methods(field, member):
     elif issubclass(datatype, basic.IntegerType):
         field_data['type'] = int_type(datatype.bits, datatype.signed)
     elif issubclass(datatype, basic.FixedPointType):
-        field_data['type'] = fixed_type(datatype.bits, datatype.radix) + '::value_type'
+        field_data['type'] = float_type(datatype.bits)
         field_data['radix'] = datatype.radix
     elif datatype == basic.Boolean:
         field_data['type'] = 'bool'
