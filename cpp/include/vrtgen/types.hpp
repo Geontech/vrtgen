@@ -6,6 +6,9 @@
 
 #include <inttypes.h>
 
+#include "swap.hpp"
+#include "fixed.hpp"
+
 namespace vrtgen {
     namespace detail {
         template <typename T>
@@ -56,39 +59,6 @@ namespace vrtgen {
         }
     }
 
-    inline uint16_t swap16(uint16_t value)
-    {
-        return (value << 8) | (value >> 8);
-    }
-
-    inline uint32_t swap24(uint32_t value)
-    {
-        return (((value & 0xFF) << 16) |
-                (value & (0xFF << 8)) |
-                ((value >> 16) & 0xFF));
-    }
-
-    inline uint32_t swap32(uint32_t value)
-    {
-        return ((value << 24) |
-                ((value << 8) & (0xFF << 16)) |
-                ((value >> 8) & (0xFF << 8)) |
-                (value >> 24));
-    }
-
-    inline uint64_t swap64(uint64_t value)
-    {
-        const uint64_t mask = 0xFF;
-        return ((value << 56) |
-                ((value << 40) & (mask << 48)) |
-                ((value << 24) & (mask << 40)) |
-                ((value << 8) & (mask << 32)) |
-                ((value >> 8) & (mask << 24)) |
-                ((value >> 24) & (mask << 16)) |
-                ((value >> 40) & (mask << 8)) |
-                (value >> 56));
-    }
-
     inline uint32_t get_int(uint32_t word, size_t pos, size_t bits)
     {
         const uint8_t* data = reinterpret_cast<const uint8_t*>(&word);
@@ -122,123 +92,6 @@ namespace vrtgen {
         size_t bit_offset = detail::adjust_pointer(data, pos);
         detail::set_int(data, bit_offset, bits, value);
     }
-
-    namespace detail {
-        template <unsigned int bytes>
-        struct byte_swap;
-
-        template <>
-        struct byte_swap<1>
-        {
-            typedef uint8_t int_type;
-            static inline int_type swap(int_type value)
-            {
-                return value;
-            }
-        };
-
-        template <>
-        struct byte_swap<2>
-        {
-            typedef uint16_t int_type;
-            static inline int_type swap(int_type value)
-            {
-                return swap16(value);
-            }
-        };
-
-        template <>
-        struct byte_swap<3>
-        {
-            typedef uint32_t int_type;
-            static inline int_type swap(int_type value)
-            {
-                return swap24(value);
-            }
-        };
-
-        template <>
-        struct byte_swap<4>
-        {
-            typedef uint32_t int_type;
-            static inline int_type swap(int_type value)
-            {
-                return swap32(value);
-            }
-        };
-
-        template <>
-        struct byte_swap<8>
-        {
-            typedef uint64_t int_type;
-            static inline int_type swap(int_type value)
-            {
-                return swap64(value);
-            }
-        };
-
-        template <typename IntT, unsigned int radix, typename FloatT=double>
-        struct fixed_converter
-        {
-            typedef IntT int_type;
-            typedef FloatT float_type;
-
-            static inline int_type to_int(float_type value)
-            {
-                return static_cast<int_type>(std::round(value * SCALE));
-            }
-
-            static inline float_type from_int(int_type value)
-            {
-                return value / SCALE;
-            }
-        private:
-            static constexpr float_type SCALE = (1 << radix);
-        };
-    }
-
-    template <typename T>
-    struct big_endian
-    {
-    public:
-        typedef T value_type;
-        typedef detail::byte_swap<sizeof(T)> swap_type;
-
-        inline value_type get() const
-        {
-            return swap_type::swap(m_value);
-        }
-
-        inline void set(value_type value)
-        {
-            m_value = swap_type::swap(value);
-        }
-
-    private:
-        value_type m_value;
-    };
-
-    template <typename IntT, unsigned int radix, typename FloatT=double>
-    struct fixed
-    {
-    public:
-        typedef IntT int_type;
-        typedef FloatT float_type;
-        typedef detail::fixed_converter<int_type,radix,float_type> converter_type;
-
-        inline float_type get() const
-        {
-            return converter_type::from_int(m_value.get());
-        }
-
-        inline void set(float_type value)
-        {
-            m_value.set(converter_type::to_int(value));
-        }
-
-    private:
-        big_endian<int_type> m_value;
-    };
 
     class OUI
     {
