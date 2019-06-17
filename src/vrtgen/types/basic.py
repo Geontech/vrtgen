@@ -1,13 +1,46 @@
 """
 Basic data types used in VITA 49 structures and fields.
 """
-class Boolean:
+class BooleanType:
+    """
+    Base type for boolean value types.
+
+    In most cases, the standard Boolean class should be used instead of
+    creating a custom subclass; however, it is possible to create multi-bit
+    booleans (as used in some enable fields) as subclasses.
+    """
+    __cached__ = {}
+
+    def __new__(cls, value=False):
+        return bool(value)
+
+    def __init_subclass__(cls, bits, **kwds):
+        super().__init_subclass__(**kwds)
+        cls.bits = bits
+
+    @staticmethod
+    def create(bits):
+        """
+        Creates new boolean types dynamically.
+
+        If a boolean type has already been created with the same number of
+        bits, returns the existing class object.
+        """
+        if bits == 1:
+            return Boolean
+        key = bits
+        existing = BooleanType.__cached__.get(key, None)
+        if existing:
+            return existing
+        name = 'Boolean{:d}'.format(bits)
+        newclass = type(name, (BooleanType,), {}, bits=bits)
+        BooleanType.__cached__[key] = newclass
+        return newclass
+
+class Boolean(BooleanType, bits=1):
     """
     One-bit boolean value type.
     """
-    bits = 1
-    def __new__(cls, value=False):
-        return bool(value)
 
 class IntegerType(int):
     """

@@ -12,12 +12,12 @@ struct ${struct.name} {
      */
     ${field.type} ${field.getter.name}() const
     {
-//%     if field.type == 'bool'
-        return GET_BIT32(${member.name}, ${field.offset});
+//%     if field.tag
+        return ${member.name}.get(${field.tag}());
 //%     elif field.bits % 8 == 0
         return ${member.name}.get();
 //%     else
-        return (${field.type}) vrtgen::get_int(${member.name}, ${field.offset}, ${field.bits});
+        return ${member.name};
 //%     endif
     }
 
@@ -26,12 +26,13 @@ struct ${struct.name} {
      */
     void ${field.setter.name}(${field.type} value)
     {
-//%     if field.type == 'bool'
-        SET_BIT32(${member.name}, ${field.offset}, value);
+//%     if field.tag
+        ${member.name}.set(value, ${field.tag}());
 //%     elif field.bits % 8 == 0
         ${member.name}.set(value);
 //%     else
-        vrtgen::set_int(${member.name}, ${field.offset}, ${field.bits}, value);
+        int_tag<${field.type},${field.offset},${field.bits}> tag;
+        ${member.name}.set(value, tag);
 //%     endif
     }
 
@@ -43,6 +44,9 @@ private:
      * ${line}
 //%      endfor
      */
+//%      for tag in member.tags
+    typedef ${tag.type} ${tag.name};
+//%      endfor
     ${member.decl};
 /*{%     if not loop.last %}*/
 
@@ -56,7 +60,6 @@ private:
 
 #include <vrtgen/types.hpp>
 #include <vrtgen/enums.hpp>
-#include <vrtgen/utils/macros.hpp>
 
 namespace vrtgen {
     namespace packing {

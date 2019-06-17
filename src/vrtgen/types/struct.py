@@ -33,19 +33,8 @@ class Enable(StructItem):
         # In some cases, such as Sample Frame in the data trailer, an enable
         # may be more than one bit. All bits must be set or clear to indicate
         # the state of the enable.
-        super().__init__(None, basic.IntegerType.create(bits), False)
+        super().__init__(None, basic.BooleanType.create(bits), False)
         self.indicator = None
-
-    def __get__(self, instance, owner):
-        if instance is None:
-            return self
-        value = super().__get__(instance, owner)
-        return bool(value)
-
-    def __set__(self, instance, value):
-        # -1 is a shortcut to "all bits set" for signed integers
-        intval = -1 if value else 0
-        super().__set__(instance, intval)
 
     def __set_name__(self, owner, name):
         # By the time the attribute name is being set (i.e., after the class

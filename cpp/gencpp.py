@@ -64,7 +64,19 @@ def enum_type(datatype):
     name = name_to_identifier(datatype.__name__)
     return 'vrtgen::{}::Code'.format(name)
 
-def cpp_type(datatype):
+def value_type(datatype):
+    if issubclass(datatype, enums.BinaryEnum):
+        return enum_type(datatype)
+    if datatype == basic.OUI:
+        return 'OUI::int_type'
+    if issubclass(datatype, basic.IntegerType):
+        return int_type(datatype.bits, datatype.signed)
+    if issubclass(datatype, basic.FixedPointType):
+        return float_type(datatype.bits)
+    if issubclass(datatype, basic.BooleanType):
+        return 'bool'
+
+def member_type(datatype):
     if datatype == basic.OUI:
         return 'OUI'
     if issubclass(datatype, enums.BinaryEnum):
@@ -74,8 +86,6 @@ def cpp_type(datatype):
         return 'big_endian<{}>'.format(base_type)
     if issubclass(datatype, basic.FixedPointType):
         return fixed_type(datatype.bits, datatype.radix)
-    if datatype == basic.Boolean:
-        return 'bool'
     raise NotImplementedError(datatype.__name__)
 
 def format_docstring(doc):
@@ -97,6 +107,12 @@ def name_to_identifier(name):
         elif ch in '.':
             identifier += '_'
     return identifier
+
+def tag_name(field):
+    return field.attr + '_tag'
+
+def tag_type(field):
+    return 'packed_tag<{},{},{}>'.format(value_type(field.type), field.offset, field.bits)
 
 def format_enum(enum):
     # Create a format string that returns a binary constant zero-padded to the
@@ -127,6 +143,7 @@ def format_enable_methods(field, member, name=None):
         'offset': field.offset,
         'type': 'bool',
         'member': member,
+        'tag': tag_name(field)
     }
 
 def format_value_methods(field, member):
@@ -144,20 +161,13 @@ def format_value_methods(field, member):
         'word': field.word,
         'offset': field.offset,
         'member': member,
+        'type': value_type(field.type),
         'bits': field.type.bits,
     }
-    datatype = field.type
-    if issubclass(datatype, enums.BinaryEnum):
-        field_data['type'] = enum_type(datatype)
-    elif datatype == basic.OUI:
-        field_data['type'] = 'OUI::int_type'
-    elif issubclass(datatype, basic.IntegerType):
-        field_data['type'] = int_type(datatype.bits, datatype.signed)
-    elif issubclass(datatype, basic.FixedPointType):
-        field_data['type'] = float_type(datatype.bits)
-        field_data['radix'] = datatype.radix
-    elif datatype == basic.Boolean:
-        field_data['type'] = 'bool'
+
+    if isinstance(member, Packed):
+        field_data['tag'] = tag_name(field)
+
     return field_data
 
 class Member:
@@ -176,7 +186,7 @@ class BasicMember(Member):
     def __init__(self, name, field):
         super().__init__(name)
         self.field = field
-        self.type = cpp_type(field.type)
+        self.type = member_type(field.type)
         self._add_field_doc(field)
 
 class Reserved:
@@ -191,10 +201,11 @@ class Packed(Member):
         super().__init__(name)
         self.offset = offset
         self.bits = 0
+        self.tags = []
 
     @property
     def type(self):
-        return int_type(self.bits, False)
+        return 'packed<{}>'.format(int_type(self.bits, False))
 
     def full(self):
         assert self.offset >= 0
@@ -205,6 +216,11 @@ class Packed(Member):
         assert self.offset - self.bits == field.offset
         self.bits += field.bits
         self._add_field_doc(field)
+        tag = {
+            'name': tag_name(field),
+            'type': tag_type(field),
+        }
+        self.tags.append(tag)
 
 class CppStruct:
     def __init__(self, structdef):
