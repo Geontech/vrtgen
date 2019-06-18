@@ -112,7 +112,17 @@ def tag_name(field):
     return field.attr + '_tag'
 
 def tag_type(field):
-    return 'packed_tag<{},{},{}>'.format(value_type(field.type), field.offset, field.bits)
+    if issubclass(field.type, basic.IntegerType):
+        # Use unsized types that only signify signed/unsigned since the size
+        # is included in the template arguments. This simplifies the
+        # implementation of sign extension.
+        if field.type.signed:
+            ctype = 'signed'
+        else:
+            ctype = 'unsigned'
+    else:
+        ctype = value_type(field.type)
+    return 'packed_tag<{},{},{}>'.format(ctype, field.offset, field.bits)
 
 def format_enum(enum):
     # Create a format string that returns a binary constant zero-padded to the

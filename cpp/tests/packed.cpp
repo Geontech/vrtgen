@@ -50,7 +50,7 @@ TEST_CASE("32-bit packed", "[pack]")
     }
 
     SECTION("4-bit integer (31)") {
-        typedef packed_tag<uint8_t,31,4> tag_type;
+        typedef packed_tag<unsigned,31,4> tag_type;
         SECTION("get") {
             data[0] = 0xEF; // low nibble part of a different field
             CHECK(value.get(tag_type()) == 14);
@@ -62,7 +62,7 @@ TEST_CASE("32-bit packed", "[pack]")
     }
 
     SECTION("7-bit integer (6)") {
-        typedef packed_tag<uint8_t,6,7> tag_type;
+        typedef packed_tag<unsigned,6,7> tag_type;
         SECTION("get") {
             data[3] = 0xF1; // high bit part of a different field
             CHECK(value.get(tag_type()) == 0x71);
@@ -74,7 +74,7 @@ TEST_CASE("32-bit packed", "[pack]")
     }
 
     SECTION("12-bit integer (23)") {
-        typedef packed_tag<uint16_t,23,12> tag_type;
+        typedef packed_tag<unsigned,23,12> tag_type;
         SECTION("get") {
             data[1] = 0x95;
             data[2] = 0x2F; // low nibble part of a different field
@@ -83,6 +83,24 @@ TEST_CASE("32-bit packed", "[pack]")
         SECTION("set") {
             value.set(0xABC, tag_type());
             CHECK(data == bytes({ 0x00, 0xAB, 0xC0, 0x00 }));
+        }
+    }
+
+    SECTION("Set 2-bit boolean") {
+        typedef packed_tag<bool,23,2> tag_type;
+        value.set(true, tag_type());
+        CHECK(data == bytes({ 0x00, 0xC0, 0x00, 0x00}));
+    }
+
+    SECTION("Signed fields") {
+        typedef packed_tag<signed,12,5> tag_type;
+        SECTION("get") {
+            data[2] = 0x10;
+            CHECK(value.get(tag_type()) == -16);
+        }
+        SECTION("set") {
+            value.set(-1, tag_type());
+            CHECK(data == bytes({ 0x00, 0x00, 0x1F, 0x00}));
         }
     }
 }

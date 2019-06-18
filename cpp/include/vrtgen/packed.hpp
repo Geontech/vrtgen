@@ -20,7 +20,51 @@ namespace vrtgen {
 #endif
             static constexpr unsigned mask = 1 << bit_traits::offset;
         };
+
+        template <typename T, unsigned bits>
+        struct field_traits_base
+        {
+            static inline T unpack(unsigned value)
+            {
+                return static_cast<T>(value);
+            }
+
+            static inline unsigned pack(T value)
+            {
+                return static_cast<unsigned>(value) & field_traits_base::mask;
+            }
+
+            static constexpr unsigned mask = (1 << bits) - 1;
+        };
+
+        template <typename T, unsigned bits>
+        struct field_traits : public field_traits_base<T,bits>
+        {
+        };
+
+        template <unsigned bits>
+        struct field_traits<bool,bits> : public field_traits_base<bool,bits>
+        {
+            static inline unsigned pack(bool value)
+            {
+                return -1 & field_traits::mask;
+            }
+        };
+
+        template <unsigned bits>
+        struct field_traits<signed,bits> : public field_traits_base<signed,bits>
+        {
+            static inline signed unpack(unsigned value)
+            {
+                bool sign_bit = value & (1<<(bits-1));
+                if (sign_bit) {
+                    value |= ~field_traits::mask;
+                }
+                return value;
+            }
+        };
     }
+
     template <typename T, unsigned pos, unsigned bits>
     struct packed_tag
     {
@@ -49,16 +93,18 @@ namespace vrtgen {
         template <typename T, unsigned pos, unsigned bits>
         inline T get(packed_tag<T,pos,bits>) const
         {
+            typedef detail::field_traits<T,bits> traits;
             constexpr unsigned offset = pos % ((sizeof(value_type) * 8));
             constexpr unsigned shift = offset - bits + 1;
             constexpr unsigned mask = (1 << bits) - 1;
-            return static_cast<T>((swap_type::swap(m_value) >> shift) & mask);
+            return traits::unpack((swap_type::swap(m_value) >> shift) & mask);
         }
 
         template <typename Tin, typename T, unsigned pos, unsigned bits>
         inline void set(Tin value, packed_tag<T,pos,bits>)
         {
-            T field_value = static_cast<T>(value);
+            typedef detail::field_traits<T,bits> traits;
+            value_type field_value = traits::pack(value);
             constexpr unsigned offset = pos % ((sizeof(value_type) * 8));
             constexpr unsigned shift = offset - bits + 1;
             const unsigned mask = swap_type::swap(((1 << bits) - 1) << shift);
