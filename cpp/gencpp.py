@@ -10,7 +10,7 @@ from vrtgen.types import prologue
 from vrtgen.types import trailer
 from vrtgen.types import cif0
 from vrtgen.types import cif1
-from vrtgen.types.struct import Struct
+from vrtgen.types import struct
 
 JINJA_OPTIONS = {
     'trim_blocks':           True,
@@ -33,7 +33,7 @@ def is_enum(obj):
 
 def get_structs(module):
     def is_struct(obj):
-        if not inspect.isclass(obj) or not issubclass(obj, Struct):
+        if not inspect.isclass(obj) or not issubclass(obj, struct.Struct):
             return False
         return obj.__module__ == module.__name__
     return [cls for _, cls in inspect.getmembers(module, is_struct)]
@@ -139,8 +139,6 @@ def format_enable_methods(field, member, name=None):
             'doc': 'Set enabled state of ' + name,
             'name' : 'set'+identifier,
         },
-        'word': field.word,
-        'offset': field.offset,
         'type': 'bool',
         'member': member,
         'tag': tag_name(field)
@@ -158,8 +156,6 @@ def format_value_methods(field, member):
             'doc': 'Set current value of ' + field.name,
             'name' : 'set'+identifier,
         },
-        'word': field.word,
-        'offset': field.offset,
         'member': member,
         'type': value_type(field.type),
         'bits': field.type.bits,
@@ -216,11 +212,12 @@ class Packed(Member):
         assert self.offset - self.bits == field.offset
         self.bits += field.bits
         self._add_field_doc(field)
-        tag = {
-            'name': tag_name(field),
-            'type': tag_type(field),
-        }
-        self.tags.append(tag)
+        if not isinstance(field, struct.Reserved):
+            tag = {
+                'name': tag_name(field),
+                'type': tag_type(field),
+            }
+            self.tags.append(tag)
 
 class CppStruct:
     def __init__(self, structdef):

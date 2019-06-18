@@ -31,8 +31,7 @@ struct ${struct.name} {
 //%     elif field.bits % 8 == 0
         ${member.name}.set(value);
 //%     else
-        int_tag<${field.type},${field.offset},${field.bits}> tag;
-        ${member.name}.set(value, tag);
+        ${member.name} = value;
 //%     endif
     }
 
