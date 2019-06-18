@@ -9,8 +9,8 @@ set(generated_header_files
     ${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen/enums.hpp
 )
 set(header_files
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/utils/macros.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/fixed.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packed.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/swap.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types.hpp
 )
