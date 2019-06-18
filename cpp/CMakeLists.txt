@@ -54,6 +54,7 @@ target_include_directories(Catch2 INTERFACE
 
 add_executable(test_libvrtgen
     tests/main.cpp
+    tests/packed.cpp
     tests/prologue.cpp
     tests/utils.cpp
 )
@@ -64,7 +65,7 @@ target_compile_features(test_libvrtgen PRIVATE cxx_std_11)
 
 add_custom_target(check
     COMMAND
-        ${CMAKE_CURRENT_BINARY_DIR}/test_libvrtgen ${TEST_OPTIONS}
+        ${CMAKE_CURRENT_BINARY_DIR}/test_libvrtgen $(TEST_OPTIONS)
     DEPENDS
         test_libvrtgen
 )

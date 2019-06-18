@@ -39,8 +39,8 @@ namespace vrtgen {
             return static_cast<T>((m_value >> traits::offset) & 1);
         }
 
-        template <typename T, unsigned pos>
-        inline void set(T value, packed_tag<T,pos,1>)
+        template <typename Tin, typename T, unsigned pos>
+        inline void set(Tin value, packed_tag<T,pos,1>)
         {
             typedef detail::bit_traits<pos> traits;
             m_value = (m_value & ~traits::mask) | (bool(value) << traits::offset);
@@ -55,13 +55,14 @@ namespace vrtgen {
             return static_cast<T>((swap_type::swap(m_value) >> shift) & mask);
         }
 
-        template <typename T, unsigned pos, unsigned bits>
-        inline void set(T value, packed_tag<T,pos,bits>)
+        template <typename Tin, typename T, unsigned pos, unsigned bits>
+        inline void set(Tin value, packed_tag<T,pos,bits>)
         {
+            T field_value = static_cast<T>(value);
             constexpr unsigned offset = pos % ((sizeof(value_type) * 8));
             constexpr unsigned shift = offset - bits + 1;
             const unsigned mask = swap_type::swap(((1 << bits) - 1) << shift);
-            m_value = (m_value & ~mask) | swap_type::swap(value << shift);
+            m_value = (m_value & ~mask) | swap_type::swap(field_value << shift);
         }
 
     private:
