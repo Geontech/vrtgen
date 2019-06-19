@@ -104,3 +104,113 @@ TEST_CASE("32-bit packed", "[pack]")
         }
     }
 }
+
+TEST_CASE("16-bit packed", "[pack]")
+{
+    bytes data = { 0, 0 };
+    packed<uint16_t>& value = *reinterpret_cast<packed<uint16_t>*>(data.data());
+
+    SECTION("1-bit boolean (15)") {
+        typedef packed_tag<bool,15,1> tag_type;
+        SECTION("get") {
+            data[0] = 0x80;
+            CHECK(value.get(tag_type()));
+        }
+        SECTION("set") {
+            value.set(true, tag_type());
+            CHECK(data == bytes({ 0x80, 0x00 }));
+        }
+    }
+
+    SECTION("1-bit boolean (9)") {
+        typedef packed_tag<bool,9,1> tag_type;
+        SECTION("get") {
+            data[0] = 0x02;
+            CHECK(value.get(tag_type()));
+        }
+        SECTION("set") {
+            data = { 0xFF, 0xFF };
+            value.set(false, tag_type());
+            CHECK(data == bytes({ 0xFD, 0xFF }));
+        }
+    }
+
+    SECTION("1-bit boolean (0)") {
+        typedef packed_tag<bool,0,1> tag_type;
+        SECTION("get") {
+            data[1] = 0x01;
+            CHECK(value.get(tag_type()));
+        }
+        SECTION("set") {
+            value.set(true, tag_type());
+            CHECK(data == bytes({ 0x00, 0x01 }));
+        }
+    }
+
+    SECTION("7-bit integer (6)") {
+        typedef packed_tag<unsigned,6,7> tag_type;
+        SECTION("get") {
+            data[1] = 0xF1; // high bit part of a different field
+            CHECK(value.get(tag_type()) == 0x71);
+        }
+        SECTION("set") {
+            value.set(0x41, tag_type());
+            CHECK(data == bytes({ 0x00, 0x41 }));
+        }
+    }
+}
+
+TEST_CASE("8-bit packed", "[pack]")
+{
+    bytes data = { 0 };
+    packed<uint8_t>& value = *reinterpret_cast<packed<uint8_t>*>(data.data());
+
+    SECTION("1-bit boolean (7)") {
+        typedef packed_tag<bool,7,1> tag_type;
+        SECTION("get") {
+            data[0] = 0x80;
+            CHECK(value.get(tag_type()));
+        }
+        SECTION("set") {
+            value.set(true, tag_type());
+            CHECK(data == bytes({ 0x80 }));
+        }
+    }
+
+    SECTION("1-bit boolean (4)") {
+        typedef packed_tag<bool,4,1> tag_type;
+        SECTION("get") {
+            data[0] = 0x10;
+            CHECK(value.get(tag_type()));
+        }
+        SECTION("set") {
+            data = { 0xFF };
+            value.set(false, tag_type());
+            CHECK(data == bytes({ 0xEF }));
+        }
+    }
+
+    SECTION("1-bit boolean (0)") {
+        typedef packed_tag<bool,0,1> tag_type;
+        SECTION("get") {
+            data[0] = 0x01;
+            CHECK(value.get(tag_type()));
+        }
+        SECTION("set") {
+            value.set(true, tag_type());
+            CHECK(data == bytes({ 0x01 }));
+        }
+    }
+
+    SECTION("4-bit integer (7)") {
+        typedef packed_tag<unsigned,7,4> tag_type;
+        SECTION("get") {
+            data[0] = 0xEF; // low nibble part of a different field
+            CHECK(value.get(tag_type()) == 14);
+        }
+        SECTION("set") {
+            value.set(9, tag_type());
+            CHECK(data == bytes({ 0x90 }));
+        }
+    }
+}

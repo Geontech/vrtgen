@@ -111,19 +111,6 @@ def name_to_identifier(name):
 def tag_name(field):
     return field.attr + '_tag'
 
-def tag_type(field):
-    if issubclass(field.type, basic.IntegerType):
-        # Use unsized types that only signify signed/unsigned since the size
-        # is included in the template arguments. This simplifies the
-        # implementation of sign extension.
-        if field.type.signed:
-            ctype = 'signed'
-        else:
-            ctype = 'unsigned'
-    else:
-        ctype = value_type(field.type)
-    return 'packed_tag<{},{},{}>'.format(ctype, field.offset, field.bits)
-
 def format_enum(enum):
     # Create a format string that returns a binary constant zero-padded to the
     # number of bits, e.g.: "0b0001"
@@ -202,6 +189,29 @@ class Reserved:
         self.decl = '{} {}:{}'.format(self.type, self.name, field.bits)
         self.doc = ['Reserved {}/{}'.format(field.word, field.offset)]
 
+class Tag:
+    def __init__(self, field):
+        self.name = tag_name(field)
+        self.offset = field.offset
+        self.basetype = Tag._base_type(field.type)
+        self.bits = field.bits
+
+    @property
+    def type(self):
+        return 'packed_tag<{},{},{}>'.format(self.basetype, self.offset, self.bits)
+
+    @staticmethod
+    def _base_type(datatype):
+        if issubclass(datatype, basic.IntegerType):
+            # Use unsized types that only signify signed/unsigned since the size
+            # is included in the template arguments. This simplifies the
+            # implementation of sign extension.
+            if datatype.signed:
+                return 'signed'
+            else:
+                return 'unsigned'
+        return value_type(datatype)
+
 class Packed(Member):
     def __init__(self, name, offset):
         super().__init__(name)
@@ -217,16 +227,19 @@ class Packed(Member):
         assert self.offset >= 0
         return (1 + self.offset - self.bits) == 0
 
+    def close(self):
+        # Limit the offset of tags to fall within the bit size of the packed
+        # container.
+        for tag in self.tags:
+            tag.offset = tag.offset % self.bits
+
     def link_field(self, field):
         # Check for wraparound into the next word
         assert self.offset - self.bits == field.offset
         self.bits += field.bits
         self._add_field_doc(field)
         if not isinstance(field, struct.Reserved):
-            tag = {
-                'name': tag_name(field),
-                'type': tag_type(field),
-            }
+            tag = Tag(field)
             self.tags.append(tag)
 
 class CppStruct:
@@ -288,6 +301,7 @@ class CppStruct:
 
     def _close_packed(self):
         assert self._packed.bits % 8 == 0
+        self._packed.close()
         self._packed = None
 
     def _add_member(self, field):

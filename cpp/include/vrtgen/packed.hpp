@@ -6,17 +6,16 @@
 
 namespace vrtgen {
     namespace detail {
-        template <unsigned pos>
+        template <unsigned bytes, unsigned pos>
         struct bit_traits
         {
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
             // Big-endian, bit position is pass-through.
             static constexpr unsigned offset = pos;
 #else
-            // Little-endian, swap the byte offset. This expression is expected to be used
-            // with constant values for b, where the final value is calculated at compile
-            // time.
-            static constexpr unsigned offset = ((8*(3-(pos/8)))+(pos&0x7));
+            // Little-endian, keep the  bit offset (lower 3 bits) but swap the
+            // byte offset (upper bits).
+            static constexpr unsigned offset = ((8*(bytes-1-(pos/8)))+(pos&0x7));
 #endif
             static constexpr unsigned mask = 1 << bit_traits::offset;
         };
@@ -79,23 +78,25 @@ namespace vrtgen {
         template <typename T, unsigned pos>
         inline T get(packed_tag<T,pos,1>) const
         {
-            typedef detail::bit_traits<pos> traits;
+            static_assert(pos < packed::BITS, "bit position exceeds size of packed value");
+            typedef detail::bit_traits<sizeof(value_type),pos> traits;
             return static_cast<T>((m_value >> traits::offset) & 1);
         }
 
         template <typename Tin, typename T, unsigned pos>
         inline void set(Tin value, packed_tag<T,pos,1>)
         {
-            typedef detail::bit_traits<pos> traits;
+            static_assert(pos < packed::BITS, "bit position exceeds size of packed value");
+            typedef detail::bit_traits<sizeof(value_type),pos> traits;
             m_value = (m_value & ~traits::mask) | (bool(value) << traits::offset);
         }
 
         template <typename T, unsigned pos, unsigned bits>
         inline T get(packed_tag<T,pos,bits>) const
         {
+            static_assert(pos < packed::BITS, "bit position exceeds size of packed value");
             typedef detail::field_traits<T,bits> traits;
-            constexpr unsigned offset = pos % ((sizeof(value_type) * 8));
-            constexpr unsigned shift = offset - bits + 1;
+            constexpr unsigned shift = pos - bits + 1;
             constexpr unsigned mask = (1 << bits) - 1;
             return traits::unpack((swap_type::swap(m_value) >> shift) & mask);
         }
@@ -103,15 +104,17 @@ namespace vrtgen {
         template <typename Tin, typename T, unsigned pos, unsigned bits>
         inline void set(Tin value, packed_tag<T,pos,bits>)
         {
+            static_assert(pos < packed::BITS, "bit position exceeds size of packed value");
             typedef detail::field_traits<T,bits> traits;
             value_type field_value = traits::pack(value);
-            constexpr unsigned offset = pos % ((sizeof(value_type) * 8));
-            constexpr unsigned shift = offset - bits + 1;
+            constexpr unsigned shift = pos - bits + 1;
             const unsigned mask = swap_type::swap(((1 << bits) - 1) << shift);
             m_value = (m_value & ~mask) | swap_type::swap(field_value << shift);
         }
 
     private:
+        static constexpr unsigned BITS = sizeof(value_type) * 8;
+
         typedef detail::byte_swap<sizeof(value_type)> swap_type;
 
         value_type m_value;
