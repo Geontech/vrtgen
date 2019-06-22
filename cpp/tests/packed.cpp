@@ -85,24 +85,6 @@ TEST_CASE("32-bit packed", "[pack]")
             CHECK(data == bytes({ 0x00, 0xAB, 0xC0, 0x00 }));
         }
     }
-
-    SECTION("Set 2-bit boolean") {
-        typedef packed_tag<bool,23,2> tag_type;
-        value.set(true, tag_type());
-        CHECK(data == bytes({ 0x00, 0xC0, 0x00, 0x00}));
-    }
-
-    SECTION("Signed fields") {
-        typedef packed_tag<signed,12,5> tag_type;
-        SECTION("get") {
-            data[2] = 0x10;
-            CHECK(value.get(tag_type()) == -16);
-        }
-        SECTION("set") {
-            value.set(-1, tag_type());
-            CHECK(data == bytes({ 0x00, 0x00, 0x1F, 0x00}));
-        }
-    }
 }
 
 TEST_CASE("16-bit packed", "[pack]")
@@ -212,5 +194,35 @@ TEST_CASE("8-bit packed", "[pack]")
             value.set(9, tag_type());
             CHECK(data == bytes({ 0x90 }));
         }
+    }
+}
+
+TEST_CASE("Packed special cases", "[pack]")
+{
+    bytes data = { 0, 0 };
+    packed<uint16_t>& value = *reinterpret_cast<packed<uint16_t>*>(data.data());
+
+    SECTION("Set 2-bit boolean") {
+        typedef packed_tag<bool,7,2> tag_type;
+        value.set(true, tag_type());
+        CHECK(data == bytes({ 0x00, 0xC0 }));
+    }
+
+    SECTION("Signed fields") {
+        typedef packed_tag<signed,12,5> tag_type;
+        SECTION("get") {
+            data[0] = 0x10;
+            CHECK(value.get(tag_type()) == -16);
+        }
+        SECTION("set") {
+            value.set(-1, tag_type());
+            CHECK(data == bytes({ 0x1F, 0x00 }));
+        }
+    }
+
+    SECTION("Truncation") {
+        typedef packed_tag<unsigned,3,4> tag_type;
+        value.set(31, tag_type());
+        CHECK(data == bytes({ 0x00, 0x0F }));
     }
 }
