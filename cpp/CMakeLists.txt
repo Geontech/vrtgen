@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.13)
 include(GNUInstallDirs)
 
+# On Mac OS X, give the system installation lowest priority so that virtual
+# environments can be found
+set(CMAKE_FIND_FRAMEWORK "last")
+find_package(Python3 REQUIRED)
+
 set(generated_header_files
     ${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen/packing/cif0.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen/packing/cif1.hpp
@@ -21,7 +26,7 @@ add_custom_command(
     OUTPUT
         ${generated_header_files}
     COMMAND
-        python3 ${CMAKE_CURRENT_SOURCE_DIR}/gencpp.py
+        ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gencpp.py
     DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/gencpp.py
         ${CMAKE_CURRENT_SOURCE_DIR}/templates/enums.hpp
