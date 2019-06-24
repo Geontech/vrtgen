@@ -13,6 +13,8 @@ from vrtgen.types import cif0
 from vrtgen.types import cif1
 from vrtgen.types import struct
 
+from vrtgen.backend.cpp import types as cpptypes
+
 JINJA_OPTIONS = {
     'trim_blocks':           True,
     'line_statement_prefix': '//%',
@@ -39,41 +41,20 @@ def get_structs(module):
         return obj.__module__ == module.__name__
     return [cls for _, cls in inspect.getmembers(module, is_struct)]
 
-def int_type(bits, signed):
-    if bits > 32:
-        ctype = 'int64_t'
-    elif bits > 16:
-        ctype = 'int32_t'
-    elif bits > 8:
-        ctype = 'int16_t'
-    else:
-        ctype = 'int8_t'
-    if not signed:
-        ctype = 'u' + ctype
-    return ctype
-
 def fixed_type(bits, radix, signed=True):
-    return 'fixed<{},{},{}>'.format(int_type(bits, signed), radix, float_type(bits))
-
-def float_type(bits):
-    if bits >= 32:
-        return 'double'
-    else:
-        return 'float'
-
-def enum_type(datatype):
-    name = name_to_identifier(datatype.__name__)
-    return 'vrtgen::{}::Code'.format(name)
+    int_type = cpptypes.int_type(bits, signed)
+    float_type = cpptypes.float_type(bits)
+    return 'fixed<{},{},{}>'.format(int_type, radix, float_type)
 
 def value_type(datatype):
     if issubclass(datatype, enums.BinaryEnum):
-        return enum_type(datatype)
+        return cpptypes.enum_type(datatype)
     if datatype == basic.OUI:
         return 'OUI::int_type'
     if issubclass(datatype, basic.IntegerType):
-        return int_type(datatype.bits, datatype.signed)
+        return cpptypes.int_type(datatype.bits, datatype.signed)
     if issubclass(datatype, basic.FixedPointType):
-        return float_type(datatype.bits)
+        return cpptypes.float_type(datatype.bits)
     if issubclass(datatype, basic.BooleanType):
         return 'bool'
 
@@ -81,9 +62,9 @@ def member_type(datatype):
     if datatype == basic.OUI:
         return 'OUI'
     if issubclass(datatype, enums.BinaryEnum):
-        return enum_type(datatype)
+        return cpptypes.enum_type(datatype)
     if issubclass(datatype, basic.IntegerType):
-        base_type = int_type(datatype.bits, datatype.signed)
+        base_type = cpptypes.int_type(datatype.bits, datatype.signed)
         return 'big_endian<{}>'.format(base_type)
     if issubclass(datatype, basic.FixedPointType):
         return fixed_type(datatype.bits, datatype.radix)
@@ -99,15 +80,6 @@ def format_docstring(doc):
         indent += 1
     for line in doc.rstrip().split('\n'):
         yield line[indent:]
-
-def name_to_identifier(name):
-    identifier = ''
-    for ch in name:
-        if ch.isalnum():
-            identifier += ch
-        elif ch in '.':
-            identifier += '_'
-    return identifier
 
 def tag_name(field):
     return field.attr + '_tag'
@@ -126,7 +98,7 @@ def format_enum(enum):
 def format_enable_methods(field, member, name=None):
     if name is None:
         name = field.name
-    identifier = name_to_identifier(name + 'Enabled')
+    identifier = cpptypes.name_to_identifier(name + 'Enabled')
     return {
         'name': name,
         'getter': {
@@ -143,7 +115,7 @@ def format_enable_methods(field, member, name=None):
     }
 
 def format_value_methods(field, member):
-    identifier = name_to_identifier(field.name)
+    identifier = cpptypes.name_to_identifier(field.name)
     field_data = {
         'name': field.name,
         'getter': {
@@ -186,7 +158,7 @@ class BasicMember(Member):
 
 class Reserved(Member):
     def __init__(self, name, field):
-        super().__init__(name, int_type(field.bits, False))
+        super().__init__(name, cpptypes.int_type(field.bits, False))
         self.doc = ['Reserved {}/{}'.format(field.word, field.offset)]
 
 class Tag:
@@ -242,7 +214,7 @@ class Packed(Member):
 
     @staticmethod
     def packed_type(bits):
-        return 'packed<{}>'.format(int_type(bits, False))
+        return 'packed<{}>'.format(cpptypes.int_type(bits, False))
 
 class CppStruct:
     def __init__(self, structdef):
@@ -312,7 +284,7 @@ class CppStruct:
         self._current_packed = None
 
     def _add_member(self, field):
-        name = name_to_identifier(field.name)
+        name = cpptypes.name_to_identifier(field.name)
         member = BasicMember(name, field)
         self.members.append(member)
         return member

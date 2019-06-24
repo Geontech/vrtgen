@@ -4,8 +4,13 @@ import jinja2
 
 from vrtgen.model import config
 from vrtgen.model.field import Scope
+from vrtgen.types import basic
+from vrtgen.types import enums
+from vrtgen.types import struct
 
 from vrtgen.backend.generator import Generator
+
+from . import types as cpptypes
 
 JINJA_OPTIONS = {
     'trim_blocks':           True,
@@ -27,14 +32,41 @@ def get_default(value, defval):
     else:
         return value
 
+def value_type(datatype):
+    if issubclass(datatype, basic.BooleanType):
+        return 'bool'
+    if issubclass(datatype, enums.BinaryEnum):
+        return cpptypes.enum_type(datatype)
+    if issubclass(datatype, basic.FixedPointType):
+        return cpptypes.float_type(datatype.bits)
+    if issubclass(datatype, basic.IntegerType):
+        return cpptypes.int_type(datatype.bits, datatype.signed)
+    if issubclass(datatype, struct.Struct):
+        return cpptypes.name_to_identifier(datatype.__name__)
+    return 'TODO'
+
+def optional_type(typename):
+    return 'vrtgen::optional<{}>'.format(typename)
+
 class CppPacket:
     def __init__(self, name):
         self.name = name
+        self.namespace = ''
         self.fields = []
         self.structs = []
+        self.members = []
 
     def add_field(self, field):
         self.fields.append(field)
+
+    def add_member(self, name, datatype):
+        identifier = cpptypes.name_to_identifier(name)
+        self.members.append({
+            'name': name,
+            'identifier': identifier,
+            'member': 'm_'+identifier,
+            'type': datatype
+        })
 
 class CppGenerator(Generator):
     def __init__(self):
@@ -43,126 +75,58 @@ class CppGenerator(Generator):
         self.env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
         self.template = self.env.get_template('packet.hpp')
 
-    def map_prologue(self, model, packet):
-        for field in packet.prologue.fields:
-            if field.is_disabled:
-                continue
-            if isinstance(field, StructField):
-                for subfield in field.fields:
-                    if not subfield.is_enabled:
-                        continue
-                    model.add_field(self.map_simple_field(subfield))
-            else:
-                model.add_field(self.map_simple_field(field))
-
-    def map_trailer(self, model, packet):
-        if not packet.has_trailer:
+    def generate_class_id(self, cppstruct, packet):
+        if packet.class_id.is_disabled:
             return
+        for field in packet.class_id.get_fields():
+            if field.is_disabled or field.is_constant:
+                continue
+            field_type = value_type(field.type)
+            cppstruct.add_member(field.name, field_type)
 
-        for field in packet.trailer.fields:
+    def generate_prologue(self, cppstruct, packet):
+        if packet.tsi != enums.TSI.NONE:
+            field_type = value_type(packet.integer_timestamp.type)
+            cppstruct.add_member(packet.integer_timestamp.name, field_type)
+            
+        if packet.tsf != enums.TSF.NONE:
+            field_type = value_type(packet.fractional_timestamp.type)
+            cppstruct.add_member(packet.fractional_timestamp.name, field_type)
+
+        if not packet.stream_id.is_disabled:
+            field_type = value_type(packet.stream_id.type)
+            if packet.stream_id.is_optional:
+                field_type = optional_type(field_type)
+            cppstruct.add_member(packet.stream_id.name, field_type)
+
+        self.generate_class_id(cppstruct, packet)
+
+    def generate_data(self, cppstruct, packet):
+        self.generate_prologue(cppstruct, packet)
+
+        for field in packet.get_fields(Scope.TRAILER):
             if field.is_disabled:
                 continue
-            model.add_field(self.map_simple_field(field))
+            field_type = value_type(field.type)
+            if field.is_optional:
+                field_type = optional_type(field_type)
+            cppstruct.add_member(field.name, field_type)
 
-    def map_simple_field(self, field, prefix=None):
-        field_value = None
-        if VRTDataTrailer.sample_frame.match(field.name):
-            field_type = 'SSI::Flag'
-            if field.value is not None:
-                field_value = 'SSI::' + field.value.name
-        elif isinstance(field, BitField):
-            field_type = 'bool'
-            field_value = str(get_default(field.value, False)).lower()
-        elif isinstance(field, IntegerField):
-            bits = max(8, next_pow2(field.bits))
-            field_type = 'int{:d}_t'.format(bits)
-            field_value = get_default(field.value, 0)
-        elif isinstance(field, FixedPointField):
-            if field.bits > 32:
-                field_type = 'double'
-            else:
-                field_type = 'float'
-            field_value = get_default(field.value, 0)
-        elif isinstance(field, TSIField):
-            field_type = 'TSI::Mode'
-            field_value = 'TSI::' + field.value.name
-        elif isinstance(field, TSFField):
-            field_type = 'TSF::Mode'
-            field_value = 'TSF::' + field.value.name
-        else:
-            field_type = 'void'
-        field_name = field.name
-        if prefix:
-            field_name = prefix + field_name
-        model_field = {
-            'name' : field_name,
-            'optional': field.is_optional,
-            'const': field.is_constant,
-        }
-        model_field['type'] = field_type
-        if field_value is not None:
-            model_field['value'] = field_value
-        model_field['identifier'] = self.name_to_identifier(field_name)
-        member_type = field_type
-        if field.is_optional:
-            member_type = 'optional<{}>'.format(member_type)
-        model_field['member'] = {
-            'type': member_type,
-            'identifier': 'm_' + model_field['identifier']
-        }
-        return model_field
+    def generate_context(self, cppstruct, packet):
+        self.generate_prologue(cppstruct, packet)
 
-    def map_payload(self, model, packet):
-        if isinstance(packet, VRTDataPacket):
-            return
-
-        for field in packet.cif[0].fields:
-            if field.is_disabled:
-                continue
-            if isinstance(field, StructField):
-                for subfield in field.fields:
-                    if not subfield.is_enabled:
-                        continue
-                    model.add_field(self.map_simple_field(subfield, prefix=field.name))
-            else:
-                model.add_field(self.map_simple_field(field))
-
-    def name_to_identifier(self, name):
-        identifier = ''
-        for ch in name:
-            if not ch.isalnum():
-                continue
-            identifier += ch
-        return identifier
-
-    def generate_data(self, packet):
-        print('Data Packet', packet.name)
-
-    def generate_context(self, packet):
-        print('Context Packet', packet.name)
-        for field in packet.get_fields(Scope.PAYLOAD):
-            if not field.is_enabled:
-                continue
-            print(field.name)
-
-    def generate_command(self, packet):
-        print('Command Packet', packet.name)
-        for field in packet.get_fields(Scope.PAYLOAD):
-            if not field.is_enabled:
-                continue
-            print(field.name)
+    def generate_command(self, cppstruct, packet):
+        self.generate_prologue(cppstruct, packet)
 
     def generate(self, packet):
-        if isinstance(packet, config.DataPacketConfiguration):
-            self.generate_data(packet)
+        name = cpptypes.name_to_identifier(packet.name)
+        model = CppPacket(name)
+        if packet.packet_type() in (enums.PacketType.SIGNAL_DATA, enums.PacketType.SIGNAL_DATA_STREAM_ID):
+            self.generate_data(model, packet)
         elif isinstance(packet, config.ContextPacketConfiguration):
-            self.generate_context(packet)
+            self.generate_context(model, packet)
         elif isinstance(packet, config.CommandPacketConfiguration):
-            self.generate_command(packet)
-        return
-        model = CppPacket(self.name_to_identifier(packet.name))
-        self.map_prologue(model, packet)
-        self.map_payload(model, packet)
-        self.map_trailer(model, packet)
+            self.generate_command(model, packet)
 
         print(self.template.render({'packet':model}))
+        

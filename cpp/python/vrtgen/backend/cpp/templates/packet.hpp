@@ -1,42 +1,56 @@
 //
 class ${packet.name} {
 public:
-  ${packet.name}() :
+    ${packet.name}() :
 //% for field in packet.fields if field.value is defined and not field.const
-    ${field.member.identifier}(${field.value})${"," if not loop.last}
+        ${field.member.identifier}(${field.value})${"," if not loop.last}
 //% endfor
-  {
-  }
+    {
+    }
 
-//% for field in packet.fields
-  // ${field.name} getter
-  ${field.type} get${field.identifier}() const
-  {
-/*{%     if field.const %}*/
-    return ${field.value};
-/*{%     else %}*/
-    return ${field.member.identifier}${".get()" if field.optional};
-/*{%     endif %}*/
-  }
+    //% for field in packet.members
+    /**
+     * ${field.name} getter
+     */
+    ${field.type} get${field.identifier}() const
+    {
+        return ${field.member};
+    }
 
-/*{%     if not field.const %}*/
-  // ${field.name} setter
-  void set${field.identifier}(${field.type} value)
-  {
-    ${field.member.identifier} = value;
-  }
+    /**
+     * ${field.name} setter
+     */
+    void set${field.identifier}(${field.type} value)
+    {
+        ${field.member} = value;
+    }
 
-/*{%     endif %}*/
-/*{%     if field.optional %}*/
-  bool has${field.identifier}() const
-  {
-    return ${field.member.identifier}.is_set();
-  }
-
-/*{%     endif %}*/
 /*{% endfor %}*/
 private:
-//% for field in packet.fields if not field.const
-  ${field.member.type} ${field.member.identifier};
+    friend class ${packet.namespace}::packing::${packet.name}Helper;
+
+//% for member in packet.members
+    ${member.type} ${member.member};
 //% endfor
 };
+
+namespace packing {
+    struct ${packet.name}Helper {
+        static size_t bytes_required(const ${packet.name}& packet)
+        {
+            return 0;
+        }
+
+        static void pack(const ${packet.name}& packet, void* buffer, size_t bufsize)
+        {
+            vrtgen::packing::Header* header = reinterpret_cast<vrtgen::packing::Header*>(buffer);
+            // TODO
+        }
+
+        static void unpack(${packet.name}& packet, const uint8_t* buffer, size_t bufsize)
+        {
+            const vrtgen::packing::Header* header = reinterpret_cast<const vrtgen::packing::Header*>(buffer);
+            // TODO
+        }
+    };
+}

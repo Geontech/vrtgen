@@ -213,6 +213,12 @@ class StructFieldConfiguration(FieldConfiguration):
         """
         return self._fields.get(name.casefold(), None)
 
+    def get_fields(self):
+        """
+        Returns the configurations for all subfields.
+        """
+        return self._fields.values()
+
     @property
     def has_value(self):
         return any(f.has_value for f in self._fields.values())
