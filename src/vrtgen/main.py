@@ -8,7 +8,7 @@ import sys
 import pkg_resources
 
 from vrtgen import parser
-from vrtgen.backend import Generator
+from vrtgen.backend.generator import Generator
 
 from . import version
 

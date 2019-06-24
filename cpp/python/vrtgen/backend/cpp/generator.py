@@ -1,9 +1,11 @@
+import os
+
 import jinja2
 
-from vrtgen.model.field import *
-from vrtgen.model.packets import *
+from vrtgen.model import config
+from vrtgen.model.field import Scope
 
-from .generator import Generator
+from vrtgen.backend.generator import Generator
 
 JINJA_OPTIONS = {
     'trim_blocks':           True,
@@ -35,11 +37,11 @@ class CppPacket:
         self.fields.append(field)
 
 class CppGenerator(Generator):
-    def __init__(self, standard='c++03'):
-        loader = jinja2.FileSystemLoader('vrtgen/backend/templates')
+    def __init__(self):
+        template_path = os.path.join(os.path.dirname(__file__), 'templates')
+        loader = jinja2.FileSystemLoader(template_path)
         self.env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
         self.template = self.env.get_template('packet.hpp')
-        self.standard = 'c++03'
 
     def map_prologue(self, model, packet):
         for field in packet.prologue.fields:
@@ -133,7 +135,31 @@ class CppGenerator(Generator):
             identifier += ch
         return identifier
 
+    def generate_data(self, packet):
+        print('Data Packet', packet.name)
+
+    def generate_context(self, packet):
+        print('Context Packet', packet.name)
+        for field in packet.get_fields(Scope.PAYLOAD):
+            if not field.is_enabled:
+                continue
+            print(field.name)
+
+    def generate_command(self, packet):
+        print('Command Packet', packet.name)
+        for field in packet.get_fields(Scope.PAYLOAD):
+            if not field.is_enabled:
+                continue
+            print(field.name)
+
     def generate(self, packet):
+        if isinstance(packet, config.DataPacketConfiguration):
+            self.generate_data(packet)
+        elif isinstance(packet, config.ContextPacketConfiguration):
+            self.generate_context(packet)
+        elif isinstance(packet, config.CommandPacketConfiguration):
+            self.generate_command(packet)
+        return
         model = CppPacket(self.name_to_identifier(packet.name))
         self.map_prologue(model, packet)
         self.map_payload(model, packet)
