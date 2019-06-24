@@ -1,3 +1,4 @@
+import argparse
 import inspect
 import os
 import sys
@@ -263,7 +264,6 @@ class CppStruct:
                 assert align % 8 == 0
                 self._add_packed(field.offset)
             member = self._packed
-            remain = self._packed.offset - self._packed.bits
             member.link_field(field)
         else:
             # Everything else should be byte-aligned
@@ -342,66 +342,97 @@ class CppEnableStruct(CppStruct):
             methods = format_enable_methods(field, member)
         self.fields.append(methods)
 
-def generate_enums(env, filename):
-    template = env.get_template('enums.hpp')
-    enum_types = [format_enum(en) for _, en in inspect.getmembers(enums, is_enum)]
+TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'templates')
 
-    with open(filename, 'w') as fp:
-        fp.write(template.render({'enums': enum_types}))
+class LibraryGenerator:
+    def __init__(self, includedir):
+        self.loader = jinja2.FileSystemLoader(TEMPLATE_PATH)
+        self.env = jinja2.Environment(loader=self.loader, **JINJA_OPTIONS)
+        self.includedir = includedir
 
-def generate_header(env, filename):
-    template = env.get_template('struct.hpp')
-    with open(filename, 'w') as fp:
-        structs = [
-            CppHeaderStruct(prologue.Header),
-            CppHeaderStruct(prologue.DataHeader),
-            CppHeaderStruct(prologue.ContextHeader),
-            CppHeaderStruct(prologue.CommandHeader),
-            CppStruct(prologue.ClassIdentifier)
-        ]
-        fp.write(template.render({
-            'name': 'header',
-            'structs': structs,
-        }))
+    def generate_enums(self, filename):
+        template = self.env.get_template('enums.hpp')
+        enum_types = [format_enum(en) for _, en in inspect.getmembers(enums, is_enum)]
 
-def generate_trailer(env, filename):
-    template = env.get_template('struct.hpp')
-    with open(filename, 'w') as fp:
-        fp.write(template.render({
-            'name': 'trailer',
-            'structs': [CppStruct(trailer.Trailer)],
-        }))
+        with open(filename, 'w') as fp:
+            fp.write(template.render({'enums': enum_types}))
 
-def generate_cif(env, module, cif, filename):
-    template = env.get_template('struct.hpp')
-    with open(filename, 'w') as fp:
-        structs = []
-        enable = CppEnableStruct(cif.Enables)
-        # Override name and docstring from parent CIFFields class
-        enable.name = cif.__name__ + 'Enables'
-        enable.doc = format_docstring(cif.__doc__)
-        structs.append(enable)
-        for structdef in get_structs(module):
-            structs.append(CppStruct(structdef))
-        fp.write(template.render({
-            'name': cif.__name__,
-            'structs': structs,
-        }))
+    def generate_header(self, filename):
+        template = self.env.get_template('struct.hpp')
+        with open(filename, 'w') as fp:
+            structs = [
+                CppHeaderStruct(prologue.Header),
+                CppHeaderStruct(prologue.DataHeader),
+                CppHeaderStruct(prologue.ContextHeader),
+                CppHeaderStruct(prologue.CommandHeader),
+                CppStruct(prologue.ClassIdentifier)
+            ]
+            fp.write(template.render({
+                'name': 'header',
+                'structs': structs,
+            }))
 
-def main():
-    loader = jinja2.FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates'))
-    env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
+    def generate_trailer(self, filename):
+        template = self.env.get_template('struct.hpp')
+        with open(filename, 'w') as fp:
+            fp.write(template.render({
+                'name': 'trailer',
+                'structs': [CppStruct(trailer.Trailer)],
+            }))
+
+    def generate_cif(self, filename, module, cif):
+        template = self.env.get_template('struct.hpp')
+        with open(filename, 'w') as fp:
+            structs = []
+            enable = CppEnableStruct(cif.Enables)
+            # Override name and docstring from parent CIFFields class
+            enable.name = cif.__name__ + 'Enables'
+            enable.doc = format_docstring(cif.__doc__)
+            structs.append(enable)
+            for structdef in get_structs(module):
+                structs.append(CppStruct(structdef))
+            fp.write(template.render({
+                'name': cif.__name__,
+                'structs': structs,
+            }))
+
+    def headers(self):
+        for target in self.TARGETS:
+            name = target[0]
+            yield os.path.join(self.includedir, name)
+
+    def generate(self):
+        for target in self.TARGETS:
+            name, method = target[:2]
+            args = target[2:]
+            filename = os.path.join(self.includedir, name)
+            dirname = os.path.dirname(filename)
+            os.makedirs(dirname, exist_ok=True)
+            method(self, filename, *args)
+
+    TARGETS = [
+        ('enums.hpp', generate_enums),
+        ('packing/trailer.hpp', generate_trailer),
+        ('packing/header.hpp', generate_header),
+        ('packing/cif0.hpp', generate_cif, cif0, cif0.CIF0),
+        ('packing/cif1.hpp', generate_cif, cif1, cif1.CIF1),
+    ]
+
+
+def main(args):
+    parser = argparse.ArgumentParser(prog='gencpp')
+    parser.add_argument('command', choices=('headers', 'generate'))
+
+    opts = parser.parse_args(args)
 
     includedir = 'include/vrtgen'
-    os.makedirs(includedir, exist_ok=True)
-    generate_enums(env, 'include/vrtgen/enums.hpp')
+    gen = LibraryGenerator(includedir)
 
-    includedir = 'include/vrtgen/packing'
-    os.makedirs(includedir, exist_ok=True)
-    generate_header(env, os.path.join(includedir, 'header.hpp'))
-    generate_trailer(env, os.path.join(includedir, 'trailer.hpp'))
-    generate_cif(env, cif0, cif0.CIF0, os.path.join(includedir, 'cif0.hpp'))
-    generate_cif(env, cif1, cif1.CIF1, os.path.join(includedir, 'cif1.hpp'))
+    if opts.command == 'generate':
+        gen.generate()
+    elif opts.command == 'headers':
+        for name in gen.headers():
+            print(name)
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])

@@ -25,32 +25,41 @@ configure_file(
     "${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen/version.hpp"
 )
 
-set(generated_header_files
-    ${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen/packing/cif0.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen/packing/cif1.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen/packing/header.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen/packing/trailer.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen/enums.hpp
+# Get the list of generated headers from the library generator (avoids need to
+# modify this file if headers are added, renamed or removed)
+execute_process(
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gencpp.py headers
+    OUTPUT_VARIABLE generated_header_files
 )
+separate_arguments(generated_header_files UNIX_COMMAND ${generated_header_files})
+list(TRANSFORM generated_header_files PREPEND "${CMAKE_CURRENT_BINARY_DIR}/")
+
+set(CMAKE_CLEAN_FILES ${generated_header_files})
+
+# List template files used to generate headers, used to trigger a re-generate
+# step if they are modified
+set(template_files
+    ${CMAKE_CURRENT_SOURCE_DIR}/templates/enums.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/templates/struct.hpp
+)
+
+add_custom_command(
+    OUTPUT
+        ${generated_header_files}
+    COMMAND
+        ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gencpp.py generate
+    DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/gencpp.py
+        ${template_files}
+)
+
+# Normal hand-written headers
 set(header_files
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/fixed.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/packed.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/swap.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/version.hpp
-)
-
-set(CMAKE_CLEAN_FILES ${generated_header_files})
-
-add_custom_command(
-    OUTPUT
-        ${generated_header_files}
-    COMMAND
-        ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gencpp.py
-    DEPENDS
-        ${CMAKE_CURRENT_SOURCE_DIR}/gencpp.py
-        ${CMAKE_CURRENT_SOURCE_DIR}/templates/enums.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/templates/struct.hpp
 )
 
 add_library(vrtgen INTERFACE)
