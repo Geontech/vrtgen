@@ -1,9 +1,9 @@
 #ifndef _VRTGEN_TYPES_HPP
 #define _VRTGEN_TYPES_HPP
 
-#include "swap.hpp"
-#include "fixed.hpp"
-#include "packed.hpp"
+#include "types/swap.hpp"
+#include "types/fixed.hpp"
+#include "types/packed.hpp"
 
 #include <inttypes.h>
 

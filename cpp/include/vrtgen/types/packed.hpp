@@ -1,5 +1,5 @@
-#ifndef _VRTGEN_PACKED_HPP
-#define _VRTGEN_PACKED_HPP
+#ifndef _VRTGEN_TYPES_PACKED_HPP
+#define _VRTGEN_TYPES_PACKED_HPP
 
 #include <inttypes.h>
 #include "swap.hpp"
@@ -121,4 +121,4 @@ namespace vrtgen {
     };
 }
 
-#endif // _VRTGEN_PACKED_HPP
+#endif // _VRTGEN_TYPES_PACKED_HPP

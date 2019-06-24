@@ -1,5 +1,5 @@
-#ifndef _VRTGEN_FIXED_HPP
-#define _VRTGEN_FIXED_HPP
+#ifndef _VRTGEN_TYPES_FIXED_HPP
+#define _VRTGEN_TYPES_FIXED_HPP
 
 #include "swap.hpp"
 
@@ -50,4 +50,4 @@ namespace vrtgen {
     };
 }
 
-#endif // _VRTGEN_FIXED_HPP
+#endif // _VRTGEN_TYPES_FIXED_HPP

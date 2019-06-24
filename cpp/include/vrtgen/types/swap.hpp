@@ -1,5 +1,5 @@
-#ifndef _VRTGEN_SWAP_HPP
-#define _VRTGEN_SWAP_HPP
+#ifndef _VRTGEN_TYPES_SWAP_HPP
+#define _VRTGEN_TYPES_SWAP_HPP
 
 #include <inttypes.h>
 
@@ -114,4 +114,4 @@ namespace vrtgen {
     };
 }
 
-#endif // _VRTGEN_SWAP_HPP
+#endif // _VRTGEN_TYPES_SWAP_HPP
