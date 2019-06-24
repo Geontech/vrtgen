@@ -5,6 +5,15 @@
 //% endfor
  */
 struct ${struct.name} {
+/*{% if struct.reserved %}*/
+    ${struct.name}() :
+/*{%    for member in struct.reserved %}*/
+        ${member.name}(0)${',' if not loop.last}
+/*{%    endfor %}*/
+    {
+    }
+
+/*{% endif %}*/
 /*{% for field in struct.fields %}*/
 //%     set member = field.member
     /**

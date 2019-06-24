@@ -184,11 +184,9 @@ class BasicMember(Member):
         self.field = field
         self._add_field_doc(field)
 
-class Reserved:
-    def __init__(self, field):
-        self.name = ''
-        self.type = 'int'
-        self.decl = '{} {}:{}'.format(self.type, self.name, field.bits)
+class Reserved(Member):
+    def __init__(self, name, field):
+        super().__init__(name, int_type(field.bits, False))
         self.doc = ['Reserved {}/{}'.format(field.word, field.offset)]
 
 class Tag:
@@ -252,28 +250,35 @@ class CppStruct:
         self.doc = format_docstring(structdef.__doc__)
         self.fields = []
         self.members = []
-        self._packed = None
-        self._packed_fields = 0
+        self._current_packed = None
         for field in structdef.get_contents():
             self._process_field(field)
+
+    @property
+    def packed(self):
+        return [f for f in self.members if isinstance(f, Packed)]
+
+    @property
+    def reserved(self):
+        return [f for f in self.members if isinstance(f, Reserved)]
 
     def _process_field(self, field):
         align = 31 - field.offset
         if field.bits % 8:
             # Field does not necessarily need to be byte-aligned, pack it into
             # a larger data member
-            if self._packed is None:
+            if self._current_packed is None:
                 # The data member does have to be byte-aligned
                 assert align % 8 == 0
                 self._add_packed(field.offset)
-            member = self._packed
+            member = self._current_packed
             member.link_field(field)
         else:
             # Everything else should be byte-aligned
             assert align % 8 == 0
             # There is a packed field being collected, "close" it and add the
             # member variable
-            if self._packed:
+            if self._current_packed:
                 self._close_packed()
 
             if field.bits % 32 == 0:
@@ -285,7 +290,8 @@ class CppStruct:
             # be reserved bits. These are handled differently so the compiler
             # doesn't issue warnings about unused private fields.
             if not field.editable:
-                self.members.append(Reserved(field))
+                name = 'reserved_{}'.format(len(self.reserved))
+                self.members.append(Reserved(name, field))
                 return
 
             member = self._add_member(field)
@@ -293,19 +299,17 @@ class CppStruct:
         if field.editable:
             self._map_field(field, member)
 
-        if self._packed and self._packed.full():
+        if self._current_packed and self._current_packed.full():
             self._close_packed()
 
     def _add_packed(self, offset):
-        name = 'packed_' + str(self._packed_fields)
-        self._packed_fields += 1
-        self._packed = Packed(name, offset)
-        self.members.append(self._packed)
+        name = 'packed_' + str(len(self.packed))
+        self._current_packed = Packed(name, offset)
+        self.members.append(self._current_packed)
 
     def _close_packed(self):
-        assert self._packed.bits % 8 == 0
-        self._packed.close()
-        self._packed = None
+        self._current_packed.close()
+        self._current_packed = None
 
     def _add_member(self, field):
         name = name_to_identifier(field.name)
