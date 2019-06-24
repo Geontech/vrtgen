@@ -1,10 +1,29 @@
 cmake_minimum_required(VERSION 3.13)
 include(GNUInstallDirs)
 
+project(vrtgen-cpp VERSION 0.1 LANGUAGES CXX)
+
 # On Mac OS X, give the system installation lowest priority so that virtual
 # environments can be found
 set(CMAKE_FIND_FRAMEWORK "last")
 find_package(Python3 REQUIRED)
+
+# Ensure that the base vrtgen Python library is available
+execute_process(
+    COMMAND ${Python3_EXECUTABLE} -c "import vrtgen"
+    OUTPUT_QUIET
+    ERROR_QUIET
+    RESULT_VARIABLE import_vrtgen_error_code
+)
+if(NOT import_vrtgen_error_code EQUAL 0)
+    message(FATAL_ERROR "vrtgen Python module not found")
+endif()
+
+# Generate a version header
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/version.hpp.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen/version.hpp"
+)
 
 set(generated_header_files
     ${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen/packing/cif0.hpp
@@ -18,6 +37,7 @@ set(header_files
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/packed.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/swap.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/version.hpp
 )
 
 set(CMAKE_CLEAN_FILES ${generated_header_files})
