@@ -165,12 +165,14 @@ def format_value_methods(field, member):
     return field_data
 
 class Member:
-    def __init__(self, name):
+    def __init__(self, name, datatype):
         self.name = 'm_' + name
+        self.type = datatype
         self.doc = []
 
     @property
     def decl(self):
+        assert self.type is not None
         return '{} {}'.format(self.type, self.name)
 
     def _add_field_doc(self, field):
@@ -178,9 +180,8 @@ class Member:
 
 class BasicMember(Member):
     def __init__(self, name, field):
-        super().__init__(name)
+        super().__init__(name, member_type(field.type))
         self.field = field
-        self.type = member_type(field.type)
         self._add_field_doc(field)
 
 class Reserved:
@@ -215,14 +216,10 @@ class Tag:
 
 class Packed(Member):
     def __init__(self, name, offset):
-        super().__init__(name)
+        super().__init__(name, None)
         self.offset = offset
         self.bits = 0
         self.tags = []
-
-    @property
-    def type(self):
-        return 'packed<{}>'.format(int_type(self.bits, False))
 
     def full(self):
         assert self.offset >= 0
@@ -231,6 +228,8 @@ class Packed(Member):
     def close(self):
         # Limit the offset of tags to fall within the bit size of the packed
         # container.
+        assert self.bits in (8, 16, 32)
+        self.type = self.packed_type(self.bits)
         for tag in self.tags:
             tag.offset = tag.offset % self.bits
 
@@ -242,6 +241,10 @@ class Packed(Member):
         if not isinstance(field, struct.Reserved):
             tag = Tag(field)
             self.tags.append(tag)
+
+    @staticmethod
+    def packed_type(bits):
+        return 'packed<{}>'.format(int_type(bits, False))
 
 class CppStruct:
     def __init__(self, structdef):
