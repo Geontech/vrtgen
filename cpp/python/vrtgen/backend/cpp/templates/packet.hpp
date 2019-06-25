@@ -8,13 +8,35 @@ public:
     {
     }
 
-    //% for field in packet.members
+//% for field in packet.members
+//%     if field.optional
+    /**
+     * Check ${field.name} presence
+     */
+    bool has${field.identifier}() const
+    {
+        return ${field.member.identifier};
+    }
+
+    /**
+     * Clear ${field.name} presence
+     */
+    void clear${field.identifier}()
+    {
+        ${field.member.identifier}.clear();
+    }
+
+//%     endif
     /**
      * ${field.name} getter
      */
     ${field.type} get${field.identifier}() const
     {
-        return ${field.member};
+//%     if field.optional
+        return ${field.member.identifier}.get();
+//%     else
+        return ${field.member.identifier};
+//%     endif
     }
 
     /**
@@ -22,15 +44,19 @@ public:
      */
     void set${field.identifier}(${field.type} value)
     {
-        ${field.member} = value;
+//%     if field.optional
+        ${field.member.identifier}.set(value);
+//%     else
+        ${field.member.identifier} = value;
+//%     endif
     }
 
 /*{% endfor %}*/
 private:
     friend class ${packet.namespace}::packing::${packet.name}Helper;
 
-//% for member in packet.members
-    ${member.type} ${member.member};
+//% for field in packet.members
+    ${field.member.type} ${field.member.identifier};
 //% endfor
 };
 

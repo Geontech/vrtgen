@@ -59,13 +59,22 @@ class CppPacket:
     def add_field(self, field):
         self.fields.append(field)
 
-    def add_member(self, name, datatype):
+    def add_member(self, name, datatype, optional=False):
         identifier = cpptypes.name_to_identifier(name)
+        if optional:
+            member_type = optional_type(datatype)
+        else:
+            member_type = datatype
+
         self.members.append({
             'name': name,
             'identifier': identifier,
-            'member': 'm_'+identifier,
-            'type': datatype
+            'optional': optional,
+            'type': datatype,
+            'member': {
+                'identifier': 'm_'+identifier,
+                'type': member_type,
+            },
         })
 
 class CppGenerator(Generator):
@@ -95,9 +104,7 @@ class CppGenerator(Generator):
 
         if not packet.stream_id.is_disabled:
             field_type = value_type(packet.stream_id.type)
-            if packet.stream_id.is_optional:
-                field_type = optional_type(field_type)
-            cppstruct.add_member(packet.stream_id.name, field_type)
+            cppstruct.add_member(packet.stream_id.name, field_type, packet.stream_id.is_optional)
 
         self.generate_class_id(cppstruct, packet)
 
@@ -108,9 +115,7 @@ class CppGenerator(Generator):
             if field.is_disabled:
                 continue
             field_type = value_type(field.type)
-            if field.is_optional:
-                field_type = optional_type(field_type)
-            cppstruct.add_member(field.name, field_type)
+            cppstruct.add_member(field.name, field_type, field.is_optional)
 
     def generate_context(self, cppstruct, packet):
         self.generate_prologue(cppstruct, packet)
