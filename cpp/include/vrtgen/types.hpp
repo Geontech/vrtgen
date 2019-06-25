@@ -4,6 +4,7 @@
 #include "types/swap.hpp"
 #include "types/fixed.hpp"
 #include "types/packed.hpp"
+#include "types/optional.hpp"
 
 #include <inttypes.h>
 

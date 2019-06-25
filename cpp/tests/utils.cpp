@@ -111,3 +111,16 @@ TEST_CASE("Q16.16 fixed-point conversion", "[fixed]")
     CHECK(fixed_type::to_int(-1.0/65536.0) == int32_t(0xFFFFFFFF));
     CHECK(fixed_type::from_int(0xFFFFFFFF) == -1.0/65536.0);
 }
+
+TEST_CASE("Optional value")
+{
+    vrtgen::optional<uint8_t> value;
+
+    CHECK_FALSE(value);
+    value.set(123);
+    CHECK(value);
+    CHECK(value.get() == 123);
+
+    value.clear();
+    CHECK_FALSE(value);
+}
