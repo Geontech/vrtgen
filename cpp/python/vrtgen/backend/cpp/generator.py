@@ -108,6 +108,13 @@ class CppGenerator(Generator):
 
         self.generate_class_id(cppstruct, packet)
 
+    def generate_payload(self, cppstruct, packet):
+        for field in packet.get_fields(Scope.PAYLOAD):
+            if field.is_disabled:
+                continue
+            field_type = value_type(field.type)
+            cppstruct.add_member(field.name, field_type, field.is_optional)
+
     def generate_data(self, cppstruct, packet):
         self.generate_prologue(cppstruct, packet)
 
@@ -119,9 +126,11 @@ class CppGenerator(Generator):
 
     def generate_context(self, cppstruct, packet):
         self.generate_prologue(cppstruct, packet)
+        self.generate_payload(cppstruct, packet)
 
     def generate_command(self, cppstruct, packet):
         self.generate_prologue(cppstruct, packet)
+        self.generate_payload(cppstruct, packet)
 
     def generate(self, packet):
         name = cpptypes.name_to_identifier(packet.name)
