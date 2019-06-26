@@ -28,9 +28,10 @@ test:cpp:
     before_script:
         - apk add g++ make cmake
         - pip install -e .
-        - cmake -S cpp -B build
+        - cd cpp
+        - pip install -e .
+        - cmake -B build .
         - cd build
-        - NCPUS=$(nproc)
-        - make -j $NCPUS
+        - export MAKEFLAGS="-j$(nproc)"
     script:
-        - ./test_libvrtgen -s --use-colour=yes
+        - make check TEST_OPTIONS="-s --use-colour=yes"
