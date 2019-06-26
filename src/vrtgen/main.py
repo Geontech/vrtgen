@@ -3,7 +3,6 @@ Command-line interface for vrtpktgen.
 """
 import logging
 import argparse
-import sys
 
 import pkg_resources
 
@@ -15,6 +14,9 @@ from . import version
 ENTRY_POINT_ID = 'vrtgen.backend.packet'
 
 class NullGenerator(Generator):
+    """
+    Default generator that produces no output.
+    """
     def generate(self, packet):
         pass
 
@@ -64,5 +66,10 @@ def main():
 
     for filename in args.filename:
         logging.debug('Parsing %s', filename)
+        generator.start_file(filename)
         for packet in parser.parse_file(filename):
-            generator.generate(packet)
+            try:
+                generator.generate(packet)
+            except RuntimeError as exc:
+                logging.error('Generator error: %s', exc)
+        generator.end_file()

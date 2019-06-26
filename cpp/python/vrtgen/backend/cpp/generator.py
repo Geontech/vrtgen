@@ -26,12 +26,6 @@ JINJA_OPTIONS = {
 def next_pow2(value):
     return 1<<(value-1).bit_length()
 
-def get_default(value, defval):
-    if value is None:
-        return defval
-    else:
-        return value
-
 def value_type(datatype):
     if issubclass(datatype, basic.BooleanType):
         return 'bool'
@@ -43,7 +37,7 @@ def value_type(datatype):
         return cpptypes.int_type(datatype.bits, datatype.signed)
     if issubclass(datatype, struct.Struct):
         return cpptypes.name_to_identifier(datatype.__name__)
-    return 'TODO'
+    raise NotImplementedError(datatype.__name__)
 
 def optional_type(typename):
     return 'vrtgen::optional<{}>'.format(typename)
@@ -83,6 +77,17 @@ class CppGenerator(Generator):
         loader = jinja2.FileSystemLoader(template_path)
         self.env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
         self.template = self.env.get_template('packet.hpp')
+        self.output_path = os.getcwd()
+        self.header_ext = '.hpp'
+        self.header = None
+
+    def start_file(self, filename):
+        basename, _ = os.path.splitext(filename)
+        header_file = os.path.join(self.output_path, basename + self.header_ext)
+        self.header = open(header_file, 'w')
+
+    def end_file(self):
+        self.header.close()
 
     def generate_class_id(self, cppstruct, packet):
         if packet.class_id.is_disabled:
@@ -142,5 +147,4 @@ class CppGenerator(Generator):
         elif isinstance(packet, config.CommandPacketConfiguration):
             self.generate_command(model, packet)
 
-        print(self.template.render({'packet':model}))
-        
+        self.header.write(self.template.render({'packet':model}))
