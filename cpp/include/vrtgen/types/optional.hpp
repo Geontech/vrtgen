@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 namespace vrtgen {
     template <typename T>
     struct optional {
