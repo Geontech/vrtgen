@@ -12,13 +12,32 @@ from vrtgen.backend.generator import Generator
 
 from . import types as cpptypes
 
+def do_namespace(text, namespace):
+    """
+    Jinja filter to add a C++ namespace around a block of text.
+    """
+    if not namespace:
+        return text
+    def apply_namespace(text, namespace):
+        indent = ' '*4
+        prefix = ''
+        for segment in namespace.split('::'):
+            yield prefix + 'namespace ' + segment + '{'
+            prefix += indent
+        for line in text.splitlines():
+            yield prefix + line
+        for segment in namespace.split('::'):
+            prefix = prefix[:-len(indent)]
+            yield prefix + '}'
+    return '\n'.join(apply_namespace(text, namespace))
+    
 JINJA_OPTIONS = {
-    'trim_blocks':           True,
+    'trim_blocks': True,
+    'lstrip_blocks': True,
+    'keep_trailing_newline': True,
     'line_statement_prefix': '//%',
-    'variable_start_string': '${',
-    'variable_end_string':   '}',
-    'block_start_string':    '/*{%',
-    'block_end_string':      '%}*/',
+    'block_start_string':    '/*%',
+    'block_end_string':      '%*/',
     'comment_start_string':  '/*#',
     'comment_end_string':    '#*/'
 }
@@ -76,10 +95,13 @@ class CppGenerator(Generator):
         template_path = os.path.join(os.path.dirname(__file__), 'templates')
         loader = jinja2.FileSystemLoader(template_path)
         self.env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
-        self.template = self.env.get_template('packet.hpp')
+        self.env.filters['namespace'] = do_namespace
+        self.template = self.env.get_template('header.hpp')
         self.output_path = os.getcwd()
         self.header_ext = '.hpp'
         self.header = None
+        self.packets = []
+        self.namespace = ''
 
     def start_file(self, filename):
         basename, _ = os.path.splitext(filename)
@@ -87,6 +109,11 @@ class CppGenerator(Generator):
         self.header = open(header_file, 'w')
 
     def end_file(self):
+        context = {
+            'packets':self.packets,
+            'namespace': self.namespace,
+        }
+        self.header.write(self.template.render(context))
         self.header.close()
 
     def generate_class_id(self, cppstruct, packet):
@@ -147,4 +174,4 @@ class CppGenerator(Generator):
         elif isinstance(packet, config.CommandPacketConfiguration):
             self.generate_command(model, packet)
 
-        self.header.write(self.template.render({'packet':model}))
+        self.packets.append(model)
