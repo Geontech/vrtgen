@@ -1,6 +1,8 @@
 //% from "packet.hpp" import define_packet
 #pragma once
 
+#include <cstddef>
+
 #include <vrtgen/vrtgen.hpp>
 
 //% filter namespace(namespace)

@@ -1,4 +1,8 @@
 //% macro define_packet(packet)
+namespace packing {
+    class {{packet.name}}Helper;
+}
+
 /**
 //% for line in packet.doc
  * {{line}}
@@ -7,7 +11,7 @@
 class {{packet.name}} {
 public:
     {{packet.name}}() :
-//% for field in packet.fields if field.value is defined and not field.const
+//% for field in packet.members if not field.optional
         {{field.member.identifier}}({{field.value}}){{"," if not loop.last}}
 //% endfor
     {
@@ -20,7 +24,7 @@ public:
      */
     bool has{{field.identifier}}() const
     {
-        return {{field.member.identifier}};
+        return static_cast<bool>({{field.member.identifier}});
     }
 
     /**
