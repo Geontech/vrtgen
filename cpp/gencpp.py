@@ -16,12 +16,12 @@ from vrtgen.types import struct
 from vrtgen.backend.cpp import types as cpptypes
 
 JINJA_OPTIONS = {
-    'trim_blocks':           True,
+    'trim_blocks': True,
+    'lstrip_blocks': True,
+    'keep_trailing_newline': True,
     'line_statement_prefix': '//%',
-    'variable_start_string': '${',
-    'variable_end_string':   '}',
-    'block_start_string':    '/*{%',
-    'block_end_string':      '%}*/',
+    'block_start_string':    '/*%',
+    'block_end_string':      '%*/',
     'comment_start_string':  '/*#',
     'comment_end_string':    '#*/'
 }
@@ -360,19 +360,30 @@ class LibraryGenerator:
             }))
 
     def generate_cif(self, filename, module, cif):
-        template = self.env.get_template('struct.hpp')
+        structs = []
+        enable = CppEnableStruct(cif.Enables)
+        # Override name and docstring from parent CIFFields class
+        enable.name = cif.__name__ + 'Enables'
+        enable.doc = format_docstring(cif.__doc__)
+        structs.append(enable)
+        for structdef in get_structs(module):
+            structs.append(CppStruct(structdef))
+
+        typedefs = []
+        for field in cif.get_fields():
+            if not field.type or not issubclass(field.type, (basic.IntegerType, basic.FixedPointType)):
+                continue
+            typedefs.append({
+                'name': cpptypes.name_to_identifier(field.name),
+                'type': member_type(field.type),
+            })
+
+        template = self.env.get_template('cif.hpp')
         with open(filename, 'w') as fp:
-            structs = []
-            enable = CppEnableStruct(cif.Enables)
-            # Override name and docstring from parent CIFFields class
-            enable.name = cif.__name__ + 'Enables'
-            enable.doc = format_docstring(cif.__doc__)
-            structs.append(enable)
-            for structdef in get_structs(module):
-                structs.append(CppStruct(structdef))
             fp.write(template.render({
                 'name': cif.__name__,
                 'structs': structs,
+                'typedefs': typedefs,
             }))
 
     def headers(self):

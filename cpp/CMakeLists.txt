@@ -39,6 +39,7 @@ set(CMAKE_CLEAN_FILES ${generated_header_files})
 # List template files used to generate headers, used to trigger a re-generate
 # step if they are modified
 set(template_files
+    ${CMAKE_CURRENT_SOURCE_DIR}/templates/cif.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/templates/enums.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/templates/struct.hpp
 )
@@ -92,6 +93,7 @@ add_executable(test_libvrtgen
     tests/packed.cpp
     tests/prologue.cpp
     tests/utils.cpp
+    tests/serialize_test.cpp
 )
 target_link_libraries(test_libvrtgen vrtgen)
 target_link_libraries(test_libvrtgen Catch2)

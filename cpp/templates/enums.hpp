@@ -1,27 +1,24 @@
-#ifndef _VRTGEN_ENUMS_HPP_
-#define _VRTGEN_ENUMS_HPP_
 //% macro define_enum(enum)
-namespace ${enum.name} {
+namespace {{enum.name}} {
     /**
 //% for line in enum.doc
-     * ${line}
+     * {{line}}
 //% endfor
      */
     enum Code {
 //% for item in enum['values']
-        ${item.name} = ${enum.format(item.value)},
+        {{item.name}} = {{enum.format(item.value)}},
 //% endfor
     };
 }
-//% endmacro
+//%- endmacro
+#pragma once
 
 namespace vrtgen {
 //% for enum in enums
-/*{% if not loop.first %}*/
+/*% if not loop.first %*/
 
-/*{% endif %}*/
-    ${define_enum(enum)|indent(4)}
+/*% endif %*/
+    {{define_enum(enum)|indent(4)}}
 //% endfor
 }
-
-#endif // _VRTGEN_ENUMS_HPP_
