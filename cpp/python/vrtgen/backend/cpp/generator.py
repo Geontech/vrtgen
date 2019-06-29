@@ -64,7 +64,7 @@ def optional_type(typename):
     return 'vrtgen::optional<{}>'.format(typename)
 
 class CppPacket:
-    def __init__(self, name, packet):
+    def __init__(self, name, packet, header_class):
         self.name = name
         self.namespace = ''
         self.type = cpptypes.enum_value(packet.packet_type())
@@ -73,6 +73,7 @@ class CppPacket:
         self.has_integer_timestamp = packet.tsi.value != enums.TSI.NONE
         self.has_fractional_timestamp = packet.tsf.value != enums.TSF.NONE
         self.header = {
+            'type': 'vrtgen::packing::' + header_class,
             'fields': [],
         }
         self.set_header_field('PacketType', cpptypes.enum_value(packet.packet_type()))
@@ -80,15 +81,7 @@ class CppPacket:
         self.set_header_field('TSF', cpptypes.enum_value(packet.tsf.value))
         self.set_header_field('ClassIdentifierEnabled', str(self.has_class_id).lower(), getter='isClassIdentifierEnabled')
 
-        if packet.packet_type() in (enums.PacketType.SIGNAL_DATA, enums.PacketType.SIGNAL_DATA_STREAM_ID):
-            self.header['type'] = 'vrtgen::packing::DataHeader'
-        elif packet.packet_type() == enums.PacketType.CONTEXT:
-            self.header['type'] = 'vrtgen::packing::ContextHeader'
-        elif packet.packet_type() == enums.PacketType.COMMAND:
-            self.header['type'] = 'vrtgen::packing::CommandHeader'
-
         self.fields = []
-        self.structs = []
         self.members = []
 
     def set_header_field(self, name, value, setter=None, getter=None):
@@ -182,6 +175,10 @@ class CppGenerator(Generator):
             cppstruct.add_member(field.name, field_type, field.is_optional)
 
     def generate_data(self, cppstruct, packet):
+        cppstruct.set_header_field('TrailerIncluded', 'false')
+        cppstruct.set_header_field('NotaV49_0Packet', 'true')
+        cppstruct.set_header_field('SignalSpectrumorSignalTimeDataPacket', 'false')
+
         self.generate_prologue(cppstruct, packet)
 
         for field in packet.get_fields(Scope.TRAILER):
@@ -191,21 +188,29 @@ class CppGenerator(Generator):
             cppstruct.add_member(field.name, field_type, field.is_optional)
 
     def generate_context(self, cppstruct, packet):
+        cppstruct.set_header_field('NotaV49_0Packet', 'true')
+        cppstruct.set_header_field('TimestampMode', cpptypes.enum_value(packet.timestamp_mode.value))
+
         self.generate_prologue(cppstruct, packet)
         self.generate_payload(cppstruct, packet)
 
     def generate_command(self, cppstruct, packet):
+        cppstruct.set_header_field('AcknowledgePacket', 'false')
+        cppstruct.set_header_field('CancellationPacket', 'false')
+        
         self.generate_prologue(cppstruct, packet)
         self.generate_payload(cppstruct, packet)
 
     def generate(self, packet):
         name = cpptypes.name_to_identifier(packet.name)
-        model = CppPacket(name, packet)
         if packet.packet_type() in (enums.PacketType.SIGNAL_DATA, enums.PacketType.SIGNAL_DATA_STREAM_ID):
+            model = CppPacket(name, packet, 'DataHeader')
             self.generate_data(model, packet)
         elif isinstance(packet, config.ContextPacketConfiguration):
+            model = CppPacket(name, packet, 'ContextHeader')
             self.generate_context(model, packet)
         elif isinstance(packet, config.CommandPacketConfiguration):
+            model = CppPacket(name, packet, 'CommandHeader')
             self.generate_command(model, packet)
 
         self.packets.append(model)

@@ -116,7 +116,7 @@ class ContextPacketConfiguration(CIFPacketConfiguration):
     """
     def _add_prologue_fields(self):
         super()._add_prologue_fields()
-        self._add_field(ContextHeader.timestamp_mode, Scope.PROLOGUE, Mode.MANDATORY)
+        self.timestamp_mode = self._add_field(ContextHeader.timestamp_mode, Scope.PROLOGUE, Mode.MANDATORY)
 
     def packet_type(self):
         return enums.PacketType.CONTEXT
