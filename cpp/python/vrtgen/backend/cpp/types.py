@@ -20,9 +20,14 @@ def int_type(bits, signed):
         ctype = 'u' + ctype
     return ctype
 
+def enum_namespace(datatype):
+    return 'vrtgen::' + name_to_identifier(datatype.__name__)
+
 def enum_type(datatype):
-    name = name_to_identifier(datatype.__name__)
-    return 'vrtgen::{}::Code'.format(name)
+    return enum_namespace(datatype) + '::Code'
+
+def enum_value(value):
+    return '{}::{}'.format(enum_namespace(type(value)), value.name)
 
 def float_type(bits):
     if bits >= 32:

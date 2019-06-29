@@ -28,6 +28,10 @@ namespace vrtgen {
     private:
         uint8_t m_value[3];
     };
+
+    typedef uint32_t StreamIdentifier;
+    typedef uint32_t GenericIdentifier32;
+    typedef uint16_t GenericIdentifier16;
 }
 
 #endif // _VRTGEN_TYPES_HPP

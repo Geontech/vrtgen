@@ -56,6 +56,7 @@ add_custom_command(
 
 # Normal hand-written headers
 set(header_files
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/buffer.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/fixed.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/packed.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/swap.hpp
@@ -93,7 +94,6 @@ add_executable(test_libvrtgen
     tests/packed.cpp
     tests/prologue.cpp
     tests/utils.cpp
-    tests/serialize_test.cpp
 )
 target_link_libraries(test_libvrtgen vrtgen)
 target_link_libraries(test_libvrtgen Catch2)

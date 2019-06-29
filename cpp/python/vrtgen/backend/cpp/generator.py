@@ -46,6 +46,8 @@ def next_pow2(value):
     return 1<<(value-1).bit_length()
 
 def value_type(datatype):
+    if datatype == basic.StreamIdentifier:
+        return 'vrtgen::StreamIdentifier'
     if issubclass(datatype, basic.BooleanType):
         return 'bool'
     if issubclass(datatype, enums.BinaryEnum):
@@ -62,12 +64,44 @@ def optional_type(typename):
     return 'vrtgen::optional<{}>'.format(typename)
 
 class CppPacket:
-    def __init__(self, name):
+    def __init__(self, name, packet):
         self.name = name
         self.namespace = ''
+        self.type = cpptypes.enum_value(packet.packet_type())
+        self.has_stream_id = packet.stream_id.is_enabled
+        self.has_class_id = packet.class_id.is_enabled
+        self.has_integer_timestamp = packet.tsi.value != enums.TSI.NONE
+        self.has_fractional_timestamp = packet.tsf.value != enums.TSF.NONE
+        self.header = {
+            'fields': [],
+        }
+        self.set_header_field('PacketType', cpptypes.enum_value(packet.packet_type()))
+        self.set_header_field('TSI', cpptypes.enum_value(packet.tsi.value))
+        self.set_header_field('TSF', cpptypes.enum_value(packet.tsf.value))
+        self.set_header_field('ClassIdentifierEnabled', str(self.has_class_id).lower(), getter='isClassIdentifierEnabled')
+
+        if packet.packet_type() in (enums.PacketType.SIGNAL_DATA, enums.PacketType.SIGNAL_DATA_STREAM_ID):
+            self.header['type'] = 'vrtgen::packing::DataHeader'
+        elif packet.packet_type() == enums.PacketType.CONTEXT:
+            self.header['type'] = 'vrtgen::packing::ContextHeader'
+        elif packet.packet_type() == enums.PacketType.COMMAND:
+            self.header['type'] = 'vrtgen::packing::CommandHeader'
+
         self.fields = []
         self.structs = []
         self.members = []
+
+    def set_header_field(self, name, value, setter=None, getter=None):
+        if setter is None:
+            setter = 'set' + name
+        if getter is None:
+            getter = 'get' + name
+        self.header['fields'].append({
+            'name': name,
+            'getter': getter,
+            'setter': setter,
+            'value': value,
+        })
 
     def add_field(self, field):
         self.fields.append(field)
@@ -166,7 +200,7 @@ class CppGenerator(Generator):
 
     def generate(self, packet):
         name = cpptypes.name_to_identifier(packet.name)
-        model = CppPacket(name)
+        model = CppPacket(name, packet)
         if packet.packet_type() in (enums.PacketType.SIGNAL_DATA, enums.PacketType.SIGNAL_DATA_STREAM_ID):
             self.generate_data(model, packet)
         elif isinstance(packet, config.ContextPacketConfiguration):

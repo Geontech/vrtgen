@@ -73,19 +73,67 @@ namespace packing {
     struct {{packet.name}}Helper {
         static size_t bytes_required(const {{packet.name}}& packet)
         {
-            return 0;
+            size_t bytes = sizeof(vrtgen::packing::Header);
+//% if packet.has_stream_id
+            bytes += sizeof(vrtgen::StreamIdentifier);
+//% endif            
+//% if packet.has_class_id
+            bytes += sizeof(vrtgen::packing::ClassIdentifier);
+//% endif
+            return bytes;
         }
 
-        static void pack(const {{packet.name}}& packet, void* buffer, size_t bufsize)
+        static void pack(const {{packet.name}}& packet, void* ptr, size_t bufsize)
         {
-            vrtgen::packing::Header* header = reinterpret_cast<vrtgen::packing::Header*>(buffer);
-            // TODO
+            vrtgen::OutputBuffer buffer(ptr, bufsize);
+            {{packet.header.type}}* header = buffer.insert<{{packet.header.type}}>();
+//% for field in packet.header.fields
+            header->{{field.setter}}({{field.value}});
+//% endfor
+
+//% if packet.has_stream_id
+            buffer.put(packet.getStreamIdentifier());
+//%endif
+//% if packet.has_class_id
+            buffer.insert<vrtgen::packing::ClassIdentifier>();
+//% endif
+//% if packet.has_integer_timestamp
+            buffer.put(packet.getIntegerTimestamp());
+//%endif
+//% if packet.has_fractional_timestamp
+            buffer.put(packet.getFractionalTimestamp());
+//%endif
+//% if packet.fields
+            vrtgen::packing::CIF0Enables* cif_0 = buffer.insert<vrtgen::packing::CIF0Enables>();
+//% endif
+            header->setPacketSize(buffer.getpos() / 4);
         }
 
-        static void unpack({{packet.name}}& packet, const uint8_t* buffer, size_t bufsize)
+        static void unpack({{packet.name}}& packet, const void* ptr, size_t bufsize)
         {
-            const vrtgen::packing::Header* header = reinterpret_cast<const vrtgen::packing::Header*>(buffer);
-            // TODO
+            vrtgen::InputBuffer buffer(ptr, bufsize);
+            const {{packet.header.type}}* header = buffer.next<{{packet.header.type}}>();
+//% for field in packet.header.fields
+            if (header->{{field.getter}}() != {{field.value}}) {
+                // ERROR
+            }
+//% endfor
+
+//% if packet.has_stream_id
+            packet.setStreamIdentifier(buffer.get<vrtgen::StreamIdentifier>());
+//%endif
+//% if packet.has_class_id
+            buffer.next<vrtgen::packing::ClassIdentifier>();
+//% endif
+//% if packet.has_integer_timestamp
+            packet.setIntegerTimestamp(buffer.get<uint32_t>());
+//%endif
+//% if packet.has_fractional_timestamp
+            packet.setFractionalTimestamp(buffer.get<uint64_t>());
+//%endif
+//%if packet.fields
+            const vrtgen::packing::CIF0Enables* cif_0 = buffer.next<vrtgen::packing::CIF0Enables>();
+//% endif
         }
     };
 }

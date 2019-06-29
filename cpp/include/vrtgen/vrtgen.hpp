@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vrtgen/version.hpp>
+#include <vrtgen/buffer.hpp>
 #include <vrtgen/enums.hpp>
 #include <vrtgen/types.hpp>
 #include <vrtgen/packing/header.hpp>
