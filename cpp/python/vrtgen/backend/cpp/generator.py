@@ -7,10 +7,17 @@ from vrtgen.model.field import Scope
 from vrtgen.types import basic
 from vrtgen.types import enums
 from vrtgen.types import struct
+from vrtgen.types import cif0
+from vrtgen.types import cif1
 
 from vrtgen.backend.generator import Generator
 
 from . import types as cpptypes
+
+CIFS = (
+    cif0.CIF0,
+    cif1.CIF1,
+)
 
 def do_namespace(text, namespace):
     """
@@ -108,13 +115,14 @@ class CppPacket:
         })
 
     def add_field(self, field):
+        cif = CIFS.index(field.field.owner)
         field_type = value_type(field.type)
         self.add_member(field.name, field_type, field.is_optional)
         self.fields.append({
             'name': cpptypes.name_to_identifier(field.name),
             'optional': field.is_optional,
-            'type': 'uint32_t',
-            'cif': 0,
+            'type': field_type,
+            'cif': cif,
         })
 
     def add_member(self, name, datatype, optional=False):

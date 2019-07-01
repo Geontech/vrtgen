@@ -12,14 +12,16 @@ class ContainerItem:
     """
     Base class for named fields in a container.
     """
-    __slots__ = ('name', 'type', 'editable', 'attr')
+    __slots__ = ('name', 'type', 'editable', 'owner', 'attr')
     def __init__(self, name, datatype, editable):
         self.name = name
         self.type = datatype
         self.editable = editable
+        self.owner = None
         self.attr = str()
 
     def __set_name__(self, owner, name):
+        self.owner = owner
         self.attr = name
 
     def _initialize(self, instance):
