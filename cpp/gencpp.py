@@ -319,19 +319,34 @@ class LibraryGenerator:
         with open(filename, 'w') as fp:
             fp.write(template.render({'enums': enum_types}))
 
+    @staticmethod
+    def field_to_typedef(field):
+        return {
+            'name': cpptypes.name_to_identifier(field.name),
+            'type': member_type(field.type),
+        }
+
     def generate_header(self, filename):
-        template = self.env.get_template('struct.hpp')
+        # Minor misnomer: the CIF header emits typedefs, which we want for
+        template = self.env.get_template('cif.hpp')
+        structs = [
+            CppHeaderStruct(prologue.Header),
+            CppHeaderStruct(prologue.DataHeader),
+            CppHeaderStruct(prologue.ContextHeader),
+            CppHeaderStruct(prologue.CommandHeader),
+            CppStruct(prologue.ClassIdentifier)
+        ]
+
+        typedefs = [
+            self.field_to_typedef(prologue.Prologue.stream_id),
+            self.field_to_typedef(prologue.Prologue.integer_timestamp),
+            self.field_to_typedef(prologue.Prologue.fractional_timestamp),
+        ]
         with open(filename, 'w') as fp:
-            structs = [
-                CppHeaderStruct(prologue.Header),
-                CppHeaderStruct(prologue.DataHeader),
-                CppHeaderStruct(prologue.ContextHeader),
-                CppHeaderStruct(prologue.CommandHeader),
-                CppStruct(prologue.ClassIdentifier)
-            ]
             fp.write(template.render({
                 'name': 'header',
                 'structs': structs,
+                'typedefs': typedefs,
             }))
 
     def generate_trailer(self, filename):
@@ -356,10 +371,7 @@ class LibraryGenerator:
         for field in cif.get_fields():
             if not field.type or not issubclass(field.type, (basic.IntegerType, basic.FixedPointType)):
                 continue
-            typedefs.append({
-                'name': cpptypes.name_to_identifier(field.name),
-                'type': member_type(field.type),
-            })
+            typedefs.append(self.field_to_typedef(field))
 
         template = self.env.get_template('cif.hpp')
         with open(filename, 'w') as fp:

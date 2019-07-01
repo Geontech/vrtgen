@@ -32,12 +32,6 @@ namespace vrtgen {
     typedef uint32_t StreamIdentifier;
     typedef uint32_t GenericIdentifier32;
     typedef uint16_t GenericIdentifier16;
-
-    namespace packing {
-        typedef vrtgen::big_endian<vrtgen::StreamIdentifier> StreamIdentifier;
-        typedef vrtgen::big_endian<uint32_t> IntegerTimestamp;
-        typedef vrtgen::big_endian<uint64_t> FractionalTimestamp;
-    }
 }
 
 #endif // _VRTGEN_TYPES_HPP
