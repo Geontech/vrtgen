@@ -83,6 +83,31 @@ namespace packing {
             return bytes;
         }
 
+//% for cif in packet.cifs[1:] if cif.optional
+        /**
+         * Checks whether @a packet has any CIF{{cif.number}} fields set.
+         */
+        static bool has_cif{{cif.number}}(const {{packet.name}}& packet)
+        {
+//%     for field in cif.fields
+            if (packet.has{{field.name}}()) {
+                return true;
+            }
+//%     endfor
+            return false;
+        }
+
+//% endfor
+//% for cif in packet.cifs[1:]
+        static const vrtgen::packing::{{cif.header}}* get_cif{{cif.number}}(vrtgen::InputBuffer& buffer, const vrtgen::packing::CIF0Enables* cif0)
+        {
+            if (cif0->getCIF{{cif.number}}Enable()) {
+                return buffer.next<vrtgen::packing::{{cif.header}}>();
+            }
+            return nullptr;
+        }
+
+//% endfor
         static void pack(const {{packet.name}}& packet, void* ptr, size_t bufsize)
         {
             vrtgen::OutputBuffer buffer(ptr, bufsize);
@@ -103,9 +128,28 @@ namespace packing {
 //% if packet.has_fractional_timestamp
             buffer.put(packet.getFractionalTimestamp());
 //%endif
-//% if packet.fields
-            vrtgen::packing::CIF0Enables* cif_0 = buffer.insert<vrtgen::packing::CIF0Enables>();
-//% endif
+//% for cif in packet.cifs if cif.enabled
+            vrtgen::packing::{{cif.header}}* cif_{{cif.number}} = nullptr;
+//%     if cif.optional
+            if (has_cif{{cif.number}}(packet)) {
+                cif_0->setCIF{{cif.number}}Enable(true);
+                cif_{{cif.number}} = buffer.insert<vrtgen::packing::{{cif.header}}>();
+            }
+//%     else
+            cif_{{cif.number}} = buffer.insert<vrtgen::packing::{{cif.header}}>();
+//%     endif
+//% endfor
+//% for field in packet.fields
+//%     if field.optional
+            if (packet.has{{field.name}}()) {
+                cif_{{field.cif}}->set{{field.name}}Enabled(true);
+                buffer.put(packet.get{{field.name}}());
+            }
+//%     else
+            cif_{{field.cif}}->set{{field.name}}Enabled(true);
+            buffer.put(packet.get{{field.name}}());
+//%     endif
+//% endfor
             header->setPacketSize(buffer.getpos() / 4);
         }
 
@@ -121,19 +165,39 @@ namespace packing {
 
 //% if packet.has_stream_id
             packet.setStreamIdentifier(buffer.get<vrtgen::StreamIdentifier>());
-//%endif
+//% endif
 //% if packet.has_class_id
             buffer.next<vrtgen::packing::ClassIdentifier>();
 //% endif
 //% if packet.has_integer_timestamp
             packet.setIntegerTimestamp(buffer.get<uint32_t>());
-//%endif
+//% endif
 //% if packet.has_fractional_timestamp
             packet.setFractionalTimestamp(buffer.get<uint64_t>());
-//%endif
-//%if packet.fields
-            const vrtgen::packing::CIF0Enables* cif_0 = buffer.next<vrtgen::packing::CIF0Enables>();
 //% endif
+//% for cif in packet.cifs if cif.enabled
+//%     if cif.number == 0
+            const vrtgen::packing::{{cif.header}}* cif_{{cif.number}} = buffer.next<vrtgen::packing::{{cif.header}}>();
+//%     else
+            const vrtgen::packing::{{cif.header}}* cif_{{cif.number}} = get_cif{{cif.number}}(buffer, cif_0);
+//%        if not cif.optional
+            if (!cif_{{cif.number}}) {
+                // ERROR
+            }
+//%         endif
+//%     endif
+//% endfor
+//% for field in packet.fields
+            if (!cif_{{field.cif}}->is{{field.name}}Enabled()) {
+//%     if field.optional
+                packet.clear{{field.name}}();
+//%     else
+                // ERROR
+//%     endif
+            } else {
+                packet.set{{field.name}}(buffer.get<{{field.type}}>());
+            }
+//% endfor
         }
     };
 }

@@ -81,8 +81,19 @@ class CppPacket:
         self.set_header_field('TSF', cpptypes.enum_value(packet.tsf.value))
         self.set_header_field('ClassIdentifierEnabled', str(self.has_class_id).lower(), getter='isClassIdentifierEnabled')
 
+        self.cifs = []
+        self.add_cif(0)
+        self.add_cif(1)
         self.fields = []
         self.members = []
+    
+    def add_cif(self, number):
+        self.cifs.append({
+            'number': number,
+            'header': 'CIF{}Enables'.format(number),
+            'enabled': False,
+            'optional': False,
+        })
 
     def set_header_field(self, name, value, setter=None, getter=None):
         if setter is None:
@@ -97,7 +108,14 @@ class CppPacket:
         })
 
     def add_field(self, field):
-        self.fields.append(field)
+        field_type = value_type(field.type)
+        self.add_member(field.name, field_type, field.is_optional)
+        self.fields.append({
+            'name': cpptypes.name_to_identifier(field.name),
+            'optional': field.is_optional,
+            'type': 'uint32_t',
+            'cif': 0,
+        })
 
     def add_member(self, name, datatype, optional=False):
         identifier = cpptypes.name_to_identifier(name)
@@ -171,8 +189,7 @@ class CppGenerator(Generator):
         for field in packet.get_fields(Scope.PAYLOAD):
             if field.is_disabled:
                 continue
-            field_type = value_type(field.type)
-            cppstruct.add_member(field.name, field_type, field.is_optional)
+            cppstruct.add_field(field)
 
     def generate_data(self, cppstruct, packet):
         cppstruct.set_header_field('TrailerIncluded', 'false')
@@ -190,6 +207,10 @@ class CppGenerator(Generator):
     def generate_context(self, cppstruct, packet):
         cppstruct.set_header_field('NotaV49_0Packet', 'true')
         cppstruct.set_header_field('TimestampMode', cpptypes.enum_value(packet.timestamp_mode.value))
+        cppstruct.cifs[0]['enabled'] = True
+        # TODO: determine dynamically
+        cppstruct.cifs[1]['enabled'] = True
+        cppstruct.cifs[1]['optional'] = True
 
         self.generate_prologue(cppstruct, packet)
         self.generate_payload(cppstruct, packet)
@@ -197,6 +218,10 @@ class CppGenerator(Generator):
     def generate_command(self, cppstruct, packet):
         cppstruct.set_header_field('AcknowledgePacket', 'false')
         cppstruct.set_header_field('CancellationPacket', 'false')
+        cppstruct.cifs[0]['enabled'] = True
+        # TODO: determine dynamically
+        cppstruct.cifs[1]['enabled'] = True
+        cppstruct.cifs[1]['optional'] = True
         
         self.generate_prologue(cppstruct, packet)
         self.generate_payload(cppstruct, packet)
