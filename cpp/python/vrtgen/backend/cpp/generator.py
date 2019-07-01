@@ -179,11 +179,11 @@ class CppGenerator(Generator):
             cppstruct.add_member(field.name, field_type)
 
     def generate_prologue(self, cppstruct, packet):
-        if packet.tsi != enums.TSI.NONE:
+        if packet.tsi.value != enums.TSI.NONE:
             field_type = value_type(packet.integer_timestamp.type)
             cppstruct.add_member(packet.integer_timestamp.name, field_type)
             
-        if packet.tsf != enums.TSF.NONE:
+        if packet.tsf.value != enums.TSF.NONE:
             field_type = value_type(packet.fractional_timestamp.type)
             cppstruct.add_member(packet.fractional_timestamp.name, field_type)
 
