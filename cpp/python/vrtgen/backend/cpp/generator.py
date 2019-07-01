@@ -115,15 +115,21 @@ class CppPacket:
         })
 
     def add_field(self, field):
-        cif = CIFS.index(field.field.owner)
+        cif = self.cifs[CIFS.index(field.field.owner)]
         field_type = value_type(field.type)
         self.add_member(field.name, field_type, field.is_optional)
+        identifier = cpptypes.name_to_identifier(field.name)
         self.fields.append({
-            'name': cpptypes.name_to_identifier(field.name),
+            'name': identifier,
             'optional': field.is_optional,
-            'type': field_type,
-            'cif': cif,
+            'type': 'vrtgen::packing::' + identifier,
+            'cif': cif['number'],
         })
+        if not cif['enabled']:
+            cif['enabled'] = True
+            cif['optional'] = True
+        if not field.is_optional:
+            cif['optional'] = False
 
     def add_member(self, name, datatype, optional=False):
         identifier = cpptypes.name_to_identifier(name)
@@ -216,9 +222,6 @@ class CppGenerator(Generator):
         cppstruct.set_header_field('NotaV49_0Packet', 'true')
         cppstruct.set_header_field('TimestampMode', cpptypes.enum_value(packet.timestamp_mode.value))
         cppstruct.cifs[0]['enabled'] = True
-        # TODO: determine dynamically
-        cppstruct.cifs[1]['enabled'] = True
-        cppstruct.cifs[1]['optional'] = True
 
         self.generate_prologue(cppstruct, packet)
         self.generate_payload(cppstruct, packet)
@@ -227,9 +230,6 @@ class CppGenerator(Generator):
         cppstruct.set_header_field('AcknowledgePacket', 'false')
         cppstruct.set_header_field('CancellationPacket', 'false')
         cppstruct.cifs[0]['enabled'] = True
-        # TODO: determine dynamically
-        cppstruct.cifs[1]['enabled'] = True
-        cppstruct.cifs[1]['optional'] = True
         
         self.generate_prologue(cppstruct, packet)
         self.generate_payload(cppstruct, packet)

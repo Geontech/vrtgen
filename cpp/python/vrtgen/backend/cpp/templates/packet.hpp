@@ -80,6 +80,18 @@ namespace packing {
 //% if packet.has_class_id
             bytes += sizeof(vrtgen::packing::ClassIdentifier);
 //% endif
+//% if packet.has_integer_timestamp
+            bytes += sizeof(vrtgen::packing::IntegerTimestamp);
+//% endif
+//% if packet.has_fractional_timestamp
+            bytes += sizeof(vrtgen::packing::FractionalTimestamp);
+//% endif
+//% for field in packet.fields
+//%     if field.optional
+//%     else
+            bytes += sizeof({{field.type}});
+//%     endif
+//% endfor
             return bytes;
         }
 
@@ -117,17 +129,17 @@ namespace packing {
 //% endfor
 
 //% if packet.has_stream_id
-            buffer.put(packet.getStreamIdentifier());
-//%endif
+            buffer.put<vrtgen::packing::StreamIdentifier>(packet.getStreamIdentifier());
+//% endif
 //% if packet.has_class_id
-            buffer.insert<vrtgen::packing::ClassIdentifier>();
+            vrtgen::packing::ClassIdentifier* class_id = buffer.insert<vrtgen::packing::ClassIdentifier>();
 //% endif
 //% if packet.has_integer_timestamp
-            buffer.put(packet.getIntegerTimestamp());
-//%endif
+            buffer.put<vrtgen::packing::IntegerTimestamp>(packet.getIntegerTimestamp());
+//% endif
 //% if packet.has_fractional_timestamp
-            buffer.put(packet.getFractionalTimestamp());
-//%endif
+            buffer.put<vrtgen::packing::FractionalTimestamp>(packet.getFractionalTimestamp());
+//% endif
 //% for cif in packet.cifs if cif.enabled
             vrtgen::packing::{{cif.header}}* cif_{{cif.number}} = nullptr;
 //%     if cif.optional
@@ -143,11 +155,11 @@ namespace packing {
 //%     if field.optional
             if (packet.has{{field.name}}()) {
                 cif_{{field.cif}}->set{{field.name}}Enabled(true);
-                buffer.put(packet.get{{field.name}}());
+                buffer.put<{{field.type}}>(packet.get{{field.name}}());
             }
 //%     else
             cif_{{field.cif}}->set{{field.name}}Enabled(true);
-            buffer.put(packet.get{{field.name}}());
+            buffer.put<{{field.type}}>(packet.get{{field.name}}());
 //%     endif
 //% endfor
             header->setPacketSize(buffer.getpos() / 4);
@@ -164,16 +176,16 @@ namespace packing {
 //% endfor
 
 //% if packet.has_stream_id
-            packet.setStreamIdentifier(buffer.get<vrtgen::StreamIdentifier>());
+            packet.setStreamIdentifier(buffer.get<vrtgen::packing::StreamIdentifier>());
 //% endif
 //% if packet.has_class_id
             buffer.next<vrtgen::packing::ClassIdentifier>();
 //% endif
 //% if packet.has_integer_timestamp
-            packet.setIntegerTimestamp(buffer.get<uint32_t>());
+            packet.setIntegerTimestamp(buffer.get<vrtgen::packing::IntegerTimestamp>());
 //% endif
 //% if packet.has_fractional_timestamp
-            packet.setFractionalTimestamp(buffer.get<uint64_t>());
+            packet.setFractionalTimestamp(buffer.get<vrtgen::packing::FractionalTimestamp>());
 //% endif
 //% for cif in packet.cifs if cif.enabled
 //%     if cif.number == 0

@@ -33,6 +33,7 @@ namespace vrtgen {
     public:
         typedef IntT int_type;
         typedef FloatT float_type;
+        typedef float_type value_type;
         typedef detail::fixed_converter<int_type,radix,float_type> converter_type;
 
         inline float_type get() const

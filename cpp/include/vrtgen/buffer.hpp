@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <new>
 
 #include <vrtgen/types/swap.hpp>
 
@@ -24,10 +25,9 @@ namespace vrtgen {
         }
 
         template <typename T>
-        void put(const T& value)
+        void put(const typename T::value_type& value)
         {
-            *reinterpret_cast<T*>(m_pos) = vrtgen::detail::byte_swap<sizeof(T)>::swap(value);
-            m_pos += sizeof(T);
+            insert<T>()->set(value);
         }
 
         size_t getpos() const
@@ -59,9 +59,9 @@ namespace vrtgen {
         }
 
         template <typename T>
-        T get()
+        typename T::value_type get()
         {
-            return vrtgen::detail::byte_swap<sizeof(T)>::swap(*next<T>());
+            return next<T>()->get();
         }
 
     private:
