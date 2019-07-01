@@ -86,8 +86,20 @@ namespace packing {
 //% if packet.has_fractional_timestamp
             bytes += sizeof(vrtgen::packing::FractionalTimestamp);
 //% endif
+//% for cif in packet.cifs
+//%     if cif.optional
+            if (has_cif{{cif.number}}(packet)) {
+                bytes += sizeof(vrtgen::packing::{{cif.header}});
+            }
+//%     else
+            bytes += sizeof(vrtgen::packing::{{cif.header}});
+//%     endif
+//% endfor
 //% for field in packet.fields
 //%     if field.optional
+            if (packet.has{{field.name}}()) {
+                bytes += sizeof({{field.type}});
+            }
 //%     else
             bytes += sizeof({{field.type}});
 //%     endif
@@ -101,7 +113,7 @@ namespace packing {
          */
         static bool has_cif{{cif.number}}(const {{packet.name}}& packet)
         {
-//%     for field in cif.fields
+//%     for field in packet.fields if field.cif == cif.number and field.optional
             if (packet.has{{field.name}}()) {
                 return true;
             }
@@ -192,7 +204,7 @@ namespace packing {
             const vrtgen::packing::{{cif.header}}* cif_{{cif.number}} = buffer.next<vrtgen::packing::{{cif.header}}>();
 //%     else
             const vrtgen::packing::{{cif.header}}* cif_{{cif.number}} = get_cif{{cif.number}}(buffer, cif_0);
-//%        if not cif.optional
+//%         if not cif.optional
             if (!cif_{{cif.number}}) {
                 // ERROR
             }
@@ -200,7 +212,8 @@ namespace packing {
 //%     endif
 //% endfor
 //% for field in packet.fields
-            if (!cif_{{field.cif}}->is{{field.name}}Enabled()) {
+//%     set cifvar = "cif_{}".format(field.cif)
+            if (!{{cifvar}} || !{{cifvar}}->is{{field.name}}Enabled()) {
 //%     if field.optional
                 packet.clear{{field.name}}();
 //%     else
