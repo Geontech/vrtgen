@@ -162,7 +162,7 @@ namespace packing {
             buffer.put<{{field.type}}>(packet.get{{field.name}}());
 //%     endif
 //% endfor
-            header->setPacketSize(buffer.getpos() / 4);
+            header->setPacketSize(buffer.size() / 4);
         }
 
         static void unpack({{packet.name}}& packet, const void* ptr, size_t bufsize)
