@@ -1,3 +1,7 @@
+from vrtgen.types import basic
+from vrtgen.types import enums
+from vrtgen.types import struct
+
 def name_to_identifier(name):
     identifier = ''
     for ch in name:
@@ -34,3 +38,21 @@ def float_type(bits):
         return 'double'
     else:
         return 'float'
+
+def fixed_type(bits, radix, signed=True):
+    return 'fixed<{},{},{}>'.format(int_type(bits, signed), radix, float_type(bits))
+
+def value_type(datatype):
+    if datatype == basic.StreamIdentifier:
+        return 'vrtgen::StreamIdentifier'
+    if issubclass(datatype, basic.BooleanType):
+        return 'bool'
+    if issubclass(datatype, enums.BinaryEnum):
+        return enum_type(datatype)
+    if issubclass(datatype, basic.FixedPointType):
+        return float_type(datatype.bits)
+    if issubclass(datatype, basic.IntegerType):
+        return int_type(datatype.bits, datatype.signed)
+    if issubclass(datatype, struct.Struct):
+        return name_to_identifier(datatype.__name__)
+    raise NotImplementedError(datatype.__name__)

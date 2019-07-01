@@ -41,23 +41,6 @@ def get_structs(module):
         return obj.__module__ == module.__name__
     return [cls for _, cls in inspect.getmembers(module, is_struct)]
 
-def fixed_type(bits, radix, signed=True):
-    int_type = cpptypes.int_type(bits, signed)
-    float_type = cpptypes.float_type(bits)
-    return 'fixed<{},{},{}>'.format(int_type, radix, float_type)
-
-def value_type(datatype):
-    if issubclass(datatype, enums.BinaryEnum):
-        return cpptypes.enum_type(datatype)
-    if datatype == basic.OUI:
-        return 'OUI::int_type'
-    if issubclass(datatype, basic.IntegerType):
-        return cpptypes.int_type(datatype.bits, datatype.signed)
-    if issubclass(datatype, basic.FixedPointType):
-        return cpptypes.float_type(datatype.bits)
-    if issubclass(datatype, basic.BooleanType):
-        return 'bool'
-
 def member_type(datatype):
     if datatype == basic.OUI:
         return 'OUI'
@@ -67,7 +50,7 @@ def member_type(datatype):
         base_type = cpptypes.int_type(datatype.bits, datatype.signed)
         return 'big_endian<{}>'.format(base_type)
     if issubclass(datatype, basic.FixedPointType):
-        return fixed_type(datatype.bits, datatype.radix)
+        return cpptypes.fixed_type(datatype.bits, datatype.radix)
     raise NotImplementedError(datatype.__name__)
 
 def format_docstring(doc):
@@ -127,7 +110,7 @@ def format_value_methods(field, member):
             'name' : 'set'+identifier,
         },
         'member': member,
-        'type': value_type(field.type),
+        'type': cpptypes.value_type(field.type),
         'bits': field.type.bits,
     }
 
@@ -182,7 +165,7 @@ class Tag:
                 return 'signed'
             else:
                 return 'unsigned'
-        return value_type(datatype)
+        return cpptypes.value_type(datatype)
 
 class Packed(Member):
     def __init__(self, name, offset):
