@@ -130,23 +130,58 @@ class CppPacket:
             'type': 'vrtgen::packing::' + identifier
         })
 
-    def add_field(self, field):
-        cif = self.cifs[CIFS.index(field.field.owner)]
-        field_type = value_type(field.type)
-        self.add_member(field.name, field_type, field.is_optional)
+    def create_packing_field(self, field, namespaced=True):
         identifier = cpptypes.name_to_identifier(field.name)
-        self.fields.append({
+        packing = {
             'name': identifier,
             'title': field.name,
+            'attr': field.field.attr,
             'optional': field.is_optional,
             'type': 'vrtgen::packing::' + identifier,
-            'cif': cif['number'],
-        })
+        }
+        if issubclass(field.type, struct.Struct):
+            packing['struct'] = True
+            packing['fields'] = []
+            for subfield in field.get_fields():
+                if subfield.is_disabled:
+                    continue
+                if namespaced:
+                    subfield_name = field.name + subfield.name
+                else:
+                    subfield_name = subfield.name
+                subfield_dict = {
+                    'name': cpptypes.name_to_identifier(subfield_name),
+                    'srcname': cpptypes.name_to_identifier(subfield.name),
+                    'title': subfield.name,
+                }
+                if subfield.is_constant:
+                    subfield_dict['value'] = subfield.value
+                packing['fields'].append(subfield_dict)
+
+        return packing
+
+    def add_field(self, field):
+        cif = self.cifs[CIFS.index(field.field.owner)]
         if not cif['enabled']:
             cif['enabled'] = True
             cif['optional'] = True
         if not field.is_optional:
             cif['optional'] = False
+
+        cif_field = self.create_packing_field(field)
+        cif_field['cif'] = cif['number']
+        self.fields.append(cif_field)
+
+        if issubclass(field.type, struct.Struct):
+            for subfield in field.get_fields():
+                if subfield.is_disabled or subfield.is_constant:
+                    continue
+                subfield_name = field.name + subfield.name
+                subfield_type = value_type(subfield.type)
+                self.add_member(subfield_name, subfield_type, subfield.is_optional)
+        else:
+            field_type = value_type(field.type)
+            self.add_member(field.name, field_type, field.is_optional)
 
     def add_member(self, name, datatype, optional=False):
         identifier = cpptypes.name_to_identifier(name)
@@ -204,28 +239,12 @@ class CppGenerator(Generator):
     def generate_class_id(self, cppstruct, packet):
         if packet.class_id.is_disabled:
             return
-        identifier = cpptypes.name_to_identifier(packet.class_id.name)
-        class_id = {
-            'name': identifier,
-            'title': packet.class_id.name,
-            'attr': 'class_id',
-            'type': 'vrtgen::packing::' + identifier,
-            'struct': True,
-            'fields': [],
-        }
+        class_id = cppstruct.create_packing_field(packet.class_id, namespaced=False)
         for field in packet.class_id.get_fields():
-            if field.is_disabled:
+            if field.is_disabled or field.is_constant:
                 continue
-            subfield = {
-                'name': cpptypes.name_to_identifier(field.name),
-                'title': field.name,
-            }
-            if field.is_constant:
-                subfield['value'] = field.value
-            else:
-                field_type = value_type(field.type)
-                cppstruct.add_member(field.name, field_type)
-            class_id['fields'].append(subfield)
+            field_type = value_type(field.type)
+            cppstruct.add_member(field.name, field_type)
         cppstruct.prologue.append(class_id)
 
     def generate_prologue(self, cppstruct, packet):

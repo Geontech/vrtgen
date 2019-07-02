@@ -3,9 +3,9 @@
 {{field.type}}* {{field.attr}} = buffer.insert<{{field.type}}>();
 //%         for subfield in field.fields
 //%             if subfield.value
-{{field.attr}}->set{{subfield.name}}({{subfield.value}});
+{{field.attr}}->set{{subfield.srcname}}({{subfield.value}});
 //%             else
-{{field.attr}}->set{{subfield.name}}(packet.get{{subfield.name}}());
+{{field.attr}}->set{{subfield.srcname}}(packet.get{{subfield.name}}());
 //%             endif
 //%         endfor
 //%     else
@@ -27,7 +27,7 @@ packet.set{{field.name}}(buffer.get<{{field.type}}>());
 //%         if subfield.value
 ::validate({{field.attr}}->get{{subfield.name}}(), {{subfield.value}}, "invalid subfield {{subfield.title}}");
 //%         else
-packet.set{{subfield.name}}({{field.attr}}->get{{subfield.name}}());
+packet.set{{subfield.name}}({{field.attr}}->get{{subfield.srcname}}());
 //%         endif
 //%     endfor
 //% endmacro
