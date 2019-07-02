@@ -31,6 +31,18 @@ packet.set{{field.name}}(buffer.get<{{field.type}}>());
 //% macro packet_impl(packet)
 using {{namespace}}::packing::{{packet.helper}};
 
+bool {{packet.helper}}::match(const void* ptr, size_t bufsize)
+{
+    vrtgen::InputBuffer buffer(ptr, bufsize);
+    const {{packet.header.type}}* header = buffer.next<{{packet.header.type}}>();
+//% for field in packet.header.fields
+    if (header->{{field.getter}}() != {{field.value}}) {
+        return false;
+    }
+//% endfor
+    return true;
+}
+
 size_t {{packet.helper}}::bytes_required(const {{packet.name}}& packet)
 {
     size_t bytes = sizeof({{packet.header.type}});
@@ -102,6 +114,9 @@ void {{packet.helper}}::pack(const {{packet.name}}& packet, void* ptr, size_t bu
         cif_{{cif.number}} = buffer.insert<{{cif.header}}>();
     }
 //%     else
+//%         if cif.number != 0
+    cif_0->setCIF{{cif.number}}Enable(true);
+//%         endif
     cif_{{cif.number}} = buffer.insert<{{cif.header}}>();
 //%     endif
 //% endfor

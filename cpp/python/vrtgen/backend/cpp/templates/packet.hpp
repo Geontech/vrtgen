@@ -71,6 +71,8 @@ private:
 
 namespace packing {
     struct {{packet.helper}} {
+        static bool match(const void* ptr, size_t length);
+
         static size_t bytes_required(const {{packet.name}}& packet);
 
 //% for cif in packet.cifs[1:] if cif.optional
