@@ -73,6 +73,7 @@ def optional_type(typename):
 class CppPacket:
     def __init__(self, name, packet, header_class):
         self.name = name
+        self.helper = name + 'Helper'
         self.namespace = ''
         self.type = cpptypes.enum_value(packet.packet_type())
         self.has_stream_id = packet.stream_id.is_enabled
@@ -156,10 +157,11 @@ class CppGenerator(Generator):
         loader = jinja2.FileSystemLoader(template_path)
         self.env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
         self.env.filters['namespace'] = do_namespace
-        self.template = self.env.get_template('header.hpp')
         self.output_path = os.getcwd()
         self.header_ext = '.hpp'
+        self.impl_ext = '.cpp'
         self.header = None
+        self.implfile = None
         self.packets = []
         self.namespace = ''
 
@@ -167,14 +169,22 @@ class CppGenerator(Generator):
         basename, _ = os.path.splitext(filename)
         header_file = os.path.join(self.output_path, basename + self.header_ext)
         self.header = open(header_file, 'w')
+        impl_file = os.path.join(self.output_path, basename + self.impl_ext)
+        self.implfile = open(impl_file, 'w')
 
     def end_file(self):
         context = {
             'packets':self.packets,
             'namespace': self.namespace,
         }
-        self.header.write(self.template.render(context))
+        template = self.env.get_template('header.hpp')
+        self.header.write(template.render(context))
         self.header.close()
+
+        context['header'] = os.path.basename(self.header.name)
+        template = self.env.get_template('packet.cpp')
+        self.implfile.write(template.render(context))
+        self.implfile.close
 
     def generate_class_id(self, cppstruct, packet):
         if packet.class_id.is_disabled:
