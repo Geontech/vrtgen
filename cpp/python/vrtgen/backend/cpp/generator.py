@@ -145,11 +145,11 @@ class CppPacket:
             'title': field.name,
             'attr': field.field.attr,
             'optional': field.is_optional,
-            'type': 'vrtgen::packing::' + identifier,
         }
         if issubclass(field.type, struct.Struct):
             packing['struct'] = True
             packing['fields'] = []
+            packing['type'] = 'vrtgen::packing::' + cpptypes.name_to_identifier(field.type.__name__)
             for subfield in field.get_fields():
                 if subfield.is_disabled:
                     continue
@@ -165,7 +165,8 @@ class CppPacket:
                 if subfield.is_constant:
                     subfield_dict['value'] = subfield.value
                 packing['fields'].append(subfield_dict)
-
+        else:
+            packing['type'] = 'vrtgen::packing::' + identifier
         return packing
 
     def add_field(self, field):
@@ -222,8 +223,8 @@ class CppGenerator(Generator):
 
     def start_file(self, filename):
         basename, _ = os.path.splitext(filename)
-        self.header = os.path.join(self.output_path, basename + self.header_ext)
-        self.implfile = os.path.join(self.output_path, basename + self.impl_ext)
+        self.header = basename + self.header_ext
+        self.implfile = basename + self.impl_ext
 
     def end_file(self):
         context = {
@@ -231,12 +232,12 @@ class CppGenerator(Generator):
             'namespace': self.namespace,
         }
         template = self.env.get_template('header.hpp')
-        with open(self.header, 'w') as fp:
+        with open(os.path.join(self.output_path, self.header), 'w') as fp:
             fp.write(template.render(context))
 
         context['header'] = self.header
         template = self.env.get_template('packet.cpp')
-        with open(self.implfile, 'w') as fp:
+        with open(os.path.join(self.output_path, self.implfile), 'w') as fp:
             fp.write(template.render(context))
 
     def generate_prologue(self, cppstruct, packet):
