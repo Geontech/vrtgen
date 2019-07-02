@@ -1,21 +1,44 @@
+//% macro pack_field(field)
+//%     if field.struct
+{{field.type}}* {{field.attr}} = buffer.insert<{{field.type}}>();
+//%         for subfield in field.fields
+//%             if subfield.value
+{{field.attr}}->set{{subfield.name}}({{subfield.value}});
+//%             else
+{{field.attr}}->set{{subfield.name}}(packet.get{{subfield.name}}());
+//%             endif
+//%         endfor
+//%     else
+buffer.put<{{field.type}}>(packet.get{{field.name}}());
+//%     endif
+//% endmacro
+
+//% macro unpack_field(field)
+//%     if field.struct:
+const {{field.type}}* {{field.attr}} = buffer.next<{{field.type}}>();
+//%         for subfield in field.fields
+//%             if subfield.value
+if ({{field.attr}}->get{{subfield.name}}() != {{subfield.value}}) {
+    // ERROR
+}
+//%             else
+packet.set{{subfield.name}}({{field.attr}}->get{{subfield.name}}());
+//%             endif
+//%         endfor
+//%     else
+packet.set{{field.name}}(buffer.get<{{field.type}}>());
+//%     endif
+//% endmacro
+
 //% macro packet_impl(packet)
 using {{namespace}}::packing::{{packet.helper}};
 
 size_t {{packet.helper}}::bytes_required(const {{packet.name}}& packet)
 {
     size_t bytes = sizeof({{packet.header.type}});
-//% if packet.has_stream_id
-    bytes += sizeof(vrtgen::StreamIdentifier);
-//% endif            
-//% if packet.class_id
-    bytes += sizeof(vrtgen::packing::ClassIdentifier);
-//% endif
-//% if packet.has_integer_timestamp
-    bytes += sizeof(vrtgen::packing::IntegerTimestamp);
-//% endif
-//% if packet.has_fractional_timestamp
-    bytes += sizeof(vrtgen::packing::FractionalTimestamp);
-//% endif
+//% for field in packet.prologue
+    bytes += sizeof({{field.type}});
+//% endfor
 //% for cif in packet.cifs
 //%     if cif.optional
     if (has_cif{{cif.number}}(packet)) {
@@ -70,25 +93,9 @@ void {{packet.helper}}::pack(const {{packet.name}}& packet, void* ptr, size_t bu
     header->{{field.setter}}({{field.value}});
 //% endfor
 
-//% if packet.has_stream_id
-    buffer.put<vrtgen::packing::StreamIdentifier>(packet.getStreamIdentifier());
-//% endif
-//% if packet.class_id
-    vrtgen::packing::ClassIdentifier* class_id = buffer.insert<vrtgen::packing::ClassIdentifier>();
-//%     for field in packet.class_id
-//%         if field.value
-    class_id->set{{field.name}}({{field.value}});
-//%         else
-    class_id->set{{field.name}}(packet.get{{field.name}}());
-//% endif
-//%     endfor
-//% endif
-//% if packet.has_integer_timestamp
-    buffer.put<vrtgen::packing::IntegerTimestamp>(packet.getIntegerTimestamp());
-//% endif
-//% if packet.has_fractional_timestamp
-    buffer.put<vrtgen::packing::FractionalTimestamp>(packet.getFractionalTimestamp());
-//% endif
+//% for field in packet.prologue
+    {{pack_field(field) | indent(4) | trim}}
+//% endfor
 //% for cif in packet.cifs if cif.enabled
     vrtgen::packing::{{cif.header}}* cif_{{cif.number}} = nullptr;
 //%     if cif.optional
@@ -104,11 +111,11 @@ void {{packet.helper}}::pack(const {{packet.name}}& packet, void* ptr, size_t bu
 //%     if field.optional
     if (packet.has{{field.name}}()) {
         cif_{{field.cif}}->set{{field.name}}Enabled(true);
-        buffer.put<{{field.type}}>(packet.get{{field.name}}());
+        {{pack_field(field)}}
     }
 //%     else
     cif_{{field.cif}}->set{{field.name}}Enabled(true);
-    buffer.put<{{field.type}}>(packet.get{{field.name}}());
+    {{pack_field(field) | indent(4) | trim}}
 //%     endif
 //% endfor
     header->setPacketSize(buffer.size() / 4);
@@ -124,27 +131,9 @@ void {{packet.helper}}::unpack({{packet.name}}& packet, const void* ptr, size_t 
     }
 //% endfor
 
-//% if packet.has_stream_id
-    packet.setStreamIdentifier(buffer.get<vrtgen::packing::StreamIdentifier>());
-//% endif
-//% if packet.class_id
-    const vrtgen::packing::ClassIdentifier* class_id = buffer.next<vrtgen::packing::ClassIdentifier>();
-//%     for field in packet.class_id
-//%         if field.value
-    if (class_id->get{{field.name}}() != {{field.value}}) {
-        // ERROR
-    }
-//%         else
-    packet.set{{field.name}}(class_id->get{{field.name}}());
-//%         endif
-//%     endfor
-//% endif
-//% if packet.has_integer_timestamp
-    packet.setIntegerTimestamp(buffer.get<vrtgen::packing::IntegerTimestamp>());
-//% endif
-//% if packet.has_fractional_timestamp
-    packet.setFractionalTimestamp(buffer.get<vrtgen::packing::FractionalTimestamp>());
-//% endif
+//% for field in packet.prologue
+    {{unpack_field(field) | indent(4) | trim}}
+//% endfor
 //% for cif in packet.cifs if cif.enabled
 //%     if cif.number == 0
     const vrtgen::packing::{{cif.header}}* cif_{{cif.number}} = buffer.next<vrtgen::packing::{{cif.header}}>();
@@ -166,11 +155,12 @@ void {{packet.helper}}::unpack({{packet.name}}& packet, const void* ptr, size_t 
         // ERROR
 //%     endif
     } else {
-        packet.set{{field.name}}(buffer.get<{{field.type}}>());
+        {{unpack_field(field) | indent(8) | trim}}
     }
 //% endfor
 }
 //% endmacro
+
 #include "{{header}}"
 
 //% for packet in packets

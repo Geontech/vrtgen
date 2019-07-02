@@ -76,10 +76,6 @@ class CppPacket:
         self.helper = name + 'Helper'
         self.namespace = ''
         self.type = cpptypes.enum_value(packet.packet_type())
-        self.has_stream_id = packet.stream_id.is_enabled
-        self.has_class_id = packet.class_id.is_enabled
-        self.has_integer_timestamp = packet.tsi.value != enums.TSI.NONE
-        self.has_fractional_timestamp = packet.tsf.value != enums.TSF.NONE
         self.header = {
             'type': 'vrtgen::packing::' + header_class,
             'fields': [],
@@ -87,7 +83,9 @@ class CppPacket:
         self.set_header_field('PacketType', cpptypes.enum_value(packet.packet_type()))
         self.set_header_field('TSI', cpptypes.enum_value(packet.tsi.value))
         self.set_header_field('TSF', cpptypes.enum_value(packet.tsf.value))
-        self.set_header_field('ClassIdentifierEnabled', str(self.has_class_id).lower(), getter='isClassIdentifierEnabled')
+        self.set_header_field('ClassIdentifierEnabled', str(packet.class_id.is_enabled).lower(), getter='isClassIdentifierEnabled')
+
+        self.prologue = []
 
         self.cifs = []
         self.add_cif(0)
@@ -114,6 +112,15 @@ class CppPacket:
             'getter': getter,
             'setter': setter,
             'value': value,
+        })
+
+    def add_prologue_field(self, field):
+        field_type = value_type(field.type)
+        self.add_member(field.name, field_type, field.is_optional)
+        identifier = cpptypes.name_to_identifier(field.name)
+        self.prologue.append({
+            'name': identifier,
+            'type': 'vrtgen::packing::' + identifier
         })
 
     def add_field(self, field):
@@ -189,35 +196,39 @@ class CppGenerator(Generator):
     def generate_class_id(self, cppstruct, packet):
         if packet.class_id.is_disabled:
             return
+        identifier = cpptypes.name_to_identifier(packet.class_id.name)
+        class_id = {
+            'name': identifier,
+            'attr': 'class_id',
+            'type': 'vrtgen::packing::' + identifier,
+            'struct': True,
+            'fields': [],
+        }
         for field in packet.class_id.get_fields():
             if field.is_disabled:
                 continue
+            subfield = {
+                'name': cpptypes.name_to_identifier(field.name),
+            }
             if field.is_constant:
-                cppstruct.class_id.append({
-                    'name': cpptypes.name_to_identifier(field.name),
-                    'value': field.value
-                })
+                subfield['value'] = field.value
             else:
                 field_type = value_type(field.type)
                 cppstruct.add_member(field.name, field_type)
-                cppstruct.class_id.append({
-                    'name': cpptypes.name_to_identifier(field.name),
-                })
+            class_id['fields'].append(subfield)
+        cppstruct.prologue.append(class_id)
 
     def generate_prologue(self, cppstruct, packet):
-        if packet.tsi.value != enums.TSI.NONE:
-            field_type = value_type(packet.integer_timestamp.type)
-            cppstruct.add_member(packet.integer_timestamp.name, field_type)
-            
-        if packet.tsf.value != enums.TSF.NONE:
-            field_type = value_type(packet.fractional_timestamp.type)
-            cppstruct.add_member(packet.fractional_timestamp.name, field_type)
-
         if not packet.stream_id.is_disabled:
-            field_type = value_type(packet.stream_id.type)
-            cppstruct.add_member(packet.stream_id.name, field_type, packet.stream_id.is_optional)
+            cppstruct.add_prologue_field(packet.stream_id)
 
         self.generate_class_id(cppstruct, packet)
+
+        if packet.tsi.value != enums.TSI.NONE:
+            cppstruct.add_prologue_field(packet.integer_timestamp)
+
+        if packet.tsf.value != enums.TSF.NONE:
+            cppstruct.add_prologue_field(packet.fractional_timestamp)
 
     def generate_payload(self, cppstruct, packet):
         for field in packet.get_fields(Scope.PAYLOAD):
