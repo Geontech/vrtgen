@@ -81,7 +81,7 @@ namespace packing {
 
 //% endfor
 //% for cif in packet.cifs[1:]
-        static const vrtgen::packing::{{cif.header}}* get_cif{{cif.number}}(vrtgen::InputBuffer& buffer, const vrtgen::packing::CIF0Enables* cif0);
+        static const {{cif.header}}* get_cif{{cif.number}}(vrtgen::InputBuffer& buffer, const vrtgen::packing::CIF0Enables* cif0);
 
 //% endfor
         static void pack(const {{packet.name}}& packet, void* ptr, size_t bufsize);

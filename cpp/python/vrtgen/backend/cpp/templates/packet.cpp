@@ -42,10 +42,10 @@ size_t {{packet.helper}}::bytes_required(const {{packet.name}}& packet)
 //% for cif in packet.cifs
 //%     if cif.optional
     if (has_cif{{cif.number}}(packet)) {
-        bytes += sizeof(vrtgen::packing::{{cif.header}});
+        bytes += sizeof({{cif.header}});
     }
 //%     else
-    bytes += sizeof(vrtgen::packing::{{cif.header}});
+    bytes += sizeof({{cif.header}});
 //%     endif
 //% endfor
 //% for field in packet.fields
@@ -76,10 +76,10 @@ bool {{packet.helper}}::has_cif{{cif.number}}(const {{packet.name}}& packet)
 
 //% endfor
 //% for cif in packet.cifs[1:]
-const vrtgen::packing::{{cif.header}}* {{packet.helper}}::get_cif{{cif.number}}(vrtgen::InputBuffer& buffer, const vrtgen::packing::CIF0Enables* cif0)
+const {{cif.header}}* {{packet.helper}}::get_cif{{cif.number}}(vrtgen::InputBuffer& buffer, const vrtgen::packing::CIF0Enables* cif0)
 {
     if (cif0->getCIF{{cif.number}}Enable()) {
-        return buffer.next<vrtgen::packing::{{cif.header}}>();
+        return buffer.next<{{cif.header}}>();
     }
     return nullptr;
 }
@@ -97,14 +97,14 @@ void {{packet.helper}}::pack(const {{packet.name}}& packet, void* ptr, size_t bu
     {{pack_field(field) | indent(4) | trim}}
 //% endfor
 //% for cif in packet.cifs if cif.enabled
-    vrtgen::packing::{{cif.header}}* cif_{{cif.number}} = nullptr;
+    {{cif.header}}* cif_{{cif.number}} = nullptr;
 //%     if cif.optional
     if (has_cif{{cif.number}}(packet)) {
         cif_0->setCIF{{cif.number}}Enable(true);
-        cif_{{cif.number}} = buffer.insert<vrtgen::packing::{{cif.header}}>();
+        cif_{{cif.number}} = buffer.insert<{{cif.header}}>();
     }
 //%     else
-    cif_{{cif.number}} = buffer.insert<vrtgen::packing::{{cif.header}}>();
+    cif_{{cif.number}} = buffer.insert<{{cif.header}}>();
 //%     endif
 //% endfor
 //% for field in packet.fields
@@ -136,9 +136,9 @@ void {{packet.helper}}::unpack({{packet.name}}& packet, const void* ptr, size_t 
 //% endfor
 //% for cif in packet.cifs if cif.enabled
 //%     if cif.number == 0
-    const vrtgen::packing::{{cif.header}}* cif_{{cif.number}} = buffer.next<vrtgen::packing::{{cif.header}}>();
+    const {{cif.header}}* cif_{{cif.number}} = buffer.next<{{cif.header}}>();
 //%     else
-    const vrtgen::packing::{{cif.header}}* cif_{{cif.number}} = get_cif{{cif.number}}(buffer, cif_0);
+    const {{cif.header}}* cif_{{cif.number}} = get_cif{{cif.number}}(buffer, cif_0);
 //%         if not cif.optional
     if (!cif_{{cif.number}}) {
         // ERROR

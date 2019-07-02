@@ -97,7 +97,7 @@ class CppPacket:
     def add_cif(self, number):
         self.cifs.append({
             'number': number,
-            'header': 'CIF{}Enables'.format(number),
+            'header': 'vrtgen::packing::CIF{}Enables'.format(number),
             'enabled': False,
             'optional': False,
         })
