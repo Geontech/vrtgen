@@ -61,7 +61,7 @@ size_t {{packet.helper}}::bytes_required(const {{packet.name}}& packet)
 //% for field in packet.prologue
     bytes += sizeof({{field.type}});
 //% endfor
-//% for cif in packet.cifs
+//% for cif in packet.cifs if cif.enabled
 //%     if cif.optional
     if (has_cif{{cif.number}}(packet)) {
         bytes += sizeof({{cif.header}});
