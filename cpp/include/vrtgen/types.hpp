@@ -2,6 +2,7 @@
 #define _VRTGEN_TYPES_HPP
 
 #include "types/swap.hpp"
+#include "types/field.hpp"
 #include "types/fixed.hpp"
 #include "types/packed.hpp"
 #include "types/optional.hpp"

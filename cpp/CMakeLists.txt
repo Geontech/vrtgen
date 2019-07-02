@@ -57,6 +57,7 @@ add_custom_command(
 # Normal hand-written headers
 set(header_files
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/buffer.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/field.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/fixed.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/packed.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/swap.hpp

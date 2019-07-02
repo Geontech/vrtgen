@@ -323,7 +323,7 @@ class LibraryGenerator:
     def field_to_typedef(field):
         return {
             'name': cpptypes.name_to_identifier(field.name),
-            'type': member_type(field.type),
+            'type': 'field<{}>'.format(member_type(field.type)),
         }
 
     def generate_header(self, filename):

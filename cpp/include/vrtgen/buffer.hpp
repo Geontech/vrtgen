@@ -56,12 +56,6 @@ namespace vrtgen {
             return new (ptr) T(args...);
         }
 
-        template <typename T>
-        void put(const typename T::value_type& value)
-        {
-            m_buf.next<T>()->set(value);
-        }
-
         size_t size() const
         {
             return m_buf.getpos();

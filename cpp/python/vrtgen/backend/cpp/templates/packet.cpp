@@ -9,7 +9,7 @@
 //%             endif
 //%         endfor
 //%     else
-buffer.put<{{field.type}}>(packet.get{{field.name}}());
+buffer.insert<{{field.type}}>(packet.get{{field.name}}());
 //%     endif
 //% endmacro
 

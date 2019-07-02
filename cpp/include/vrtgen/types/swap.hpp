@@ -99,6 +99,16 @@ namespace vrtgen {
         typedef T value_type;
         typedef detail::byte_swap<sizeof(T)> swap_type;
 
+        big_endian() :
+            m_value(0)
+        {
+        }
+
+        explicit big_endian(value_type value) :
+            m_value(swap_type::swap(value))
+        {
+        }
+
         inline value_type get() const
         {
             return swap_type::swap(m_value);

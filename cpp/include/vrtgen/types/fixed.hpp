@@ -36,6 +36,16 @@ namespace vrtgen {
         typedef float_type value_type;
         typedef detail::fixed_converter<int_type,radix,float_type> converter_type;
 
+        fixed() :
+            m_value(0)
+        {
+        }
+
+        explicit fixed(value_type value) :
+            m_value(converter_type::to_int(value))
+        {
+        }
+
         inline float_type get() const
         {
             return converter_type::from_int(m_value.get());
