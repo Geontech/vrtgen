@@ -93,7 +93,8 @@ class CppPacket:
         self.add_cif(1)
         self.fields = []
         self.members = []
-    
+        self.class_id = []
+   
     def add_cif(self, number):
         self.cifs.append({
             'number': number,
@@ -179,10 +180,19 @@ class CppGenerator(Generator):
         if packet.class_id.is_disabled:
             return
         for field in packet.class_id.get_fields():
-            if field.is_disabled or field.is_constant:
+            if field.is_disabled:
                 continue
-            field_type = value_type(field.type)
-            cppstruct.add_member(field.name, field_type)
+            if field.is_constant:
+                cppstruct.class_id.append({
+                    'name': cpptypes.name_to_identifier(field.name),
+                    'value': field.value
+                })
+            else:
+                field_type = value_type(field.type)
+                cppstruct.add_member(field.name, field_type)
+                cppstruct.class_id.append({
+                    'name': cpptypes.name_to_identifier(field.name),
+                })
 
     def generate_prologue(self, cppstruct, packet):
         if packet.tsi.value != enums.TSI.NONE:

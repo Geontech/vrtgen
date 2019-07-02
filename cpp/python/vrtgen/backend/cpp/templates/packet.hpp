@@ -73,11 +73,11 @@ namespace packing {
     struct {{packet.name}}Helper {
         static size_t bytes_required(const {{packet.name}}& packet)
         {
-            size_t bytes = sizeof(vrtgen::packing::Header);
+            size_t bytes = sizeof({{packet.header.type}});
 //% if packet.has_stream_id
             bytes += sizeof(vrtgen::StreamIdentifier);
 //% endif            
-//% if packet.has_class_id
+//% if packet.class_id
             bytes += sizeof(vrtgen::packing::ClassIdentifier);
 //% endif
 //% if packet.has_integer_timestamp
@@ -143,8 +143,15 @@ namespace packing {
 //% if packet.has_stream_id
             buffer.put<vrtgen::packing::StreamIdentifier>(packet.getStreamIdentifier());
 //% endif
-//% if packet.has_class_id
+//% if packet.class_id
             vrtgen::packing::ClassIdentifier* class_id = buffer.insert<vrtgen::packing::ClassIdentifier>();
+//%     for field in packet.class_id
+//%         if field.value
+            class_id->set{{field.name}}({{field.value}});
+//%         else
+            class_id->set{{field.name}}(packet.get{{field.name}}());
+//% endif
+//%     endfor
 //% endif
 //% if packet.has_integer_timestamp
             buffer.put<vrtgen::packing::IntegerTimestamp>(packet.getIntegerTimestamp());
@@ -190,8 +197,17 @@ namespace packing {
 //% if packet.has_stream_id
             packet.setStreamIdentifier(buffer.get<vrtgen::packing::StreamIdentifier>());
 //% endif
-//% if packet.has_class_id
-            buffer.next<vrtgen::packing::ClassIdentifier>();
+//% if packet.class_id
+            const vrtgen::packing::ClassIdentifier* class_id = buffer.next<vrtgen::packing::ClassIdentifier>();
+//%     for field in packet.class_id
+//%         if field.value
+            if (class_id->get{{field.name}}() != {{field.value}}) {
+                // ERROR
+            }
+//%         else
+            packet.set{{field.name}}(class_id->get{{field.name}}());
+//%         endif
+//%     endfor
 //% endif
 //% if packet.has_integer_timestamp
             packet.setIntegerTimestamp(buffer.get<vrtgen::packing::IntegerTimestamp>());
