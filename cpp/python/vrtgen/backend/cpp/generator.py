@@ -217,10 +217,8 @@ class CppGenerator(Generator):
 
     def start_file(self, filename):
         basename, _ = os.path.splitext(filename)
-        header_file = os.path.join(self.output_path, basename + self.header_ext)
-        self.header = open(header_file, 'w')
-        impl_file = os.path.join(self.output_path, basename + self.impl_ext)
-        self.implfile = open(impl_file, 'w')
+        self.header = os.path.join(self.output_path, basename + self.header_ext)
+        self.implfile = os.path.join(self.output_path, basename + self.impl_ext)
 
     def end_file(self):
         context = {
@@ -228,13 +226,13 @@ class CppGenerator(Generator):
             'namespace': self.namespace,
         }
         template = self.env.get_template('header.hpp')
-        self.header.write(template.render(context))
-        self.header.close()
+        with open(self.header, 'w') as fp:
+            fp.write(template.render(context))
 
-        context['header'] = os.path.basename(self.header.name)
+        context['header'] = self.header
         template = self.env.get_template('packet.cpp')
-        self.implfile.write(template.render(context))
-        self.implfile.close
+        with open(self.implfile, 'w') as fp:
+            fp.write(template.render(context))
 
     def generate_class_id(self, cppstruct, packet):
         if packet.class_id.is_disabled:
