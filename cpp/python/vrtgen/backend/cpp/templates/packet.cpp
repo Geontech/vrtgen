@@ -25,7 +25,7 @@ packet.set{{field.name}}(buffer.get<{{field.type}}>());
 //% macro unpack_struct(field)
 //%     for subfield in field.fields
 //%         if subfield.value
-::validate({{field.attr}}->get{{subfield.name}}(), {{subfield.value}}, "invalid subfield {{subfield.title}}");
+::validate({{field.attr}}->get{{subfield.srcname}}(), {{subfield.value}}, "invalid subfield {{subfield.title}}");
 //%         else
 packet.set{{subfield.name}}({{field.attr}}->get{{subfield.srcname}}());
 //%         endif
