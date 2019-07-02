@@ -18,9 +18,7 @@ buffer.put<{{field.type}}>(packet.get{{field.name}}());
 const {{field.type}}* {{field.attr}} = buffer.next<{{field.type}}>();
 //%         for subfield in field.fields
 //%             if subfield.value
-if ({{field.attr}}->get{{subfield.name}}() != {{subfield.value}}) {
-    // ERROR
-}
+::validate({{field.attr}}->get{{subfield.name}}(), {{subfield.value}}, "invalid subfield {{subfield.title}}");
 //%             else
 packet.set{{subfield.name}}({{field.attr}}->get{{subfield.name}}());
 //%             endif
@@ -126,9 +124,7 @@ void {{packet.helper}}::unpack({{packet.name}}& packet, const void* ptr, size_t 
     vrtgen::InputBuffer buffer(ptr, bufsize);
     const {{packet.header.type}}* header = buffer.next<{{packet.header.type}}>();
 //% for field in packet.header.fields
-    if (header->{{field.getter}}() != {{field.value}}) {
-        // ERROR
-    }
+    ::validate(header->{{field.getter}}(), {{field.value}}, "invalid header field {{field.title}}");
 //% endfor
 
 //% for field in packet.prologue
@@ -140,9 +136,7 @@ void {{packet.helper}}::unpack({{packet.name}}& packet, const void* ptr, size_t 
 //%     else
     const {{cif.header}}* cif_{{cif.number}} = get_cif{{cif.number}}(buffer, cif_0);
 //%         if not cif.optional
-    if (!cif_{{cif.number}}) {
-        // ERROR
-    }
+    ::validate(cif_{{cif.number}}, "CIF{{cif.number}} missing");
 //%         endif
 //%     endif
 //% endfor
@@ -162,6 +156,22 @@ void {{packet.helper}}::unpack({{packet.name}}& packet, const void* ptr, size_t 
 //% endmacro
 
 #include "{{header}}"
+
+#include <stdexcept>
+
+namespace {
+    static inline void validate(bool actual, bool expected, const char* msg)
+    {
+        if (actual != expected) {
+            throw std::runtime_error(msg);
+        }
+    }
+
+    static inline void validate(bool cond, const char* msg)
+    {
+        validate(cond, true, msg);
+    }
+}
 
 //% for packet in packets
 {{packet_impl(packet)}}

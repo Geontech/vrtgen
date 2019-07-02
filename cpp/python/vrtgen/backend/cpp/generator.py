@@ -7,6 +7,7 @@ from vrtgen.model.field import Scope
 from vrtgen.types import basic
 from vrtgen.types import enums
 from vrtgen.types import struct
+from vrtgen.types import prologue
 from vrtgen.types import cif0
 from vrtgen.types import cif1
 
@@ -80,10 +81,14 @@ class CppPacket:
             'type': 'vrtgen::packing::' + header_class,
             'fields': [],
         }
-        self.set_header_field('PacketType', cpptypes.enum_value(packet.packet_type()))
-        self.set_header_field('TSI', cpptypes.enum_value(packet.tsi.value))
-        self.set_header_field('TSF', cpptypes.enum_value(packet.tsf.value))
-        self.set_header_field('ClassIdentifierEnabled', str(packet.class_id.is_enabled).lower(), getter='isClassIdentifierEnabled')
+        self.set_header_field(prologue.Header.packet_type, cpptypes.enum_value(packet.packet_type()))
+        self.set_header_field(prologue.Header.tsi, cpptypes.enum_value(packet.tsi.value))
+        self.set_header_field(prologue.Header.tsf, cpptypes.enum_value(packet.tsf.value))
+        self.set_header_field(prologue.Header.class_id_enable,
+            str(packet.class_id.is_enabled).lower(),
+            getter='isClassIdentifierEnabled',
+            setter='setClassIdentifierEnabled',
+        )
 
         self.prologue = []
 
@@ -102,13 +107,15 @@ class CppPacket:
             'optional': False,
         })
 
-    def set_header_field(self, name, value, setter=None, getter=None):
-        if setter is None:
-            setter = 'set' + name
+    def set_header_field(self, field, value, getter=None, setter=None):
+        name = cpptypes.name_to_identifier(field.name)
         if getter is None:
             getter = 'get' + name
+        if setter is None:
+            setter = 'set' + name
         self.header['fields'].append({
             'name': name,
+            'title': field.name,
             'getter': getter,
             'setter': setter,
             'value': value,
@@ -130,6 +137,7 @@ class CppPacket:
         identifier = cpptypes.name_to_identifier(field.name)
         self.fields.append({
             'name': identifier,
+            'title': field.name,
             'optional': field.is_optional,
             'type': 'vrtgen::packing::' + identifier,
             'cif': cif['number'],
@@ -199,6 +207,7 @@ class CppGenerator(Generator):
         identifier = cpptypes.name_to_identifier(packet.class_id.name)
         class_id = {
             'name': identifier,
+            'title': packet.class_id.name,
             'attr': 'class_id',
             'type': 'vrtgen::packing::' + identifier,
             'struct': True,
@@ -209,6 +218,7 @@ class CppGenerator(Generator):
                 continue
             subfield = {
                 'name': cpptypes.name_to_identifier(field.name),
+                'title': field.name,
             }
             if field.is_constant:
                 subfield['value'] = field.value
@@ -237,9 +247,9 @@ class CppGenerator(Generator):
             cppstruct.add_field(field)
 
     def generate_data(self, cppstruct, packet):
-        cppstruct.set_header_field('TrailerIncluded', 'false')
-        cppstruct.set_header_field('NotaV49_0Packet', 'true')
-        cppstruct.set_header_field('SignalSpectrumorSignalTimeDataPacket', 'false')
+        cppstruct.set_header_field(prologue.DataHeader.trailer_included, 'false')
+        cppstruct.set_header_field(prologue.DataHeader.not_v49d0, 'true')
+        cppstruct.set_header_field(prologue.DataHeader.spectrum, 'false')
 
         self.generate_prologue(cppstruct, packet)
 
@@ -250,16 +260,16 @@ class CppGenerator(Generator):
             cppstruct.add_member(field.name, field_type, field.is_optional)
 
     def generate_context(self, cppstruct, packet):
-        cppstruct.set_header_field('NotaV49_0Packet', 'true')
-        cppstruct.set_header_field('TimestampMode', cpptypes.enum_value(packet.timestamp_mode.value))
+        cppstruct.set_header_field(prologue.ContextHeader.not_v49d0, 'true')
+        cppstruct.set_header_field(prologue.ContextHeader.timestamp_mode, cpptypes.enum_value(packet.timestamp_mode.value))
         cppstruct.cifs[0]['enabled'] = True
 
         self.generate_prologue(cppstruct, packet)
         self.generate_payload(cppstruct, packet)
 
     def generate_command(self, cppstruct, packet):
-        cppstruct.set_header_field('AcknowledgePacket', 'false')
-        cppstruct.set_header_field('CancellationPacket', 'false')
+        cppstruct.set_header_field(prologue.CommandHeader.acknowledge_packet, 'false')
+        cppstruct.set_header_field(prologue.CommandHeader.cancellation_packet, 'false')
         cppstruct.cifs[0]['enabled'] = True
         
         self.generate_prologue(cppstruct, packet)
