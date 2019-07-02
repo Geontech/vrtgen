@@ -16,16 +16,20 @@ buffer.put<{{field.type}}>(packet.get{{field.name}}());
 //% macro unpack_field(field)
 //%     if field.struct:
 const {{field.type}}* {{field.attr}} = buffer.next<{{field.type}}>();
-//%         for subfield in field.fields
-//%             if subfield.value
-::validate({{field.attr}}->get{{subfield.name}}(), {{subfield.value}}, "invalid subfield {{subfield.title}}");
-//%             else
-packet.set{{subfield.name}}({{field.attr}}->get{{subfield.name}}());
-//%             endif
-//%         endfor
+{{unpack_struct(field)}}
 //%     else
 packet.set{{field.name}}(buffer.get<{{field.type}}>());
 //%     endif
+//% endmacro
+
+//% macro unpack_struct(field)
+//%     for subfield in field.fields
+//%         if subfield.value
+::validate({{field.attr}}->get{{subfield.name}}(), {{subfield.value}}, "invalid subfield {{subfield.title}}");
+//%         else
+packet.set{{subfield.name}}({{field.attr}}->get{{subfield.name}}());
+//%         endif
+//%     endfor
 //% endmacro
 
 //% macro packet_impl(packet)
@@ -34,7 +38,7 @@ using {{namespace}}::packing::{{packet.helper}};
 bool {{packet.helper}}::match(const void* ptr, size_t bufsize)
 {
     vrtgen::InputBuffer buffer(ptr, bufsize);
-    const {{packet.header.type}}* header = buffer.next<{{packet.header.type}}>();
+    const {{packet.header.type}}* header = reinterpret_cast<const {{packet.header.type}}*>(buffer.getHeader());
 //% for field in packet.header.fields
     if (header->{{field.getter}}() != {{field.value}}) {
         return false;
@@ -85,16 +89,6 @@ bool {{packet.helper}}::has_cif{{cif.number}}(const {{packet.name}}& packet)
 }
 
 //% endfor
-//% for cif in packet.cifs[1:]
-const {{cif.header}}* {{packet.helper}}::get_cif{{cif.number}}(vrtgen::InputBuffer& buffer, const vrtgen::packing::CIF0Enables* cif0)
-{
-    if (cif0->getCIF{{cif.number}}Enable()) {
-        return buffer.next<{{cif.header}}>();
-    }
-    return nullptr;
-}
-
-//% endfor
 void {{packet.helper}}::pack(const {{packet.name}}& packet, void* ptr, size_t bufsize)
 {
     vrtgen::OutputBuffer buffer(ptr, bufsize);
@@ -137,22 +131,23 @@ void {{packet.helper}}::pack(const {{packet.name}}& packet, void* ptr, size_t bu
 void {{packet.helper}}::unpack({{packet.name}}& packet, const void* ptr, size_t bufsize)
 {
     vrtgen::InputBuffer buffer(ptr, bufsize);
-    const {{packet.header.type}}* header = buffer.next<{{packet.header.type}}>();
+    const {{packet.header.type}}* header = reinterpret_cast<const {{packet.header.type}}*>(buffer.getHeader());
 //% for field in packet.header.fields
     ::validate(header->{{field.getter}}(), {{field.value}}, "invalid header field {{field.title}}");
 //% endfor
 
 //% for field in packet.prologue
-    {{unpack_field(field) | indent(4) | trim}}
+//%     if field.struct
+    const {{field.type}}* {{field.attr}} = buffer.get{{field.name}}();
+    {{unpack_struct(field) | indent(4) | trim}}
+//%     else
+    packet.set{{field.name}}(buffer.get{{field.name}}());
+//%     endif
 //% endfor
 //% for cif in packet.cifs if cif.enabled
-//%     if cif.number == 0
-    const {{cif.header}}* cif_{{cif.number}} = buffer.next<{{cif.header}}>();
-//%     else
-    const {{cif.header}}* cif_{{cif.number}} = get_cif{{cif.number}}(buffer, cif_0);
-//%         if not cif.optional
+    const {{cif.header}}* cif_{{cif.number}} = buffer.getCIF{{cif.number}}();
+//%     if not cif.optional
     ::validate(cif_{{cif.number}}, "CIF{{cif.number}} missing");
-//%         endif
 //%     endif
 //% endfor
 //% for field in packet.fields

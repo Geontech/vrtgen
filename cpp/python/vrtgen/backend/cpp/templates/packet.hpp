@@ -82,10 +82,6 @@ namespace packing {
         static bool has_cif{{cif.number}}(const {{packet.name}}& packet);
 
 //% endfor
-//% for cif in packet.cifs[1:]
-        static const {{cif.header}}* get_cif{{cif.number}}(vrtgen::InputBuffer& buffer, const vrtgen::packing::CIF0Enables* cif0);
-
-//% endfor
         static void pack(const {{packet.name}}& packet, void* ptr, size_t bufsize);
 
         static void unpack({{packet.name}}& packet, const void* ptr, size_t bufsize);
