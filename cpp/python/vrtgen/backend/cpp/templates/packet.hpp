@@ -75,13 +75,6 @@ namespace packing {
 
         static size_t bytes_required(const {{packet.name}}& packet);
 
-//% for cif in packet.cifs[1:] if cif.optional
-        /**
-         * Checks whether @a packet has any CIF{{cif.number}} fields set.
-         */
-        static bool has_cif{{cif.number}}(const {{packet.name}}& packet);
-
-//% endfor
         static void pack(const {{packet.name}}& packet, void* ptr, size_t bufsize);
 
         static void unpack({{packet.name}}& packet, const void* ptr, size_t bufsize);

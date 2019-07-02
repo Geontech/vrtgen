@@ -113,7 +113,6 @@ class CppPacket:
             'number': number,
             'header': 'vrtgen::packing::CIF{}Enables'.format(number),
             'enabled': False,
-            'optional': False,
         })
 
     def set_header_field(self, field, value, getter=None, setter=None):
@@ -173,9 +172,6 @@ class CppPacket:
         cif = self.cifs[CIFS.index(field.field.owner)]
         if not cif['enabled']:
             cif['enabled'] = True
-            cif['optional'] = True
-        if not field.is_optional:
-            cif['optional'] = False
 
         cif_field = self.create_packing_field(field)
         cif_field['cif'] = cif['number']
