@@ -44,6 +44,14 @@ bool {{packet.helper}}::match(const void* ptr, size_t bufsize)
         return false;
     }
 //% endfor
+//% if packet.class_id
+//%     set field = packet.class_id
+//%     for subfield in field.fields if subfield.value:
+    if (buffer.get{{field.name}}()->get{{subfield.name}}() != {{subfield.value}}) {
+        return false;
+    }
+//%     endfor
+//% endif
     return true;
 }
 

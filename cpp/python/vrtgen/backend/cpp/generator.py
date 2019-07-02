@@ -97,8 +97,17 @@ class CppPacket:
         self.add_cif(1)
         self.fields = []
         self.members = []
-        self.class_id = []
-   
+        self.class_id = None
+
+    def add_class_id(self, packet):
+        self.class_id = self.create_packing_field(packet.class_id, namespaced=False)
+        for field in packet.class_id.get_fields():
+            if field.is_disabled or field.is_constant:
+                continue
+            field_type = value_type(field.type)
+            self.add_member(field.name, field_type)
+        self.prologue.append(self.class_id)
+
     def add_cif(self, number):
         self.cifs.append({
             'number': number,
@@ -234,22 +243,12 @@ class CppGenerator(Generator):
         with open(self.implfile, 'w') as fp:
             fp.write(template.render(context))
 
-    def generate_class_id(self, cppstruct, packet):
-        if packet.class_id.is_disabled:
-            return
-        class_id = cppstruct.create_packing_field(packet.class_id, namespaced=False)
-        for field in packet.class_id.get_fields():
-            if field.is_disabled or field.is_constant:
-                continue
-            field_type = value_type(field.type)
-            cppstruct.add_member(field.name, field_type)
-        cppstruct.prologue.append(class_id)
-
     def generate_prologue(self, cppstruct, packet):
         if not packet.stream_id.is_disabled:
             cppstruct.add_prologue_field(packet.stream_id)
 
-        self.generate_class_id(cppstruct, packet)
+        if not packet.class_id.is_disabled:
+            cppstruct.add_class_id(packet)
 
         if packet.tsi.value != enums.TSI.NONE:
             cppstruct.add_prologue_field(packet.integer_timestamp)
