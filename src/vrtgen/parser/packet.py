@@ -6,7 +6,7 @@ dictionaries.
 import logging
 
 from vrtgen.model import config
-from vrtgen.types.prologue import Header, ContextHeader, Prologue
+from vrtgen.types.prologue import ContextHeader, Prologue
 from vrtgen.types.trailer import Trailer
 
 from . import field
@@ -25,13 +25,25 @@ def unimplemented_parser(name):
     return parser
 
 class TimestampParser(MappingParser):
+    """
+    Parser for timestamp configuration.
+
+    Only the TSI and TSF modes are configurable, under the names "integer" and
+    "fractional".
+    """
     @staticmethod
     def parse_integer(log, context, value):
+        """
+        Parses integer timestamp mode.
+        """
         context.tsi = value_parser.parse_tsi(value)
         log.debug('TSI = %s', context.tsi)
 
     @staticmethod
     def parse_fractional(log, context, value):
+        """
+        Parses fractional timestamp mode.
+        """
         context.tsf = value_parser.parse_tsf(value)
         log.debug('TSF = %s', context.tsf)
 
@@ -115,10 +127,17 @@ class ContextSectionParser(PrologueParser):
     """
     @staticmethod
     def parse_tsm(log, context, value):
+        """
+        Parses context packet timestamp mode.
+        """
         context.timestamp_mode = value_parser.parse_tsm(value)
         log.debug('TSM = %s', context.timestamp_mode)
 
-ContextSectionParser.add_parser(ContextHeader.timestamp_mode.name, ContextSectionParser.parse_tsm, alias='TSM')
+ContextSectionParser.add_parser(
+    ContextHeader.timestamp_mode.name,
+    ContextSectionParser.parse_tsm,
+    alias='TSM'
+)
 ContextSectionParser.add_parser('Payload', CIFPayloadParser())
 
 class ContextPacketParser(PacketParser):
