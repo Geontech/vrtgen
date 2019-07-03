@@ -41,3 +41,15 @@ TestCommand:
     assert packet.tsf == enums.TSF.NONE
     assert packet.stream_id.is_mandatory
     assert packet.class_id.is_disabled
+
+def test_timestamp():
+    document = """
+TimestampTest:
+    type: data
+    timestamp:
+        integer: utc
+        fractional: picoseconds
+"""
+    packet = parse_single(document)
+    assert packet.tsi == enums.TSI.UTC
+    assert packet.tsf == enums.TSF.REAL_TIME
