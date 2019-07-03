@@ -9,7 +9,7 @@ test:
         - pip install -e .
         - pip install pytest
     script:
-        - pytest
+        - pytest --color=yes
 
 lint:
     stage: test
