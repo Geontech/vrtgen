@@ -21,7 +21,7 @@ lint:
         # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
         # Unfortunately, even if the command completely fails (e.g., invalid
         # path) it still exits with 0.
-        - pylint -f colorized --exit-zero vrtgen
+        - pylint -f colorized --exit-zero src/
 
 test:cpp:
     stage: test
