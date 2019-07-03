@@ -95,8 +95,12 @@ namespace vrtgen {
             // Data packets will not have any CIF enables in their prologue
             switch (packet_type) {
                 case vrtgen::PacketType::SIGNAL_DATA:
+                case vrtgen::PacketType::SIGNAL_DATA_STREAM_ID:
                 case vrtgen::PacketType::EXTENSION_DATA:
+                case vrtgen::PacketType::EXTENSION_DATA_STREAM_ID:
                     return;
+                default:
+                    break;
             }
 
             m_CIF0 = m_buf.next<const vrtgen::packing::CIF0Enables>();
