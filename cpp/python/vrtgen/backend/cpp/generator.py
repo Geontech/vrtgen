@@ -84,7 +84,8 @@ class CppPacket:
         self.set_header_field(prologue.Header.packet_type, cpptypes.enum_value(packet.packet_type()))
         self.set_header_field(prologue.Header.tsi, cpptypes.enum_value(packet.tsi))
         self.set_header_field(prologue.Header.tsf, cpptypes.enum_value(packet.tsf))
-        self.set_header_field(prologue.Header.class_id_enable,
+        self.set_header_field(
+            prologue.Header.class_id_enable,
             str(packet.class_id.is_enabled).lower(),
             getter='isClassIdentifierEnabled',
             setter='setClassIdentifierEnabled',
@@ -131,7 +132,7 @@ class CppPacket:
 
     def add_prologue_field(self, field):
         field_type = value_type(field.type)
-        self.add_member(field.name, field_type, field.is_optional)
+        self.add_member(field.name, field_type)
         identifier = cpptypes.name_to_identifier(field.name)
         self.prologue.append({
             'name': identifier,
@@ -242,16 +243,16 @@ class CppGenerator(Generator):
 
     def generate_prologue(self, cppstruct, packet):
         if not packet.stream_id.is_disabled:
-            cppstruct.add_prologue_field(packet.stream_id)
+            cppstruct.add_prologue_field(prologue.Prologue.stream_id)
 
         if not packet.class_id.is_disabled:
             cppstruct.add_class_id(packet)
 
         if packet.tsi != enums.TSI.NONE:
-            cppstruct.add_prologue_field(packet.integer_timestamp)
+            cppstruct.add_prologue_field(prologue.Prologue.integer_timestamp)
 
         if packet.tsf != enums.TSF.NONE:
-            cppstruct.add_prologue_field(packet.fractional_timestamp)
+            cppstruct.add_prologue_field(prologue.Prologue.fractional_timestamp)
 
     def generate_payload(self, cppstruct, packet):
         for field in packet.get_fields(Scope.PAYLOAD):
