@@ -24,23 +24,6 @@ def unimplemented_parser(name):
         log.warn('%s not implemented', name)
     return parser
 
-class TrailerParser(SectionParser):
-    """
-    Parser for Data Packet Trailer configuration.
-    """
-
-TrailerParser.add_field_parser(Trailer.calibrated_time)
-TrailerParser.add_field_parser(Trailer.valid_data)
-TrailerParser.add_field_parser(Trailer.reference_lock)
-TrailerParser.add_field_parser(Trailer.agc_mgc)
-TrailerParser.add_field_parser(Trailer.detected_signal)
-TrailerParser.add_field_parser(Trailer.spectral_inversion)
-TrailerParser.add_field_parser(Trailer.over_range)
-TrailerParser.add_field_parser(Trailer.sample_loss)
-TrailerParser.add_field_parser(Trailer.sample_frame)
-TrailerParser.add_parser(Trailer.user_defined.name, unimplemented_parser('User-defined bits'))
-TrailerParser.add_field_parser(Trailer.associated_context_packets)
-
 class TimestampParser(MappingParser):
     @staticmethod
     def parse_integer(log, context, value):
@@ -91,13 +74,28 @@ class PacketParser:
         return packet
 
 # Data Packet parser classes
+class TrailerParser(SectionParser):
+    """
+    Parser for Data Packet Trailer configuration.
+    """
 
-class DataSectionParser(SectionParser):
+TrailerParser.add_field_parser(Trailer.calibrated_time)
+TrailerParser.add_field_parser(Trailer.valid_data)
+TrailerParser.add_field_parser(Trailer.reference_lock)
+TrailerParser.add_field_parser(Trailer.agc_mgc)
+TrailerParser.add_field_parser(Trailer.detected_signal)
+TrailerParser.add_field_parser(Trailer.spectral_inversion)
+TrailerParser.add_field_parser(Trailer.over_range)
+TrailerParser.add_field_parser(Trailer.sample_loss)
+TrailerParser.add_field_parser(Trailer.sample_frame)
+TrailerParser.add_parser(Trailer.user_defined.name, unimplemented_parser('User-defined bits'))
+TrailerParser.add_field_parser(Trailer.associated_context_packets)
+
+class DataSectionParser(PrologueParser):
     """
     Parser for Data Packet configuration sections.
     """
 
-DataSectionParser.add_parser('Prologue', PrologueParser())
 DataSectionParser.add_parser('Trailer', TrailerParser())
 
 class DataPacketParser(PacketParser):
@@ -111,20 +109,12 @@ class DataPacketParser(PacketParser):
         return DataSectionParser()
 
 # Context Packet parser classes
-
-class ContextPrologueParser(PrologueParser):
-    """
-    Parser for context packet prologue configuration.
-    """
-
-ContextPrologueParser.add_field_parser(ContextHeader.timestamp_mode)
-
-class ContextSectionParser(SectionParser):
+class ContextSectionParser(PrologueParser):
     """
     Parser for Context Packet configuration sections.
     """
 
-ContextSectionParser.add_parser('Prologue', ContextPrologueParser())
+ContextSectionParser.add_field_parser(ContextHeader.timestamp_mode)
 ContextSectionParser.add_parser('Payload', CIFPayloadParser())
 
 class ContextPacketParser(PacketParser):
@@ -139,12 +129,11 @@ class ContextPacketParser(PacketParser):
 
 # Command Packet parser classes
 
-class CommandSectionParser(SectionParser):
+class CommandSectionParser(PrologueParser):
     """
     Parser for Command Packet configuration sections.
     """
 
-CommandSectionParser.add_parser('Prologue', PrologueParser())
 CommandSectionParser.add_parser('Payload', CIFPayloadParser())
 
 class CommandPacketParser(PacketParser):
