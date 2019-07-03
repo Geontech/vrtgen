@@ -5,7 +5,7 @@ Types for VITA 49 packet configurations.
 import warnings
 
 from vrtgen.types import enums
-from vrtgen.types.prologue import Prologue, ContextHeader
+from vrtgen.types.prologue import Prologue
 from vrtgen.types.trailer import Trailer
 from vrtgen.types.cif0 import CIF0
 from vrtgen.types.cif1 import CIF1
@@ -21,10 +21,8 @@ class PacketConfiguration:
         self._fields = []
         self.tsi = enums.TSI()
         self.tsf = enums.TSF()
-        self._add_prologue_fields()
-
-    def _add_prologue_fields(self):
-        self._add_fields(Prologue, Scope.PROLOGUE)
+        self.stream_id = self._add_field(Prologue.stream_id, Scope.PROLOGUE)
+        self.class_id = self._add_field(Prologue.class_id, Scope.PROLOGUE)
 
     def get_fields(self, scope=None):
         """
@@ -90,7 +88,7 @@ class DataPacketConfiguration(PacketConfiguration):
         self._add_fields(Trailer, Scope.TRAILER)
 
     def packet_type(self):
-        if self.stream_id.is_enabled: # pylint: disable=no-member
+        if self.stream_id.is_enabled:
             return enums.PacketType.SIGNAL_DATA_STREAM_ID
         return enums.PacketType.SIGNAL_DATA
 
@@ -102,7 +100,7 @@ class CIFPacketConfiguration(PacketConfiguration):
     def __init__(self, name):
         super().__init__(name)
 
-        self.stream_id.mode = Mode.MANDATORY # pylint: disable=no-member
+        self.stream_id.mode = Mode.MANDATORY
 
         self._add_fields(CIF0, Scope.PAYLOAD)
         self._add_fields(CIF1, Scope.PAYLOAD)
@@ -111,13 +109,9 @@ class ContextPacketConfiguration(CIFPacketConfiguration):
     """
     Configuration for a Context Packet.
     """
-    def _add_prologue_fields(self):
-        super()._add_prologue_fields()
-        self.timestamp_mode = self._add_field(
-            ContextHeader.timestamp_mode,
-            Scope.PROLOGUE,
-            Mode.MANDATORY
-        )
+    def __init__(self, name):
+        super().__init__(name)
+        self.timestamp_mode = enums.TSM()
 
     def packet_type(self):
         return enums.PacketType.CONTEXT

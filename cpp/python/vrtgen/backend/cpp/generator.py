@@ -274,7 +274,7 @@ class CppGenerator(Generator):
 
     def generate_context(self, cppstruct, packet):
         cppstruct.set_header_field(prologue.ContextHeader.not_v49d0, 'true')
-        cppstruct.set_header_field(prologue.ContextHeader.timestamp_mode, cpptypes.enum_value(packet.timestamp_mode.value))
+        cppstruct.set_header_field(prologue.ContextHeader.timestamp_mode, cpptypes.enum_value(packet.timestamp_mode))
         cppstruct.cifs[0]['enabled'] = True
 
         self.generate_prologue(cppstruct, packet)

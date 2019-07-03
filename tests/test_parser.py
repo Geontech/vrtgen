@@ -18,6 +18,15 @@ TestData:
     assert packet.stream_id.is_disabled
     assert packet.class_id.is_disabled
 
+def test_data_stream_id():
+    document = """
+StreamIDTest:
+    type: data
+    stream id: required
+"""
+    packet = parse_single(document)
+    assert packet.stream_id.is_required
+
 def test_context_defaults():
     document = """
 TestContext:
@@ -29,6 +38,16 @@ TestContext:
     assert packet.tsf == enums.TSF.NONE
     assert packet.stream_id.is_mandatory
     assert packet.class_id.is_disabled
+    assert packet.timestamp_mode == enums.TSM.FINE
+
+def test_context_timestamp_mode():
+    document = """
+TSMTest:
+    type: context
+    timestamp mode: coarse
+"""
+    packet = parse_single(document)
+    assert packet.timestamp_mode == enums.TSM.COARSE
 
 def test_command_defaults():
     document = """

@@ -113,8 +113,12 @@ class ContextSectionParser(PrologueParser):
     """
     Parser for Context Packet configuration sections.
     """
+    @staticmethod
+    def parse_tsm(log, context, value):
+        context.timestamp_mode = value_parser.parse_tsm(value)
+        log.debug('TSM = %s', context.timestamp_mode)
 
-ContextSectionParser.add_field_parser(ContextHeader.timestamp_mode)
+ContextSectionParser.add_parser(ContextHeader.timestamp_mode.name, ContextSectionParser.parse_tsm, alias='TSM')
 ContextSectionParser.add_parser('Payload', CIFPayloadParser())
 
 class ContextPacketParser(PacketParser):
