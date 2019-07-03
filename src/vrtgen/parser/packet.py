@@ -11,7 +11,9 @@ from vrtgen.types.trailer import Trailer
 
 from . import field
 from .cif import CIFPayloadParser
+from .mapping import MappingParser
 from .section import SectionParser
+from . import value as value_parser
 
 def unimplemented_parser(name):
     """
@@ -39,6 +41,20 @@ TrailerParser.add_field_parser(Trailer.sample_frame)
 TrailerParser.add_parser(Trailer.user_defined.name, unimplemented_parser('User-defined bits'))
 TrailerParser.add_field_parser(Trailer.associated_context_packets)
 
+class TimestampParser(MappingParser):
+    @staticmethod
+    def parse_integer(log, context, value):
+        context.tsi.value = value_parser.parse_tsi(value)
+        log.debug('TSI = %s', context.tsi.value)
+
+    @staticmethod
+    def parse_fractional(log, context, value):
+        context.tsf.value = value_parser.parse_tsf(value)
+        log.debug('TSF = %s', context.tsf.value)
+
+TimestampParser.add_parser('integer', TimestampParser.parse_integer)
+TimestampParser.add_parser('fractional', TimestampParser.parse_fractional)
+
 class PrologueParser(SectionParser):
     """
     Base parser for packet prologue configuration.
@@ -46,10 +62,7 @@ class PrologueParser(SectionParser):
 
 PrologueParser.add_field_parser(Prologue.stream_id, alias='Stream ID')
 PrologueParser.add_field_parser(Prologue.class_id, field.ClassIDParser(), alias='Class ID')
-PrologueParser.add_field_parser(Header.tsi)
-PrologueParser.add_field_parser(Header.tsf)
-PrologueParser.add_field_parser(Prologue.integer_timestamp)
-PrologueParser.add_field_parser(Prologue.fractional_timestamp)
+PrologueParser.add_parser('timestamp', TimestampParser())
 
 class PacketParser:
     """
