@@ -50,12 +50,10 @@ class BinaryDumper(Generator):
             prologue += struct.pack('>I', packet.stream_id.value)
         if packet.class_id.is_set:
             prologue += packet.class_id.value.pack()
-        if packet.tsi.value != TSI.NONE:
-            ts = get_default(packet.integer_timestamp.value, 0)
-            prologue += struct.pack('>I', ts)
-        if packet.tsf.value != TSF.NONE:
-            ts = get_default(packet.fractional_timestamp.value, 0)
-            prologue += struct.pack('>Q', ts)
+        if packet.tsi != TSI.NONE:
+            prologue += struct.pack('>I', 0)
+        if packet.tsf != TSF.NONE:
+            prologue += struct.pack('>Q', 0)
         return prologue
 
     def _get_cif_prologue(self, packet):

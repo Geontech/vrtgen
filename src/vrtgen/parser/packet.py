@@ -27,13 +27,13 @@ def unimplemented_parser(name):
 class TimestampParser(MappingParser):
     @staticmethod
     def parse_integer(log, context, value):
-        context.tsi.value = value_parser.parse_tsi(value)
-        log.debug('TSI = %s', context.tsi.value)
+        context.tsi = value_parser.parse_tsi(value)
+        log.debug('TSI = %s', context.tsi)
 
     @staticmethod
     def parse_fractional(log, context, value):
-        context.tsf.value = value_parser.parse_tsf(value)
-        log.debug('TSF = %s', context.tsf.value)
+        context.tsf = value_parser.parse_tsf(value)
+        log.debug('TSF = %s', context.tsf)
 
 TimestampParser.add_parser('integer', TimestampParser.parse_integer)
 TimestampParser.add_parser('fractional', TimestampParser.parse_fractional)

@@ -13,8 +13,8 @@ TestData:
 """
     packet = parse_single(document)
     assert packet.name == 'TestData'
-    assert packet.tsi.value == enums.TSI.NONE
-    assert packet.tsf.value == enums.TSF.NONE
+    assert packet.tsi == enums.TSI.NONE
+    assert packet.tsf == enums.TSF.NONE
     assert packet.stream_id.is_disabled
     assert packet.class_id.is_disabled
 
@@ -25,8 +25,8 @@ TestContext:
 """
     packet = parse_single(document)
     assert packet.name == 'TestContext'
-    assert packet.tsi.value == enums.TSI.NONE
-    assert packet.tsf.value == enums.TSF.NONE
+    assert packet.tsi == enums.TSI.NONE
+    assert packet.tsf == enums.TSF.NONE
     assert packet.stream_id.is_mandatory
     assert packet.class_id.is_disabled
 
@@ -37,7 +37,7 @@ TestCommand:
 """
     packet = parse_single(document)
     assert packet.name == 'TestCommand'
-    assert packet.tsi.value == enums.TSI.NONE
-    assert packet.tsf.value == enums.TSF.NONE
+    assert packet.tsi == enums.TSI.NONE
+    assert packet.tsf == enums.TSF.NONE
     assert packet.stream_id.is_mandatory
     assert packet.class_id.is_disabled

@@ -82,8 +82,8 @@ class CppPacket:
             'fields': [],
         }
         self.set_header_field(prologue.Header.packet_type, cpptypes.enum_value(packet.packet_type()))
-        self.set_header_field(prologue.Header.tsi, cpptypes.enum_value(packet.tsi.value))
-        self.set_header_field(prologue.Header.tsf, cpptypes.enum_value(packet.tsf.value))
+        self.set_header_field(prologue.Header.tsi, cpptypes.enum_value(packet.tsi))
+        self.set_header_field(prologue.Header.tsf, cpptypes.enum_value(packet.tsf))
         self.set_header_field(prologue.Header.class_id_enable,
             str(packet.class_id.is_enabled).lower(),
             getter='isClassIdentifierEnabled',
@@ -247,10 +247,10 @@ class CppGenerator(Generator):
         if not packet.class_id.is_disabled:
             cppstruct.add_class_id(packet)
 
-        if packet.tsi.value != enums.TSI.NONE:
+        if packet.tsi != enums.TSI.NONE:
             cppstruct.add_prologue_field(packet.integer_timestamp)
 
-        if packet.tsf.value != enums.TSF.NONE:
+        if packet.tsf != enums.TSF.NONE:
             cppstruct.add_prologue_field(packet.fractional_timestamp)
 
     def generate_payload(self, cppstruct, packet):
