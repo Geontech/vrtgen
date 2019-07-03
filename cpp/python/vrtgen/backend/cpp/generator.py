@@ -4,7 +4,6 @@ import jinja2
 
 from vrtgen.model import config
 from vrtgen.model.field import Scope
-from vrtgen.types import basic
 from vrtgen.types import enums
 from vrtgen.types import struct
 from vrtgen.types import prologue
@@ -38,7 +37,7 @@ def do_namespace(text, namespace):
             prefix = prefix[:-len(indent)]
             yield prefix + '}'
     return '\n'.join(apply_namespace(text, namespace))
-    
+
 JINJA_OPTIONS = {
     'trim_blocks': True,
     'lstrip_blocks': True,
@@ -49,24 +48,6 @@ JINJA_OPTIONS = {
     'comment_start_string':  '/*#',
     'comment_end_string':    '#*/'
 }
-
-def next_pow2(value):
-    return 1<<(value-1).bit_length()
-
-def value_type(datatype):
-    if datatype == basic.StreamIdentifier:
-        return 'vrtgen::StreamIdentifier'
-    if issubclass(datatype, basic.BooleanType):
-        return 'bool'
-    if issubclass(datatype, enums.BinaryEnum):
-        return cpptypes.enum_type(datatype)
-    if issubclass(datatype, basic.FixedPointType):
-        return cpptypes.float_type(datatype.bits)
-    if issubclass(datatype, basic.IntegerType):
-        return cpptypes.int_type(datatype.bits, datatype.signed)
-    if issubclass(datatype, struct.Struct):
-        return cpptypes.name_to_identifier(datatype.__name__)
-    raise NotImplementedError(datatype.__name__)
 
 def optional_type(typename):
     return 'vrtgen::optional<{}>'.format(typename)
@@ -105,7 +86,7 @@ class CppPacket:
         for field in packet.class_id.get_fields():
             if field.is_disabled or field.is_constant:
                 continue
-            field_type = value_type(field.type)
+            field_type = cpptypes.value_type(field.type)
             self.add_member(field.name, field_type)
         self.prologue.append(self.class_id)
 
@@ -131,7 +112,7 @@ class CppPacket:
         })
 
     def add_prologue_field(self, field):
-        field_type = value_type(field.type)
+        field_type = cpptypes.value_type(field.type)
         self.add_member(field.name, field_type)
         identifier = cpptypes.name_to_identifier(field.name)
         self.prologue.append({
@@ -212,7 +193,7 @@ class CppPacket:
     def add_member_from_field(self, field, name=None):
         if name is None:
             name = field.name
-        self.add_member(name, value_type(field.type), field.is_optional, field.value)
+        self.add_member(name, cpptypes.value_type(field.type), field.is_optional, field.value)
 
 
 class CppGenerator(Generator):
