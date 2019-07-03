@@ -184,20 +184,18 @@ class CppPacket:
                 if subfield.is_disabled or subfield.is_constant:
                     continue
                 subfield_name = field.name + subfield.name
-                subfield_type = value_type(subfield.type)
-                self.add_member(subfield_name, subfield_type, subfield.is_optional)
+                self.add_member_from_field(subfield, name=subfield_name)
         else:
-            field_type = value_type(field.type)
-            self.add_member(field.name, field_type, field.is_optional)
+            self.add_member_from_field(field)
 
-    def add_member(self, name, datatype, optional=False):
+    def add_member(self, name, datatype, optional=False, value=None):
         identifier = cpptypes.name_to_identifier(name)
         if optional:
             member_type = optional_type(datatype)
         else:
             member_type = datatype
 
-        self.members.append({
+        member = {
             'name': name,
             'identifier': identifier,
             'optional': optional,
@@ -206,7 +204,16 @@ class CppPacket:
                 'identifier': 'm_'+identifier,
                 'type': member_type,
             },
-        })
+        }
+        if value is not None:
+            member['value'] = value
+        self.members.append(member)
+
+    def add_member_from_field(self, field, name=None):
+        if name is None:
+            name = field.name
+        self.add_member(name, value_type(field.type), field.is_optional, field.value)
+
 
 class CppGenerator(Generator):
     def __init__(self):
@@ -270,8 +277,7 @@ class CppGenerator(Generator):
         for field in packet.get_fields(Scope.TRAILER):
             if field.is_disabled:
                 continue
-            field_type = value_type(field.type)
-            cppstruct.add_member(field.name, field_type, field.is_optional)
+            cppstruct.add_member_from_field(field)
 
     def generate_context(self, cppstruct, packet):
         cppstruct.set_header_field(prologue.ContextHeader.not_v49d0, 'true')

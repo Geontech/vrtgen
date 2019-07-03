@@ -11,7 +11,7 @@ namespace packing {
 class {{packet.name}} {
 public:
     {{packet.name}}() :
-//% for field in packet.members if not field.optional
+//% for field in packet.members
         {{field.member.identifier}}({{field.value}}){{"," if not loop.last}}
 //% endfor
     {
