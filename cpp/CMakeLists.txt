@@ -91,10 +91,10 @@ target_include_directories(Catch2 INTERFACE
 )
 
 add_executable(test_libvrtgen
-    tests/main.cpp
-    tests/packed.cpp
-    tests/prologue.cpp
-    tests/utils.cpp
+    tests/lib/main.cpp
+    tests/lib/packed.cpp
+    tests/lib/prologue.cpp
+    tests/lib/utils.cpp
 )
 target_link_libraries(test_libvrtgen vrtgen)
 target_link_libraries(test_libvrtgen Catch2)
