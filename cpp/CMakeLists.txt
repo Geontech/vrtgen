@@ -7,6 +7,8 @@ project(vrtgen-cpp VERSION 0.1 LANGUAGES CXX)
 # environments can be found
 set(CMAKE_FIND_FRAMEWORK "last")
 find_package(Python3 REQUIRED)
+# Use the Python bin directory to find the vrtpktgen executable for testing
+get_filename_component(Python3_BINDIR ${Python3_EXECUTABLE} DIRECTORY CACHE)
 
 # Ensure that the base vrtgen Python library is available
 execute_process(
@@ -53,6 +55,9 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/gencpp.py
         ${template_files}
 )
+# Define an intermediate target to ensure that header generation only occurs
+# once, as part of the vrtgen target
+add_custom_target(generate-headers DEPENDS ${generated_header_files})
 
 # Normal hand-written headers
 set(header_files
@@ -67,6 +72,7 @@ set(header_files
 )
 
 add_library(vrtgen INTERFACE)
+add_dependencies(vrtgen generate-headers)
 target_sources(vrtgen INTERFACE
     ${header_files}
     ${generated_header_files}
@@ -90,6 +96,9 @@ target_include_directories(Catch2 INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/external/Catch2/include
 )
 
+# Create an empty "check" target to hang tests off of
+add_custom_target(check)
+
 add_executable(test_libvrtgen
     tests/lib/main.cpp
     tests/lib/packed.cpp
@@ -101,9 +110,47 @@ target_link_libraries(test_libvrtgen Catch2)
 target_compile_options(test_libvrtgen PRIVATE -Wall)
 target_compile_features(test_libvrtgen PRIVATE cxx_std_11)
 
-add_custom_target(check
-    COMMAND
-        ${CMAKE_CURRENT_BINARY_DIR}/test_libvrtgen $(TEST_OPTIONS)
-    DEPENDS
-        test_libvrtgen
+add_custom_target(run_test_libvrtgen
+    COMMAND test_libvrtgen $(TEST_OPTIONS)
 )
+add_dependencies(check run_test_libvrtgen)
+
+# Helper function to generate C++ source from a YAML file using vrtpktgen
+function(add_codegen_file TARGET YAML_FILE)
+    get_filename_component(TEST_DIRNAME "${YAML_FILE}" DIRECTORY)
+    get_filename_component(TEST_BASENAME "${YAML_FILE}" NAME_WE)
+    add_custom_command(
+        OUTPUT
+            ${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME}/${TEST_BASENAME}.cpp
+            ${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME}/${TEST_BASENAME}.hpp
+        COMMAND
+            ${Python3_BINDIR}/vrtpktgen -b cpp -o dir=${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME} ${YAML_FILE}
+        WORKING_DIRECTORY
+            ${CMAKE_CURRENT_SOURCE_DIR}
+        DEPENDS
+            ${YAML_FILE}
+    )
+    target_sources(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME}/${TEST_BASENAME}.cpp)
+endfunction()
+
+add_executable(test_codegen
+    tests/codegen/main.cpp
+    tests/codegen/test_basic.cpp
+)
+add_codegen_file(test_codegen tests/codegen/basic.yaml)
+
+target_link_libraries(test_codegen vrtgen)
+target_link_libraries(test_codegen Catch2)
+target_compile_options(test_codegen PRIVATE -Wall)
+target_compile_features(test_codegen PRIVATE cxx_std_11)
+target_include_directories(test_codegen PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}/tests/codegen
+    # Explicitly add the build "vrtgen" include directory so that the relative
+    # includes in packed.hpp can resolve generated headers
+    ${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen
+)
+
+add_custom_target(run_test_codegen
+    COMMAND test_codegen $(TEST_OPTIONS)
+)
+add_dependencies(check run_test_codegen)

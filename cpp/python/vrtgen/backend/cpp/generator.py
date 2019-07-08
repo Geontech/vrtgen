@@ -210,8 +210,15 @@ class CppGenerator(Generator):
         self.packets = []
         self.namespace = ''
 
+    def set_option(self, name, value):
+        if name == 'dir':
+            self.output_path = value
+            os.makedirs(self.output_path, exist_ok=True)
+        else:
+            super().set_option(name, value)
+
     def start_file(self, filename):
-        basename, _ = os.path.splitext(filename)
+        basename, _ = os.path.splitext(os.path.basename(filename))
         self.header = basename + self.header_ext
         self.implfile = basename + self.impl_ext
 

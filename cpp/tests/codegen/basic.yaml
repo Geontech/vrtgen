@@ -1,0 +1,9 @@
+BasicContext:
+  type: context
+  payload:
+    Reference Point Identifier: required
+
+BasicCommand:
+  type: command
+  payload:
+    RF Reference Frequency: required
