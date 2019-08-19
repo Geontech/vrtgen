@@ -67,11 +67,13 @@ class PayloadFormat(Struct):
     repeat_indicator = Field('Sample-Component Repeat Indicator', basic.Boolean)
     event_tag_size = Field('Event Tag Size', basic.IntegerType.create(3, signed=False))
     channel_tag_size = Field('Channel Tag Size', basic.IntegerType.create(4, signed=False))
-    data_item_fraction_size = Field('Data Item Fraction Size', basic.IntegerType.create(4, signed=False))
-    item_packing_field_size = Field('Item Packing Field Size', basic.IntegerType.create(6, signed=False))
-    data_item_size = Field('Data Item Size', basic.IntegerType.create(6, signed=False))
-    repeat_count = Field('Repeat Count', basic.UInteger16)
-    vector_size = Field('Vector Size', basic.UInteger16)
+    data_item_fraction_size = Field(
+        'Data Item Fraction Size', basic.IntegerType.create(4, signed=False)
+    )
+    item_packing_field_size = Field('Item Packing Field Size', basic.NonZeroSize.create(6))
+    data_item_size = Field('Data Item Size', basic.NonZeroSize.create(6))
+    repeat_count = Field('Repeat Count', basic.NonZeroSize.create(16))
+    vector_size = Field('Vector Size', basic.NonZeroSize.create(16))
 
 class Ephemeris(Struct):
     """

@@ -1,6 +1,7 @@
 import pytest
 
 from vrtgen.types import cif0, cif1
+from vrtgen.types import basic
 
 @pytest.mark.parametrize(
     'name,offset',
@@ -73,3 +74,21 @@ def test_cif0_enables(name, offset):
 def test_cif1_enables(name, offset):
     field = cif1.CIF1.Enables.get_field(name)
     assert field.offset == offset
+
+
+NonZero6 = basic.NonZeroSize.create(6)
+
+@pytest.mark.parametrize(
+    "value",
+    [0, 65]
+)
+def test_size_range(value):
+    with pytest.raises(ValueError):
+        NonZero6(value)
+
+@pytest.mark.parametrize(
+    "input,expected",
+    [ (1, 0), (12, 11), (64, 63)]
+)
+def test_size_to_binary(input,expected):
+    assert NonZero6(input).to_binary() == expected

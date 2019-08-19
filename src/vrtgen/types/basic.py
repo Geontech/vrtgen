@@ -42,6 +42,15 @@ class Boolean(BooleanType, bits=1):
     One-bit boolean value type.
     """
 
+def _range_check(cls, value):
+    """
+    Validates numeric values against the minimum and maximum for a class.
+    """
+    if value > cls.maxval:
+        raise ValueError('{} cannot exceed {}'.format(cls.__name__, cls.maxval))
+    if value < cls.minval:
+        raise ValueError('{} cannot be less than {}'.format(cls.__name__, cls.minval))
+
 class IntegerType(int):
     """
     Base class for signed and unsigned integer types with specific bit widths.
@@ -53,10 +62,7 @@ class IntegerType(int):
 
     def __new__(cls, value=0):
         value = int.__new__(cls, value)
-        if value > cls.maxval:
-            raise ValueError('{} cannot exceed {:d}'.format(cls.__name__, cls.maxval))
-        if value < cls.minval:
-            raise ValueError('{} cannot be less than {:d}'.format(cls.__name__, cls.minval))
+        _range_check(cls, value)
         return value
 
     def __init_subclass__(cls, bits, signed=True, **kwds):
@@ -147,6 +153,57 @@ class UInteger8(IntegerType, bits=8, signed=False):
     8-bit unsigned integer type.
     """
 
+class NonZeroSize(int):
+    """
+    Base class for non-zero size fields, in which the binary representation is
+    one less than the actual value.
+    """
+    __cached__ = {}
+
+    # In this case sizes are always unsigned
+    signed = False
+
+    def __new__(cls, value=1):
+        value = int.__new__(cls, value)
+        _range_check(cls, value)
+        return value
+
+    def __init_subclass__(cls, bits, **kwds):
+        super().__init_subclass__(**kwds)
+        cls.bits = bits
+        cls.minval = 1
+        cls.maxval = 2**bits
+
+    def to_binary(self):
+        """
+        Converts this non-zero size to its unsigned binary representation.
+        """
+        return self - 1
+
+    @classmethod
+    def from_binary(cls, value):
+        """
+        Converts an unsigned binary representation to a non-zero size.
+        """
+        return cls(value + 1)
+
+    @staticmethod
+    def create(bits):
+        """
+        Creates new non-zero size types dynamically.
+
+        If a non-zero size type has already been created with the same number
+        of bits, returns the existing class object.
+        """
+        key = bits
+        existing = NonZeroSize.__cached__.get(key, None)
+        if existing:
+            return existing
+        name = 'NonZeroSize{:d}'.format(bits)
+        newclass = type(name, (NonZeroSize,), {}, bits=bits)
+        NonZeroSize.__cached__[key] = newclass
+        return newclass
+
 class FixedPointType(float):
     """
     Base class for fixed-point types, mapping to Python float for the actual
@@ -158,10 +215,7 @@ class FixedPointType(float):
 
     def __new__(cls, value=0.0):
         value = float.__new__(cls, value)
-        if value > cls.maxval:
-            raise ValueError('{} cannot exceed {}'.format(cls.__name__, cls.maxval))
-        if value < cls.minval:
-            raise ValueError('{} cannot be less than {}'.format(cls.__name__, cls.minval))
+        _range_check(cls, value)
         return value
 
     def __init_subclass__(cls, bits, radix, **kwds):
