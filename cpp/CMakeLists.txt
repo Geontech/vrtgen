@@ -102,9 +102,10 @@ add_custom_target(check)
 
 add_library(testutils OBJECT
     tests/utils/main.cpp
+    tests/utils/bindump.cpp
 )
 target_link_libraries(testutils Catch2)
-target_include_directories(testutils INTERFACE
+target_include_directories(testutils PUBLIC
     tests/include
 )
 
