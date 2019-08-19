@@ -57,6 +57,22 @@ class Geolocation(Struct):
     track_angle = Field('Track Angle', GeolocationAngle)
     magnetic_variation = Field('Magnetic Variation', GeolocationAngle)
 
+class PayloadFormat(Struct):
+    """
+    Data Packet Payload Format Field [9.13.3]
+    """
+    packing_method = Field('Packing Method', enums.PackingMethod)
+    real_complex_type = Field('Real/Complex Type', enums.DataSampleType)
+    data_item_format = Field('Data Item Format', enums.DataItemFormat)
+    repeat_indicator = Field('Sample-Component Repeat Indicator', basic.Boolean)
+    event_tag_size = Field('Event Tag Size', basic.IntegerType.create(3, signed=False))
+    channel_tag_size = Field('Channel Tag Size', basic.IntegerType.create(4, signed=False))
+    data_item_fraction_size = Field('Data Item Fraction Size', basic.IntegerType.create(4, signed=False))
+    item_packing_field_size = Field('Item Packing Field Size', basic.IntegerType.create(6, signed=False))
+    data_item_size = Field('Data Item Size', basic.IntegerType.create(6, signed=False))
+    repeat_count = Field('Repeat Count', basic.UInteger16)
+    vector_size = Field('Vector Size', basic.UInteger16)
+
 class Ephemeris(Struct):
     """
     ECEF Ephemeris [9.4.3] and Relative Ephemeris [9.4.9].
@@ -132,8 +148,8 @@ class CIF0(CIFFields):
     # State/Event Indicators (0/16): 32 bits, bit flags
     state_event_indicators = Field('State/Event Indicators', basic.Integer32)
 
-    # Data Payload Format (0/15): structured (TODO: not implemented)
-    data_format = Field('Signal Data Packet Payload Format', None)
+    # Data Payload Format (0/15): structured
+    data_format = Field('Signal Data Packet Payload Format', PayloadFormat)
 
     # Formatted GPS (0/14): structured
     formatted_gps = Field('Formatted GPS', Geolocation)
