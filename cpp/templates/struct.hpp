@@ -45,6 +45,22 @@ struct {{struct.name}} {
     }
 
 /*% endfor %*/
+    /**
+     * Checks that all fields have valid values.
+     * 
+     * Returns the number of invalid fields.
+     */
+    int validate() const
+    {
+        int errors = 0;
+/*% for field in struct.reserved %*/
+        if ({{field.name}} != 0) {
+            ++errors;
+        }
+/*% endfor %*/
+        return errors;
+    }
+
 private:
 /*% for member in struct.members %*/
     /**
