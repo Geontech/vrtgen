@@ -6,6 +6,7 @@
 #include "types/fixed.hpp"
 #include "types/packed.hpp"
 #include "types/optional.hpp"
+#include "types/size.hpp"
 
 #include <inttypes.h>
 

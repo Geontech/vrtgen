@@ -34,6 +34,20 @@ TEST_CASE("PayloadFormat getter methods", "[cif0]")
         data[3] = 0x10;
         CHECK(payload_format.getDataItemSize() == 16);
     }
+
+    SECTION("Repeat Count") {
+        CHECK(payload_format.getRepeatCount() == 1);
+        data[4] = 0x12;
+        data[5] = 0x34;
+        CHECK(payload_format.getRepeatCount() == 0x1235);
+    }
+
+    SECTION("Vector Size") {
+        CHECK(payload_format.getVectorSize() == 1);
+        data[6] = 0x56;
+        data[7] = 0x78;
+        CHECK(payload_format.getVectorSize() == 0x5679);
+    }
 }
 
 TEST_CASE("PayloadFormat setter methods", "[cif0]")
@@ -60,5 +74,27 @@ TEST_CASE("PayloadFormat setter methods", "[cif0]")
     SECTION("Data Item Size") {
         payload_format.setDataItemSize(32);
         CHECK(data == bytes({0, 0, 0, 0x20, 0, 0, 0, 0}));
+    }
+
+    SECTION("Repeat Count") {
+        payload_format.setRepeatCount(512);
+        CHECK(data == bytes({0, 0, 0, 0, 0x01, 0xFF, 0, 0}));
+
+        payload_format.setRepeatCount(65536);
+        CHECK(data == bytes({0, 0, 0, 0, 0xFF, 0xFF, 0, 0}));
+
+        payload_format.setRepeatCount(1);
+        CHECK(data == bytes({0, 0, 0, 0, 0, 0, 0, 0}));
+    }
+
+    SECTION("Vector Size") {
+        payload_format.setVectorSize(1024);
+        CHECK(data == bytes({0, 0, 0, 0, 0, 0, 0x03, 0xFF}));
+
+        payload_format.setVectorSize(65536);
+        CHECK(data == bytes({0, 0, 0, 0, 0, 0, 0xFF, 0xFF}));
+
+        payload_format.setVectorSize(1);
+        CHECK(data == bytes({0, 0, 0, 0, 0, 0, 0, 0}));
     }
 }

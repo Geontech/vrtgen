@@ -52,9 +52,8 @@ def member_type(datatype):
     if issubclass(datatype, basic.FixedPointType):
         return cpptypes.fixed_type(datatype.bits, datatype.radix)
     if issubclass(datatype, basic.NonZeroSize):
-        # TODO: true non-zero size support
         base_type = cpptypes.int_type(datatype.bits, False)
-        return 'big_endian<{}>'.format(base_type)
+        return 'nonzero_size<{}>'.format(base_type)
     raise NotImplementedError(datatype.__name__)
 
 def format_docstring(doc):
