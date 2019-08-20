@@ -51,8 +51,10 @@ def value_type(datatype):
         return enum_type(datatype)
     if issubclass(datatype, basic.FixedPointType):
         return float_type(datatype.bits)
-    if issubclass(datatype, (basic.IntegerType, basic.NonZeroSize)):
+    if issubclass(datatype, basic.IntegerType):
         return int_type(datatype.bits, datatype.signed)
+    if issubclass(datatype, basic.NonZeroSize):
+        return 'size_t'
     if issubclass(datatype, struct.Struct):
         return name_to_identifier(datatype.__name__)
     raise NotImplementedError(datatype.__name__)
