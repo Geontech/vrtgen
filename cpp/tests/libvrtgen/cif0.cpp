@@ -30,8 +30,8 @@ TEST_CASE("PayloadFormat getter methods", "[cif0]")
     }
 
     SECTION("Data Item Size") {
-        CHECK(payload_format.getDataItemSize() == 0);
-        data[3] = 0x10;
+        CHECK(payload_format.getDataItemSize() == 1);
+        data[3] = 0x0F;
         CHECK(payload_format.getDataItemSize() == 16);
     }
 
@@ -73,7 +73,7 @@ TEST_CASE("PayloadFormat setter methods", "[cif0]")
 
     SECTION("Data Item Size") {
         payload_format.setDataItemSize(32);
-        CHECK(data == bytes({0, 0, 0, 0x20, 0, 0, 0, 0}));
+        CHECK(data == bytes({0, 0, 0, 0x1F, 0, 0, 0, 0}));
     }
 
     SECTION("Repeat Count") {

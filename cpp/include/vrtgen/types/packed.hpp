@@ -21,52 +21,78 @@ namespace vrtgen {
         };
 
         template <typename T, unsigned bits>
-        struct field_traits_base
+        struct field_packing_base
         {
-            static inline T unpack(unsigned value)
+            static inline T load(unsigned value)
             {
                 return static_cast<T>(value);
             }
 
-            static inline unsigned pack(T value)
+            static inline unsigned store(T value)
             {
-                return static_cast<unsigned>(value) & field_traits_base::mask;
+                return static_cast<unsigned>(value) & field_packing_base::mask;
             }
 
             static constexpr unsigned mask = (1 << bits) - 1;
         };
 
         template <typename T, unsigned bits>
-        struct field_traits : public field_traits_base<T,bits>
+        struct field_packing : public field_packing_base<T,bits>
         {
         };
 
         template <unsigned bits>
-        struct field_traits<bool,bits> : public field_traits_base<bool,bits>
+        struct field_packing<bool,bits> : public field_packing_base<bool,bits>
         {
-            static inline unsigned pack(bool value)
+            static inline unsigned store(bool value)
             {
-                return -1 & field_traits::mask;
+                return -1 & field_packing::mask;
             }
         };
 
         template <unsigned bits>
-        struct field_traits<signed,bits> : public field_traits_base<signed,bits>
+        struct field_packing<signed,bits> : public field_packing_base<signed,bits>
         {
-            static inline signed unpack(unsigned value)
+            static inline signed load(unsigned value)
             {
                 bool sign_bit = value & (1<<(bits-1));
                 if (sign_bit) {
-                    value |= ~field_traits::mask;
+                    value |= ~field_packing::mask;
                 }
                 return value;
             }
         };
+
+        template <typename T, unsigned bits, typename Converter=void>
+        struct field_converter;
+
+        template <typename T, unsigned bits>
+        struct field_converter<T,bits,void> : public field_packing<T,bits>
+        {
+        };
+
+        template <typename T, unsigned bits, typename Converter>
+        struct field_converter : public field_packing<T,bits>
+        {
+            static inline T store(unsigned value)
+            {
+                return field_packing<T,bits>::store(Converter::store(value));
+            }
+
+            static inline unsigned load(T value)
+            {
+                return Converter::load(field_packing<T,bits>::load(value));
+            }
+        };
     }
 
-    template <typename T, unsigned pos, unsigned bits>
+    template <typename Value, unsigned Position, unsigned Bits, typename Converter=void>
     struct packed_tag
     {
+        typedef Value value_type;
+        static constexpr unsigned pos = Position;
+        static constexpr unsigned bits = Bits;
+        typedef Converter converter_type;
     };
 
     template <typename IntT>
@@ -91,22 +117,22 @@ namespace vrtgen {
             m_value = (m_value & ~traits::mask) | (bool(value) << traits::offset);
         }
 
-        template <typename T, unsigned pos, unsigned bits>
-        inline T get(packed_tag<T,pos,bits>) const
+        template <typename T, unsigned pos, unsigned bits, typename Converter>
+        inline T get(packed_tag<T,pos,bits,Converter>) const
         {
             static_assert(pos < packed::BITS, "bit position exceeds size of packed value");
-            typedef detail::field_traits<T,bits> traits;
+            typedef detail::field_converter<T,bits,Converter> converter;
             constexpr unsigned shift = pos - bits + 1;
             constexpr unsigned mask = (1 << bits) - 1;
-            return traits::unpack((swap_type::swap(m_value) >> shift) & mask);
+            return converter::load((swap_type::swap(m_value) >> shift) & mask);
         }
 
-        template <typename Tin, typename T, unsigned pos, unsigned bits>
-        inline void set(Tin value, packed_tag<T,pos,bits>)
+        template <typename Tin, typename T, unsigned pos, unsigned bits, typename Converter>
+        inline void set(Tin value, packed_tag<T,pos,bits,Converter>)
         {
             static_assert(pos < packed::BITS, "bit position exceeds size of packed value");
-            typedef detail::field_traits<T,bits> traits;
-            value_type field_value = traits::pack(value);
+            typedef detail::field_converter<T,bits,Converter> converter;
+            value_type field_value = converter::store(value);
             constexpr unsigned shift = pos - bits + 1;
             const unsigned mask = swap_type::swap(((1 << bits) - 1) << shift);
             m_value = (m_value & ~mask) | swap_type::swap(field_value << shift);

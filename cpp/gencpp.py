@@ -153,10 +153,14 @@ class Tag:
         self.offset = field.offset
         self.basetype = Tag._base_type(field.type)
         self.bits = field.bits
+        self.converter = Tag._converter_type(field.type)
 
     @property
     def type(self):
-        return 'packed_tag<{},{},{}>'.format(self.basetype, self.offset, self.bits)
+        template_args = [self.basetype, self.offset, self.bits]
+        if self.converter:
+            template_args.append(self.converter)
+        return 'packed_tag<{}>'.format(','.join(str(arg) for arg in template_args))
 
     @staticmethod
     def _base_type(datatype):
@@ -169,6 +173,12 @@ class Tag:
             else:
                 return 'unsigned'
         return cpptypes.value_type(datatype)
+
+    @staticmethod
+    def _converter_type(datatype):
+        if issubclass(datatype, basic.NonZeroSize):
+            return 'detail::size_converter'
+        return None
 
 class Packed(Member):
     def __init__(self, name, offset):
