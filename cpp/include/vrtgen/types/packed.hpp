@@ -20,6 +20,13 @@ namespace vrtgen {
             static constexpr unsigned mask = 1 << bit_traits::offset;
         };
 
+        template <unsigned pos, unsigned bits>
+        struct field_traits
+        {
+            static constexpr unsigned shift = pos - bits + 1;
+            static constexpr unsigned mask = (1 << bits) - 1;
+        };
+
         template <typename T, unsigned bits>
         struct field_packing_base
         {
@@ -121,21 +128,27 @@ namespace vrtgen {
         inline T get(packed_tag<T,pos,bits,Converter>) const
         {
             static_assert(pos < packed::BITS, "bit position exceeds size of packed value");
+            typedef detail::field_traits<pos,bits> traits;
             typedef detail::field_converter<T,bits,Converter> converter;
-            constexpr unsigned shift = pos - bits + 1;
-            constexpr unsigned mask = (1 << bits) - 1;
-            return converter::load((swap_type::swap(m_value) >> shift) & mask);
+            // Fetch the stored bits in host order, then extract the field
+            // bits
+            value_type value = (swap_type::swap(m_value) >> traits::shift) & traits::mask;
+            return converter::load(value);
         }
 
         template <typename Tin, typename T, unsigned pos, unsigned bits, typename Converter>
         inline void set(Tin value, packed_tag<T,pos,bits,Converter>)
         {
             static_assert(pos < packed::BITS, "bit position exceeds size of packed value");
+            typedef detail::field_traits<pos,bits> traits;
             typedef detail::field_converter<T,bits,Converter> converter;
-            value_type field_value = converter::store(value);
-            constexpr unsigned shift = pos - bits + 1;
-            const unsigned mask = swap_type::swap(((1 << bits) - 1) << shift);
-            m_value = (m_value & ~mask) | swap_type::swap(field_value << shift);
+            // Fetch the current value in host order, then mask off the field
+            // bits
+            value_type old_value = swap_type::swap(m_value) & ~traits::mask;
+            value_type field_value = converter::store(value) << traits::shift;
+            // Combine the new value with the existing bits, then store back
+            // in network order
+            m_value = swap_type::swap(old_value | field_value);
         }
 
     private:
