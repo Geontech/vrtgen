@@ -127,3 +127,52 @@ def parse_data_sample_type(value):
         return _DATASAMPLETYPE_VALUES[value.casefold()]
     except KeyError:
         raise ValueError(value)
+
+_DATAITEMFORMAT_VALUES = {
+    'signed fixed': enums.DataItemFormat.SIGNED_FIXED,
+    'signed vrt 1-bit exponent': enums.DataItemFormat.SIGNED_VRT_1,
+    'signed vrt 2-bit exponent': enums.DataItemFormat.SIGNED_VRT_2,
+    'signed vrt 3-bit exponent': enums.DataItemFormat.SIGNED_VRT_3,
+    'signed vrt 4-bit exponent': enums.DataItemFormat.SIGNED_VRT_4,
+    'signed vrt 5-bit exponent': enums.DataItemFormat.SIGNED_VRT_5,
+    'signed vrt 6-bit exponent': enums.DataItemFormat.SIGNED_VRT_6,
+    'signed fixed non-normalized': enums.DataItemFormat.SIGNED_FIXED_NON_NORMALIZED,
+    'unsigned fixed': enums.DataItemFormat.UNSIGNED_FIXED,
+    'unsigned vrt 1-bit exponent': enums.DataItemFormat.UNSIGNED_VRT_1,
+    'unsigned vrt 2-bit exponent': enums.DataItemFormat.UNSIGNED_VRT_2,
+    'unsigned vrt 3-bit exponent': enums.DataItemFormat.UNSIGNED_VRT_3,
+    'unsigned vrt 4-bit exponent': enums.DataItemFormat.UNSIGNED_VRT_4,
+    'unsigned vrt 5-bit exponent': enums.DataItemFormat.UNSIGNED_VRT_5,
+    'unsigned vrt 6-bit exponent': enums.DataItemFormat.UNSIGNED_VRT_6,
+    'unsigned fixed non-normalized': enums.DataItemFormat.UNSIGNED_FIXED_NON_NORMALIZED,
+    'ieee half-precision': enums.DataItemFormat.IEEE754_HALF_PRECISION,
+    'ieee single-precision': enums.DataItemFormat.IEEE754_SINGLE_PRECISION,
+    'ieee double-precision': enums.DataItemFormat.IEEE754_DOUBLE_PRECISION,
+}
+
+def parse_data_item_format(value):
+    """
+    Parses a Data Item Format literal.
+
+    Data item format values vary depending on the encoding, which may be one
+    of 'fixed', 'VRT' or 'IEEE'. Case is always ignored.
+
+    Fixed-point encodings must be either 'signed' or 'unsigned', and can be
+    'non-normalized'. Normalized is the default and does not need to be
+    specified.  For example, 'signed fixed' specifies a signed, normalized
+    fixed-point format, while 'unsigned fixed non-normalized' specified an
+    unsigned, non-normalized fixed-point format.
+
+    VRT floating-point encodings must be either 'signed' or 'unsigned' and
+    specify the number of exponent bits; for example, 'signed VRT 1-bit
+    exponent'. The exponent must be between 1 and 6 bits, inclusive.
+
+    IEEE 754 floating-point encodings must specify the precision as one of
+    'half-precision' (16-bit), 'single-precision' (32-bit) or
+    'double-precision' (64-bit). For example, 'IEEE single' specifies a 32-bit
+    floating point format.
+    """
+    try:
+        return _DATAITEMFORMAT_VALUES[value.casefold()]
+    except KeyError:
+        raise ValueError(value)

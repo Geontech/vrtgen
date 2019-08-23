@@ -117,3 +117,17 @@ def test_parse_data_sample_type(literal, expected):
 def test_parse_data_sample_type_error():
     with pytest.raises(ValueError):
         value.parse_data_sample_type('invalid')
+
+@parametrize_literals(
+    ('signed fixed', enums.DataItemFormat.SIGNED_FIXED),
+    ('unsigned fixed non-normalized', enums.DataItemFormat.UNSIGNED_FIXED_NON_NORMALIZED),
+    ('signed VRT 2-bit exponent', enums.DataItemFormat.SIGNED_VRT_2),
+    ('unsigned VRT 5-bit exponent', enums.DataItemFormat.UNSIGNED_VRT_5),
+    ('ieee single-precision', enums.DataItemFormat.IEEE754_SINGLE_PRECISION),
+)
+def test_parse_data_item_format(literal, expected):
+    assert value.parse_data_item_format(literal) == expected
+
+def test_parse_data_item_format_error():
+    with pytest.raises(ValueError):
+        value.parse_data_item_format('invalid')
