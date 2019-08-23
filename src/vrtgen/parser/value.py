@@ -91,3 +91,39 @@ def parse_tsm(value):
         return getattr(enums.TSM, value.upper())
     except AttributeError:
         raise ValueError(value)
+
+_PACKINGMETHOD_VALUES = {
+    'processing': enums.PackingMethod.PROCESSING_EFFICIENT,
+    'link': enums.PackingMethod.LINK_EFFICIENT,
+}
+
+def parse_packing_method(value):
+    """
+    Parses a Packing Method literal.
+
+    Valid values are 'processing' and 'link'. Case is ignored.
+    """
+    try:
+        return _PACKINGMETHOD_VALUES[value.casefold()]
+    except KeyError:
+        raise ValueError(value)
+
+_DATASAMPLETYPE_VALUES = {
+    'real': enums.DataSampleType.REAL,
+    'complex cartesian': enums.DataSampleType.COMPLEX_CARTESIAN,
+    'real/imag': enums.DataSampleType.COMPLEX_CARTESIAN,
+    'complex polar': enums.DataSampleType.COMPLEX_POLAR,
+    'mag/phase': enums.DataSampleType.COMPLEX_POLAR,
+}
+def parse_data_sample_type(value):
+    """
+    Parses a Data Sample Type literal.
+
+    Valid values are 'real', 'complex cartesian', 'real/imag' (alias for
+    'complex cartesian'), 'complex polar' and 'mag/phase' (alias for 'complex
+    polar'). Case is ignored.
+    """
+    try:
+        return _DATASAMPLETYPE_VALUES[value.casefold()]
+    except KeyError:
+        raise ValueError(value)

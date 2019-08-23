@@ -145,7 +145,7 @@ class CppPacket:
                     'title': subfield.name,
                 }
                 if subfield.is_constant:
-                    subfield_dict['value'] = subfield.value
+                    subfield_dict['value'] = cpptypes.literal(subfield.value, subfield.type)
                 packing['fields'].append(subfield_dict)
         else:
             packing['type'] = 'vrtgen::packing::' + identifier
@@ -193,7 +193,11 @@ class CppPacket:
     def add_member_from_field(self, field, name=None):
         if name is None:
             name = field.name
-        self.add_member(name, cpptypes.value_type(field.type), field.is_optional, field.value)
+        if field.value is not None:
+            value = cpptypes.literal(field.value, field.type)
+        else:
+            value = None
+        self.add_member(name, cpptypes.value_type(field.type), field.is_optional, value)
 
 
 class CppGenerator(Generator):

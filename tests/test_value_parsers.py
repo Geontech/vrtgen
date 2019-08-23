@@ -94,3 +94,26 @@ def test_parse_tsm(literal, expected):
 def test_parse_tsm_error():
     with pytest.raises(ValueError):
         value.parse_tsm('invalid')
+
+@parametrize_literals(
+    ('processing', enums.PackingMethod.PROCESSING_EFFICIENT),
+    ('link', enums.PackingMethod.LINK_EFFICIENT),
+)
+def test_parse_packing_method(literal, expected):
+    assert value.parse_packing_method(literal) == expected
+
+def test_parse_packing_method_error():
+    with pytest.raises(ValueError):
+        value.parse_packing_method('invalid')
+
+@parametrize_literals(
+    ('real', enums.DataSampleType.REAL),
+    ('real/imag', enums.DataSampleType.COMPLEX_CARTESIAN),
+    ('mag/phase', enums.DataSampleType.COMPLEX_POLAR),
+)
+def test_parse_data_sample_type(literal, expected):
+    assert value.parse_data_sample_type(literal) == expected
+
+def test_parse_data_sample_type_error():
+    with pytest.raises(ValueError):
+        value.parse_data_sample_type('invalid')

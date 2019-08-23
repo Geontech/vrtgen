@@ -27,7 +27,7 @@ CIFPayloadParser.add_field_parser(CIF0.timestamp_calibration_time)
 CIFPayloadParser.add_field_parser(CIF0.temperature)
 CIFPayloadParser.add_field_parser(CIF0.device_id)
 # Not implemented: CIF0.state_event_indicators
-# Not implemented: CIF0.data_format
+CIFPayloadParser.add_field_parser(CIF0.data_format, alias='Data Payload Format')
 CIFPayloadParser.add_field_parser(CIF0.formatted_gps)
 CIFPayloadParser.add_field_parser(CIF0.formatted_ins)
 CIFPayloadParser.add_field_parser(CIF0.ecef_ephemeris)

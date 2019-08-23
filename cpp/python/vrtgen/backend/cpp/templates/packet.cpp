@@ -2,7 +2,7 @@
 //%     if field.struct
 {{field.type}}* {{field.attr}} = buffer.insert<{{field.type}}>();
 //%         for subfield in field.fields
-//%             if subfield.value
+//%             if subfield.value is defined
 {{field.attr}}->set{{subfield.srcname}}({{subfield.value}});
 //%             else
 {{field.attr}}->set{{subfield.srcname}}(packet.get{{subfield.name}}());
@@ -24,7 +24,7 @@ packet.set{{field.name}}(buffer.get<{{field.type}}>());
 
 //% macro unpack_struct(field)
 //%     for subfield in field.fields
-//%         if subfield.value
+//%         if subfield.value is defined
 ::validate({{field.attr}}->get{{subfield.srcname}}(), {{subfield.value}}, "invalid subfield {{subfield.title}}");
 //%         else
 packet.set{{subfield.name}}({{field.attr}}->get{{subfield.srcname}}());

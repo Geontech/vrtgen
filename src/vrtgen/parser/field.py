@@ -161,6 +161,8 @@ SimpleFieldParser.register_type(enums.TSI, value_parser.parse_tsi)
 SimpleFieldParser.register_type(enums.TSF, value_parser.parse_tsf)
 SimpleFieldParser.register_type(enums.SSI, value_parser.parse_ssi)
 SimpleFieldParser.register_type(enums.TSM, value_parser.parse_tsm)
+SimpleFieldParser.register_type(enums.PackingMethod, value_parser.parse_packing_method)
+SimpleFieldParser.register_type(enums.DataSampleType, value_parser.parse_data_sample_type)
 
 class UserDefinedFieldParser(FieldParser):
     """
@@ -252,7 +254,11 @@ class StructValueParser:
 
         for field_name, field_value in value.items():
             name = self.get_field_name(field_name)
-            parser = self.get_field_parser(name)
+            try:
+                parser = self.get_field_parser(name)
+            except KeyError:
+                log.error("Invalid field '%s'",field_name)
+                continue
 
             # If parser lookup succeeded, field lookup must succeed
             field = context.get_field(name)

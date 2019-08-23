@@ -58,3 +58,10 @@ def value_type(datatype):
     if issubclass(datatype, struct.Struct):
         return name_to_identifier(datatype.__name__)
     raise NotImplementedError(datatype.__name__)
+
+def literal(value, datatype):
+    if issubclass(datatype, enums.BinaryEnum):
+        return enum_value(value)
+    if issubclass(datatype, basic.BooleanType):
+        return str(value).lower()
+    return str(value)
