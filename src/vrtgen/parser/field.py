@@ -258,7 +258,7 @@ class StructValueParser:
             try:
                 parser = self.get_field_parser(name)
             except KeyError:
-                log.error("Invalid field '%s'",field_name)
+                log.error("Invalid field '%s'", field_name)
                 continue
 
             # If parser lookup succeeded, field lookup must succeed

@@ -128,28 +128,39 @@ def parse_data_sample_type(value):
     except KeyError:
         raise ValueError(value)
 
-_DATAITEMFORMAT_VALUES = {
-    'signed fixed': enums.DataItemFormat.SIGNED_FIXED,
-    'signed vrt 1-bit exponent': enums.DataItemFormat.SIGNED_VRT_1,
-    'signed vrt 2-bit exponent': enums.DataItemFormat.SIGNED_VRT_2,
-    'signed vrt 3-bit exponent': enums.DataItemFormat.SIGNED_VRT_3,
-    'signed vrt 4-bit exponent': enums.DataItemFormat.SIGNED_VRT_4,
-    'signed vrt 5-bit exponent': enums.DataItemFormat.SIGNED_VRT_5,
-    'signed vrt 6-bit exponent': enums.DataItemFormat.SIGNED_VRT_6,
-    'signed fixed non-normalized': enums.DataItemFormat.SIGNED_FIXED_NON_NORMALIZED,
-    'unsigned fixed': enums.DataItemFormat.UNSIGNED_FIXED,
-    'unsigned vrt 1-bit exponent': enums.DataItemFormat.UNSIGNED_VRT_1,
-    'unsigned vrt 2-bit exponent': enums.DataItemFormat.UNSIGNED_VRT_2,
-    'unsigned vrt 3-bit exponent': enums.DataItemFormat.UNSIGNED_VRT_3,
-    'unsigned vrt 4-bit exponent': enums.DataItemFormat.UNSIGNED_VRT_4,
-    'unsigned vrt 5-bit exponent': enums.DataItemFormat.UNSIGNED_VRT_5,
-    'unsigned vrt 6-bit exponent': enums.DataItemFormat.UNSIGNED_VRT_6,
-    'unsigned fixed non-normalized': enums.DataItemFormat.UNSIGNED_FIXED_NON_NORMALIZED,
-    'ieee half-precision': enums.DataItemFormat.IEEE754_HALF_PRECISION,
-    'ieee single-precision': enums.DataItemFormat.IEEE754_SINGLE_PRECISION,
-    'ieee double-precision': enums.DataItemFormat.IEEE754_DOUBLE_PRECISION,
+_IEEE_REGEXP = re.compile(r'ieee(?:[ -]754)? +(?P<precision>single|double|half)(?:-precision)?')
+_IEEE_FORMATS = {
+    'half': enums.DataItemFormat.IEEE754_HALF_PRECISION,
+    'single': enums.DataItemFormat.IEEE754_SINGLE_PRECISION,
+    'double': enums.DataItemFormat.IEEE754_DOUBLE_PRECISION,
 }
+def _ieee_format(precision):
+    return _IEEE_FORMATS[precision]
 
+_SIGNED_REGEXP = r'(?P<sign>(?:un)?signed)'
+_FIXED_REGEXP = re.compile(_SIGNED_REGEXP + r' +fixed(?:-point)?(?:[ ]+(?P<non_normalized>non-normalized))?')
+def _fixed_format(sign, non_normalized):
+    value = 0
+    if sign == 'unsigned':
+        value += 0b10000
+    if non_normalized is not None:
+        value += 0b00111
+    return enums.DataItemFormat(value)
+
+_VRTFLOAT_REGEXP = re.compile(_SIGNED_REGEXP + r' +vrt[, ] *(?P<exp>[1-6])(?:[ -]bit)?(?:[ ]+exponent)?')
+def _vrtfloat_format(sign, exp):
+    # VRT float formats happen to have the exponent in the lower bits of the
+    # format code
+    value = int(exp)
+    if sign == 'unsigned':
+        value += 0b10000
+    return enums.DataItemFormat(value)
+
+_DATA_ITEM_FORMAT_PARSERS = (
+    (_IEEE_REGEXP, _ieee_format),
+    (_FIXED_REGEXP, _fixed_format),
+    (_VRTFLOAT_REGEXP, _vrtfloat_format)
+)
 def parse_data_item_format(value):
     """
     Parses a Data Item Format literal.
@@ -172,7 +183,9 @@ def parse_data_item_format(value):
     'double-precision' (64-bit). For example, 'IEEE single' specifies a 32-bit
     floating point format.
     """
-    try:
-        return _DATAITEMFORMAT_VALUES[value.casefold()]
-    except KeyError:
-        raise ValueError(value)
+    for regexp, parser in _DATA_ITEM_FORMAT_PARSERS:
+        match = regexp.fullmatch(value.casefold())
+        if match:
+            return parser(**match.groupdict())
+
+    raise ValueError(value)
