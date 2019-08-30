@@ -7,6 +7,9 @@ setup(
     version='0.1',
     packages=['vrtgen.backend.cpp'],
     package_dir={'':'python'},
+    package_data={
+        '': ['templates/*'],
+    },
     python_requires='>= 3.6',
     install_requires=[
         'vrtgen == 0.1',

@@ -6,7 +6,7 @@ image: python:3.6-alpine
 test:
     stage: test
     before_script:
-        - pip install -e .
+        - pip install .
         - pip install pytest
     script:
         - pytest --color=yes
@@ -15,7 +15,7 @@ lint:
     stage: test
     before_script:
         - apk add gcc musl-dev
-        - pip install -e .
+        - pip install .
         - pip install pylint
     script:
         # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
@@ -27,9 +27,9 @@ test:cpp:
     stage: test
     before_script:
         - apk add g++ make cmake
-        - pip install -e .
+        - pip install .
         - cd cpp
-        - pip install -e .
+        - pip install .
         - cmake -B build .
         - cd build
         - export MAKEFLAGS="-j$(nproc)"
