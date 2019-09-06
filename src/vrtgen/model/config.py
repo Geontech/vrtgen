@@ -102,8 +102,8 @@ class CIFPacketConfiguration(PacketConfiguration):
 
         self.stream_id.mode = Mode.MANDATORY
 
-        self._add_fields(CIF0, Scope.PAYLOAD)
-        self._add_fields(CIF1, Scope.PAYLOAD)
+        self._add_fields(CIF0, Scope.CIF0)
+        self._add_fields(CIF1, Scope.CIF1)
 
 class ContextPacketConfiguration(CIFPacketConfiguration):
     """

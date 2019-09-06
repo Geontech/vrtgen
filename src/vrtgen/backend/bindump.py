@@ -1,3 +1,7 @@
+"""
+Binary dump packet generator.
+"""
+
 import sys
 import struct
 
@@ -27,10 +31,12 @@ def dump_bytes(data, stream):
 def get_default(value, defval):
     if value is None:
         return defval
-    else:
-        return value
+    return value
 
 class BinaryDumper(Generator):
+    """
+    Writes binary dumps of default packet configurations to the console.
+    """
     def _get_header(self, packet):
         header = Header()
 
@@ -58,21 +64,13 @@ class BinaryDumper(Generator):
 
     def _get_cif_prologue(self, packet):
         cif0 = CIF0.Enables()
-        for field in cif0.get_fields():
-            try:
-                config = packet.get_field(field.name)
-            except KeyError:
-                continue
-            if config.is_required or config.is_set:
+        for field in packet.get_fields(scope=Scope.CIF0):
+            if field.is_required or field.is_set:
                 cif0.set_value(field.name, True)
 
         cif1 = CIF1.Enables()
-        for field in cif1.get_fields():
-            try:
-                config = packet.get_field(field.name)
-            except KeyError:
-                continue
-            if config.is_required or config.is_set:
+        for field in packet.get_fields(scope=Scope.CIF1):
+            if field.is_required or field.is_set:
                 cif0.cif1_enable = True
                 cif1.set_value(field.name, True)
 
@@ -84,9 +82,11 @@ class BinaryDumper(Generator):
 
     def _get_trailer_bytes(self, packet):
         trailer = Trailer()
-        for field in trailer.get_fields():
-            pass
-        return trailer
+        for config in packet.get_fields(scope=Scope.TRAILER):
+            if not config.is_required and not config.is_set:
+                continue
+            trailer.set_value(config.name, config.value)
+        return trailer.pack()
 
     def generate(self, packet):
         is_data = packet.packet_type() in (PacketType.SIGNAL_DATA, PacketType.SIGNAL_DATA_STREAM_ID)
@@ -100,4 +100,4 @@ class BinaryDumper(Generator):
         if is_data:
             print('Trailer:')
             trailer = self._get_trailer_bytes(packet)
-            dump_bytes(trailer.pack(), sys.stdout)
+            dump_bytes(trailer, sys.stdout)

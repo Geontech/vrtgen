@@ -22,12 +22,14 @@ class Mode(Enum):
 class Scope(Enum):
     """
     Defines the section of the packet in which a field resides:
-        PROLOGUE: Packet prologue.
-        PAYLOAD: Packet payload (Context and Command Packets).
-        TRAILER: Packet trailer (Data Packet only).
+        PROLOGUE: Packet prologue (excluding CIF headers).
+        CIF0: CIF 0 fields (Context and Command packets only).
+        CIF1: CIF 1 fields (Context and Command packets only).
+        TRAILER: Packet trailer (Data packet only).
     """
     PROLOGUE = auto()
-    PAYLOAD = auto()
+    CIF0 = auto()
+    CIF1 = auto()
     TRAILER = auto()
 
 class FieldConfiguration:
