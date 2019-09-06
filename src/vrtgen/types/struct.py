@@ -81,6 +81,20 @@ class Field(StructItem):
         if enable is not None:
             enable.link(self)
 
+    def __get__(self, instance, owner):
+        if instance is not None and self.enable:
+            if not self.enable.__get__(instance, owner):
+                return None
+        return super().__get__(instance, owner)
+
+    def __set__(self, instance, value):
+        if self.enable:
+            if value is None:
+                self.enable.__set__(instance, False)
+                return
+            self.enable.__set__(instance, True)
+        super().__set__(instance, value)
+
 class Struct(Container):
     """
     Base class for structures that have a well-defined binary layout.
@@ -172,7 +186,11 @@ class Struct(Container):
         bits = 0
         word = 0
         for field in self.get_contents():
-            value = getattr(self, field.attr)
+            value = field.__get__(self, type(self))
+            # Disabled indicator fields report a value of None, but should be
+            # packed as 0
+            if value is None:
+                value = 0
             if hasattr(value, 'to_binary'):
                 value = value.to_binary()
             word = (word << field.bits) | value
