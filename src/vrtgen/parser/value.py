@@ -128,6 +128,9 @@ def parse_data_sample_type(value):
     except KeyError:
         raise ValueError(value)
 
+# IEEE 754 format specifier regexp:
+# * "ieee" keyword with optional "754" suffix, space or "-" separated
+# * precision keyord with optional "-precision" suffix (group "precision")
 _IEEE_REGEXP = re.compile(r'ieee(?:[ -]754)? +(?P<precision>single|double|half)(?:-precision)?')
 _IEEE_FORMATS = {
     'half': enums.DataItemFormat.IEEE754_HALF_PRECISION,
@@ -137,8 +140,16 @@ _IEEE_FORMATS = {
 def _ieee_format(precision):
     return _IEEE_FORMATS[precision]
 
+# Common regexp prefix for optional (un)signed qualifier
 _SIGNED_REGEXP = r'(?P<sign>(?:un)?signed)'
-_FIXED_REGEXP = re.compile(_SIGNED_REGEXP + r' +fixed(?:-point)?(?:[ ]+(?P<non_normalized>non-normalized))?')
+
+# Fixed-point format specifier regexp:
+# * optional sign qualifier (group "sign")
+# * "fixed" keyword with optional "-point" suffix
+# * optional "non-normalized" qualifier (group "non_normalized")
+_FIXED_REGEXP = re.compile(
+    _SIGNED_REGEXP + r' +fixed(?:-point)?(?:[ ]+(?P<non_normalized>non-normalized))?'
+)
 def _fixed_format(sign, non_normalized):
     value = 0
     if sign == 'unsigned':
@@ -147,7 +158,13 @@ def _fixed_format(sign, non_normalized):
         value += 0b00111
     return enums.DataItemFormat(value)
 
-_VRTFLOAT_REGEXP = re.compile(_SIGNED_REGEXP + r' +vrt[, ] *(?P<exp>[1-6])(?:[ -]bit)?(?:[ ]+exponent)?')
+# VRT floating point format specifier regexp:
+# * optional sign qualifier (group "sign")
+# * "vrt" keyword with optional ","
+# * exponent bits with optional "-bit" and "exponent" suffixes (group "exp")
+_VRTFLOAT_REGEXP = re.compile(
+    _SIGNED_REGEXP + r' +vrt[, ] *(?P<exp>[1-6])(?:[ -]bit)?(?:[ ]+exponent)?'
+)
 def _vrtfloat_format(sign, exp):
     # VRT float formats happen to have the exponent in the lower bits of the
     # format code
@@ -156,6 +173,7 @@ def _vrtfloat_format(sign, exp):
         value += 0b10000
     return enums.DataItemFormat(value)
 
+# Mapping of regular expressions to format extraction functions
 _DATA_ITEM_FORMAT_PARSERS = (
     (_IEEE_REGEXP, _ieee_format),
     (_FIXED_REGEXP, _fixed_format),
@@ -183,6 +201,8 @@ def parse_data_item_format(value):
     'double-precision' (64-bit). For example, 'IEEE single' specifies a 32-bit
     floating point format.
     """
+    # Check each possible regexp for a complete match (i.e., reject strings with
+    # extra noise on the end). On a match, use the associated parse function.
     for regexp, parser in _DATA_ITEM_FORMAT_PARSERS:
         match = regexp.fullmatch(value.casefold())
         if match:
