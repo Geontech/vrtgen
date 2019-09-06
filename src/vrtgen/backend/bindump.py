@@ -64,12 +64,12 @@ class BinaryDumper(Generator):
 
     def _get_cif_prologue(self, packet):
         cif0 = CIF0.Enables()
-        for field in packet.get_fields(scope=Scope.CIF0):
+        for field in packet.get_fields(Scope.CIF0):
             if field.is_required or field.is_set:
                 cif0.set_value(field.name, True)
 
         cif1 = CIF1.Enables()
-        for field in packet.get_fields(scope=Scope.CIF1):
+        for field in packet.get_fields(Scope.CIF1):
             if field.is_required or field.is_set:
                 cif0.cif1_enable = True
                 cif1.set_value(field.name, True)
@@ -82,7 +82,7 @@ class BinaryDumper(Generator):
 
     def _get_trailer_bytes(self, packet):
         trailer = Trailer()
-        for config in packet.get_fields(scope=Scope.TRAILER):
+        for config in packet.get_fields(Scope.TRAILER):
             if not config.is_required and not config.is_set:
                 continue
             trailer.set_value(config.name, config.value)
