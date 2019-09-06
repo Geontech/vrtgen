@@ -11,11 +11,43 @@ class StructItem(ContainerItem):
     """
     Base class for objects that require space in a binary structure.
     """
-    __slots__ = ('word', 'offset')
+    __slots__ = ('_word', '_offset')
     def __init__(self, name, datatype, editable):
         super().__init__(name, datatype, editable)
-        self.word = None
-        self.offset = None
+        self._word = None
+        self._offset = None
+
+    @property
+    def word(self):
+        """
+        First VRT word number at which this field resides.
+
+        Can only be set once. Subsequent attempts to overwrite the value raise
+        an AttributeError.
+        """
+        return self._word
+
+    @word.setter
+    def word(self, word):
+        if self._word is not None:
+            raise AttributeError('word is already set')
+        self._word = word
+
+    @property
+    def offset(self):
+        """
+        Bit offset from MSB of VRT word.
+
+        Can only be set once. Subsequent attempts to overwrite the value raise
+        an AttributeError.
+        """
+        return self._offset
+
+    @offset.setter
+    def offset(self, offset):
+        if self._offset is not None:
+            raise AttributeError('offset is already set')
+        self._offset = offset
 
     @property
     def bits(self):

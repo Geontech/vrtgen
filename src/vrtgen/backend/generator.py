@@ -1,8 +1,24 @@
-class Generator:
-    def set_option(self, name, value):
+"""
+Common packet generator backend support.
+"""
+
+import abc
+
+class Generator(abc.ABC):
+    """
+    Abstract base class for packet generator backends.
+
+    Subclasses must implement the generate method.
+    """
+    @staticmethod
+    def set_option(name, value):
+        """
+        Sets an option for this generator.
+        """
         raise ValueError("invalid option '"+name+"'")
 
-    def start_file(self, filename):
+    @staticmethod
+    def start_file(filename):
         """
         Notification for the start of processing of an input YAML file.
 
@@ -10,7 +26,8 @@ class Generator:
         of an input file, such as opening an output file.
         """
 
-    def end_file(self):
+    @staticmethod
+    def end_file():
         """
         Notification for the end of processing of an input YAML file.
 
@@ -18,5 +35,10 @@ class Generator:
         an input file, such as closing an output file.
         """
 
+    @abc.abstractmethod
     def generate(self, packet):
-        raise NotImplementedError('generate')
+        """
+        Generate output for a packet configuration.
+
+        Must be implemented by subclasses.
+        """
