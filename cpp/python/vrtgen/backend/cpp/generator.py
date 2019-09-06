@@ -254,7 +254,7 @@ class CppGenerator(Generator):
             cppstruct.add_prologue_field(prologue.Prologue.fractional_timestamp)
 
     def generate_payload(self, cppstruct, packet):
-        for field in packet.get_fields(Scope.PAYLOAD):
+        for field in packet.get_fields(Scope.CIF0, Scope.CIF1):
             if field.is_disabled:
                 continue
             cppstruct.add_field(field)

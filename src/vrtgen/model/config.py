@@ -24,15 +24,15 @@ class PacketConfiguration:
         self.stream_id = self._add_field(Prologue.stream_id, Scope.PROLOGUE)
         self.class_id = self._add_field(Prologue.class_id, Scope.PROLOGUE)
 
-    def get_fields(self, scope=None):
+    def get_fields(self, *scopes):
         """
         Gets all of the field configurations defined for this packet type.
 
-        Optionally, only fields within a given scope are returned.
+        Optionally, only fields within the given scope(s) are returned.
         """
-        if scope is None:
+        if not scopes:
             return self._fields
-        return [field for field in self._fields if field.scope is scope]
+        return [field for field in self._fields if field.scope in scopes]
 
     def get_field(self, name):
         """
