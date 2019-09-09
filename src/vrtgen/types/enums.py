@@ -72,6 +72,52 @@ class PacketType(BinaryEnum, bits=4):
     RESERVED_14 = 0b1110
     RESERVED_15 = 0b1111
 
+    @property
+    def is_data(self):
+        """
+        True if this Packet Type code represents a Data Packet.
+        """
+        return self in (
+            PacketType.SIGNAL_DATA,
+            PacketType.SIGNAL_DATA_STREAM_ID,
+            PacketType.EXTENSION_DATA,
+            PacketType.EXTENSION_DATA_STREAM_ID,
+        )
+
+    @property
+    def is_context(self):
+        """
+        True if this Packet Type code represents a Context Packet.
+        """
+        return self in (
+            PacketType.CONTEXT,
+            PacketType.EXTENSION_CONTEXT,
+        )
+
+
+    @property
+    def is_command(self):
+        """
+        True if this Packet Type code represents a Command Packet.
+        """
+        return self in (
+            PacketType.COMMAND,
+            PacketType.EXTENSION_COMMAND,
+        )
+
+    @property
+    def is_extension(self):
+        """
+        True if this Packet Type code represents and Extension Packet Type
+        (Data, Context or Command).
+        """
+        return self in (
+            PacketType.EXTENSION_DATA,
+            PacketType.EXTENSION_DATA_STREAM_ID,
+            PacketType.EXTENSION_CONTEXT,
+            PacketType.EXTENSION_COMMAND,
+        )
+
 class TSI(BinaryEnum, bits=2):
     """
     TimeStamp-Integer (TSI) codes:
