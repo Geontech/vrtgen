@@ -209,3 +209,19 @@ def parse_data_item_format(value):
             return parser(**match.groupdict())
 
     raise ValueError(value)
+
+_ACTION_VALUES = {
+    'none': enums.ActionMode.NO_ACTION,
+    'dry run': enums.ActionMode.DRY_RUN,
+    'execute': enums.ActionMode.EXECUTE,
+}
+def parse_action(value):
+    """
+    Parses an Action Mode literal.
+
+    Valid values are 'none', 'dry run', and 'execute'. Case is ignored.
+    """
+    try:
+        return _ACTION_VALUES[value.casefold()]
+    except KeyError:
+        raise ValueError(value)

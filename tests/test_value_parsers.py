@@ -135,3 +135,15 @@ def test_parse_data_item_format(literal, expected):
 def test_parse_data_item_format_error():
     with pytest.raises(ValueError):
         value.parse_data_item_format('invalid')
+
+@parametrize_literals(
+    ('none', enums.ActionMode.NO_ACTION),
+    ('dry run', enums.ActionMode.DRY_RUN),
+    ('execute', enums.ActionMode.EXECUTE),
+)
+def test_parse_action(literal, expected):
+    assert value.parse_action(literal) == expected
+
+def test_parse_action_error():
+    with pytest.raises(ValueError):
+        value.parse_action('invalid')
