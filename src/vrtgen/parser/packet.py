@@ -156,8 +156,50 @@ class CommandSectionParser(PrologueParser):
     """
     Parser for Command Packet configuration sections.
     """
+    _ACKNOWLEDGE_TYPES = {
+        'validation': config.Acknowledgement.VALIDATION,
+        'execution': config.Acknowledgement.EXECUTION,
+        'query-state': config.Acknowledgement.QUERY_STATE,
+    }
+    @classmethod
+    def _parse_acknowledge_type(cls, log, context, value):
+        try:
+            ack_type = cls._ACKNOWLEDGE_TYPES[value.casefold()]
+        except KeyError:
+            raise ValueError(value)
+        log.debug('Acknowledge %s', ack_type)
+        context.acknowledge.append(ack_type)
+
+    @classmethod
+    def parse_acknowledge(cls, log, context, value):
+        """
+        Parses acknowledgement packet types.
+        """
+        if isinstance(value, dict):
+            raise TypeError('acknowledgement packet types must be a sequence or scalar')
+
+        if not isinstance(value, list):
+            value = [value]
+
+        for item in value:
+            try:
+                cls._parse_acknowledge_type(log, context, item)
+            except ValueError:
+                log.warning("Invalid acknowledgement packet type '%s'", item)
+            except TypeError:
+                log.error('Acknowledgement packet type must be a string')
+
+    @staticmethod
+    def parse_action(log, context, value):
+        """
+        Parses action types.
+        """
+        context.action = value_parser.parse_action(value)
+        log.debug('Action = %s', context.action)
 
 CommandSectionParser.add_parser('Payload', CIFPayloadParser())
+CommandSectionParser.add_parser('Acknowledge', CommandSectionParser.parse_acknowledge)
+CommandSectionParser.add_parser('Action', CommandSectionParser.parse_action)
 
 class CommandPacketParser(PacketParser):
     """

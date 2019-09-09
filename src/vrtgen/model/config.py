@@ -2,6 +2,7 @@
 Types for VITA 49 packet configurations.
 """
 
+from enum import Enum, auto
 import warnings
 
 from vrtgen.types import enums
@@ -11,6 +12,14 @@ from vrtgen.types.cif0 import CIF0
 from vrtgen.types.cif1 import CIF1
 
 from .field import FieldConfiguration, Mode, Scope
+
+class Acknowledgement(Enum):
+    """
+    Acknowledgment packet types.
+    """
+    VALIDATION = auto()
+    EXECUTION = auto()
+    QUERY_STATE = auto()
 
 class PacketConfiguration:
     """
@@ -120,5 +129,10 @@ class CommandPacketConfiguration(CIFPacketConfiguration):
     """
     Configuration for a Command Packet.
     """
+    def __init__(self, name):
+        super().__init__(name)
+        self.action = enums.ActionMode()
+        self.acknowledge = []
+
     def packet_type(self):
         return enums.PacketType.COMMAND
