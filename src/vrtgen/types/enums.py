@@ -278,3 +278,51 @@ class AGCMode(BinaryEnum, bits=1):
     """
     MGC = 0
     AGC = 1
+
+class IdentifierFormat(BinaryEnum, bits=1):
+    """
+    Control Packet Controllee/Controller Identifier Format:
+        WORD (0) - 32-bit word
+        UUID (1) - 128-bit UUID
+    """
+    WORD = 0
+    UUID = 1
+
+class ActionMode(BinaryEnum, bits=2):
+    """
+    Control Packet Action Mode Bits:
+        NO_ACTION (0) - Controllee takes no action
+        DRY_RUN   (1) - Controllee does not implement commands but sends ACK
+                        packets as though it had
+        EXECUTE   (2) - Controllee implements command and sends ACK packet(s)
+        RESERVED  (3) - Reserved
+    """
+    NO_ACTION = 0b00
+    DRY_RUN = 0b01
+    EXECUTE = 0b10
+    RESERVED = 0b11
+
+class TimestampControlMode(BinaryEnum, bits=3):
+    """
+    Control Packet Timestamp Control Mode (Tables 8.3.1.7-1 and 8.4.1.5-1):
+        IGNORE        (0) - Execute(d) with no timestamp constraints
+        DEVICE        (1) - Execute(d) within device timing precision window
+        LATE          (2) - Execute(d) within device timing precision window,
+                            pr after if within application timing window
+        EARLY         (3) - Execute(d) within device timing precision window,
+                            or before if within application timing window
+        EARLY_LATE    (4) - Execute(d) within application timing execution
+                            window
+        RESERVED_5    (5) - Reserved
+        RESERVED_6    (6) - Reserved
+        TIMING_ISSUES (7) - Did not executed some controls at specified time
+                            (Acknowledge only)
+    """
+    IGNORE = 0b000
+    DEVICE = 0b001
+    LATE = 0b010
+    EARLY = 0b011
+    EARLY_LATE = 0b100
+    RESERVED_5 = 0b101
+    RESERVED_6 = 0b110
+    TIMING_ISSUES = 0b111
