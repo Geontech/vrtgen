@@ -73,6 +73,19 @@ To run the test suite, from within the base directory:
 pytest
 ```
 
+## Linting and exceptions
+The `pylint` can get in a way in some cases. Rather then disabling lint warning globally,
+an exception can be added inline at the site of warning.
+For e.g., the code below issues warning `C0301: Line too long (101/100) (line-too-long)`
+```python
+self._action = self._add_field(ControlAcknowledgeMode.action, Scope.PROLOGUE, Mode.MANDATORY)
+```
+The warning can be suppressed on a case-by-case basis via a `comment header` as the following:
+```python
+# pylint: disable=C0301
+self._action = self._add_field(ControlAcknowledgeMode.action, Scope.PROLOGUE, Mode.MANDATORY)
+```
+
 
 ## Anand's notes CentOS 7 local
 Testing the runner setup with local gitlab-runner.

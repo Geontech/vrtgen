@@ -16,8 +16,10 @@ class ControlAcknowledgeMode(Struct):
     """
     # 32..21 Control Packet Fields
     controllee_enable = Enable('Controllee enable')
+    # pylint: disable=C0301
     controllee_format = Field('Controllee identifier format', enums.IdentifierFormat, enable=controllee_enable)
     controller_enable = Enable('Controller enable')
+    # pylint: disable=C0301
     controller_format = Field('Controller identifier format', enums.IdentifierFormat, enable=controller_enable)
     partial_permitted = Field('Partial packet implementation permitted', Boolean)
     warnings = Field('Warnings', Boolean)
