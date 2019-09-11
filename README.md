@@ -72,3 +72,42 @@ To run the test suite, from within the base directory:
 ```sh
 pytest
 ```
+
+
+## Anand's notes CentOS 7 local
+Testing the runner setup with local gitlab-runner.
+Install the gitlab-runner through the system package
+
+```bash
+yum install yum-utils device-mapper-persistent-data lvm2
+yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+yum install docker-ce docker-ce-cli containerd.io
+
+# The docker package runs docker service under docker user. In order to
+# make use of the docker execution without sudo ensure the user is appended
+# to the docker group, must start new shell/session, see below
+usermod -aG docker <your username>
+
+# verify the above command worked
+cat /etc/group | grep docker   # the output should contain <your username>
+
+# ensure service starts automatically
+systemctl enable docker
+systemctl start docker
+```
+
+Now execute the `test` stage defined in the `.gitlab-ci.yaml` file through execution
+of `gitlab-runner` using `docker` executor
+
+`gitlab-runner exec docker test`
+
+If you receive error `Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock`, add the `docker` group to your current session. You do not need to log out or reboot!
+`newgrp docker`
+
+Run the command again.
+
+
+
+
+
+
