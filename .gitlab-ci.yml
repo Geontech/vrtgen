@@ -10,20 +10,19 @@ test:
         - pip install pytest
     script:
         - pytest --color=yes
-    except:
-         - develop
 
 lint:
     stage: test
     before_script:
         - apk add gcc musl-dev
         - pip install .
-        - pip install pylint
+        - pip install pylint pylint_junit
     script:
         # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
         # Unfortunately, even if the command completely fails (e.g., invalid
         # path) it still exits with 0.
-        - pylint -f colorized --exit-zero src/
+      - pylint -f colorized --output-format=pylint_junit.JUnitReporter src/
+      - echo $?
     except:
          - develop
 
@@ -39,6 +38,4 @@ test:cpp:
         - export MAKEFLAGS="-j$(nproc)"
     script:
         - make check TEST_OPTIONS="-s --use-colour=yes"
-    except:
-         - develop
 
