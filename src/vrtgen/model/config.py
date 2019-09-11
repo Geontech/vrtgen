@@ -10,6 +10,7 @@ from vrtgen.types.prologue import Prologue
 from vrtgen.types.trailer import Trailer
 from vrtgen.types.cif0 import CIF0
 from vrtgen.types.cif1 import CIF1
+from vrtgen.types.control import ControlAcknowledgeMode
 
 from .field import FieldConfiguration, Mode, Scope
 
@@ -131,8 +132,27 @@ class CommandPacketConfiguration(CIFPacketConfiguration):
     """
     def __init__(self, name):
         super().__init__(name)
-        self.action = enums.ActionMode()
         self.acknowledge = []
+
+        self._action = self._add_field(ControlAcknowledgeMode.action, Scope.PROLOGUE, Mode.MANDATORY)
+        self._nack = self._add_field(ControlAcknowledgeMode.nack, Scope.PROLOGUE, Mode.MANDATORY)
+
+        self._action.value = enums.ActionMode()
+        self._nack.value = False
 
     def packet_type(self):
         return enums.PacketType.COMMAND
+
+    @property
+    def action(self):
+        """
+        The Action Mode of this packet.
+        """
+        return self._action.value
+
+    @property
+    def nack(self):
+        """
+        True if this packet only requires acknowledgement on failures.
+        """
+        return self._nack.value

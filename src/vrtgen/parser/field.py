@@ -164,6 +164,7 @@ SimpleFieldParser.register_type(enums.TSM, value_parser.parse_tsm)
 SimpleFieldParser.register_type(enums.PackingMethod, value_parser.parse_packing_method)
 SimpleFieldParser.register_type(enums.DataSampleType, value_parser.parse_data_sample_type)
 SimpleFieldParser.register_type(enums.DataItemFormat, value_parser.parse_data_item_format)
+SimpleFieldParser.register_type(enums.ActionMode, value_parser.parse_action)
 
 class UserDefinedFieldParser(FieldParser):
     """

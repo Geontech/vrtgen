@@ -8,6 +8,7 @@ import logging
 from vrtgen.model import config
 from vrtgen.types.prologue import ContextHeader, Prologue
 from vrtgen.types.trailer import Trailer
+from vrtgen.types.control import ControlAcknowledgeMode
 
 from . import field
 from .cif import CIFPayloadParser
@@ -189,17 +190,10 @@ class CommandSectionParser(PrologueParser):
             except TypeError:
                 log.error('Acknowledgement packet type must be a string')
 
-    @staticmethod
-    def parse_action(log, context, value):
-        """
-        Parses action types.
-        """
-        context.action = value_parser.parse_action(value)
-        log.debug('Action = %s', context.action)
-
 CommandSectionParser.add_parser('Payload', CIFPayloadParser())
 CommandSectionParser.add_parser('Acknowledge', CommandSectionParser.parse_acknowledge)
-CommandSectionParser.add_parser('Action', CommandSectionParser.parse_action)
+CommandSectionParser.add_field_parser(ControlAcknowledgeMode.action, alias='Action')
+CommandSectionParser.add_field_parser(ControlAcknowledgeMode.nack, alias='NACK')
 
 class CommandPacketParser(PacketParser):
     """
