@@ -225,3 +225,18 @@ def parse_action(value):
         return _ACTION_VALUES[value.casefold()]
     except KeyError:
         raise ValueError(value)
+
+_IDENTIFIER_FORMAT_VALUES = {
+    'word': enums.IdentifierFormat.WORD,
+    'uuid': enums.IdentifierFormat.UUID,
+}
+def parse_identifier_format(value):
+    """
+    Parses a CAM identifier format literal.
+
+    Valid values are 'word' (32 bits) and 'UUID' (128 bits). Case is ignored.
+    """
+    try:
+        return _IDENTIFIER_FORMAT_VALUES[value.casefold()]
+    except KeyError:
+        raise ValueError(value)

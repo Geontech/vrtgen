@@ -190,10 +190,30 @@ class CommandSectionParser(PrologueParser):
             except TypeError:
                 log.error('Acknowledgement packet type must be a string')
 
+    @staticmethod
+    def _parse_identification(value):
+        if not isinstance(value, str):
+            raise TypeError('identification type must be a string')
+        if value.casefold() == 'none':
+            return None
+        return value_parser.parse_identifier_format(value)
+
+    @classmethod
+    def parse_controllee(cls, log, context, value):
+        context.controllee = cls._parse_identification(value)
+        log.debug('Controllee ID = %s', context.controllee)
+
+    @classmethod
+    def parse_controller(cls, log, context, value):
+        context.controller = cls._parse_identification(value)
+        log.debug('Controller ID = %s', context.controller)
+
 CommandSectionParser.add_parser('Payload', CIFPayloadParser())
 CommandSectionParser.add_parser('Acknowledge', CommandSectionParser.parse_acknowledge)
 CommandSectionParser.add_field_parser(ControlAcknowledgeMode.action, alias='Action')
 CommandSectionParser.add_field_parser(ControlAcknowledgeMode.nack, alias='NACK')
+CommandSectionParser.add_parser('Controllee', CommandSectionParser.parse_controllee)
+CommandSectionParser.add_parser('Controller', CommandSectionParser.parse_controller)
 
 class CommandPacketParser(PacketParser):
     """

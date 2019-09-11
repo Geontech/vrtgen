@@ -133,6 +133,8 @@ class CommandPacketConfiguration(CIFPacketConfiguration):
     def __init__(self, name):
         super().__init__(name)
         self.acknowledge = []
+        self.controllee = None
+        self.controller = None
 
         self._action = self._add_field(ControlAcknowledgeMode.action, Scope.PROLOGUE, Mode.MANDATORY)
         self._nack = self._add_field(ControlAcknowledgeMode.nack, Scope.PROLOGUE, Mode.MANDATORY)
