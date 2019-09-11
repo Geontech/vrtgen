@@ -21,7 +21,7 @@ lint:
         # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
         # Unfortunately, even if the command completely fails (e.g., invalid
         # path) it still exits with 0.
-      - pylint -f colorized --output-format=pylint_junit.JUnitReporter src/ > linter.xml
+      - pylint -f colorized --output-format=pylint_junit.JUnitReporter src/ > >(tee linter.xml) 2> >(tee stderr.log >&2)
       - echo $?
     artifacts:
       paths:
