@@ -200,11 +200,13 @@ class CommandSectionParser(PrologueParser):
 
     @classmethod
     def parse_controllee(cls, log, context, value):
+        """Provide context"""
         context.controllee = cls._parse_identification(value)
         log.debug('Controllee ID = %s', context.controllee)
 
     @classmethod
     def parse_controller(cls, log, context, value):
+        """Provide context"""
         context.controller = cls._parse_identification(value)
         log.debug('Controller ID = %s', context.controller)
 
