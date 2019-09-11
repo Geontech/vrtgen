@@ -18,11 +18,9 @@ lint:
         - pip install .
         - pip install pylint pylint_junit
     script:
-        # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
-        # Unfortunately, even if the command completely fails (e.g., invalid
-        # path) it still exits with 0.
-      - pylint -f colorized --output-format=pylint_junit.JUnitReporter src/ > >(tee linter.xml) 2> >(tee stderr.log >&2)
-      - echo $?
+      # ensure output goes to stdout and the xml file
+      # the stdout/err is useful to see logs in the gitlab UI
+      - pylint -f colorized --output-format=pylint_junit.JUnitReporter src/ | tee linter.xml
     artifacts:
       paths:
         - linter.xml

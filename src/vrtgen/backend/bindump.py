@@ -67,8 +67,8 @@ class BinaryDumper(Generator):
             prologue += struct.pack('>Q', 0)
         return header.pack() + prologue
 
-    # pylint: disable=R0201
-    def _get_cif_prologue(self, packet):
+    @staticmethod
+    def _get_cif_prologue(packet):
         cif0 = CIF0.Enables()
         for field in packet.get_fields(Scope.CIF0):
             if field.is_required or field.is_set:
