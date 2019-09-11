@@ -36,7 +36,6 @@ def get_default(value, defval):
         return defval
     return value
 
-# TODO: Review the message and suggest improvements
 # pylint: disable=R0201
 class BinaryDumper(Generator):
     """
@@ -68,6 +67,7 @@ class BinaryDumper(Generator):
             prologue += struct.pack('>Q', 0)
         return header.pack() + prologue
 
+    # pylint: disable=R0201
     def _get_cif_prologue(self, packet):
         cif0 = CIF0.Enables()
         for field in packet.get_fields(Scope.CIF0):
@@ -81,7 +81,6 @@ class BinaryDumper(Generator):
                 cif1.set_value(field.name, True)
 
         prologue = cif0.pack()
-        # TODO: Review the message and suggest improvements
         # pylint: disable=R0201
         if cif0.cif1_enable:
             prologue += cif1.pack()
