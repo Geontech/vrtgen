@@ -61,11 +61,11 @@ class Enable(StructItem):
     Boolean flag to enable or disable a feature.
     """
     __slots__ = ('indicator',)
-    def __init__(self, bits=1):
+    def __init__(self, name=None, bits=1):
         # In some cases, such as Sample Frame in the data trailer, an enable
         # may be more than one bit. All bits must be set or clear to indicate
         # the state of the enable.
-        super().__init__(None, basic.BooleanType.create(bits), False)
+        super().__init__(name, basic.BooleanType.create(bits), False)
         self.indicator = None
 
     def __set_name__(self, owner, name):
@@ -77,9 +77,13 @@ class Enable(StructItem):
     def link(self, field):
         """
         Creates a field associated with this enable.
+
+        If this enable field does not already have a name, sets the name to
+        the linked field's name plus the string " Enable".
         """
         assert self.indicator is None
-        self.name = field.name + ' Enable'
+        if self.name is None:
+            self.name = field.name + ' Enable'
         self.indicator = field
 
 class Reserved(StructItem):
