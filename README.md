@@ -51,46 +51,11 @@ A C++ backend is available in the `cpp` subdirectory of the source.
 For more information, see [cpp/README.md](./cpp/README.md).
 
 ## Developer Setup
+Ideally, developers make use of the same build environment as defined in the [.gitlab-ci.yml](./gitlab-ci.yml) file.
 
-For developers, `pip` supports an editable install mode that links the source code to the Python `site-packages` directory.
-It is strongly recommended to use a `venv` environment or Docker image for development.
-To perform a "developer install" using a virtual environment:
-
-```sh
-python3 -m venv venv
-. venv/bin/activate
-pip install -e .
-```
-
-This will install both the `vrtgen` Python modules and the `vrtpktgen` executable.
-
-## Testing
-
-The included test suite verifies the YAML parser and Python data model.
-To run the test suite, from within the base directory:
-
-```sh
-pytest
-```
-
-## Linting and exceptions
-The `pylint` can get in a way in some cases. Rather then disabling lint warning globally,
-an exception can be added inline at the site of warning.
-For e.g., the code below issues warning `C0301: Line too long (101/100) (line-too-long)`
-```python
-self._action = self._add_field(ControlAcknowledgeMode.action, Scope.PROLOGUE, Mode.MANDATORY)
-```
-The warning can be suppressed on a case-by-case basis via a `comment header` as the following:
-```python
-# pylint: disable=C0301
-self._action = self._add_field(ControlAcknowledgeMode.action, Scope.PROLOGUE, Mode.MANDATORY)
-```
-
-
-## Anand's notes CentOS 7 local
-Testing the runner setup with local gitlab-runner.
-Install the gitlab-runner through the system package
-
+### CentOS 7
+#### Docker instllation and configuraion
+The following installs docker and adds the user to the `docker` group.
 ```bash
 yum install yum-utils device-mapper-persistent-data lvm2
 yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
@@ -108,18 +73,92 @@ cat /etc/group | grep docker   # the output should contain <your username>
 systemctl enable docker
 systemctl start docker
 ```
+Docker is installed and ready to use, happy developing!
 
-Now execute the `test` stage defined in the `.gitlab-ci.yaml` file through execution
-of `gitlab-runner` using `docker` executor
+#### gitlab-runner installation
+The GitLab CI/CD uses `gitlab-runner` tool to execute the stages defined in the
+[.gitlab-ci.yml](./.gitlab-ci.yml) file. First you need to install the tool on
+your host. Once installed, all the stages can be executed using the tool.
 
-`gitlab-runner exec docker test`
+You need to install the `gitlab-runner` tool first. The tool is provided by the
+upstream GitLab repository and you are encouraged to consult the current documentation.
+Below is an example for the GitLab version 12.2.
 
-If you receive error `Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock`, add the `docker` group to your current session. You do not need to log out or reboot!
-`newgrp docker`
+```bash
+curl -L https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.rpm.sh > /tmp/script.rpm.sh
+chmod +x /tmp/script.rpm.sh
+sudo /tmp/script.rpm.sh
+sudo yum install gitlab-runner.x86_64
+```
 
-Run the command again.
+[See below](#execute-stages)
+
+##### Advance setup, does not require Docker
+
+For developers, `pip` supports an editable install mode that links the source code to the Python `site-packages` directory.
+It is strongly recommended to use a `venv` environment or Docker image for development.
+To perform a "developer install" using a virtual environment:
+
+```sh
+python3 -m venv venv
+. venv/bin/activate
+pip install -e .
+```
+
+This will install both the `vrtgen` Python modules and the `vrtpktgen` executable.
+
+## Testing and Building
+
+### Overview
+The project uses docker to test and build. The project makes use of GitLab CI/CD
+to run those stages upon every push. However, contributors are encouraged to
+perform those steps locally prior to pushing. The build stages are defined in the
+[.gitlab-ci.yml](./gitlab-ci.yml) that the CI executes on a push event.
+
+#### Execute test locally
+The local setup is same as the CI setup defined in the .gitlab-ci.yaml. Start a
+docker container, mount the current dir path returned by `pwd` as `/vrtgen` into
+the container.
+`docker run -it --rm -v `pwd`:/vrtgen python:3.6-alpine sh`
+
+You should have a shell prompt inside docker. Change the directoryi `cd /vrtgen`
+and continue development. Files modifications are instantly visible on both the
+container and the host.
+
+#### Execute stages
+If you prefer to execute all the stages defined in the [.gitlab-ci.yml](./gitlab-ci.yml)
+file, use of `gitlab-runner` tool is recommended.
+Once the `gitlab-runner` tool is installed, execute the following to run all the stages.
+```bash
+gitlab-runner exec docker
+```
+
+Individual stages can be executed for the more focused and shorter execution time. The
+following command only executes the `lint` stage.
+```bash
+gitlab-runner exec docker lint
+```
 
 
+### Linting and exceptions
+The `pylint` can get in a way in some cases. Rather then disabling lint warning globally,
+an exception can be added inline at the site of warning.
+For e.g., the code below issues warning `C0301: Line too long (101/100) (line-too-long)`
+
+```python
+self._action = self._add_field(ControlAcknowledgeMode.action, Scope.PROLOGUE, Mode.MANDATORY)
+```
+
+The warning can be suppressed on a case-by-case basis via a `comment header` as the following:
+
+```python
+# pylint: disable=C0301
+self._action = self._add_field(ControlAcknowledgeMode.action, Scope.PROLOGUE, Mode.MANDATORY)
+```
+
+
+## Troubleshooting
+ * If you receive the error `Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock`, execute `newgrp docker` to add the `docker` group to your current session/shell . You do not need to log out or reboot!
 
 
 
