@@ -21,6 +21,7 @@ class NullGenerator(Generator):
         pass
 
 def load_generator(name):
+    """Return a generator"""
     if name is None:
         return NullGenerator()
 
@@ -32,6 +33,7 @@ def load_generator(name):
     raise KeyError(name)
 
 def main():
+    """Main function, entry point"""
     logging.basicConfig()
 
     arg_parser = argparse.ArgumentParser(description='Generate VITA 49.2 packet classes.')

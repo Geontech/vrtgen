@@ -18,10 +18,12 @@ from .generator import Generator
 __all__ = ('BinaryDumper')
 
 def group_bytes(data, size=8):
+    """Returns grouped bytes"""
     for pos in range(0, len(data), size):
         yield data[pos:pos+size]
 
 def dump_bytes(data, stream):
+    """Writes out data to the stream in hex format"""
     offset = 0
     for chunk in group_bytes(data):
         data = ''.join('{:02x}'.format(ch) for ch in chunk)
@@ -29,10 +31,12 @@ def dump_bytes(data, stream):
         offset += 0x10
 
 def get_default(value, defval):
+    """Returns defval if value is None"""
     if value is None:
         return defval
     return value
 
+# pylint: disable=R0201
 class BinaryDumper(Generator):
     """
     Writes binary dumps of default packet configurations to the console.
@@ -63,7 +67,8 @@ class BinaryDumper(Generator):
             prologue += struct.pack('>Q', 0)
         return header.pack() + prologue
 
-    def _get_cif_prologue(self, packet):
+    @staticmethod
+    def _get_cif_prologue(packet):
         cif0 = CIF0.Enables()
         for field in packet.get_fields(Scope.CIF0):
             if field.is_required or field.is_set:
@@ -76,6 +81,7 @@ class BinaryDumper(Generator):
                 cif1.set_value(field.name, True)
 
         prologue = cif0.pack()
+        # pylint: disable=R0201
         if cif0.cif1_enable:
             prologue += cif1.pack()
 
