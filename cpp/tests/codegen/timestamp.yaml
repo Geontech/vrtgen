@@ -1,0 +1,15 @@
+TimestampUTCRealTime:
+  type: context
+  timestamp:
+    integer: utc
+    fractional: picoseconds
+
+TimestampGPS:
+  type: context
+  timestamp:
+    integer: gps
+
+TimestampFreeRunning:
+  type: context
+  timestamp:
+    fractional: free running
