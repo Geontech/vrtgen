@@ -37,7 +37,6 @@ class BooleanType:
         BooleanType.__cached__[key] = newclass
         return newclass
 
-# pylint: disable=R0903
 class Boolean(BooleanType, bits=1):
     """
     One-bit boolean value type.

@@ -136,7 +136,6 @@ class CommandPacketConfiguration(CIFPacketConfiguration):
         self.controllee = None
         self.controller = None
 
-        # pylint: disable=C0301
         self._action = self._add_field(ControlAcknowledgeMode.action, Scope.PROLOGUE, Mode.MANDATORY)
         self._nack = self._add_field(ControlAcknowledgeMode.nack, Scope.PROLOGUE, Mode.MANDATORY)
 
