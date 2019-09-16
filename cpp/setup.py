@@ -22,6 +22,7 @@ from setuptools import setup, find_packages
 setup(
     name='vrtgen-cpp',
     version='0.1.1',
+    license='LGPL',
     packages=['vrtgen.backend.cpp'],
     package_dir={'':'python'},
     package_data={
