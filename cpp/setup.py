@@ -21,7 +21,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='vrtgen-cpp',
-    version='0.1.1',
+    version='0.2.0',
     license='LGPL',
     packages=['vrtgen.backend.cpp'],
     package_dir={'':'python'},
@@ -30,7 +30,7 @@ setup(
     },
     python_requires='>= 3.6',
     install_requires=[
-        'vrtgen ~= 0.1',
+        'vrtgen ~= 0.2',
         'Jinja2 ~= 2.8',
     ],
     entry_points={
