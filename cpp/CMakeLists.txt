@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 include(GNUInstallDirs)
 
-project(vrtgen-cpp VERSION 0.1.1 LANGUAGES CXX)
+project(vrtgen-cpp VERSION 0.1.2 LANGUAGES CXX)
 
 # On Mac OS X, give the system installation lowest priority so that virtual
 # environments can be found
