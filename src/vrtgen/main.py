@@ -90,3 +90,7 @@ def main():
             except RuntimeError as exc:
                 logging.error('Generator error: %s', exc)
         generator.end_file()
+
+# Support running via "python -m vrtgen.main", used for C++ build
+if __name__ == '__main__':
+    main()

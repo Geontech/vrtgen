@@ -22,10 +22,8 @@ Installation via `pip` is recommended, as it will automatically install the requ
 To install via `pip`:
 
 ```sh
-pip3 install .
+sudo pip3 install .
 ```
-
-_Note_: Installing to the default system location may require superuser privileges.
 
 ## Usage
 

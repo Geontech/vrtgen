@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
-from setuptools import setup, find_namespace_packages
+from setuptools import setup
 
 # For a single point of maintenance, the canonical package version is in the
 # version module
@@ -29,7 +29,13 @@ setup(
     name='vrtgen',
     version=version['__version__'],
     license='LGPL',
-    packages=find_namespace_packages('src'),
+    packages=[
+        'vrtgen',
+        'vrtgen.backend',
+        'vrtgen.model',
+        'vrtgen.parser',
+        'vrtgen.types'
+    ],
     package_dir={'':'src'},
     python_requires='>= 3.6',
     install_requires=[
