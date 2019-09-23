@@ -13,27 +13,28 @@ No additional dependencies are required.
 Generated C++ code requires C++11 support.
 The only dependency is the C++ header library.
 
-To build the C++ header library, CMake 3.13 must be installed.
+To build the C++ header library, CMake 3.13 or later must be installed.
 
 ## Installation
 
-The Python plugin must be installed to generate the C++ headers.
+The Python plugin must be installed first to generate the C++ headers.
 
 To install the Python plugin:
 
 ```sh
-pip3 install .
+sudo pip3 install .
 ```
 
 Then, to build the C++ library:
 
 ```sh
-cmake -B build
+cmake3 -B build
 cd build
-make install
+make
+sudo make install
 ```
 
-On some Linux systems, such as CentOS 7, you must explicitly run `cmake3` instead of `cmake`.
+On some Linux systems, CMake 3 is the default; run `cmake` instead of `cmake3`.
 
 The headers are installed to `/usr/local/include/vrtgen` by default.
 
