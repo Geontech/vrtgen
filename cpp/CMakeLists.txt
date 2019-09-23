@@ -7,8 +7,6 @@ project(vrtgen-cpp VERSION 0.1.1 LANGUAGES CXX)
 # environments can be found
 set(CMAKE_FIND_FRAMEWORK "last")
 find_package(Python3 REQUIRED)
-# Use the Python bin directory to find the vrtpktgen executable for testing
-get_filename_component(Python3_BINDIR ${Python3_EXECUTABLE} DIRECTORY CACHE)
 
 # Ensure that the base vrtgen Python library is available
 execute_process(
@@ -135,7 +133,7 @@ function(add_codegen_file TARGET YAML_FILE)
             ${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME}/${TEST_BASENAME}.cpp
             ${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME}/${TEST_BASENAME}.hpp
         COMMAND
-            ${Python3_BINDIR}/vrtpktgen -b cpp -o dir=${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME} ${YAML_FILE}
+            ${Python3_EXECUTABLE} -m vrtgen.main -b cpp -o dir=${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME} ${YAML_FILE}
         WORKING_DIRECTORY
             ${CMAKE_CURRENT_SOURCE_DIR}
         DEPENDS
