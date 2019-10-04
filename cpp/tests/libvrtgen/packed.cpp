@@ -221,10 +221,17 @@ TEST_CASE("Packed special cases", "[pack]")
     bytes data = { 0, 0 };
     packed<uint16_t>& value = *reinterpret_cast<packed<uint16_t>*>(data.data());
 
-    SECTION("Set 2-bit boolean") {
+    SECTION("2-bit boolean") {
         typedef packed_tag<bool,7,2> tag_type;
-        value.set(true, tag_type());
-        CHECK(data == bytes({ 0x00, 0xC0 }));
+        SECTION("set") {
+            value.set(true, tag_type());
+            CHECK(data == bytes({ 0x00, 0xC0 }));
+        }
+        SECTION("clear") {
+            data[0] = data[1] = 0xFF;
+            value.set(false, tag_type());
+            CHECK(data == bytes({ 0xFF, 0x3F }));
+        }
     }
 
     SECTION("Signed fields") {
