@@ -96,6 +96,11 @@ target_include_directories(Catch2 INTERFACE
 )
 target_compile_features(Catch2 INTERFACE cxx_std_11)
 
+# Compile everything with most warnings
+add_compile_options(
+  "-Wall" "-Wpedantic" "-Wextra"
+)
+
 # Create an empty "check" target to hang tests off of
 add_custom_target(check)
 
@@ -117,7 +122,7 @@ add_executable(test_libvrtgen
 target_link_libraries(test_libvrtgen vrtgen)
 target_link_libraries(test_libvrtgen Catch2)
 target_link_libraries(test_libvrtgen testutils)
-target_compile_options(test_libvrtgen PRIVATE -Wall)
+target_compile_options(test_libvrtgen PRIVATE -Wall -Wextra -Wpedantic)
 
 add_custom_target(run_test_libvrtgen
     COMMAND test_libvrtgen $(TEST_OPTIONS)
@@ -152,7 +157,7 @@ add_codegen_file(test_codegen tests/codegen/timestamp.yaml)
 target_link_libraries(test_codegen vrtgen)
 target_link_libraries(test_codegen Catch2)
 target_link_libraries(test_codegen testutils)
-target_compile_options(test_codegen PRIVATE -Wall)
+target_compile_options(test_codegen PRIVATE)
 target_include_directories(test_codegen PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}/tests/codegen
     # Explicitly add the build "vrtgen" include directory so that the relative
