@@ -88,9 +88,10 @@ def tag_name(field):
     return field.attr + '_tag'
 
 def format_enum(enum):
-    # Create a format string that returns a binary constant zero-padded to the
-    # number of bits, e.g.: "0b0001"
-    format_string = '0b{{:0{}b}}'.format(enum.bits)
+    # Create a format string that returns a hex constant (binary constants are
+    # a C++14 feature)
+    digits = int((enum.bits + 3) / 4)
+    format_string = '0x{{:0{}x}}'.format(digits)
     return {
         'name': enum.__name__,
         'doc': format_docstring(enum.__doc__),
