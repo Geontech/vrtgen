@@ -83,11 +83,10 @@ namespace vrtgen {
         {
             static inline signed load(unsigned value)
             {
+                // Extract sign bit in MSB and expand its value to all sign
+                // bits in the output type.
                 bool sign_bit = value & (1<<(bits-1));
-                if (sign_bit) {
-                    value |= ~field_packing::mask;
-                }
-                return value;
+                return (-sign_bit & ~field_packing::mask) | value;
             }
         };
 
