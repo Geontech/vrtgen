@@ -1,5 +1,6 @@
 stages:
     - test
+    - package
 
 image: python:3.6-alpine
 
@@ -35,3 +36,14 @@ test:cpp:
         - export MAKEFLAGS="-j$(nproc)"
     script:
         - make check TEST_OPTIONS="-s --use-colour=yes"
+
+rpmbuild:
+    stage: package
+    image: centos:7
+    before_script:
+        - yum install -y epel-release rpm-build python3
+    script:
+        - python3 setup.py bdist_rpm --requires python36-PyYAML,python36-jinja2
+    artifacts:
+        paths:
+            - build/*
