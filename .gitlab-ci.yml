@@ -44,6 +44,9 @@ rpmbuild:
         - yum install -y epel-release rpm-build python3
     script:
         - python3 setup.py bdist_rpm --requires python36-PyYAML,python36-jinja2
+        - cd cpp
+        - python3 setup.py bdist_rpm --requires "vrtgen = %{version}"
     artifacts:
         paths:
-            - build/*
+            - dist/*
+            - cpp/dist/*
