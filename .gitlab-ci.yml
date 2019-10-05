@@ -45,11 +45,11 @@ rpmbuild:
         - yum install -y cmake3 gcc-c++ make
     script:
         # Base package
-        - python3 setup.py bdist_rpm --requires python36-PyYAML,python36-jinja2
+        - python3 setup.py bdist_rpm
         - yum install dist/vrtgen-*-noarch.rpm
         # C++ codegen plugin
         - cd cpp
-        - python3 setup.py bdist_rpm --requires "vrtgen = %{version}"
+        - python3 setup.py bdist_rpm
         - yum install dist/vrtgen-*-noarch.rpm
         # C++ library packaging
         - cmake3 -B release .
