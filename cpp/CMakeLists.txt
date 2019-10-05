@@ -169,3 +169,10 @@ add_custom_target(run_test_codegen
     COMMAND test_codegen $(TEST_OPTIONS)
 )
 add_dependencies(check run_test_codegen)
+
+# Packaging options
+set(CPACK_PACKAGE_NAME libvrtgen)
+set(CPACK_PACKAGE_VENDOR "Geon Technologies, LLC")
+set(CPACK_RPM_PACKAGE_RELEASE_DIST ON)
+set(CPACK_RPM_FILE_NAME "RPM-DEFAULT")
+include(CPack)

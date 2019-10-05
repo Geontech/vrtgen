@@ -42,11 +42,21 @@ rpmbuild:
     image: centos:7
     before_script:
         - yum install -y epel-release rpm-build python3
+        - yum install -y cmake3 gcc-c++ make
     script:
+        # Base package
         - python3 setup.py bdist_rpm --requires python36-PyYAML,python36-jinja2
+        - yum install dist/vrtgen-*-noarch.rpm
+        # C++ codegen plugin
         - cd cpp
         - python3 setup.py bdist_rpm --requires "vrtgen = %{version}"
+        - yum install dist/vrtgen-*-noarch.rpm
+        # C++ library packaging
+        - cmake3 -B release .
+        - cd release
+        - cpack3 -G RPM
     artifacts:
         paths:
             - dist/*
             - cpp/dist/*
+            - cpp/release/*.rpm
