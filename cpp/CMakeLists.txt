@@ -86,8 +86,7 @@ install(
     DIRECTORY
         ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen
         ${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen
-    DESTINATION
-        ${CMAKE_INSTALL_INCLUDEDIR}
+    TYPE INCLUDE
     FILES_MATCHING PATTERN "*.hpp"
 )
 
