@@ -88,6 +88,7 @@ install(
         ${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen
     DESTINATION
         ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.hpp"
 )
 
 add_library(Catch2 INTERFACE)
