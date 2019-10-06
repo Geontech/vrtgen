@@ -90,11 +90,7 @@ install(
     FILES_MATCHING PATTERN "*.hpp"
 )
 
-add_library(Catch2 INTERFACE)
-target_include_directories(Catch2 INTERFACE
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/Catch2/include
-)
-target_compile_features(Catch2 INTERFACE cxx_std_11)
+subdirs(external/Catch2)
 
 # Compile everything with most warnings
 add_compile_options(
