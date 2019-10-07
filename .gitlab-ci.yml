@@ -46,17 +46,16 @@ rpmbuild:
     script:
         # Base package
         - python3 setup.py bdist_rpm
-        - yum install -y dist/vrtgen-*.noarch.rpm
         # C++ codegen plugin
         - cd cpp
-        - python3 setup.py bdist_rpm
-        - yum install -y dist/vrtgen-cpp-*.noarch.rpm
-        # C++ library packaging
-        - cmake3 -B release .
+        - python3 setup.py bdist_rpm --dist-dir ../dist
+        - cd ..
+        # C++ library packaging (requires installing Python RPMs)
+        - yum install -y dist/vrtgen-*.noarch.rpm
+        - cmake3 -B release cpp
         - cd release
         - cpack3 -G RPM
+        - mv *.rpm ../dist
     artifacts:
         paths:
             - dist/*.rpm
-            - cpp/dist/*.rpm
-            - cpp/release/*.rpm
