@@ -27,23 +27,24 @@ sudo pip3 install .
 
 ## Usage
 
-The package installs a `vrtpktgen` executable in your path.
-By default, `vrtpktgen` only validates a YAML packet definition file.
-
-```sh
-vrtpktgen <path-to-file.yml>
-```
-
+This package installs a `vrtpktgen` executable in your path.
 The `vrtpktgen` program supports backend plug-ins to target different output types.
-Select an available backend with the `-b <backend>` flag.
-The `bindump` backend is included with the default install.
-For example:
+By default, the `check` and `bindump` backends are installed.
+
+Select an available backend with the first positional argument.
+To validate a YAML file, use the `check` backend:
 
 ```sh
-vrtpktgen -b bindump <path-to-file.yml>
+vrtpktgen check <path-to-file.yml>
 ```
 
-will give a hexadecimal dump of the default configuration for each packet defined in the YAML file.
+Invalid packet configurations will be flagged with warnings and errors.
+
+To generate a hexadecimal dump of the default configuration for each packet defined in the YAML file:
+
+```sh
+vrtpktgen bindump <path-to-file.yml>
+```
 
 A C++ backend is available in the `cpp` subdirectory of the source.
 For more information, see [cpp/README.md](./cpp/README.md).

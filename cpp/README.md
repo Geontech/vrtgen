@@ -44,7 +44,7 @@ The `vrtpktgen` program automatically discovers registered code generator plugin
 To generate C++ bindings from your YAML specification:
 
 ```sh
-vrtpktgen -b cpp <yaml file>
+vrtpktgen cpp <yaml file>
 ```
 
 This will generate `.hpp` and `.cpp` files with the same basename as the input file.
