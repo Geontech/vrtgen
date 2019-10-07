@@ -24,22 +24,21 @@ import argparse
 import pkg_resources
 
 from vrtgen import parser
+from vrtgen.version import __version__
 from vrtgen.backend.generator import Generator
-
-from . import version
 
 ENTRY_POINT_ID = 'vrtgen.backend.packet'
 
-class NullGenerator(Generator):
+class CheckGenerator(Generator):
     """
-    Default generator that produces no output.
+    Validates packet definitions.
     """
     def generate(self, packet):
         pass
 
 def load_generator(name):
-    if name is None:
-        return NullGenerator()
+    if name == 'check':
+        return CheckGenerator()
 
     for entry_point in pkg_resources.iter_entry_points(ENTRY_POINT_ID):
         if entry_point.name == name:
@@ -49,16 +48,63 @@ def load_generator(name):
     raise KeyError(name)
 
 def main():
+    """
+    Main entry point for vrtpktgen.
+    """
     logging.basicConfig()
 
-    arg_parser = argparse.ArgumentParser(description='Generate VITA 49.2 packet classes.')
-    arg_parser.add_argument('filename', nargs='+', help='VRT YAML definition file')
-    arg_parser.add_argument('-v', '--verbose', action='store_true', default=False,
-                            help='display debug messages')
-    arg_parser.add_argument('--version', action='version', version='%(prog)s '+version.__version__)
-    arg_parser.add_argument('-b', '--backend', help='code generator backend to target')
-    arg_parser.add_argument('-o', '--option', action='append', default=[],
-                            help='options for code generator backend')
+    common_parser = argparse.ArgumentParser(add_help=False)
+    common_parser.add_argument(
+        '-v',
+        '--verbose',
+        action='store_true',
+        default=False,
+        help='display debug messages'
+    )
+
+    arg_parser = argparse.ArgumentParser(
+        description='Generate VITA 49.2 packet classes.',
+        parents=[common_parser],
+        epilog="Run '%(prog)s GENERATOR --help' for more information on a generator.",
+    )
+    arg_parser.add_argument('--version', action='version', version='%(prog)s '+__version__)
+    sub_parser = arg_parser.add_subparsers(dest='generator', metavar='GENERATOR')
+    arg_parser.add_argument(
+        'filename',
+        nargs='+',
+        help='VRT YAML definition file',
+        metavar='FILENAME'
+    )
+
+    def _add_backend_parser(name, version, generator):
+        backend_parser = sub_parser.add_parser(
+            name,
+            help=generator.__doc__,
+            description=generator.__doc__,
+            parents=[common_parser],
+            usage='%(prog)s [OPTIONS] FILENAME [FILENAME ...]'
+        )
+        backend_parser.add_argument(
+            'filename',
+            nargs='*',
+            help='VRT YAML definition file',
+            metavar='FILENAME'
+        )
+        backend_parser.add_argument(
+            '-o',
+            '--option',
+            action='append',
+            default=[],
+            help='options for code generator backend'
+        )
+        backend_parser.add_argument('--version', action='version', version='%(prog)s '+version)
+
+    _add_backend_parser('check', __version__, CheckGenerator)
+
+    for entry_point in pkg_resources.iter_entry_points(ENTRY_POINT_ID):
+        version = entry_point.dist.version
+        generator = entry_point.load()
+        _add_backend_parser(entry_point.name, version, generator)
 
     args = arg_parser.parse_args()
 
@@ -66,7 +112,7 @@ def main():
         logging.getLogger().setLevel(logging.DEBUG)
 
     try:
-        generator = load_generator(args.backend)
+        generator = load_generator(args.generator)
     except KeyError:
         raise SystemExit("invalid backend '"+args.backend+"'")
 
