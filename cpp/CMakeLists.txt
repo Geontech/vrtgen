@@ -138,7 +138,7 @@ function(add_codegen_file TARGET YAML_FILE)
             ${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME}/${TEST_BASENAME}.cpp
             ${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME}/${TEST_BASENAME}.hpp
         COMMAND
-            ${Python3_EXECUTABLE} -m vrtgen.main -b cpp -o dir=${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME} ${YAML_FILE}
+            ${Python3_EXECUTABLE} -m vrtgen.main cpp -o dir=${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME} ${YAML_FILE}
         WORKING_DIRECTORY
             ${CMAKE_CURRENT_SOURCE_DIR}
         DEPENDS
