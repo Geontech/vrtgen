@@ -37,6 +37,7 @@ test:cpp:
     script:
         - make check TEST_OPTIONS="-s --use-colour=yes"
 
+# Build release RPMs
 rpmbuild:
     stage: package
     image: centos:7
@@ -59,3 +60,5 @@ rpmbuild:
     artifacts:
         paths:
             - dist/*.rpm
+    only:
+        - tags
