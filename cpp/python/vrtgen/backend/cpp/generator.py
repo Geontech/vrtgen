@@ -244,7 +244,7 @@ class CppGenerator(Generator):
 
     header_ext = GeneratorOption(
         '--header-ext',
-        doc="file extension for headers [.cpp]",
+        doc="file extension for headers [.hpp]",
         dtype=str,
         defval='hpp'
     )
