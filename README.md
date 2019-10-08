@@ -46,6 +46,20 @@ To generate a hexadecimal dump of the default configuration for each packet defi
 vrtpktgen bindump <path-to-file.yml>
 ```
 
+Help is available with the `--help` (or `-h`) option.
+To get general help or to check which backends are available:
+
+```sh
+vrtpktgen --help
+```
+
+To get help on a specific backend, run `vrtpktgen <backend> --help`.
+For example, to get help on the `bindump` backend:
+
+```sh
+vrtpktgen bindump --help
+```
+
 A C++ backend is available in the `cpp` subdirectory of the source.
 For more information, see [cpp/README.md](./cpp/README.md).
 
