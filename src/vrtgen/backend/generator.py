@@ -20,6 +20,7 @@ Common packet generator backend support.
 """
 
 import abc
+import inspect
 
 class Generator(abc.ABC):
     """
@@ -59,3 +60,35 @@ class Generator(abc.ABC):
 
         Must be implemented by subclasses.
         """
+
+    @classmethod
+    def get_options(cls):
+        """
+        Gets the command line configurable options.
+        """
+        return inspect.getmembers(cls, lambda x: isinstance(x, GeneratorOption))
+
+class GeneratorOption:
+    """
+    Command line configurable attribute for Generator classes.
+
+    When defining a generator, options should be declared as class-level
+    attributes.
+    """
+    def __init__(self, opt, doc=None, dtype=None, defval=None):
+        self.opt = opt
+        self.help = doc
+        self.type = dtype
+        self.default = defval
+        self.attr = None
+
+    def __set_name__(self, owner, name):
+        self.attr = '_' + name
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        return getattr(instance, self.attr)
+
+    def __set__(self, instance, value):
+        setattr(instance, self.attr, value)

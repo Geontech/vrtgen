@@ -27,7 +27,7 @@ from vrtgen.types import prologue
 from vrtgen.types import cif0
 from vrtgen.types import cif1
 
-from vrtgen.backend.generator import Generator
+from vrtgen.backend.generator import Generator, GeneratorOption
 
 from . import types as cpptypes
 
@@ -223,38 +223,50 @@ class CppGenerator(Generator):
         loader = jinja2.FileSystemLoader(template_path)
         self.env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
         self.env.filters['namespace'] = do_namespace
-        self.output_path = os.getcwd()
-        self.header_ext = '.hpp'
-        self.impl_ext = '.cpp'
+        self.output_dir = os.getcwd()
         self.header = None
         self.implfile = None
         self.packets = []
         self.namespace = ''
 
-    def set_option(self, name, value):
-        if name == 'dir':
-            self.output_path = value
-            os.makedirs(self.output_path, exist_ok=True)
-        else:
-            super().set_option(name, value)
+    output_dir = GeneratorOption(
+        '--dir',
+        doc="output directory for generated files",
+        dtype=str
+    )
+
+    source_ext = GeneratorOption(
+        '--source-ext',
+        doc="file extension for source [.cpp]",
+        dtype=str,
+        defval='cpp'
+    )
+
+    header_ext = GeneratorOption(
+        '--header-ext',
+        doc="file extension for headers [.cpp]",
+        dtype=str,
+        defval='hpp'
+    )
 
     def start_file(self, filename):
         basename, _ = os.path.splitext(os.path.basename(filename))
-        self.header = basename + self.header_ext
-        self.implfile = basename + self.impl_ext
+        self.header = basename + '.' + self.header_ext
+        self.implfile = basename + '.' + self.source_ext
 
     def end_file(self):
+        os.makedirs(self.output_dir, exist_ok=True)
         context = {
             'packets':self.packets,
             'namespace': self.namespace,
         }
         template = self.env.get_template('header.hpp')
-        with open(os.path.join(self.output_path, self.header), 'w') as fp:
+        with open(os.path.join(self.output_dir, self.header), 'w') as fp:
             fp.write(template.render(context))
 
         context['header'] = self.header
         template = self.env.get_template('packet.cpp')
-        with open(os.path.join(self.output_path, self.implfile), 'w') as fp:
+        with open(os.path.join(self.output_dir, self.implfile), 'w') as fp:
             fp.write(template.render(context))
 
     def generate_prologue(self, cppstruct, packet):

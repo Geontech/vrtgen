@@ -36,17 +36,6 @@ class CheckGenerator(Generator):
     def generate(self, packet):
         pass
 
-def load_generator(name):
-    if name == 'check':
-        return CheckGenerator()
-
-    for entry_point in pkg_resources.iter_entry_points(ENTRY_POINT_ID):
-        if entry_point.name == name:
-            generator = entry_point.load()
-            return generator()
-
-    raise KeyError(name)
-
 def main():
     """
     Main entry point for vrtpktgen.
@@ -90,21 +79,26 @@ def main():
             help='VRT YAML definition file',
             metavar='FILENAME'
         )
-        backend_parser.add_argument(
-            '-o',
-            '--option',
-            action='append',
-            default=[],
-            help='options for code generator backend'
-        )
         backend_parser.add_argument('--version', action='version', version='%(prog)s '+version)
+        for attr, option in generator.get_options():
+            backend_parser.add_argument(
+                option.opt,
+                dest=attr,
+                type=option.type,
+                help=option.help,
+                default=option.default
+            )
 
+    generators = {}
     _add_backend_parser('check', __version__, CheckGenerator)
+    generators['check'] = CheckGenerator
 
+    # Load all registered generators and include their command line options
     for entry_point in pkg_resources.iter_entry_points(ENTRY_POINT_ID):
         version = entry_point.dist.version
         generator = entry_point.load()
         _add_backend_parser(entry_point.name, version, generator)
+        generators[entry_point.name] = generator
 
     args = arg_parser.parse_args()
 
@@ -112,20 +106,14 @@ def main():
         logging.getLogger().setLevel(logging.DEBUG)
 
     try:
-        generator = load_generator(args.generator)
+        generator = generators[args.generator]()
     except KeyError:
         raise SystemExit("invalid backend '"+args.backend+"'")
 
-    for option in args.option:
-        if '=' in option:
-            name, value = option.split('=', 1)
-        else:
-            name = option
-            value = True
-        try:
-            generator.set_option(name, value)
-        except Exception as exc:
-            raise SystemExit(str(exc))
+    for attr, _ in generator.get_options():
+        value = getattr(args, attr, None)
+        if value is not None:
+            setattr(generator, attr, value)
 
     for filename in args.filename:
         logging.debug('Parsing %s', filename)
