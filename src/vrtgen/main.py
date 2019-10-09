@@ -25,16 +25,8 @@ import pkg_resources
 
 from vrtgen import parser
 from vrtgen.version import __version__
-from vrtgen.backend.generator import Generator
 
 ENTRY_POINT_ID = 'vrtgen.backend.packet'
-
-class CheckGenerator(Generator):
-    """
-    Validates packet definitions.
-    """
-    def generate(self, packet):
-        pass
 
 def main():
     """
@@ -89,11 +81,8 @@ def main():
                 default=option.default
             )
 
-    generators = {}
-    _add_backend_parser('check', __version__, CheckGenerator)
-    generators['check'] = CheckGenerator
-
     # Load all registered generators and include their command line options
+    generators = {}
     for entry_point in pkg_resources.iter_entry_points(ENTRY_POINT_ID):
         version = entry_point.dist.version
         generator = entry_point.load()
