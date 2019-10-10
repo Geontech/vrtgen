@@ -26,6 +26,7 @@ from vrtgen.types import basic
 from vrtgen.types import enums
 from vrtgen.types import prologue
 from vrtgen.types import trailer
+from vrtgen.types import control
 from vrtgen.types import cif0
 from vrtgen.types import cif1
 from vrtgen.types import struct
@@ -248,11 +249,25 @@ class CppStruct:
     def reserved(self):
         return [f for f in self.members if isinstance(f, Reserved)]
 
-    def _process_field(self, field):
-        align = 31 - field.offset
+    def _should_pack(self, field):
         if field.bits % 8:
             # Field does not necessarily need to be byte-aligned, pack it into
             # a larger data member
+            return True
+        if not field.editable and self._current_packed is not None:
+            # Currently adding fields to a packed member, tack on reserved
+            # fields instead of giving them their own member. This avoids a
+            # problem in the CAM prologue field, where there are 24 bits worth
+            # of packed fields followed by 8 reserved bits, but there is no
+            # native 24-bit type to hold the packed field.
+            return True
+        return False 
+
+    def _process_field(self, field):
+        align = 31 - field.offset
+        if self._should_pack(field):
+            # Pack the field into a larger data member; the field itself does
+            # not need to be byte-aligned
             if self._current_packed is None:
                 # The data member does have to be byte-aligned
                 assert align % 8 == 0
@@ -388,6 +403,14 @@ class LibraryGenerator:
                 'structs': [CppStruct(trailer.Trailer)],
             }))
 
+    def generate_control(self, filename):
+        template = self.env.get_template('struct.hpp')
+        with open(filename, 'w') as fp:
+            fp.write(template.render({
+                'name': 'control',
+                'structs': [CppStruct(control.ControlAcknowledgeMode)],
+            }))
+
     def generate_cif(self, filename, module, cif):
         structs = []
         enable = CppEnableStruct(cif.Enables)
@@ -430,6 +453,7 @@ class LibraryGenerator:
         ('enums.hpp', generate_enums),
         ('packing/trailer.hpp', generate_trailer),
         ('packing/header.hpp', generate_header),
+        ('packing/control.hpp', generate_control),
         ('packing/cif0.hpp', generate_cif, cif0, cif0.CIF0),
         ('packing/cif1.hpp', generate_cif, cif1, cif1.CIF1),
     ]
