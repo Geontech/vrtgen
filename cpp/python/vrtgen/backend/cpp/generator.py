@@ -26,6 +26,7 @@ from vrtgen.types import struct
 from vrtgen.types import prologue
 from vrtgen.types import cif0
 from vrtgen.types import cif1
+from vrtgen.types import control
 
 from vrtgen.backend.generator import Generator, GeneratorOption
 
@@ -216,6 +217,20 @@ class CppPacket:
             value = None
         self.add_member(name, cpptypes.value_type(field.type), field.is_optional, value)
 
+    def set_cam_field(self, field, value, getter=None, setter=None):
+        assert self.cam is not None
+        name = cpptypes.name_to_identifier(field.name)
+        if getter is None:
+            getter = 'get' + name
+        if setter is None:
+            setter = 'set' + name
+        self.cam['fields'].append({
+            'name': name,
+            'title': field.name,
+            'getter': getter,
+            'setter': setter,
+            'value': cpptypes.literal(value, field.type),
+        })
 
 class CppGenerator(Generator):
     """
@@ -323,6 +338,20 @@ class CppGenerator(Generator):
         cppstruct.cam = {
             'fields': []
         }
+        cppstruct.set_cam_field(
+            control.ControlAcknowledgeMode.request_validation,
+            config.Acknowledgement.VALIDATION in packet.acknowledge
+        )
+        cppstruct.set_cam_field(
+            control.ControlAcknowledgeMode.request_execution,
+            config.Acknowledgement.EXECUTION in packet.acknowledge
+        )
+        cppstruct.set_cam_field(
+            control.ControlAcknowledgeMode.request_query,
+            config.Acknowledgement.QUERY_STATE in packet.acknowledge
+        )
+        cppstruct.set_cam_field(control.ControlAcknowledgeMode.action, packet.action)
+        cppstruct.set_cam_field(control.ControlAcknowledgeMode.nack, packet.nack)
 
         self.generate_payload(cppstruct, packet)
 
