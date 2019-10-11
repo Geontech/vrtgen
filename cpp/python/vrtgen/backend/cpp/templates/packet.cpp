@@ -113,7 +113,11 @@ void {{packet.helper}}::pack(const {{packet.name}}& packet, void* ptr, size_t bu
 //% if packet.cam
     vrtgen::packing::ControlAcknowledgeMode* cam = buffer.insert<vrtgen::packing::ControlAcknowledgeMode>();
 //%     for field in packet.cam.fields
+//%         if field.value
     cam->{{field.setter}}({{field.value}});
+//%         else
+    cam->{{field.setter}}(packet.{{field.getter}}());
+//%         endif
 //%     endfor
     buffer.insert<vrtgen::packing::MessageIdentifier>(0);
 //% endif
@@ -156,7 +160,11 @@ void {{packet.helper}}::unpack({{packet.name}}& packet, const void* ptr, size_t 
 //% if packet.cam
     const vrtgen::packing::ControlAcknowledgeMode* cam = buffer.getControlAcknowledgeMode();
 //% for field in packet.cam.fields
+//%     if field.value
     ::validate(cam->{{field.getter}}(), {{field.value}}, "invalid CAM field {{field.title}}");
+//%     else
+    packet.{{field.setter}}(cam->{{field.getter}}());
+//%     endif
 //% endfor
 //% endif
 //% for cif in packet.cifs if cif.enabled

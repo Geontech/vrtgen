@@ -217,20 +217,31 @@ class CppPacket:
             value = None
         self.add_member(name, cpptypes.value_type(field.type), field.is_optional, value)
 
-    def set_cam_field(self, field, value, getter=None, setter=None):
+    def set_cam_field(self, field, value=None, getter=None, setter=None):
         assert self.cam is not None
         name = cpptypes.name_to_identifier(field.name)
         if getter is None:
             getter = 'get' + name
         if setter is None:
             setter = 'set' + name
-        self.cam['fields'].append({
+        cam_field = {
             'name': name,
             'title': field.name,
             'getter': getter,
             'setter': setter,
-            'value': cpptypes.literal(value, field.type),
-        })
+        }
+        if value is not None:
+            cam_field['value'] = cpptypes.literal(value, field.type)
+        self.cam['fields'].append(cam_field)
+
+    def add_cam_field(self, field):
+        if not field.is_constant:
+            self.add_member_from_field(field)
+            value = None
+        else:
+            value = field.value
+        self.set_cam_field(field.field, value)
+
 
 class CppGenerator(Generator):
     """
@@ -338,18 +349,9 @@ class CppGenerator(Generator):
         cppstruct.cam = {
             'fields': []
         }
-        cppstruct.set_cam_field(
-            control.ControlAcknowledgeMode.partial_permitted,
-            packet.partial_permitted.value
-        )
-        cppstruct.set_cam_field(
-            control.ControlAcknowledgeMode.warnings,
-            packet.warnings.value
-        )
-        cppstruct.set_cam_field(
-            control.ControlAcknowledgeMode.errors,
-            packet.errors.value
-        )
+        cppstruct.add_cam_field(packet.partial_permitted)
+        cppstruct.add_cam_field(packet.warnings)
+        cppstruct.add_cam_field(packet.errors)
         cppstruct.set_cam_field(
             control.ControlAcknowledgeMode.request_validation,
             config.Acknowledgement.VALIDATION in packet.acknowledge
@@ -362,14 +364,8 @@ class CppGenerator(Generator):
             control.ControlAcknowledgeMode.request_query,
             config.Acknowledgement.QUERY_STATE in packet.acknowledge
         )
-        cppstruct.set_cam_field(
-            control.ControlAcknowledgeMode.action,
-            packet.action.value
-        )
-        cppstruct.set_cam_field(
-            control.ControlAcknowledgeMode.nack,
-            packet.nack.value
-        )
+        cppstruct.add_cam_field(packet.action)
+        cppstruct.add_cam_field(packet.nack)
 
         self.generate_payload(cppstruct, packet)
 
