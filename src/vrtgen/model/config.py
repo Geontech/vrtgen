@@ -153,29 +153,21 @@ class CommandPacketConfiguration(CIFPacketConfiguration):
         self.controllee = None
         self.controller = None
 
-        self._action = self._add_field(
+        self.partial_permitted = self._add_field(
+            ControlAcknowledgeMode.partial_permitted, Scope.PROLOGUE, Mode.MANDATORY
+        )
+        self.warnings = self._add_field(
+            ControlAcknowledgeMode.warnings, Scope.PROLOGUE, Mode.MANDATORY
+        )
+        self.errors = self._add_field(
+            ControlAcknowledgeMode.errors, Scope.PROLOGUE, Mode.MANDATORY
+        )
+        self.action = self._add_field(
             ControlAcknowledgeMode.action, Scope.PROLOGUE, Mode.MANDATORY
         )
-        self._nack = self._add_field(
+        self.nack = self._add_field(
             ControlAcknowledgeMode.nack, Scope.PROLOGUE, Mode.MANDATORY
         )
 
-        self._action.value = enums.ActionMode()
-        self._nack.value = False
-
     def packet_type(self):
         return enums.PacketType.COMMAND
-
-    @property
-    def action(self):
-        """
-        The Action Mode of this packet.
-        """
-        return self._action.value
-
-    @property
-    def nack(self):
-        """
-        True if this packet only requires acknowledgement on failures.
-        """
-        return self._nack.value

@@ -339,6 +339,18 @@ class CppGenerator(Generator):
             'fields': []
         }
         cppstruct.set_cam_field(
+            control.ControlAcknowledgeMode.partial_permitted,
+            packet.partial_permitted.value
+        )
+        cppstruct.set_cam_field(
+            control.ControlAcknowledgeMode.warnings,
+            packet.warnings.value
+        )
+        cppstruct.set_cam_field(
+            control.ControlAcknowledgeMode.errors,
+            packet.errors.value
+        )
+        cppstruct.set_cam_field(
             control.ControlAcknowledgeMode.request_validation,
             config.Acknowledgement.VALIDATION in packet.acknowledge
         )
@@ -350,8 +362,14 @@ class CppGenerator(Generator):
             control.ControlAcknowledgeMode.request_query,
             config.Acknowledgement.QUERY_STATE in packet.acknowledge
         )
-        cppstruct.set_cam_field(control.ControlAcknowledgeMode.action, packet.action)
-        cppstruct.set_cam_field(control.ControlAcknowledgeMode.nack, packet.nack)
+        cppstruct.set_cam_field(
+            control.ControlAcknowledgeMode.action,
+            packet.action.value
+        )
+        cppstruct.set_cam_field(
+            control.ControlAcknowledgeMode.nack,
+            packet.nack.value
+        )
 
         self.generate_payload(cppstruct, packet)
 

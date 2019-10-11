@@ -227,6 +227,9 @@ class CommandSectionParser(PrologueParser):
 
 CommandSectionParser.add_parser('Payload', CIFPayloadParser())
 CommandSectionParser.add_parser('Acknowledge', CommandSectionParser.parse_acknowledge)
+CommandSectionParser.add_field_parser(ControlAcknowledgeMode.partial_permitted, alias='Partial')
+CommandSectionParser.add_field_parser(ControlAcknowledgeMode.warnings)
+CommandSectionParser.add_field_parser(ControlAcknowledgeMode.errors)
 CommandSectionParser.add_field_parser(ControlAcknowledgeMode.action, alias='Action')
 CommandSectionParser.add_field_parser(ControlAcknowledgeMode.nack, alias='NACK')
 CommandSectionParser.add_parser('Controllee', CommandSectionParser.parse_controllee)
