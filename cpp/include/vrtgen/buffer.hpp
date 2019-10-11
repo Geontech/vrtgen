@@ -94,6 +94,7 @@ namespace vrtgen {
             m_ClassIdentifier(nullptr),
             m_IntegerTimestamp(nullptr),
             m_FractionalTimestamp(nullptr),
+            m_ControlAcknowledgeMode(nullptr),
             m_CIF0(nullptr),
             m_CIF1(nullptr)
         {
@@ -118,6 +119,9 @@ namespace vrtgen {
                 case vrtgen::PacketType::EXTENSION_DATA:
                 case vrtgen::PacketType::EXTENSION_DATA_STREAM_ID:
                     return;
+                case vrtgen::PacketType::COMMAND:
+                case vrtgen::PacketType::EXTENSION_COMMAND:
+                    m_ControlAcknowledgeMode = m_buf.next<const vrtgen::packing::ControlAcknowledgeMode>();
                 default:
                     break;
             }
@@ -185,6 +189,11 @@ namespace vrtgen {
             return m_FractionalTimestamp->get();
         }
 
+        const vrtgen::packing::ControlAcknowledgeMode* getControlAcknowledgeMode() const
+        {
+            return m_ControlAcknowledgeMode;
+        }
+
         const vrtgen::packing::CIF0Enables* getCIF0() const
         {
             return m_CIF0;
@@ -214,6 +223,7 @@ namespace vrtgen {
         const vrtgen::packing::ClassIdentifier* m_ClassIdentifier;
         const vrtgen::packing::IntegerTimestamp* m_IntegerTimestamp;
         const vrtgen::packing::FractionalTimestamp* m_FractionalTimestamp;
+        const vrtgen::packing::ControlAcknowledgeMode* m_ControlAcknowledgeMode;
         const vrtgen::packing::CIF0Enables* m_CIF0;
         const vrtgen::packing::CIF1Enables* m_CIF1;
     };

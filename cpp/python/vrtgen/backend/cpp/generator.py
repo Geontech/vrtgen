@@ -90,7 +90,7 @@ class CppPacket:
         )
 
         self.prologue = []
-
+        self.cam = None
         self.cifs = []
         self.add_cif(0)
         self.add_cif(1)
@@ -318,6 +318,12 @@ class CppGenerator(Generator):
         cppstruct.cifs[0]['enabled'] = True
         
         self.generate_prologue(cppstruct, packet)
+
+        # Add CAM configuration
+        cppstruct.cam = {
+            'fields': []
+        }
+
         self.generate_payload(cppstruct, packet)
 
     def generate(self, packet):

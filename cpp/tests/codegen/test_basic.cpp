@@ -22,6 +22,7 @@
 #include "basic.hpp"
 
 #include <vector>
+#include <bytes.hpp>
 
 TEST_CASE("Basic context message") {
     BasicContext packet_in;
@@ -58,19 +59,20 @@ TEST_CASE("Basic command message") {
     packet_in.setStreamIdentifier(0x12345678);
     packet_in.setRFReferenceFrequency(101.1e6);
 
-    size_t packed_size = packing::BasicCommandHelper::bytes_required(packet_in);
-    CHECK(packed_size == 20);
+    const size_t PACKED_SIZE = 24;
+    REQUIRE(packing::BasicCommandHelper::bytes_required(packet_in) == PACKED_SIZE);
 
-    std::vector<unsigned char> data;
-    data.resize(20);
+    bytes data;
+    data.resize(PACKED_SIZE);
     packing::BasicCommandHelper::pack(packet_in, data.data(), data.size());
+    CHECK(range(data, 4, 8) == bytes{0x12, 0x34, 0x56, 0x78});
 
     const vrtgen::packing::CommandHeader* header = reinterpret_cast<const vrtgen::packing::CommandHeader*>(data.data());
     CHECK(header->getPacketType() == vrtgen::PacketType::COMMAND);
     CHECK(header->getTSI() == vrtgen::TSI::NONE);
     CHECK(header->getTSF() == vrtgen::TSF::NONE);
     CHECK_FALSE(header->isClassIdentifierEnabled());
-    CHECK(header->getPacketSize() == 5);
+    CHECK(header->getPacketSize() == (PACKED_SIZE / 4));
     CHECK_FALSE(header->getAcknowledgePacket());
     CHECK_FALSE(header->getCancellationPacket());
 
