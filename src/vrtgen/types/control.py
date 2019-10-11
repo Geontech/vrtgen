@@ -20,11 +20,12 @@ Data types for Control Packet prologue.
 """
 
 from .struct import Struct, Enable, Field, Reserved
-from .basic import Boolean
+from .basic import Boolean, IntegerType
 from . import enums
 
 __all__ = (
     'ControlAcknowledgeMode',
+    'MessageIdentifier'
 )
 
 class ControlAcknowledgeMode(Struct):
@@ -60,3 +61,10 @@ class ControlAcknowledgeMode(Struct):
     reserved_9 = Reserved(2)
     # 7..0 Reserved
     reserved_7 = Reserved(8)
+
+class MessageIdentifier(IntegerType, bits=32, signed=False):
+    """
+    A Message Identifier (Message ID) is a 32-bit number that allows
+    association of a particular Control packet with any resulting Acknowledge
+    packets (8.4).
+    """

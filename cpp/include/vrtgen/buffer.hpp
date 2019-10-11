@@ -95,6 +95,7 @@ namespace vrtgen {
             m_IntegerTimestamp(nullptr),
             m_FractionalTimestamp(nullptr),
             m_ControlAcknowledgeMode(nullptr),
+            m_MessageID(nullptr),
             m_CIF0(nullptr),
             m_CIF1(nullptr)
         {
@@ -122,6 +123,7 @@ namespace vrtgen {
                 case vrtgen::PacketType::COMMAND:
                 case vrtgen::PacketType::EXTENSION_COMMAND:
                     m_ControlAcknowledgeMode = m_buf.next<const vrtgen::packing::ControlAcknowledgeMode>();
+                    m_MessageID = m_buf.next<const vrtgen::packing::MessageIdentifier>();
                 default:
                     break;
             }
@@ -194,6 +196,14 @@ namespace vrtgen {
             return m_ControlAcknowledgeMode;
         }
 
+        vrtgen::MessageIdentifier getMessageID() const
+        {
+            if (!m_MessageID) {
+                throw std::runtime_error("no Message ID");
+            }
+            return m_MessageID->get();
+        }
+
         const vrtgen::packing::CIF0Enables* getCIF0() const
         {
             return m_CIF0;
@@ -224,6 +234,7 @@ namespace vrtgen {
         const vrtgen::packing::IntegerTimestamp* m_IntegerTimestamp;
         const vrtgen::packing::FractionalTimestamp* m_FractionalTimestamp;
         const vrtgen::packing::ControlAcknowledgeMode* m_ControlAcknowledgeMode;
+        const vrtgen::packing::MessageIdentifier* m_MessageID;
         const vrtgen::packing::CIF0Enables* m_CIF0;
         const vrtgen::packing::CIF1Enables* m_CIF1;
     };

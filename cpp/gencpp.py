@@ -404,11 +404,24 @@ class LibraryGenerator:
             }))
 
     def generate_control(self, filename):
-        template = self.env.get_template('struct.hpp')
+        # Minor misnomer: the CIF header emits typedefs, which we want for
+        # MessageIdentifier
+        template = self.env.get_template('cif.hpp')
+        structs = [
+            CppStruct(control.ControlAcknowledgeMode),
+        ]
+
+        typedefs = [
+            {
+                'name': 'MessageIdentifier',
+                'type': 'field<{}>'.format(member_type(control.MessageIdentifier))
+            }
+        ]
         with open(filename, 'w') as fp:
             fp.write(template.render({
                 'name': 'control',
-                'structs': [CppStruct(control.ControlAcknowledgeMode)],
+                'structs': structs,
+                'typedefs': typedefs,
             }))
 
     def generate_cif(self, filename, module, cif):

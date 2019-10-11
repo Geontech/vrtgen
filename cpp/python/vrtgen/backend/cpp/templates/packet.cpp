@@ -82,6 +82,7 @@ size_t {{packet.helper}}::bytes_required(const {{packet.name}}& packet)
 //% endfor
 //% if packet.cam
     bytes += sizeof(vrtgen::packing::ControlAcknowledgeMode);
+    bytes += sizeof(vrtgen::packing::MessageIdentifier);
 //% endif
 //% for cif in packet.cifs if cif.enabled
     bytes += sizeof({{cif.header}});
@@ -113,6 +114,7 @@ void {{packet.helper}}::pack(const {{packet.name}}& packet, void* ptr, size_t bu
     vrtgen::packing::ControlAcknowledgeMode* cam = buffer.insert<vrtgen::packing::ControlAcknowledgeMode>();
 //%     for field in packet.cam.fields
 //%     endfor
+    buffer.insert<vrtgen::packing::MessageIdentifier>(0);
 //% endif
 //% for cif in packet.cifs if cif.enabled
 //%     if cif.number != 0

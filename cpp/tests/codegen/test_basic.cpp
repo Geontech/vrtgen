@@ -59,7 +59,7 @@ TEST_CASE("Basic command message") {
     packet_in.setStreamIdentifier(0x12345678);
     packet_in.setRFReferenceFrequency(101.1e6);
 
-    const size_t PACKED_SIZE = 24;
+    const size_t PACKED_SIZE = 28;
     REQUIRE(packing::BasicCommandHelper::bytes_required(packet_in) == PACKED_SIZE);
 
     bytes data;
