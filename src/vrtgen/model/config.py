@@ -171,3 +171,13 @@ class CommandPacketConfiguration(CIFPacketConfiguration):
 
     def packet_type(self):
         return enums.PacketType.COMMAND
+
+class ControlPacketConfiguration(CommandPacketConfiguration):
+    """
+    Configuration for a Control Packet.
+    """
+
+class AcknowledgePacketConfiguration(CommandPacketConfiguration):
+    """
+    Configuration for an Acknowledge Packet.
+    """

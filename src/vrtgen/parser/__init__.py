@@ -22,7 +22,7 @@ import logging
 
 import yaml
 
-from .packet import DataPacketParser, ContextPacketParser, CommandPacketParser
+from .packet import create_parser
 
 __all__ = (
     'parse_packet',
@@ -37,17 +37,15 @@ def parse_packet(name, value):
     if not isinstance(value, dict):
         raise RuntimeError('Invalid definition for packet ' + name)
 
+    log = logging.getLogger(name)
     packet_type = value.pop('type', None)
     if packet_type is None:
         raise RuntimeError('No packet type specified for ' + name)
-    if packet_type == 'data':
-        parser = DataPacketParser(name)
-    elif packet_type == 'context':
-        parser = ContextPacketParser(name)
-    elif packet_type == 'command':
-        parser = CommandPacketParser(name)
-    else:
-        raise RuntimeError("Invalid type '{0}' for packet '{1}'".format(packet_type, name))
+    if packet_type == 'command':
+        log.warning('"command" packet type is deprecated, using "control"')
+        packet_type = 'control'
+
+    parser = create_parser(packet_type, name)
 
     return parser.parse(value)
 

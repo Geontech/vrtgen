@@ -235,12 +235,37 @@ CommandSectionParser.add_field_parser(ControlAcknowledgeMode.nack, alias='NACK')
 CommandSectionParser.add_parser('Controllee', CommandSectionParser.parse_controllee)
 CommandSectionParser.add_parser('Controller', CommandSectionParser.parse_controller)
 
-class CommandPacketParser(PacketParser):
+class ControlPacketParser(PacketParser):
     """
-    Parser for Command Packet configuration.
+    Parser for Control Packet configuration.
     """
     def create_packet(self, name):
         return config.CommandPacketConfiguration(name)
 
     def _get_parser(self):
         return CommandSectionParser()
+
+class AcknowledgePacketParser(PacketParser):
+    """
+    Parser for Acknowledge Packet configuration.
+    """
+    def create_packet(self, name):
+        return config.AcknowledgePacketConfiguration(name)
+
+    def _get_parser(self):
+        return CommandSectionParser()
+
+def create_parser(packet_type, name):
+    """
+    Returns a parser for the given packet type.
+    """
+    if packet_type == 'data':
+        return DataPacketParser(name)
+    if packet_type == 'context':
+        return ContextPacketParser(name)
+    if packet_type == 'control':
+        return ControlPacketParser(name)
+    if packet_type == 'acknowledge':
+        return AcknowledgePacketParser(name)
+
+    raise RuntimeError("Invalid type '{0}' for packet '{1}'".format(packet_type, name))
