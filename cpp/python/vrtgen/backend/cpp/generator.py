@@ -217,6 +217,11 @@ class CppPacket:
             value = None
         self.add_member(name, cpptypes.value_type(field.type), field.is_optional, value)
 
+    def add_cam(self):
+        self.cam = {
+            'fields': []
+        }
+
     def set_cam_field(self, field, value=None, getter=None, setter=None):
         assert self.cam is not None
         name = cpptypes.name_to_identifier(field.name)
@@ -346,9 +351,7 @@ class CppGenerator(Generator):
         self.generate_prologue(cppstruct, packet)
 
         # Add CAM configuration
-        cppstruct.cam = {
-            'fields': []
-        }
+        cppstruct.add_cam()
         cppstruct.add_cam_field(packet.partial_permitted)
         cppstruct.add_cam_field(packet.warnings)
         cppstruct.add_cam_field(packet.errors)
