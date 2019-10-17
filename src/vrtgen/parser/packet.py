@@ -21,6 +21,7 @@ dictionaries.
 """
 
 from vrtgen.model import config
+from vrtgen.model.config import PacketType
 from vrtgen.types.prologue import ContextHeader, Prologue
 from vrtgen.types.trailer import Trailer
 from vrtgen.types.control import ControlAcknowledgeMode
@@ -201,13 +202,13 @@ def create_parser(packet_type):
     """
     Returns a parser for the given packet type.
     """
-    if packet_type == 'data':
+    if packet_type == PacketType.DATA:
         return DataPacketParser()
-    if packet_type == 'context':
+    if packet_type == PacketType.CONTEXT:
         return ContextPacketParser()
-    if packet_type == 'control':
+    if packet_type == PacketType.CONTROL:
         return ControlPacketParser()
-    if packet_type == 'acknowledge':
+    if packet_type in (PacketType.ACKV, PacketType.ACKX, PacketType.ACKS):
         return AcknowledgePacketParser()
 
-    raise RuntimeError("Invalid packet type '{}'".format(packet_type))
+    raise ValueError("Invalid packet type '{}'".format(packet_type))

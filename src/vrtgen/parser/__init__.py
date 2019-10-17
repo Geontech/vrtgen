@@ -22,7 +22,7 @@ import logging
 
 import yaml
 
-from vrtgen.model.config import create_packet
+from vrtgen.model.config import create_packet, PacketType
 
 from .packet import create_parser
 
@@ -47,6 +47,7 @@ def parse_packet(name, value):
         log.warning('"command" packet type is deprecated, using "control"')
         packet_type = 'control'
 
+    packet_type = PacketType(packet_type.casefold())
     packet = create_packet(packet_type, name)
     parser = create_parser(packet_type)
 
@@ -76,5 +77,7 @@ def parse_stream(stream):
                 packet = parse_packet(name, value)
                 packet.validate()
                 yield packet
+            except ValueError as exc:
+                logging.error("%s", str(exc))
             except RuntimeError as exc:
                 logging.exception("%s %s", name, str(exc))

@@ -39,6 +39,17 @@ class Acknowledgement(Enum):
     EXECUTION = auto()
     QUERY_STATE = auto()
 
+class PacketType(Enum):
+    """
+    Packet subtypes.
+    """
+    DATA = 'data'
+    CONTEXT = 'context'
+    CONTROL = 'control'
+    ACKV = 'ackv'
+    ACKX = 'ackx'
+    ACKS = 'acks'
+
 class PacketConfiguration:
     """
     Base class for VRT packet configuration.
@@ -149,7 +160,6 @@ class CommandPacketConfiguration(CIFPacketConfiguration):
     """
     def __init__(self, name):
         super().__init__(name)
-        self.acknowledge = []
         self.controllee = None
         self.controller = None
 
@@ -176,21 +186,27 @@ class ControlPacketConfiguration(CommandPacketConfiguration):
     """
     Configuration for a Control Packet.
     """
+    def __init__(self, name):
+        super().__init__(name)
+        self.acknowledge = []
 
 class AcknowledgePacketConfiguration(CommandPacketConfiguration):
     """
     Configuration for an Acknowledge Packet.
     """
+    def __init__(self, name):
+        super().__init__(name)
+        self.acknowledge = []
 
 def create_packet(packet_type, name):
-    if packet_type == 'data':
+    if packet_type == PacketType.DATA:
         cls = DataPacketConfiguration
-    elif packet_type == 'context':
+    elif packet_type == PacketType.CONTEXT:
         cls = ContextPacketConfiguration
-    elif packet_type == 'control':
+    elif packet_type == PacketType.CONTROL:
         cls = ControlPacketConfiguration
-    elif packet_type == 'acknowledge':
+    elif packet_type in (PacketType.ACKV, PacketType.ACKX, PacketType.ACKS):
         cls = AcknowledgePacketConfiguration
     else:
-        raise KeyError(packet_type)
+        raise NotImplementedError(packet_type)
     return cls(name)
