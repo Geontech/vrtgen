@@ -181,3 +181,16 @@ class AcknowledgePacketConfiguration(CommandPacketConfiguration):
     """
     Configuration for an Acknowledge Packet.
     """
+
+def create_packet(packet_type, name):
+    if packet_type == 'data':
+        cls = DataPacketConfiguration
+    elif packet_type == 'context':
+        cls = ContextPacketConfiguration
+    elif packet_type == 'control':
+        cls = ControlPacketConfiguration
+    elif packet_type == 'acknowledge':
+        cls = AcknowledgePacketConfiguration
+    else:
+        raise KeyError(packet_type)
+    return cls(name)

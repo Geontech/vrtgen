@@ -22,6 +22,8 @@ import logging
 
 import yaml
 
+from vrtgen.model.config import create_packet
+
 from .packet import create_parser
 
 __all__ = (
@@ -45,9 +47,12 @@ def parse_packet(name, value):
         log.warning('"command" packet type is deprecated, using "control"')
         packet_type = 'control'
 
-    parser = create_parser(packet_type, name)
+    packet = create_packet(packet_type, name)
+    parser = create_parser(packet_type)
 
-    return parser.parse(value)
+    parser(log, packet, value)
+
+    return packet
 
 def parse_file(filename):
     """
