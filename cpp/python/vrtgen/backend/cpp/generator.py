@@ -19,7 +19,6 @@ import os
 
 import jinja2
 
-from vrtgen.model import config
 from vrtgen.model.config import PacketType
 from vrtgen.model.field import Scope
 from vrtgen.types import enums
@@ -358,15 +357,15 @@ class CppGenerator(Generator):
         cppstruct.add_cam_field(packet.errors)
         cppstruct.set_cam_field(
             control.ControlAcknowledgeMode.request_validation,
-            config.Acknowledgement.VALIDATION in packet.acknowledge
+            PacketType.ACKV in packet.acknowledge
         )
         cppstruct.set_cam_field(
             control.ControlAcknowledgeMode.request_execution,
-            config.Acknowledgement.EXECUTION in packet.acknowledge
+            PacketType.ACKX in packet.acknowledge
         )
         cppstruct.set_cam_field(
             control.ControlAcknowledgeMode.request_query,
-            config.Acknowledgement.QUERY_STATE in packet.acknowledge
+            PacketType.ACKS in packet.acknowledge
         )
         cppstruct.add_cam_field(packet.action)
         cppstruct.add_cam_field(packet.nack)

@@ -19,7 +19,7 @@
 Types for VITA 49 packet configurations.
 """
 
-from enum import Enum, auto
+from enum import Enum
 import warnings
 
 from vrtgen.types import enums
@@ -30,14 +30,6 @@ from vrtgen.types.cif1 import CIF1
 from vrtgen.types.control import ControlAcknowledgeMode
 
 from .field import FieldConfiguration, Mode, Scope
-
-class Acknowledgement(Enum):
-    """
-    Acknowledgment packet types.
-    """
-    VALIDATION = auto()
-    EXECUTION = auto()
-    QUERY_STATE = auto()
 
 class PacketType(Enum):
     """
@@ -117,7 +109,7 @@ class PacketConfiguration:
         Returns the Packet Type Code for this packet configuration.
         """
         return self._get_packet_type_code()
-    
+
     def _get_packet_type_code(self):
         raise NotImplementedError('packet_type_code')
 

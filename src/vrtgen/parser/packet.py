@@ -20,7 +20,6 @@ Parser classes for generating VITA 49 packet configurations from Python
 dictionaries.
 """
 
-from vrtgen.model import config
 from vrtgen.model.config import PacketType
 from vrtgen.types.prologue import ContextHeader, Prologue
 from vrtgen.types.trailer import Trailer
@@ -159,9 +158,9 @@ class ControlPacketParser(CommandPacketParser):
     Parser for Control Packet configuration.
     """
     _ACKNOWLEDGE_TYPES = {
-        'validation': config.Acknowledgement.VALIDATION,
-        'execution': config.Acknowledgement.EXECUTION,
-        'query-state': config.Acknowledgement.QUERY_STATE,
+        'validation': PacketType.ACKV,
+        'execution': PacketType.ACKX,
+        'query-state': PacketType.ACKS,
     }
     @classmethod
     def _parse_acknowledge_type(cls, log, context, value):
