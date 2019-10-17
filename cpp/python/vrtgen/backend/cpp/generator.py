@@ -344,33 +344,26 @@ class CppGenerator(Generator):
         self.generate_payload(cppstruct, packet)
 
     def generate_command(self, cppstruct, packet):
-        cppstruct.set_header_field(prologue.CommandHeader.acknowledge_packet, 'false')
-        cppstruct.set_header_field(prologue.CommandHeader.cancellation_packet, 'false')
         cppstruct.cifs[0]['enabled'] = True
         
         self.generate_prologue(cppstruct, packet)
 
         # Add CAM configuration
         cppstruct.add_cam()
-        cppstruct.add_cam_field(packet.partial_permitted)
-        cppstruct.add_cam_field(packet.warnings)
-        cppstruct.add_cam_field(packet.errors)
-        cppstruct.set_cam_field(
-            control.ControlAcknowledgeMode.request_validation,
-            PacketType.ACKV in packet.acknowledge
-        )
-        cppstruct.set_cam_field(
-            control.ControlAcknowledgeMode.request_execution,
-            PacketType.ACKX in packet.acknowledge
-        )
-        cppstruct.set_cam_field(
-            control.ControlAcknowledgeMode.request_query,
-            PacketType.ACKS in packet.acknowledge
-        )
-        cppstruct.add_cam_field(packet.action)
-        cppstruct.add_cam_field(packet.nack)
+        for field in packet.get_fields(Scope.CAM):
+            cppstruct.add_cam_field(field)
 
         self.generate_payload(cppstruct, packet)
+
+    def generate_control(self, cppstruct, packet):
+        cppstruct.set_header_field(prologue.CommandHeader.acknowledge_packet, 'false')
+        cppstruct.set_header_field(prologue.CommandHeader.cancellation_packet, 'false')
+        self.generate_command(cppstruct, packet)
+
+    def generate_acks(self, cppstruct, packet):
+        cppstruct.set_header_field(prologue.CommandHeader.acknowledge_packet, 'true')
+        cppstruct.set_header_field(prologue.CommandHeader.cancellation_packet, 'false')
+        self.generate_command(cppstruct, packet)
 
     def generate(self, packet):
         name = cpptypes.name_to_identifier(packet.name)
@@ -383,6 +376,9 @@ class CppGenerator(Generator):
         elif packet.packet_type == PacketType.CONTROL:
             model = CppPacket(name, packet, 'CommandHeader')
             self.generate_command(model, packet)
+        elif packet.packet_type == PacketType.ACKS:
+            model = CppPacket(name, packet, 'CommandHeader')
+            self.generate_acks(model, packet)
         else:
             raise NotImplementedError(packet.packet_type)
 

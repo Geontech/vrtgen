@@ -168,8 +168,9 @@ class ControlPacketParser(CommandPacketParser):
             ack_type = cls._ACKNOWLEDGE_TYPES[value.casefold()]
         except KeyError:
             raise ValueError(value)
-        log.debug('Acknowledge %s', ack_type)
-        context.acknowledge.append(ack_type)
+        ack = context.get_acknowledge(ack_type)
+        ack.value = True
+        log.debug('Acknowledge %s', ack_type)        
 
     @classmethod
     def parse_acknowledge(cls, log, context, value):
@@ -181,6 +182,11 @@ class ControlPacketParser(CommandPacketParser):
 
         if not isinstance(value, list):
             value = [value]
+
+        # Acknowledge packet types are explicitly listed, assume not variable
+        context.ackv.set_constant()
+        context.ackx.set_constant()
+        context.acks.set_constant()
 
         for item in value:
             try:

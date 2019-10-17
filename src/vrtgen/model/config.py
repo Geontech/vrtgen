@@ -161,20 +161,42 @@ class CommandPacketConfiguration(CIFPacketConfiguration):
         self.controller = None
 
         self.partial_permitted = self._add_field(
-            ControlAcknowledgeMode.partial_permitted, Scope.PROLOGUE, Mode.MANDATORY
+            ControlAcknowledgeMode.partial_permitted, Scope.CAM, Mode.MANDATORY
         )
         self.warnings = self._add_field(
-            ControlAcknowledgeMode.warnings, Scope.PROLOGUE, Mode.MANDATORY
+            ControlAcknowledgeMode.warnings, Scope.CAM, Mode.MANDATORY
         )
         self.errors = self._add_field(
-            ControlAcknowledgeMode.errors, Scope.PROLOGUE, Mode.MANDATORY
+            ControlAcknowledgeMode.errors, Scope.CAM, Mode.MANDATORY
         )
         self.action = self._add_field(
-            ControlAcknowledgeMode.action, Scope.PROLOGUE, Mode.MANDATORY
+            ControlAcknowledgeMode.action, Scope.CAM, Mode.MANDATORY
         )
         self.nack = self._add_field(
-            ControlAcknowledgeMode.nack, Scope.PROLOGUE, Mode.MANDATORY
+            ControlAcknowledgeMode.nack, Scope.CAM, Mode.MANDATORY
         )
+        self.ackv = self._add_field(
+            ControlAcknowledgeMode.request_validation, Scope.CAM, Mode.MANDATORY
+        )
+        self.ackx = self._add_field(
+            ControlAcknowledgeMode.request_execution, Scope.CAM, Mode.MANDATORY
+        )
+        self.acks = self._add_field(
+            ControlAcknowledgeMode.request_query, Scope.CAM, Mode.MANDATORY
+        )
+
+    def get_acknowledge(self, packet_type):
+        """
+        Returns the field associated with the given acknowledgement packet
+        type.
+        """
+        if packet_type == PacketType.ACKV:
+            return self.ackv
+        if packet_type == PacketType.ACKX:
+            return self.ackx
+        if packet_type == PacketType.ACKS:
+            return self.acks
+        raise ValueError(packet_type)
 
     def _get_packet_type_code(self):
         return enums.PacketType.COMMAND
@@ -185,7 +207,6 @@ class ControlPacketConfiguration(CommandPacketConfiguration):
     """
     def __init__(self, name):
         super().__init__(name, PacketType.CONTROL)
-        self.acknowledge = []
 
 class AcknowledgePacketConfiguration(CommandPacketConfiguration):
     """
@@ -193,7 +214,11 @@ class AcknowledgePacketConfiguration(CommandPacketConfiguration):
     """
     def __init__(self, name, packet_type):
         super().__init__(name, packet_type)
-        self.acknowledge = []
+        for field in (self.ackv, self.ackx, self.acks):
+            field.value = False
+            field.set_constant()
+        ack = self.get_acknowledge(packet_type)
+        ack.value = True
 
 def create_packet(packet_type, name):
     args = [name]

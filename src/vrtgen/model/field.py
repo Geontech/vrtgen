@@ -40,11 +40,13 @@ class Scope(Enum):
     """
     Defines the section of the packet in which a field resides:
         PROLOGUE: Packet prologue (excluding CIF headers).
+        CAM: ControlAcknowledgeMode field (Command packets only).
         CIF0: CIF 0 fields (Context and Command packets only).
         CIF1: CIF 1 fields (Context and Command packets only).
         TRAILER: Packet trailer (Data packet only).
     """
     PROLOGUE = auto()
+    CAM = auto()
     CIF0 = auto()
     CIF1 = auto()
     TRAILER = auto()
