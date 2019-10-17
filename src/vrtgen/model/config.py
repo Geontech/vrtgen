@@ -54,8 +54,9 @@ class PacketConfiguration:
     """
     Base class for VRT packet configuration.
     """
-    def __init__(self, name):
+    def __init__(self, name, packet_type):
         self.name = name
+        self.packet_type = packet_type
         self._fields = []
         self.tsi = enums.TSI()
         self.tsf = enums.TSF()
@@ -110,22 +111,26 @@ class PacketConfiguration:
         # Override or extend in subclasses to check for invalid combinations
         # of field configurations.
 
-    def packet_type(self):
+    @property
+    def packet_type_code(self):
         """
         Returns the Packet Type Code for this packet configuration.
         """
-        raise NotImplementedError('packet_type')
+        return self._get_packet_type_code()
+    
+    def _get_packet_type_code(self):
+        raise NotImplementedError('packet_type_code')
 
 class DataPacketConfiguration(PacketConfiguration):
     """
     Configuration for a Data Packet.
     """
     def __init__(self, name):
-        super().__init__(name)
+        super().__init__(name, PacketType.DATA)
 
         self._add_fields(Trailer, Scope.TRAILER)
 
-    def packet_type(self):
+    def _get_packet_type_code(self):
         if self.stream_id.is_enabled:
             return enums.PacketType.SIGNAL_DATA_STREAM_ID
         return enums.PacketType.SIGNAL_DATA
@@ -135,8 +140,8 @@ class CIFPacketConfiguration(PacketConfiguration):
     Base class for packet types that contain Context Information Fields.
     """
     # pylint: disable=abstract-method
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self, name, packet_type):
+        super().__init__(name, packet_type)
 
         self.stream_id.mode = Mode.MANDATORY
 
@@ -148,18 +153,18 @@ class ContextPacketConfiguration(CIFPacketConfiguration):
     Configuration for a Context Packet.
     """
     def __init__(self, name):
-        super().__init__(name)
+        super().__init__(name, PacketType.CONTEXT)
         self.timestamp_mode = enums.TSM()
 
-    def packet_type(self):
+    def _get_packet_type_code(self):
         return enums.PacketType.CONTEXT
 
 class CommandPacketConfiguration(CIFPacketConfiguration):
     """
     Configuration for a Command Packet.
     """
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self, name, packet_type):
+        super().__init__(name, packet_type)
         self.controllee = None
         self.controller = None
 
@@ -179,7 +184,7 @@ class CommandPacketConfiguration(CIFPacketConfiguration):
             ControlAcknowledgeMode.nack, Scope.PROLOGUE, Mode.MANDATORY
         )
 
-    def packet_type(self):
+    def _get_packet_type_code(self):
         return enums.PacketType.COMMAND
 
 class ControlPacketConfiguration(CommandPacketConfiguration):
@@ -187,18 +192,19 @@ class ControlPacketConfiguration(CommandPacketConfiguration):
     Configuration for a Control Packet.
     """
     def __init__(self, name):
-        super().__init__(name)
+        super().__init__(name, PacketType.CONTROL)
         self.acknowledge = []
 
 class AcknowledgePacketConfiguration(CommandPacketConfiguration):
     """
     Configuration for an Acknowledge Packet.
     """
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self, name, packet_type):
+        super().__init__(name, packet_type)
         self.acknowledge = []
 
 def create_packet(packet_type, name):
+    args = [name]
     if packet_type == PacketType.DATA:
         cls = DataPacketConfiguration
     elif packet_type == PacketType.CONTEXT:
@@ -207,6 +213,7 @@ def create_packet(packet_type, name):
         cls = ControlPacketConfiguration
     elif packet_type in (PacketType.ACKV, PacketType.ACKX, PacketType.ACKS):
         cls = AcknowledgePacketConfiguration
+        args.append(packet_type)
     else:
-        raise NotImplementedError(packet_type)
-    return cls(name)
+        raise ValueError(packet_type)
+    return cls(*args)

@@ -20,6 +20,7 @@ import os
 import jinja2
 
 from vrtgen.model import config
+from vrtgen.model.config import PacketType
 from vrtgen.model.field import Scope
 from vrtgen.types import enums
 from vrtgen.types import struct
@@ -75,12 +76,12 @@ class CppPacket:
         self.name = name
         self.helper = name + 'Helper'
         self.namespace = ''
-        self.type = cpptypes.enum_value(packet.packet_type())
+        self.type = cpptypes.enum_value(packet.packet_type_code)
         self.header = {
             'type': 'vrtgen::packing::' + header_class,
             'fields': [],
         }
-        self.set_header_field(prologue.Header.packet_type, cpptypes.enum_value(packet.packet_type()))
+        self.set_header_field(prologue.Header.packet_type, cpptypes.enum_value(packet.packet_type_code))
         self.set_header_field(prologue.Header.tsi, cpptypes.enum_value(packet.tsi))
         self.set_header_field(prologue.Header.tsf, cpptypes.enum_value(packet.tsf))
         self.set_header_field(
@@ -374,14 +375,16 @@ class CppGenerator(Generator):
 
     def generate(self, packet):
         name = cpptypes.name_to_identifier(packet.name)
-        if packet.packet_type() in (enums.PacketType.SIGNAL_DATA, enums.PacketType.SIGNAL_DATA_STREAM_ID):
+        if packet.packet_type == PacketType.DATA:
             model = CppPacket(name, packet, 'DataHeader')
             self.generate_data(model, packet)
-        elif isinstance(packet, config.ContextPacketConfiguration):
+        elif packet.packet_type == PacketType.CONTEXT:
             model = CppPacket(name, packet, 'ContextHeader')
             self.generate_context(model, packet)
-        elif isinstance(packet, config.CommandPacketConfiguration):
+        elif packet.packet_type == PacketType.CONTROL:
             model = CppPacket(name, packet, 'CommandHeader')
             self.generate_command(model, packet)
+        else:
+            raise NotImplementedError(packet.packet_type)
 
         self.packets.append(model)

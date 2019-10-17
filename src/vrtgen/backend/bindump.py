@@ -62,7 +62,7 @@ class BinaryDumper(Generator):
 
     @staticmethod
     def _get_prologue(packet):
-        packet_type = packet.packet_type()
+        packet_type = packet.packet_type_code
         if packet_type.is_data:
             header = DataHeader()
         elif packet_type.is_context:
@@ -116,7 +116,7 @@ class BinaryDumper(Generator):
         return trailer.pack()
 
     def generate(self, packet):
-        packet_type = packet.packet_type()
+        packet_type = packet.packet_type_code
         print('Packet ' + packet.name)
         print('Prologue:')
         prologue = self._get_prologue(packet)
