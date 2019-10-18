@@ -415,7 +415,15 @@ class LibraryGenerator:
             {
                 'name': 'MessageID',
                 'type': 'field<{}>'.format(member_type(control.MessageIdentifier))
-            }
+            },
+            {
+                'name': 'ControlleeID',
+                'type': 'field<{}>'.format(member_type(basic.Identifier32))
+            },
+            {
+                'name': 'ControllerID',
+                'type': 'field<{}>'.format(member_type(basic.Identifier32))
+            },
         ]
         with open(filename, 'w') as fp:
             fp.write(template.render({

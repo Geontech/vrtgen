@@ -70,6 +70,18 @@ JINJA_OPTIONS = {
 def optional_type(typename):
     return 'vrtgen::optional<{}>'.format(typename)
 
+def get_accessors(field, name=None):
+    if name is None:
+        name = field.name
+    identifier = cpptypes.name_to_identifier(field.name)
+    if isinstance(field, struct.Enable):
+        getter = 'is{}Enabled'.format(identifier)
+        setter = 'set{}Enabled'.format(identifier)
+    else:
+        getter = 'get' + identifier
+        setter = 'set' + identifier
+    return (getter, setter)
+
 class CppPacket:
     def __init__(self, name, packet, header_class):
         self.name = name
@@ -157,9 +169,16 @@ class CppPacket:
                     subfield_name = field.name + subfield.name
                 else:
                     subfield_name = subfield.name
+                sub_get, sub_set = get_accessors(subfield, name=subfield_name)
+                src_get, src_set = get_accessors(subfield.name)
                 subfield_dict = {
-                    'name': cpptypes.name_to_identifier(subfield_name),
-                    'srcname': cpptypes.name_to_identifier(subfield.name),
+                    'name': subfield_name,
+                    'getter': sub_get,
+                    'setter': sub_set,
+                    'src': {
+                        'getter': src_get,
+                        'setter': src_set,
+                    },
                     'title': subfield.name,
                 }
                 if subfield.is_constant:
@@ -229,10 +248,15 @@ class CppPacket:
 
     def set_cam_field(self, field, value=None):
         assert self.cam is not None
-        name = cpptypes.name_to_identifier(field.name)
+        getter, setter = get_accessors(field)
         cam_field = {
-            'name': name,
-            'srcname': name,
+            'name': cpptypes.name_to_identifier(field.name),
+            'getter': getter,
+            'setter': setter,
+            'src': {
+                'getter': getter,
+                'setter': setter,
+            },
             'title': field.name,
         }
         if value is not None:
@@ -356,6 +380,22 @@ class CppGenerator(Generator):
             cppstruct.add_cam_field(field)
 
         cppstruct.add_prologue_field(control.CommandPrologue.message_id)
+
+        controllee_enable = packet.controllee is not None
+        cppstruct.set_cam_field(control.ControlAcknowledgeMode.controllee_enable, controllee_enable)
+        if controllee_enable:
+            cppstruct.set_cam_field(control.ControlAcknowledgeMode.controllee_format, packet.controllee)
+            if packet.controllee == enums.IdentifierFormat.WORD:
+                cppstruct.add_prologue_field(control.CommandPrologue.controllee_id)
+            # TODO: UUID support
+
+        controller_enable = packet.controller is not None
+        cppstruct.set_cam_field(control.ControlAcknowledgeMode.controller_enable, controller_enable)
+        if controller_enable:
+            cppstruct.set_cam_field(control.ControlAcknowledgeMode.controller_format, packet.controller)
+            if packet.controller == enums.IdentifierFormat.WORD:
+                cppstruct.add_prologue_field(control.CommandPrologue.controller_id)
+            # TODO: UUID support
 
         self.generate_payload(cppstruct, packet)
 

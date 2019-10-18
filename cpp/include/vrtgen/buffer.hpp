@@ -96,6 +96,8 @@ namespace vrtgen {
             m_FractionalTimestamp(nullptr),
             m_ControlAcknowledgeMode(nullptr),
             m_MessageID(nullptr),
+            m_ControlleeID(nullptr),
+            m_ControllerID(nullptr),
             m_CIF0(nullptr),
             m_CIF1(nullptr)
         {
@@ -122,8 +124,7 @@ namespace vrtgen {
                     return;
                 case vrtgen::PacketType::COMMAND:
                 case vrtgen::PacketType::EXTENSION_COMMAND:
-                    m_ControlAcknowledgeMode = m_buf.next<const vrtgen::packing::ControlAcknowledgeMode>();
-                    m_MessageID = m_buf.next<const vrtgen::packing::MessageID>();
+                    parse_command_prologue();
                 default:
                     break;
             }
@@ -204,6 +205,32 @@ namespace vrtgen {
             return m_MessageID->get();
         }
 
+        bool hasControlleeID() const
+        {
+            return m_ControlleeID;
+        }
+
+        vrtgen::GenericIdentifier32 getControlleeID() const
+        {
+            if (!m_ControlleeID) {
+                throw std::logic_error("no Controllee ID");
+            }
+            return m_ControlleeID->get();
+        }
+
+        bool hasControllerID() const
+        {
+            return m_ControllerID;
+        }
+
+        vrtgen::GenericIdentifier32 getControllerID() const
+        {
+            if (!m_ControllerID) {
+                throw std::logic_error("no Controller ID");
+            }
+            return m_ControllerID->get();
+        }
+
         const vrtgen::packing::CIF0Enables* getCIF0() const
         {
             return m_CIF0;
@@ -227,6 +254,32 @@ namespace vrtgen {
         }
 
     private:
+        void parse_command_prologue()
+        {
+            m_ControlAcknowledgeMode = m_buf.next<const vrtgen::packing::ControlAcknowledgeMode>();
+            m_MessageID = m_buf.next<const vrtgen::packing::MessageID>();
+            if (m_ControlAcknowledgeMode->isControlleeEnabled()) {
+                switch(m_ControlAcknowledgeMode->getControlleeIdentifierFormat()) {
+                case vrtgen::IdentifierFormat::WORD:
+                    m_ControlleeID = m_buf.next<const vrtgen::packing::ControlleeID>();
+                    break;
+                case vrtgen::IdentifierFormat::UUID:
+                    // TODO: UUID support
+                    break;
+                }
+            }
+            if (m_ControlAcknowledgeMode->isControllerEnabled()) {
+                switch(m_ControlAcknowledgeMode->getControllerIdentifierFormat()) {
+                case vrtgen::IdentifierFormat::WORD:
+                    m_ControllerID = m_buf.next<const vrtgen::packing::ControllerID>();
+                    break;
+                case vrtgen::IdentifierFormat::UUID:
+                    // TODO: UUID support
+                    break;
+                }
+            }
+        }
+
         detail::overlay_buffer<const char> m_buf;
         const vrtgen::packing::Header* const m_Header;
         const vrtgen::packing::StreamIdentifier* m_StreamIdentifier;
@@ -235,6 +288,8 @@ namespace vrtgen {
         const vrtgen::packing::FractionalTimestamp* m_FractionalTimestamp;
         const vrtgen::packing::ControlAcknowledgeMode* m_ControlAcknowledgeMode;
         const vrtgen::packing::MessageID* m_MessageID;
+        const vrtgen::packing::ControlleeID* m_ControlleeID;
+        const vrtgen::packing::ControllerID* m_ControllerID;
         const vrtgen::packing::CIF0Enables* m_CIF0;
         const vrtgen::packing::CIF1Enables* m_CIF1;
     };

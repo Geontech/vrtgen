@@ -20,7 +20,7 @@ Data types for Control Packet prologue.
 """
 
 from .struct import Struct, Enable, Field, Reserved
-from .basic import Boolean, IntegerType
+from .basic import Boolean, IntegerType, Identifier32
 from .prologue import Prologue
 from . import enums
 
@@ -76,3 +76,5 @@ class CommandPrologue(Prologue):
     """
     cam = Field('ControlAcknowledgeMode', ControlAcknowledgeMode)
     message_id = Field('Message ID', MessageIdentifier)
+    controllee_id = Field('Controllee ID', Identifier32)
+    controller_id = Field('Controller ID', Identifier32)
