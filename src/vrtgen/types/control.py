@@ -34,31 +34,31 @@ class ControlAcknowledgeMode(Struct):
     Control/Acknowledge Mode Field (8.3.1).
     """
     # 32..21 Control Packet Fields
-    controllee_enable = Enable('Controllee enable')
+    controllee_enable = Enable('Controllee')
     controllee_format = Field(
-        'Controllee identifier format', enums.IdentifierFormat, enable=controllee_enable
+        'Controllee Identifier Format', enums.IdentifierFormat, enable=controllee_enable
     )
-    controller_enable = Enable('Controller enable')
+    controller_enable = Enable('Controller')
     controller_format = Field(
-        'Controller identifier format', enums.IdentifierFormat, enable=controller_enable
+        'Controller Identifier Format', enums.IdentifierFormat, enable=controller_enable
     )
-    partial_permitted = Field('Partial packet implementation permitted', Boolean)
-    warnings = Field('Warnings', Boolean)
-    errors = Field('Errors', Boolean)
-    action = Field('Action Bit Field', enums.ActionMode)
-    nack = Field('Not-ack only', Boolean)
+    permit_partial = Field('Partial Packet Implementation Permitted', Boolean)
+    permit_warnings = Field('Warnings Permitted', Boolean)
+    permit_errors = Field('Errors Permitted', Boolean)
+    action_mode = Field('Action Mode', enums.ActionMode)
+    nack_only = Field('Not-Ack Only', Boolean)
     reserved_21 = Reserved(1)
     # Common bits
-    request_validation = Field('Request Validation Acknowledge packet', Boolean)
-    request_execution = Field('Request Execution Acknowledge packet', Boolean)
-    request_query = Field('Request Query-State Acknowledge packet', Boolean)
+    request_validation = Field('Request Validation Acknowledge Packet', Boolean)
+    request_execution = Field('Request Execution Acknowledge Packet', Boolean)
+    request_query = Field('Request Query-State Acknowledge Packet', Boolean)
     request_warning = Field('Request/Return Warnings', Boolean)
     request_error = Field('Request/Return Errors', Boolean)
     reserved_15 = Reserved(1)
     timing_control = Field('Timing Control/Acknowledgement', enums.TimestampControlMode)
     # 11..8 Acknowledge Packet Fields
-    partial = Field('Partial action', Boolean)
-    scheduled_or_executed = Field('Action Scheduled or Executed', Boolean)
+    partial = Field('Partial Action', Boolean)
+    scheduled_or_executed = Field('Action Scheduled Or Executed', Boolean)
     reserved_9 = Reserved(2)
     # 7..0 Reserved
     reserved_7 = Reserved(8)

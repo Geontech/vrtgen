@@ -145,11 +145,11 @@ class CommandPacketParser(PacketParser):
         log.debug('Controller ID = %s', context.controller)
 
 CommandPacketParser.add_parser('Payload', CIFPayloadParser())
-CommandPacketParser.add_field_parser(ControlAcknowledgeMode.partial_permitted, alias='Partial')
-CommandPacketParser.add_field_parser(ControlAcknowledgeMode.warnings)
-CommandPacketParser.add_field_parser(ControlAcknowledgeMode.errors)
-CommandPacketParser.add_field_parser(ControlAcknowledgeMode.action, alias='Action')
-CommandPacketParser.add_field_parser(ControlAcknowledgeMode.nack, alias='NACK')
+CommandPacketParser.add_field_parser(ControlAcknowledgeMode.permit_partial, alias='Partial')
+CommandPacketParser.add_field_parser(ControlAcknowledgeMode.permit_warnings)
+CommandPacketParser.add_field_parser(ControlAcknowledgeMode.permit_errors)
+CommandPacketParser.add_field_parser(ControlAcknowledgeMode.action_mode, alias='Action')
+CommandPacketParser.add_field_parser(ControlAcknowledgeMode.nack_only, alias='NACK')
 CommandPacketParser.add_parser('Controllee', CommandPacketParser.parse_controllee)
 CommandPacketParser.add_parser('Controller', CommandPacketParser.parse_controller)
 

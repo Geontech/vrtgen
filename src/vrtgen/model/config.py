@@ -161,19 +161,19 @@ class CommandPacketConfiguration(CIFPacketConfiguration):
         self.controller = None
 
         self.partial_permitted = self._add_field(
-            ControlAcknowledgeMode.partial_permitted, Scope.CAM, Mode.MANDATORY
+            ControlAcknowledgeMode.permit_partial, Scope.CAM, Mode.MANDATORY
         )
         self.warnings = self._add_field(
-            ControlAcknowledgeMode.warnings, Scope.CAM, Mode.MANDATORY
+            ControlAcknowledgeMode.permit_warnings, Scope.CAM, Mode.MANDATORY
         )
         self.errors = self._add_field(
-            ControlAcknowledgeMode.errors, Scope.CAM, Mode.MANDATORY
+            ControlAcknowledgeMode.permit_errors, Scope.CAM, Mode.MANDATORY
         )
         self.action = self._add_field(
-            ControlAcknowledgeMode.action, Scope.CAM, Mode.MANDATORY
+            ControlAcknowledgeMode.action_mode, Scope.CAM, Mode.MANDATORY
         )
         self.nack = self._add_field(
-            ControlAcknowledgeMode.nack, Scope.CAM, Mode.MANDATORY
+            ControlAcknowledgeMode.nack_only, Scope.CAM, Mode.MANDATORY
         )
         self.ackv = self._add_field(
             ControlAcknowledgeMode.request_validation, Scope.CAM, Mode.MANDATORY

@@ -320,7 +320,7 @@ class CppStruct:
 
     def _map_field(self, field, member):
         if field.enable is not None:
-            methods = format_enable_methods(field.enable, member, name=field.name)
+            methods = format_enable_methods(field.enable, member)
             self.fields.append(methods)
         methods = format_value_methods(field, member)
         self.fields.append(methods)
