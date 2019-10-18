@@ -123,7 +123,7 @@ namespace vrtgen {
                 case vrtgen::PacketType::COMMAND:
                 case vrtgen::PacketType::EXTENSION_COMMAND:
                     m_ControlAcknowledgeMode = m_buf.next<const vrtgen::packing::ControlAcknowledgeMode>();
-                    m_MessageID = m_buf.next<const vrtgen::packing::MessageIdentifier>();
+                    m_MessageID = m_buf.next<const vrtgen::packing::MessageID>();
                 default:
                     break;
             }
@@ -234,7 +234,7 @@ namespace vrtgen {
         const vrtgen::packing::IntegerTimestamp* m_IntegerTimestamp;
         const vrtgen::packing::FractionalTimestamp* m_FractionalTimestamp;
         const vrtgen::packing::ControlAcknowledgeMode* m_ControlAcknowledgeMode;
-        const vrtgen::packing::MessageIdentifier* m_MessageID;
+        const vrtgen::packing::MessageID* m_MessageID;
         const vrtgen::packing::CIF0Enables* m_CIF0;
         const vrtgen::packing::CIF1Enables* m_CIF1;
     };

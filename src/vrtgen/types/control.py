@@ -21,6 +21,7 @@ Data types for Control Packet prologue.
 
 from .struct import Struct, Enable, Field, Reserved
 from .basic import Boolean, IntegerType
+from .prologue import Prologue
 from . import enums
 
 __all__ = (
@@ -68,3 +69,10 @@ class MessageIdentifier(IntegerType, bits=32, signed=False):
     association of a particular Control packet with any resulting Acknowledge
     packets (8.4).
     """
+
+class CommandPrologue(Prologue):
+    """
+    Command Packet prologue.
+    """
+    cam = Field('ControlAcknowledgeMode', ControlAcknowledgeMode)
+    message_id = Field('Message ID', MessageIdentifier)

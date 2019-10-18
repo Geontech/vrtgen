@@ -218,22 +218,22 @@ class CppPacket:
         self.add_member(name, cpptypes.value_type(field.type), field.is_optional, value)
 
     def add_cam(self):
-        self.cam = {
-            'fields': []
+        self.cam = { 
+            'name' : 'ControlAcknowledgeMode',
+            'attr': 'cam',
+            'type' : 'vrtgen::packing::ControlAcknowledgeMode',
+            'struct': True,
+            'fields': [],
         }
+        self.prologue.append(self.cam)
 
-    def set_cam_field(self, field, value=None, getter=None, setter=None):
+    def set_cam_field(self, field, value=None):
         assert self.cam is not None
         name = cpptypes.name_to_identifier(field.name)
-        if getter is None:
-            getter = 'get' + name
-        if setter is None:
-            setter = 'set' + name
         cam_field = {
             'name': name,
+            'srcname': name,
             'title': field.name,
-            'getter': getter,
-            'setter': setter,
         }
         if value is not None:
             cam_field['value'] = cpptypes.literal(value, field.type)
@@ -352,6 +352,8 @@ class CppGenerator(Generator):
         cppstruct.add_cam()
         for field in packet.get_fields(Scope.CAM):
             cppstruct.add_cam_field(field)
+
+        cppstruct.add_prologue_field(control.CommandPrologue.message_id)
 
         self.generate_payload(cppstruct, packet)
 

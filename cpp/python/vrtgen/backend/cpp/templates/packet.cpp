@@ -80,10 +80,6 @@ size_t {{packet.helper}}::bytes_required(const {{packet.name}}& packet)
 //% for field in packet.prologue
     bytes += sizeof({{field.type}});
 //% endfor
-//% if packet.cam
-    bytes += sizeof(vrtgen::packing::ControlAcknowledgeMode);
-    bytes += sizeof(vrtgen::packing::MessageIdentifier);
-//% endif
 //% for cif in packet.cifs if cif.enabled
     bytes += sizeof({{cif.header}});
 //% endfor
@@ -110,17 +106,6 @@ void {{packet.helper}}::pack(const {{packet.name}}& packet, void* ptr, size_t bu
 //% for field in packet.prologue
     {{pack_field(field) | indent(4) | trim}}
 //% endfor
-//% if packet.cam
-    vrtgen::packing::ControlAcknowledgeMode* cam = buffer.insert<vrtgen::packing::ControlAcknowledgeMode>();
-//%     for field in packet.cam.fields
-//%         if field.value
-    cam->{{field.setter}}({{field.value}});
-//%         else
-    cam->{{field.setter}}(packet.{{field.getter}}());
-//%         endif
-//%     endfor
-    buffer.insert<vrtgen::packing::MessageIdentifier>(0);
-//% endif
 //% for cif in packet.cifs if cif.enabled
 //%     if cif.number != 0
     cif_0->setCIF{{cif.number}}Enable(true);
@@ -157,16 +142,6 @@ void {{packet.helper}}::unpack({{packet.name}}& packet, const void* ptr, size_t 
     packet.set{{field.name}}(buffer.get{{field.name}}());
 //%     endif
 //% endfor
-//% if packet.cam
-    const vrtgen::packing::ControlAcknowledgeMode* cam = buffer.getControlAcknowledgeMode();
-//% for field in packet.cam.fields
-//%     if field.value
-    ::validate(cam->{{field.getter}}(), {{field.value}}, "invalid CAM field {{field.title}}");
-//%     else
-    packet.{{field.setter}}(cam->{{field.getter}}());
-//%     endif
-//% endfor
-//% endif
 //% for cif in packet.cifs if cif.enabled
     const {{cif.header}}* cif_{{cif.number}} = buffer.getCIF{{cif.number}}();
     ::validate(cif_{{cif.number}}, "CIF{{cif.number}} missing");

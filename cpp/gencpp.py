@@ -413,7 +413,7 @@ class LibraryGenerator:
 
         typedefs = [
             {
-                'name': 'MessageIdentifier',
+                'name': 'MessageID',
                 'type': 'field<{}>'.format(member_type(control.MessageIdentifier))
             }
         ]
