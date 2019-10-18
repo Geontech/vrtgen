@@ -144,10 +144,17 @@ class CommandPacketParser(PacketParser):
         context.controller = cls._parse_identification(value)
         log.debug('Controller ID = %s', context.controller)
 
+class PermitParser(SectionParser):
+    """
+    Parser for 'permit' settings on Command Packets.
+    """
+
+PermitParser.add_field_parser(ControlAcknowledgeMode.permit_partial, alias='Partial')
+PermitParser.add_field_parser(ControlAcknowledgeMode.permit_warnings, alias='Warnings')
+PermitParser.add_field_parser(ControlAcknowledgeMode.permit_errors, alias='Errors')
+
 CommandPacketParser.add_parser('Payload', CIFPayloadParser())
-CommandPacketParser.add_field_parser(ControlAcknowledgeMode.permit_partial, alias='Partial')
-CommandPacketParser.add_field_parser(ControlAcknowledgeMode.permit_warnings, alias='Warnings')
-CommandPacketParser.add_field_parser(ControlAcknowledgeMode.permit_errors, alias='Errors')
+CommandPacketParser.add_parser('Permit', PermitParser())
 CommandPacketParser.add_field_parser(ControlAcknowledgeMode.action_mode, alias='Action')
 CommandPacketParser.add_field_parser(ControlAcknowledgeMode.nack_only, alias='NACK')
 CommandPacketParser.add_parser('Controllee', CommandPacketParser.parse_controllee)
