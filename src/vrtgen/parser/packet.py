@@ -160,45 +160,21 @@ CommandPacketParser.add_field_parser(ControlAcknowledgeMode.nack_only, alias='NA
 CommandPacketParser.add_parser('Controllee', CommandPacketParser.parse_controllee)
 CommandPacketParser.add_parser('Controller', CommandPacketParser.parse_controller)
 
+class AcknowledgeRequestParser(SectionParser):
+    """
+    Parser for acknowledment request settings in Control Packets.
+    """
+
+AcknowledgeRequestParser.add_field_parser(ControlAcknowledgeMode.request_validation, alias='Validation')
+AcknowledgeRequestParser.add_field_parser(ControlAcknowledgeMode.request_execution, alias='Execution')
+AcknowledgeRequestParser.add_field_parser(ControlAcknowledgeMode.request_query, alias='Query-State')
+
 class ControlPacketParser(CommandPacketParser):
     """
     Parser for Control Packet configuration.
     """
-    _ACKNOWLEDGE_TYPES = {
-        'validation': PacketType.ACKV,
-        'execution': PacketType.ACKX,
-        'query-state': PacketType.ACKS,
-    }
-    @classmethod
-    def _parse_acknowledge_type(cls, log, context, value):
-        try:
-            ack_type = cls._ACKNOWLEDGE_TYPES[value.casefold()]
-        except KeyError:
-            raise ValueError(value)
-        ack = context.get_acknowledge(ack_type)
-        ack.value = True
-        log.debug('Acknowledge %s', ack_type)
 
-    @classmethod
-    def parse_acknowledge(cls, log, context, value):
-        """
-        Parses acknowledgement packet types.
-        """
-        if isinstance(value, dict):
-            raise TypeError('acknowledgement packet types must be a sequence or scalar')
-
-        if not isinstance(value, list):
-            value = [value]
-
-        for item in value:
-            try:
-                cls._parse_acknowledge_type(log, context, item)
-            except ValueError:
-                log.warning("Invalid acknowledgement packet type '%s'", item)
-            except TypeError:
-                log.error('Acknowledgement packet type must be a string')
-
-ControlPacketParser.add_parser('Acknowledge', ControlPacketParser.parse_acknowledge)
+ControlPacketParser.add_parser('Acknowledge', AcknowledgeRequestParser())
 
 class AcknowledgePacketParser(CommandPacketParser):
     """
