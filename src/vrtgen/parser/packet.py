@@ -146,8 +146,8 @@ class CommandPacketParser(PacketParser):
 
 CommandPacketParser.add_parser('Payload', CIFPayloadParser())
 CommandPacketParser.add_field_parser(ControlAcknowledgeMode.permit_partial, alias='Partial')
-CommandPacketParser.add_field_parser(ControlAcknowledgeMode.permit_warnings)
-CommandPacketParser.add_field_parser(ControlAcknowledgeMode.permit_errors)
+CommandPacketParser.add_field_parser(ControlAcknowledgeMode.permit_warnings, alias='Warnings')
+CommandPacketParser.add_field_parser(ControlAcknowledgeMode.permit_errors, alias='Errors')
 CommandPacketParser.add_field_parser(ControlAcknowledgeMode.action_mode, alias='Action')
 CommandPacketParser.add_field_parser(ControlAcknowledgeMode.nack_only, alias='NACK')
 CommandPacketParser.add_parser('Controllee', CommandPacketParser.parse_controllee)
@@ -170,7 +170,7 @@ class ControlPacketParser(CommandPacketParser):
             raise ValueError(value)
         ack = context.get_acknowledge(ack_type)
         ack.value = True
-        log.debug('Acknowledge %s', ack_type)        
+        log.debug('Acknowledge %s', ack_type)
 
     @classmethod
     def parse_acknowledge(cls, log, context, value):
@@ -182,11 +182,6 @@ class ControlPacketParser(CommandPacketParser):
 
         if not isinstance(value, list):
             value = [value]
-
-        # Acknowledge packet types are explicitly listed, assume not variable
-        context.ackv.set_constant()
-        context.ackx.set_constant()
-        context.acks.set_constant()
 
         for item in value:
             try:

@@ -240,11 +240,13 @@ class CppPacket:
         self.cam['fields'].append(cam_field)
 
     def add_cam_field(self, field):
-        if not field.is_constant:
+        if field.is_optional:
             self.add_member_from_field(field)
             value = None
         else:
             value = field.value
+            if value is None:
+                value = field.type()
         self.set_cam_field(field.field, value)
 
 

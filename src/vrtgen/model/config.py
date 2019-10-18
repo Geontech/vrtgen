@@ -160,30 +160,14 @@ class CommandPacketConfiguration(CIFPacketConfiguration):
         self.controllee = None
         self.controller = None
 
-        self.partial_permitted = self._add_field(
-            ControlAcknowledgeMode.permit_partial, Scope.CAM, Mode.MANDATORY
-        )
-        self.warnings = self._add_field(
-            ControlAcknowledgeMode.permit_warnings, Scope.CAM, Mode.MANDATORY
-        )
-        self.errors = self._add_field(
-            ControlAcknowledgeMode.permit_errors, Scope.CAM, Mode.MANDATORY
-        )
-        self.action = self._add_field(
-            ControlAcknowledgeMode.action_mode, Scope.CAM, Mode.MANDATORY
-        )
-        self.nack = self._add_field(
-            ControlAcknowledgeMode.nack_only, Scope.CAM, Mode.MANDATORY
-        )
-        self.ackv = self._add_field(
-            ControlAcknowledgeMode.request_validation, Scope.CAM, Mode.MANDATORY
-        )
-        self.ackx = self._add_field(
-            ControlAcknowledgeMode.request_execution, Scope.CAM, Mode.MANDATORY
-        )
-        self.acks = self._add_field(
-            ControlAcknowledgeMode.request_query, Scope.CAM, Mode.MANDATORY
-        )
+        self.permit_partial = self._add_field(ControlAcknowledgeMode.permit_partial, Scope.CAM)
+        self.permit_warnings = self._add_field(ControlAcknowledgeMode.permit_warnings, Scope.CAM)
+        self.permit_errors = self._add_field(ControlAcknowledgeMode.permit_errors, Scope.CAM)
+        self.action_mode = self._add_field(ControlAcknowledgeMode.action_mode, Scope.CAM)
+        self.nack_only = self._add_field(ControlAcknowledgeMode.nack_only, Scope.CAM)
+        self.ackv = self._add_field(ControlAcknowledgeMode.request_validation, Scope.CAM)
+        self.ackx = self._add_field(ControlAcknowledgeMode.request_execution, Scope.CAM)
+        self.acks = self._add_field(ControlAcknowledgeMode.request_query, Scope.CAM)
 
     def get_acknowledge(self, packet_type):
         """
