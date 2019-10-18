@@ -136,11 +136,17 @@ class CommandPacketParser(PacketParser):
 
     @classmethod
     def parse_controllee(cls, log, context, value):
+        """
+        Parses Controllee ID/UUID setting.
+        """
         context.controllee = cls._parse_identification(value)
         log.debug('Controllee ID = %s', context.controllee)
 
     @classmethod
     def parse_controller(cls, log, context, value):
+        """
+        Parses Controller ID/UUID setting.
+        """
         context.controller = cls._parse_identification(value)
         log.debug('Controller ID = %s', context.controller)
 
@@ -162,12 +168,18 @@ CommandPacketParser.add_parser('Controller', CommandPacketParser.parse_controlle
 
 class AcknowledgeRequestParser(SectionParser):
     """
-    Parser for acknowledment request settings in Control Packets.
+    Parser for acknowledgement packet requests in Control Packets.
     """
 
-AcknowledgeRequestParser.add_field_parser(ControlAcknowledgeMode.request_validation, alias='Validation')
-AcknowledgeRequestParser.add_field_parser(ControlAcknowledgeMode.request_execution, alias='Execution')
-AcknowledgeRequestParser.add_field_parser(ControlAcknowledgeMode.request_query, alias='Query-State')
+AcknowledgeRequestParser.add_field_parser(
+    ControlAcknowledgeMode.request_validation, alias='Validation'
+)
+AcknowledgeRequestParser.add_field_parser(
+    ControlAcknowledgeMode.request_execution, alias='Execution'
+)
+AcknowledgeRequestParser.add_field_parser(
+    ControlAcknowledgeMode.request_query, alias='Query-State'
+)
 
 class ControlPacketParser(CommandPacketParser):
     """
