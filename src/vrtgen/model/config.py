@@ -204,6 +204,10 @@ class AcknowledgePacketConfiguration(CommandPacketConfiguration):
         ack = self.get_acknowledge(packet_type)
         ack.value = True
 
+        self.warnings = self._add_field(ControlAcknowledgeMode.request_warning, Scope.CAM)
+        self.errors = self._add_field(ControlAcknowledgeMode.request_error, Scope.CAM)
+        self.partial = self._add_field(ControlAcknowledgeMode.partial, Scope.CAM)
+
 def create_packet(packet_type, name):
     args = [name]
     if packet_type == PacketType.DATA:

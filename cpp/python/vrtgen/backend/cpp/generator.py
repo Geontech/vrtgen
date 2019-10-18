@@ -227,14 +227,16 @@ class CppPacket:
             member['value'] = value
         self.members.append(member)
 
-    def add_member_from_field(self, field, name=None):
+    def add_member_from_field(self, field, name=None, optional=None):
         if name is None:
             name = field.name
         if field.value is not None:
             value = cpptypes.literal(field.value, field.type)
         else:
             value = None
-        self.add_member(name, cpptypes.value_type(field.type), field.is_optional, value)
+        if optional is None:
+            optional = field.is_optional
+        self.add_member(name, cpptypes.value_type(field.type), optional, value)
 
     def add_cam(self):
         self.cam = { 
@@ -265,7 +267,10 @@ class CppPacket:
 
     def add_cam_field(self, field):
         if field.is_optional:
-            self.add_member_from_field(field)
+            # In the context of CAM, "optional" fields mean that the value can
+            # vary (e.g., warnings might be set or not set on an AckV packet),
+            # not that its presence is optional.
+            self.add_member_from_field(field, optional=False)
             value = None
         else:
             value = field.value
@@ -369,7 +374,7 @@ class CppGenerator(Generator):
         self.generate_prologue(cppstruct, packet)
         self.generate_payload(cppstruct, packet)
 
-    def generate_command(self, cppstruct, packet):
+    def generate_command_prologue(self, cppstruct, packet):
         cppstruct.cifs[0]['enabled'] = True
         
         self.generate_prologue(cppstruct, packet)
@@ -397,17 +402,25 @@ class CppGenerator(Generator):
                 cppstruct.add_prologue_field(control.CommandPrologue.controller_id)
             # TODO: UUID support
 
-        self.generate_payload(cppstruct, packet)
-
     def generate_control(self, cppstruct, packet):
         cppstruct.set_header_field(prologue.CommandHeader.acknowledge_packet, 'false')
         cppstruct.set_header_field(prologue.CommandHeader.cancellation_packet, 'false')
-        self.generate_command(cppstruct, packet)
+        self.generate_command_prologue(cppstruct, packet)
+        self.generate_payload(cppstruct, packet)
 
     def generate_acks(self, cppstruct, packet):
         cppstruct.set_header_field(prologue.CommandHeader.acknowledge_packet, 'true')
         cppstruct.set_header_field(prologue.CommandHeader.cancellation_packet, 'false')
-        self.generate_command(cppstruct, packet)
+        self.generate_command_prologue(cppstruct, packet)
+        self.generate_payload(cppstruct, packet)
+
+    def generate_ackvx(self, cppstruct, packet):
+        cppstruct.set_header_field(prologue.CommandHeader.acknowledge_packet, 'true')
+        cppstruct.set_header_field(prologue.CommandHeader.cancellation_packet, 'false')
+        self.generate_command_prologue(cppstruct, packet)
+        # Don't include CIFs as-is
+        cppstruct.cifs[0]['enabled'] = False
+        # TODO: Add warning/error indicators
 
     def generate(self, packet):
         name = cpptypes.name_to_identifier(packet.name)
@@ -419,10 +432,13 @@ class CppGenerator(Generator):
             self.generate_context(model, packet)
         elif packet.packet_type == PacketType.CONTROL:
             model = CppPacket(name, packet, 'CommandHeader')
-            self.generate_command(model, packet)
+            self.generate_control(model, packet)
         elif packet.packet_type == PacketType.ACKS:
             model = CppPacket(name, packet, 'CommandHeader')
             self.generate_acks(model, packet)
+        elif packet.packet_type in (PacketType.ACKV, PacketType.ACKX):
+            model = CppPacket(name, packet, 'CommandHeader')
+            self.generate_ackvx(model, packet)
         else:
             raise NotImplementedError(packet.packet_type)
 
