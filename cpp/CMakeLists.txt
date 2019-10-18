@@ -115,6 +115,7 @@ target_include_directories(testutils PUBLIC
 
 add_executable(test_libvrtgen
     tests/libvrtgen/cif0.cpp
+    tests/libvrtgen/control.cpp
     tests/libvrtgen/packed.cpp
     tests/libvrtgen/prologue.cpp
     tests/libvrtgen/utils.cpp
