@@ -19,13 +19,14 @@ import os
 
 import jinja2
 
-from vrtgen.model import config
+from vrtgen.model.config import PacketType
 from vrtgen.model.field import Scope
 from vrtgen.types import enums
 from vrtgen.types import struct
 from vrtgen.types import prologue
 from vrtgen.types import cif0
 from vrtgen.types import cif1
+from vrtgen.types import control
 
 from vrtgen.backend.generator import Generator, GeneratorOption
 
@@ -69,17 +70,29 @@ JINJA_OPTIONS = {
 def optional_type(typename):
     return 'vrtgen::optional<{}>'.format(typename)
 
+def get_accessors(field, name=None):
+    if name is None:
+        name = field.name
+    identifier = cpptypes.name_to_identifier(field.name)
+    if isinstance(field, struct.Enable):
+        getter = 'is{}Enabled'.format(identifier)
+        setter = 'set{}Enabled'.format(identifier)
+    else:
+        getter = 'get' + identifier
+        setter = 'set' + identifier
+    return (getter, setter)
+
 class CppPacket:
     def __init__(self, name, packet, header_class):
         self.name = name
         self.helper = name + 'Helper'
         self.namespace = ''
-        self.type = cpptypes.enum_value(packet.packet_type())
+        self.type = cpptypes.enum_value(packet.packet_type_code)
         self.header = {
             'type': 'vrtgen::packing::' + header_class,
             'fields': [],
         }
-        self.set_header_field(prologue.Header.packet_type, cpptypes.enum_value(packet.packet_type()))
+        self.set_header_field(prologue.Header.packet_type, cpptypes.enum_value(packet.packet_type_code))
         self.set_header_field(prologue.Header.tsi, cpptypes.enum_value(packet.tsi))
         self.set_header_field(prologue.Header.tsf, cpptypes.enum_value(packet.tsf))
         self.set_header_field(
@@ -90,7 +103,7 @@ class CppPacket:
         )
 
         self.prologue = []
-
+        self.cam = None
         self.cifs = []
         self.add_cif(0)
         self.add_cif(1)
@@ -156,9 +169,16 @@ class CppPacket:
                     subfield_name = field.name + subfield.name
                 else:
                     subfield_name = subfield.name
+                sub_get, sub_set = get_accessors(subfield, name=subfield_name)
+                src_get, src_set = get_accessors(subfield.name)
                 subfield_dict = {
-                    'name': cpptypes.name_to_identifier(subfield_name),
-                    'srcname': cpptypes.name_to_identifier(subfield.name),
+                    'name': subfield_name,
+                    'getter': sub_get,
+                    'setter': sub_set,
+                    'src': {
+                        'getter': src_get,
+                        'setter': src_set,
+                    },
                     'title': subfield.name,
                 }
                 if subfield.is_constant:
@@ -207,14 +227,56 @@ class CppPacket:
             member['value'] = value
         self.members.append(member)
 
-    def add_member_from_field(self, field, name=None):
+    def add_member_from_field(self, field, name=None, optional=None):
         if name is None:
             name = field.name
         if field.value is not None:
             value = cpptypes.literal(field.value, field.type)
         else:
             value = None
-        self.add_member(name, cpptypes.value_type(field.type), field.is_optional, value)
+        if optional is None:
+            optional = field.is_optional
+        self.add_member(name, cpptypes.value_type(field.type), optional, value)
+
+    def add_cam(self):
+        self.cam = { 
+            'name' : 'ControlAcknowledgeMode',
+            'attr': 'cam',
+            'type' : 'vrtgen::packing::ControlAcknowledgeMode',
+            'struct': True,
+            'fields': [],
+        }
+        self.prologue.append(self.cam)
+
+    def set_cam_field(self, field, value=None):
+        assert self.cam is not None
+        getter, setter = get_accessors(field)
+        cam_field = {
+            'name': cpptypes.name_to_identifier(field.name),
+            'getter': getter,
+            'setter': setter,
+            'src': {
+                'getter': getter,
+                'setter': setter,
+            },
+            'title': field.name,
+        }
+        if value is not None:
+            cam_field['value'] = cpptypes.literal(value, field.type)
+        self.cam['fields'].append(cam_field)
+
+    def add_cam_field(self, field):
+        if field.is_optional:
+            # In the context of CAM, "optional" fields mean that the value can
+            # vary (e.g., warnings might be set or not set on an AckV packet),
+            # not that its presence is optional.
+            self.add_member_from_field(field, optional=False)
+            value = None
+        else:
+            value = field.value
+            if value is None:
+                value = field.type()
+        self.set_cam_field(field.field, value)
 
 
 class CppGenerator(Generator):
@@ -312,24 +374,72 @@ class CppGenerator(Generator):
         self.generate_prologue(cppstruct, packet)
         self.generate_payload(cppstruct, packet)
 
-    def generate_command(self, cppstruct, packet):
-        cppstruct.set_header_field(prologue.CommandHeader.acknowledge_packet, 'false')
-        cppstruct.set_header_field(prologue.CommandHeader.cancellation_packet, 'false')
+    def generate_command_prologue(self, cppstruct, packet):
         cppstruct.cifs[0]['enabled'] = True
         
         self.generate_prologue(cppstruct, packet)
+
+        # Add CAM configuration
+        cppstruct.add_cam()
+        for field in packet.get_fields(Scope.CAM):
+            cppstruct.add_cam_field(field)
+
+        cppstruct.add_prologue_field(control.CommandPrologue.message_id)
+
+        controllee_enable = packet.controllee is not None
+        cppstruct.set_cam_field(control.ControlAcknowledgeMode.controllee_enable, controllee_enable)
+        if controllee_enable:
+            cppstruct.set_cam_field(control.ControlAcknowledgeMode.controllee_format, packet.controllee)
+            if packet.controllee == enums.IdentifierFormat.WORD:
+                cppstruct.add_prologue_field(control.CommandPrologue.controllee_id)
+            # TODO: UUID support
+
+        controller_enable = packet.controller is not None
+        cppstruct.set_cam_field(control.ControlAcknowledgeMode.controller_enable, controller_enable)
+        if controller_enable:
+            cppstruct.set_cam_field(control.ControlAcknowledgeMode.controller_format, packet.controller)
+            if packet.controller == enums.IdentifierFormat.WORD:
+                cppstruct.add_prologue_field(control.CommandPrologue.controller_id)
+            # TODO: UUID support
+
+    def generate_control(self, cppstruct, packet):
+        cppstruct.set_header_field(prologue.CommandHeader.acknowledge_packet, 'false')
+        cppstruct.set_header_field(prologue.CommandHeader.cancellation_packet, 'false')
+        self.generate_command_prologue(cppstruct, packet)
         self.generate_payload(cppstruct, packet)
+
+    def generate_acks(self, cppstruct, packet):
+        cppstruct.set_header_field(prologue.CommandHeader.acknowledge_packet, 'true')
+        cppstruct.set_header_field(prologue.CommandHeader.cancellation_packet, 'false')
+        self.generate_command_prologue(cppstruct, packet)
+        self.generate_payload(cppstruct, packet)
+
+    def generate_ackvx(self, cppstruct, packet):
+        cppstruct.set_header_field(prologue.CommandHeader.acknowledge_packet, 'true')
+        cppstruct.set_header_field(prologue.CommandHeader.cancellation_packet, 'false')
+        self.generate_command_prologue(cppstruct, packet)
+        # Don't include CIFs as-is
+        cppstruct.cifs[0]['enabled'] = False
+        # TODO: Add warning/error indicators
 
     def generate(self, packet):
         name = cpptypes.name_to_identifier(packet.name)
-        if packet.packet_type() in (enums.PacketType.SIGNAL_DATA, enums.PacketType.SIGNAL_DATA_STREAM_ID):
+        if packet.packet_type == PacketType.DATA:
             model = CppPacket(name, packet, 'DataHeader')
             self.generate_data(model, packet)
-        elif isinstance(packet, config.ContextPacketConfiguration):
+        elif packet.packet_type == PacketType.CONTEXT:
             model = CppPacket(name, packet, 'ContextHeader')
             self.generate_context(model, packet)
-        elif isinstance(packet, config.CommandPacketConfiguration):
+        elif packet.packet_type == PacketType.CONTROL:
             model = CppPacket(name, packet, 'CommandHeader')
-            self.generate_command(model, packet)
+            self.generate_control(model, packet)
+        elif packet.packet_type == PacketType.ACKS:
+            model = CppPacket(name, packet, 'CommandHeader')
+            self.generate_acks(model, packet)
+        elif packet.packet_type in (PacketType.ACKV, PacketType.ACKX):
+            model = CppPacket(name, packet, 'CommandHeader')
+            self.generate_ackvx(model, packet)
+        else:
+            raise NotImplementedError(packet.packet_type)
 
         self.packets.append(model)

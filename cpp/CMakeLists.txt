@@ -115,6 +115,7 @@ target_include_directories(testutils PUBLIC
 
 add_executable(test_libvrtgen
     tests/libvrtgen/cif0.cpp
+    tests/libvrtgen/control.cpp
     tests/libvrtgen/packed.cpp
     tests/libvrtgen/prologue.cpp
     tests/libvrtgen/utils.cpp
@@ -149,9 +150,11 @@ endfunction()
 
 add_executable(test_codegen
     tests/codegen/test_basic.cpp
+    tests/codegen/test_control_ids.cpp
     tests/codegen/test_timestamp.cpp
 )
 add_codegen_file(test_codegen tests/codegen/basic.yaml)
+add_codegen_file(test_codegen tests/codegen/control_ids.yaml)
 add_codegen_file(test_codegen tests/codegen/timestamp.yaml)
 
 target_link_libraries(test_codegen vrtgen)

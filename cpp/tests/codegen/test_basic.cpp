@@ -22,6 +22,7 @@
 #include "basic.hpp"
 
 #include <vector>
+#include <bytes.hpp>
 
 TEST_CASE("Basic context message") {
     BasicContext packet_in;
@@ -53,31 +54,41 @@ TEST_CASE("Basic context message") {
     CHECK(packet_out.getReferencePointIdentifier() == 0x10AB7DE9);
 }
 
-TEST_CASE("Basic command message") {
-    BasicCommand packet_in;
-    packet_in.setStreamIdentifier(0x12345678);
-    packet_in.setRFReferenceFrequency(101.1e6);
+TEST_CASE("Basic control message") {
+    const vrtgen::StreamIdentifier STREAM_ID = 0x12345678;
+    const vrtgen::MessageIdentifier MESSAGE_ID = 0xFEDCBA98;
+    const double RF_FREQ = 101.1e6;
 
-    size_t packed_size = packing::BasicCommandHelper::bytes_required(packet_in);
-    CHECK(packed_size == 20);
+    BasicControl packet_in;
+    packet_in.setStreamIdentifier(STREAM_ID);
+    packet_in.setMessageID(MESSAGE_ID);
+    packet_in.setRFReferenceFrequency(RF_FREQ);
 
-    std::vector<unsigned char> data;
-    data.resize(20);
-    packing::BasicCommandHelper::pack(packet_in, data.data(), data.size());
+    const size_t PACKED_SIZE = 28;
+    REQUIRE(packing::BasicControlHelper::bytes_required(packet_in) == PACKED_SIZE);
+
+    bytes data;
+    data.resize(PACKED_SIZE);
+    packing::BasicControlHelper::pack(packet_in, data.data(), data.size());
 
     const vrtgen::packing::CommandHeader* header = reinterpret_cast<const vrtgen::packing::CommandHeader*>(data.data());
     CHECK(header->getPacketType() == vrtgen::PacketType::COMMAND);
     CHECK(header->getTSI() == vrtgen::TSI::NONE);
     CHECK(header->getTSF() == vrtgen::TSF::NONE);
     CHECK_FALSE(header->isClassIdentifierEnabled());
-    CHECK(header->getPacketSize() == 5);
+    CHECK(header->getPacketSize() == (PACKED_SIZE / 4));
     CHECK_FALSE(header->getAcknowledgePacket());
     CHECK_FALSE(header->getCancellationPacket());
+    // Stream ID should be at offset 4
+    CHECK(reinterpret_cast<const vrtgen::packing::StreamIdentifier*>(&data[4])->get() == STREAM_ID);
+    // Message ID should be at offset 12
+    CHECK(reinterpret_cast<const vrtgen::packing::MessageID*>(&data[12])->get() == MESSAGE_ID);
 
-    CHECK(packing::BasicCommandHelper::match(data.data(), data.size()));
+    CHECK(packing::BasicControlHelper::match(data.data(), data.size()));
 
-    BasicCommand packet_out;
-    packing::BasicCommandHelper::unpack(packet_out, data.data(), data.size());
-    CHECK(packet_out.getStreamIdentifier() == 0x12345678);
-    CHECK(packet_out.getRFReferenceFrequency() == 101.1e6);
+    BasicControl packet_out;
+    packing::BasicControlHelper::unpack(packet_out, data.data(), data.size());
+    CHECK(packet_out.getStreamIdentifier() == STREAM_ID);
+    CHECK(packet_out.getMessageID() == MESSAGE_ID);
+    CHECK(packet_out.getRFReferenceFrequency() == RF_FREQ);
 }

@@ -19,7 +19,7 @@
 Types for VITA 49 packet configurations.
 """
 
-from enum import Enum, auto
+from enum import Enum
 import warnings
 
 from vrtgen.types import enums
@@ -31,20 +31,24 @@ from vrtgen.types.control import ControlAcknowledgeMode
 
 from .field import FieldConfiguration, Mode, Scope
 
-class Acknowledgement(Enum):
+class PacketType(Enum):
     """
-    Acknowledgment packet types.
+    Packet subtypes.
     """
-    VALIDATION = auto()
-    EXECUTION = auto()
-    QUERY_STATE = auto()
+    DATA = 'data'
+    CONTEXT = 'context'
+    CONTROL = 'control'
+    ACKV = 'ackv'
+    ACKX = 'ackx'
+    ACKS = 'acks'
 
 class PacketConfiguration:
     """
     Base class for VRT packet configuration.
     """
-    def __init__(self, name):
+    def __init__(self, name, packet_type):
         self.name = name
+        self.packet_type = packet_type
         self._fields = []
         self.tsi = enums.TSI()
         self.tsf = enums.TSF()
@@ -99,22 +103,26 @@ class PacketConfiguration:
         # Override or extend in subclasses to check for invalid combinations
         # of field configurations.
 
-    def packet_type(self):
+    @property
+    def packet_type_code(self):
         """
         Returns the Packet Type Code for this packet configuration.
         """
-        raise NotImplementedError('packet_type')
+        return self._get_packet_type_code()
+
+    def _get_packet_type_code(self):
+        raise NotImplementedError('packet_type_code')
 
 class DataPacketConfiguration(PacketConfiguration):
     """
     Configuration for a Data Packet.
     """
     def __init__(self, name):
-        super().__init__(name)
+        super().__init__(name, PacketType.DATA)
 
         self._add_fields(Trailer, Scope.TRAILER)
 
-    def packet_type(self):
+    def _get_packet_type_code(self):
         if self.stream_id.is_enabled:
             return enums.PacketType.SIGNAL_DATA_STREAM_ID
         return enums.PacketType.SIGNAL_DATA
@@ -124,8 +132,8 @@ class CIFPacketConfiguration(PacketConfiguration):
     Base class for packet types that contain Context Information Fields.
     """
     # pylint: disable=abstract-method
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self, name, packet_type):
+        super().__init__(name, packet_type)
 
         self.stream_id.mode = Mode.MANDATORY
 
@@ -137,45 +145,80 @@ class ContextPacketConfiguration(CIFPacketConfiguration):
     Configuration for a Context Packet.
     """
     def __init__(self, name):
-        super().__init__(name)
+        super().__init__(name, PacketType.CONTEXT)
         self.timestamp_mode = enums.TSM()
 
-    def packet_type(self):
+    def _get_packet_type_code(self):
         return enums.PacketType.CONTEXT
 
 class CommandPacketConfiguration(CIFPacketConfiguration):
     """
     Configuration for a Command Packet.
     """
-    def __init__(self, name):
-        super().__init__(name)
-        self.acknowledge = []
+    def __init__(self, name, packet_type):
+        super().__init__(name, packet_type)
         self.controllee = None
         self.controller = None
 
-        self._action = self._add_field(
-            ControlAcknowledgeMode.action, Scope.PROLOGUE, Mode.MANDATORY
-        )
-        self._nack = self._add_field(
-            ControlAcknowledgeMode.nack, Scope.PROLOGUE, Mode.MANDATORY
-        )
+        self.permit_partial = self._add_field(ControlAcknowledgeMode.permit_partial, Scope.CAM)
+        self.permit_warnings = self._add_field(ControlAcknowledgeMode.permit_warnings, Scope.CAM)
+        self.permit_errors = self._add_field(ControlAcknowledgeMode.permit_errors, Scope.CAM)
+        self.action_mode = self._add_field(ControlAcknowledgeMode.action_mode, Scope.CAM)
+        self.nack_only = self._add_field(ControlAcknowledgeMode.nack_only, Scope.CAM)
+        self.ackv = self._add_field(ControlAcknowledgeMode.request_validation, Scope.CAM)
+        self.ackx = self._add_field(ControlAcknowledgeMode.request_execution, Scope.CAM)
+        self.acks = self._add_field(ControlAcknowledgeMode.request_query, Scope.CAM)
 
-        self._action.value = enums.ActionMode()
-        self._nack.value = False
+    def get_acknowledge(self, packet_type):
+        """
+        Returns the field associated with the given acknowledgement packet
+        type.
+        """
+        if packet_type == PacketType.ACKV:
+            return self.ackv
+        if packet_type == PacketType.ACKX:
+            return self.ackx
+        if packet_type == PacketType.ACKS:
+            return self.acks
+        raise ValueError(packet_type)
 
-    def packet_type(self):
+    def _get_packet_type_code(self):
         return enums.PacketType.COMMAND
 
-    @property
-    def action(self):
-        """
-        The Action Mode of this packet.
-        """
-        return self._action.value
+class ControlPacketConfiguration(CommandPacketConfiguration):
+    """
+    Configuration for a Control Packet.
+    """
+    def __init__(self, name):
+        super().__init__(name, PacketType.CONTROL)
 
-    @property
-    def nack(self):
-        """
-        True if this packet only requires acknowledgement on failures.
-        """
-        return self._nack.value
+class AcknowledgePacketConfiguration(CommandPacketConfiguration):
+    """
+    Configuration for an Acknowledge Packet.
+    """
+    def __init__(self, name, packet_type):
+        super().__init__(name, packet_type)
+        for field in (self.ackv, self.ackx, self.acks):
+            field.value = False
+            field.set_constant()
+        ack = self.get_acknowledge(packet_type)
+        ack.value = True
+
+        self.warnings = self._add_field(ControlAcknowledgeMode.request_warning, Scope.CAM)
+        self.errors = self._add_field(ControlAcknowledgeMode.request_error, Scope.CAM)
+        self.partial = self._add_field(ControlAcknowledgeMode.partial, Scope.CAM)
+
+def create_packet(packet_type, name):
+    args = [name]
+    if packet_type == PacketType.DATA:
+        cls = DataPacketConfiguration
+    elif packet_type == PacketType.CONTEXT:
+        cls = ContextPacketConfiguration
+    elif packet_type == PacketType.CONTROL:
+        cls = ControlPacketConfiguration
+    elif packet_type in (PacketType.ACKV, PacketType.ACKX, PacketType.ACKS):
+        cls = AcknowledgePacketConfiguration
+        args.append(packet_type)
+    else:
+        raise ValueError(packet_type)
+    return cls(*args)

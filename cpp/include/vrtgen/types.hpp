@@ -53,6 +53,7 @@ namespace vrtgen {
     typedef uint32_t StreamIdentifier;
     typedef uint32_t GenericIdentifier32;
     typedef uint16_t GenericIdentifier16;
+    typedef uint32_t MessageIdentifier;
 }
 
 #endif // _VRTGEN_TYPES_HPP

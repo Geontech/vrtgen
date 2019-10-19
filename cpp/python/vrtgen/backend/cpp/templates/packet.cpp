@@ -22,9 +22,9 @@
 {{field.type}}* {{field.attr}} = buffer.insert<{{field.type}}>();
 //%         for subfield in field.fields
 //%             if subfield.value is defined
-{{field.attr}}->set{{subfield.srcname}}({{subfield.value}});
+{{field.attr}}->{{subfield.src.setter}}({{subfield.value}});
 //%             else
-{{field.attr}}->set{{subfield.srcname}}(packet.get{{subfield.name}}());
+{{field.attr}}->{{subfield.src.setter}}(packet.{{subfield.getter}}());
 //%             endif
 //%         endfor
 //%     else
@@ -44,9 +44,9 @@ packet.set{{field.name}}(buffer.get<{{field.type}}>());
 //% macro unpack_struct(field)
 //%     for subfield in field.fields
 //%         if subfield.value is defined
-::validate({{field.attr}}->get{{subfield.srcname}}(), {{subfield.value}}, "invalid subfield {{subfield.title}}");
+::validate({{field.attr}}->{{subfield.src.getter}}(), {{subfield.value}}, "invalid subfield {{subfield.title}}");
 //%         else
-packet.set{{subfield.name}}({{field.attr}}->get{{subfield.srcname}}());
+packet.{{subfield.setter}}({{field.attr}}->{{subfield.src.getter}}());
 //%         endif
 //%     endfor
 //% endmacro

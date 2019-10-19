@@ -16,6 +16,7 @@
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
 from vrtgen.types import enums
+from vrtgen.model import config
 from vrtgen import parser
 
 def parse_single(document):
@@ -30,6 +31,8 @@ TestData:
 """
     packet = parse_single(document)
     assert packet.name == 'TestData'
+    assert packet.packet_type == config.PacketType.DATA
+    assert packet.packet_type_code == enums.PacketType.SIGNAL_DATA
     assert packet.tsi == enums.TSI.NONE
     assert packet.tsf == enums.TSF.NONE
     assert packet.stream_id.is_disabled
@@ -43,6 +46,8 @@ StreamIDTest:
 """
     packet = parse_single(document)
     assert packet.stream_id.is_required
+    assert packet.packet_type == config.PacketType.DATA
+    assert packet.packet_type_code == enums.PacketType.SIGNAL_DATA_STREAM_ID
 
 def test_context_defaults():
     document = """
@@ -51,6 +56,8 @@ TestContext:
 """
     packet = parse_single(document)
     assert packet.name == 'TestContext'
+    assert packet.packet_type == config.PacketType.CONTEXT
+    assert packet.packet_type_code == enums.PacketType.CONTEXT
     assert packet.tsi == enums.TSI.NONE
     assert packet.tsf == enums.TSF.NONE
     assert packet.stream_id.is_mandatory
@@ -66,17 +73,73 @@ TSMTest:
     packet = parse_single(document)
     assert packet.timestamp_mode == enums.TSM.COARSE
 
-def test_command_defaults():
+def test_control_defaults():
     document = """
-TestCommand:
-    type: command
+TestControl:
+    type: control
 """
     packet = parse_single(document)
-    assert packet.name == 'TestCommand'
+    assert packet.name == 'TestControl'
+    assert packet.packet_type == config.PacketType.CONTROL
+    assert packet.packet_type_code == enums.PacketType.COMMAND
     assert packet.tsi == enums.TSI.NONE
     assert packet.tsf == enums.TSF.NONE
     assert packet.stream_id.is_mandatory
     assert packet.class_id.is_disabled
+    assert not packet.ackv.value
+    assert not packet.ackx.value
+    assert not packet.acks.value
+
+def test_ackv_defaults():
+    document = """
+TestAckV:
+    type: AckV
+"""
+    packet = parse_single(document)
+    assert packet.name == 'TestAckV'
+    assert packet.packet_type == config.PacketType.ACKV
+    assert packet.packet_type_code == enums.PacketType.COMMAND
+    assert packet.tsi == enums.TSI.NONE
+    assert packet.tsf == enums.TSF.NONE
+    assert packet.stream_id.is_mandatory
+    assert packet.class_id.is_disabled
+    assert packet.ackv.value
+    assert not packet.ackx.value
+    assert not packet.acks.value
+
+def test_ackx_defaults():
+    document = """
+TestAckX:
+    type: AckX
+"""
+    packet = parse_single(document)
+    assert packet.name == 'TestAckX'
+    assert packet.packet_type == config.PacketType.ACKX
+    assert packet.packet_type_code == enums.PacketType.COMMAND
+    assert packet.tsi == enums.TSI.NONE
+    assert packet.tsf == enums.TSF.NONE
+    assert packet.stream_id.is_mandatory
+    assert packet.class_id.is_disabled
+    assert not packet.ackv.value
+    assert packet.ackx.value
+    assert not packet.acks.value
+
+def test_acks_defaults():
+    document = """
+TestAckS:
+    type: AckS
+"""
+    packet = parse_single(document)
+    assert packet.name == 'TestAckS'
+    assert packet.packet_type == config.PacketType.ACKS
+    assert packet.packet_type_code == enums.PacketType.COMMAND
+    assert packet.tsi == enums.TSI.NONE
+    assert packet.tsf == enums.TSF.NONE
+    assert packet.stream_id.is_mandatory
+    assert packet.class_id.is_disabled
+    assert not packet.ackv.value
+    assert not packet.ackx.value
+    assert packet.acks.value
 
 def test_timestamp():
     document = """

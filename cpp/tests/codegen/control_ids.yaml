@@ -1,0 +1,5 @@
+# Test for controllee and controller IDs
+ControlIDs:
+  type: Control
+  Controllee: word
+  Controller: word

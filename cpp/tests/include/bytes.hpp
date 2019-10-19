@@ -30,9 +30,19 @@
  * Typedef to abstract a comparison-capable data structure for use in testing
  * binary data, e.g.:
  *
- *     REQUIRE(value == bytes({1, 2, 3, 4}));
+ *     REQUIRE(value == bytes{1, 2, 3, 4});
  */
 typedef std::vector<uint8_t> bytes;
+
+/**
+ * Utility function to get a subset of a byte array for comparisons:
+ *
+ *     REQUIRE(range(value, 4, 8) == bytes{1,2,3,4});
+ */
+inline bytes range(const bytes& data, size_t start, size_t end)
+{
+    return bytes(data.begin() + start, data.begin() + end);
+}
 
 namespace Catch {
     /**
