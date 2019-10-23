@@ -111,6 +111,10 @@ class CppPacket:
         self.members = []
         self.class_id = None
 
+    @property
+    def is_variable_length(self):
+        return any(field.get('optional', False) for field in self.fields)
+
     def add_class_id(self, packet):
         self.class_id = self.create_packing_field(packet.class_id, namespaced=False)
         for field in packet.class_id.get_fields():

@@ -74,7 +74,13 @@ bool {{packet.helper}}::match(const void* ptr, size_t bufsize)
     return true;
 }
 
-size_t {{packet.helper}}::bytes_required(const {{packet.name}}& packet)
+//# Suppress warnings by only naming the argument if there are optional fields
+//% if packet.is_variable_length
+//%     set varname = 'packet'
+//% else
+//%     set varname = '/*unused*/'
+//% endif
+size_t {{packet.helper}}::bytes_required(const {{packet.name}}& {{varname}})
 {
     size_t bytes = sizeof({{packet.header.type}});
 //% for field in packet.prologue
@@ -110,7 +116,11 @@ void {{packet.helper}}::pack(const {{packet.name}}& packet, void* ptr, size_t bu
 //%     if cif.number != 0
     cif_0->setCIF{{cif.number}}Enable(true);
 //%     endif
+//%     if not packet.fields
+    buffer.insert<{{cif.header}}>();
+//%     else
     {{cif.header}}* cif_{{cif.number}} = buffer.insert<{{cif.header}}>();
+//%     endif
 //% endfor
 //% for field in packet.fields
 //%     if field.optional
