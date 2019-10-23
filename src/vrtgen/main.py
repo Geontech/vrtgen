@@ -24,41 +24,70 @@ import argparse
 import pkg_resources
 
 from vrtgen import parser
-from vrtgen.backend.generator import Generator
-
-from . import version
+from vrtgen.version import __version__
 
 ENTRY_POINT_ID = 'vrtgen.backend.packet'
 
-class NullGenerator(Generator):
-    """
-    Default generator that produces no output.
-    """
-    def generate(self, packet):
-        pass
-
-def load_generator(name):
-    if name is None:
-        return NullGenerator()
-
-    for entry_point in pkg_resources.iter_entry_points(ENTRY_POINT_ID):
-        if entry_point.name == name:
-            generator = entry_point.load()
-            return generator()
-
-    raise KeyError(name)
-
 def main():
+    """
+    Main entry point for vrtpktgen.
+    """
     logging.basicConfig()
 
-    arg_parser = argparse.ArgumentParser(description='Generate VITA 49.2 packet classes.')
-    arg_parser.add_argument('filename', nargs='+', help='VRT YAML definition file')
-    arg_parser.add_argument('-v', '--verbose', action='store_true', default=False,
-                            help='display debug messages')
-    arg_parser.add_argument('--version', action='version', version='%(prog)s '+version.__version__)
-    arg_parser.add_argument('-b', '--backend', help='code generator backend to target')
-    arg_parser.add_argument('-o', '--option', action='append', default=[],
-                            help='options for code generator backend')
+    common_parser = argparse.ArgumentParser(add_help=False)
+    common_parser.add_argument(
+        '-v',
+        '--verbose',
+        action='store_true',
+        default=False,
+        help='display debug messages'
+    )
+
+    arg_parser = argparse.ArgumentParser(
+        description='Generate VITA 49.2 packet classes.',
+        parents=[common_parser],
+        epilog="Run '%(prog)s GENERATOR --help' for more information on a generator.",
+    )
+    arg_parser.add_argument('--version', action='version', version='%(prog)s '+__version__)
+    sub_parser = arg_parser.add_subparsers(dest='generator', metavar='GENERATOR')
+    arg_parser.add_argument(
+        'filename',
+        nargs='+',
+        help='VRT YAML definition file',
+        metavar='FILENAME'
+    )
+
+    def _add_backend_parser(name, version, generator):
+        backend_parser = sub_parser.add_parser(
+            name,
+            help=generator.__doc__,
+            description=generator.__doc__,
+            parents=[common_parser],
+            usage='%(prog)s [OPTIONS] FILENAME [FILENAME ...]'
+        )
+        backend_parser.add_argument(
+            'filename',
+            nargs='*',
+            help='VRT YAML definition file',
+            metavar='FILENAME'
+        )
+        backend_parser.add_argument('--version', action='version', version='%(prog)s '+version)
+        for attr, option in generator.get_options():
+            backend_parser.add_argument(
+                option.opt,
+                dest=attr,
+                type=option.type,
+                help=option.help,
+                default=option.default
+            )
+
+    # Load all registered generators and include their command line options
+    generators = {}
+    for entry_point in pkg_resources.iter_entry_points(ENTRY_POINT_ID):
+        version = entry_point.dist.version
+        generator = entry_point.load()
+        _add_backend_parser(entry_point.name, version, generator)
+        generators[entry_point.name] = generator
 
     args = arg_parser.parse_args()
 
@@ -66,20 +95,14 @@ def main():
         logging.getLogger().setLevel(logging.DEBUG)
 
     try:
-        generator = load_generator(args.backend)
+        generator = generators[args.generator]()
     except KeyError:
         raise SystemExit("invalid backend '"+args.backend+"'")
 
-    for option in args.option:
-        if '=' in option:
-            name, value = option.split('=', 1)
-        else:
-            name = option
-            value = True
-        try:
-            generator.set_option(name, value)
-        except Exception as exc:
-            raise SystemExit(str(exc))
+    for attr, _ in generator.get_options():
+        value = getattr(args, attr, None)
+        if value is not None:
+            setattr(generator, attr, value)
 
     for filename in args.filename:
         logging.debug('Parsing %s', filename)

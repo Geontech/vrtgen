@@ -22,9 +22,9 @@
 {{field.type}}* {{field.attr}} = buffer.insert<{{field.type}}>();
 //%         for subfield in field.fields
 //%             if subfield.value is defined
-{{field.attr}}->set{{subfield.srcname}}({{subfield.value}});
+{{field.attr}}->{{subfield.src.setter}}({{subfield.value}});
 //%             else
-{{field.attr}}->set{{subfield.srcname}}(packet.get{{subfield.name}}());
+{{field.attr}}->{{subfield.src.setter}}(packet.{{subfield.getter}}());
 //%             endif
 //%         endfor
 //%     else
@@ -44,9 +44,9 @@ packet.set{{field.name}}(buffer.get<{{field.type}}>());
 //% macro unpack_struct(field)
 //%     for subfield in field.fields
 //%         if subfield.value is defined
-::validate({{field.attr}}->get{{subfield.srcname}}(), {{subfield.value}}, "invalid subfield {{subfield.title}}");
+::validate({{field.attr}}->{{subfield.src.getter}}(), {{subfield.value}}, "invalid subfield {{subfield.title}}");
 //%         else
-packet.set{{subfield.name}}({{field.attr}}->get{{subfield.srcname}}());
+packet.{{subfield.setter}}({{field.attr}}->{{subfield.src.getter}}());
 //%         endif
 //%     endfor
 //% endmacro
@@ -74,7 +74,13 @@ bool {{packet.helper}}::match(const void* ptr, size_t bufsize)
     return true;
 }
 
-size_t {{packet.helper}}::bytes_required(const {{packet.name}}& packet)
+//# Suppress warnings by only naming the argument if there are optional fields
+//% if packet.is_variable_length
+//%     set varname = 'packet'
+//% else
+//%     set varname = '/*unused*/'
+//% endif
+size_t {{packet.helper}}::bytes_required(const {{packet.name}}& {{varname}})
 {
     size_t bytes = sizeof({{packet.header.type}});
 //% for field in packet.prologue
@@ -110,7 +116,11 @@ void {{packet.helper}}::pack(const {{packet.name}}& packet, void* ptr, size_t bu
 //%     if cif.number != 0
     cif_0->setCIF{{cif.number}}Enable(true);
 //%     endif
+//%     if not packet.fields
+    buffer.insert<{{cif.header}}>();
+//%     else
     {{cif.header}}* cif_{{cif.number}} = buffer.insert<{{cif.header}}>();
+//%     endif
 //% endfor
 //% for field in packet.fields
 //%     if field.optional

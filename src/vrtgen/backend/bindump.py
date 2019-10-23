@@ -30,32 +30,39 @@ from vrtgen.types.cif1 import CIF1
 
 from vrtgen.model.field import Scope
 
-from .generator import Generator
+from .generator import Generator, GeneratorOption
 
 __all__ = ('BinaryDumper')
 
-def group_bytes(data, size=8):
-    for pos in range(0, len(data), size):
-        yield data[pos:pos+size]
-
-def dump_bytes(data, stream):
-    offset = 0
-    for chunk in group_bytes(data):
-        data = ''.join('{:02x}'.format(ch) for ch in chunk)
-        stream.write('0x{0:04x} {1} {2}\n'.format(offset, data[:8], data[8:]))
-        offset += 0x10
-
-def get_default(value, defval):
-    if value is None:
-        return defval
-    return value
+def dump_bytes(data, stream, words):
+    """
+    Prints VRT words in hex to an output stream.
+    """
+    width = words * 4
+    for offset in range(0, len(data), width):
+        stream.write('0x{:04x} '.format(offset))
+        chunk = data[offset:offset+width]
+        for pos, val in enumerate(chunk):
+            stream.write('{:02x}'.format(val))
+            if pos % 4 == 3:
+                # Add a space between each VRT word
+                stream.write(' ')
+        stream.write('\n')
 
 class BinaryDumper(Generator):
     """
     Writes binary dumps of default packet configurations to the console.
     """
-    def _get_prologue(self, packet):
-        packet_type = packet.packet_type()
+    width = GeneratorOption(
+        "--width",
+        doc="number of 32-bit words per line [2]",
+        dtype=int,
+        defval=2,
+    )
+
+    @staticmethod
+    def _get_prologue(packet):
+        packet_type = packet.packet_type_code
         if packet_type.is_data:
             header = DataHeader()
         elif packet_type.is_context:
@@ -68,19 +75,20 @@ class BinaryDumper(Generator):
         header.packet_type = packet_type
         header.tsi = packet.tsi
         header.tsf = packet.tsf
-        prologue = bytes()
+        header.class_id_enable = packet.class_id.is_set
+        prologue = header.pack()
         if packet.stream_id.is_set:
             prologue += struct.pack('>I', packet.stream_id.value)
-        if packet.class_id.is_set:
-            header.class_id_enable = True
+        if header.class_id_enable:
             prologue += packet.class_id.value.pack()
         if packet.tsi != TSI.NONE:
             prologue += struct.pack('>I', 0)
         if packet.tsf != TSF.NONE:
             prologue += struct.pack('>Q', 0)
-        return header.pack() + prologue
+        return prologue
 
-    def _get_cif_prologue(self, packet):
+    @staticmethod
+    def _get_cif_prologue(packet):
         cif0 = CIF0.Enables()
         for field in packet.get_fields(Scope.CIF0):
             if field.is_required or field.is_set:
@@ -98,7 +106,8 @@ class BinaryDumper(Generator):
 
         return prologue
 
-    def _get_trailer_bytes(self, packet):
+    @staticmethod
+    def _get_trailer_bytes(packet):
         trailer = Trailer()
         for config in packet.get_fields(Scope.TRAILER):
             if not config.is_required and not config.is_set:
@@ -107,15 +116,18 @@ class BinaryDumper(Generator):
         return trailer.pack()
 
     def generate(self, packet):
-        packet_type = packet.packet_type()
+        packet_type = packet.packet_type_code
         print('Packet ' + packet.name)
         print('Prologue:')
         prologue = self._get_prologue(packet)
         if not packet_type.is_data:
             prologue += self._get_cif_prologue(packet)
-        dump_bytes(prologue, sys.stdout)
 
-        if packet_type.is_data:
-            print('Trailer:')
-            trailer = self._get_trailer_bytes(packet)
-            dump_bytes(trailer, sys.stdout)
+        dump_bytes(prologue, sys.stdout, self.width)
+
+        if not packet_type.is_data:
+            return
+
+        print('Trailer:')
+        trailer = self._get_trailer_bytes(packet)
+        dump_bytes(trailer, sys.stdout, self.width)

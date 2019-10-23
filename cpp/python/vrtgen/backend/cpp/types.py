@@ -15,51 +15,79 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
+"""
+Mappings of VRT types to C++ types.
+"""
+
 from vrtgen.types import basic
 from vrtgen.types import enums
 from vrtgen.types import struct
 
 def name_to_identifier(name):
-    identifier = ''
-    for ch in name:
-        if ch.isalnum():
-            identifier += ch
-        elif ch in '.':
-            identifier += '_'
-    return identifier
+    """
+    Returns a valid C++ identifier for a string name.
+    """
+    def map_char(value):
+        if value.isalnum():
+            return value
+        if value in '.':
+            return '_'
+        return ''
+    return ''.join(map_char(ch) for ch in name)
 
 def int_type(bits, signed):
-    if bits > 32:
-        ctype = 'int64_t'
-    elif bits > 16:
-        ctype = 'int32_t'
-    elif bits > 8:
-        ctype = 'int16_t'
-    else:
-        ctype = 'int8_t'
+    """
+    Returns the C++ sized integer type for a given bit width and sign bit.
+    """
     if not signed:
-        ctype = 'u' + ctype
-    return ctype
+        return 'u' + int_type(bits, True)
+    if bits > 32:
+        return 'int64_t'
+    if bits > 16:
+        return 'int32_t'
+    if bits > 8:
+        return 'int16_t'
+    return 'int8_t'
 
 def enum_namespace(datatype):
+    """
+    Returns the C++ namespace that contains a VRT enumeration.
+    """
     return 'vrtgen::' + name_to_identifier(datatype.__name__)
 
 def enum_type(datatype):
+    """
+    Returns the C++ enum type for a VRT enumeration.
+    """
     return enum_namespace(datatype) + '::Code'
 
 def enum_value(value):
+    """
+    Returns the C++ enum label for a VRT enumeration value.
+    """
     return '{}::{}'.format(enum_namespace(type(value)), value.name)
 
 def float_type(bits):
+    """
+    Returns the C++ floating point type for a given bit width.
+    """
     if bits >= 32:
         return 'double'
-    else:
-        return 'float'
+    return 'float'
 
 def fixed_type(bits, radix, signed=True):
+    """
+    Returns the C++ fixed point packing class for a VRT fixed point type.
+    """
     return 'fixed<{},{},{}>'.format(int_type(bits, signed), radix, float_type(bits))
 
 def value_type(datatype):
+    """
+    Returns the C++ API data type for a given VRT type.
+
+    The C++ API data type is used in the external interfaces to packing
+    classes, and is not necessarily the same as the packed type.
+    """
     if datatype == basic.StreamIdentifier:
         return 'vrtgen::StreamIdentifier'
     if issubclass(datatype, basic.BooleanType):
@@ -77,6 +105,9 @@ def value_type(datatype):
     raise NotImplementedError(datatype.__name__)
 
 def literal(value, datatype):
+    """
+    Returns a value as a C++ literal for a given data type.
+    """
     if issubclass(datatype, enums.BinaryEnum):
         return enum_value(value)
     if issubclass(datatype, basic.BooleanType):

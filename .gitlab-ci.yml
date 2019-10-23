@@ -1,5 +1,6 @@
 stages:
     - test
+    - package
 
 image: python:3.6-alpine
 
@@ -35,3 +36,29 @@ test:cpp:
         - export MAKEFLAGS="-j$(nproc)"
     script:
         - make check TEST_OPTIONS="-s --use-colour=yes"
+
+# Build release RPMs
+rpmbuild:
+    stage: package
+    image: centos:7
+    before_script:
+        - yum install -y epel-release rpm-build python3
+        - yum install -y cmake3 gcc-c++ make
+    script:
+        # Base package
+        - python3 setup.py bdist_rpm
+        # C++ codegen plugin
+        - cd cpp
+        - python3 setup.py bdist_rpm --dist-dir ../dist
+        - cd ..
+        # C++ library packaging (requires installing Python RPMs)
+        - yum install -y dist/vrtgen-*.noarch.rpm
+        - cmake3 -B release cpp
+        - cd release
+        - cpack3 -G RPM
+        - mv *.rpm ../dist
+    artifacts:
+        paths:
+            - dist/*.rpm
+    only:
+        - tags

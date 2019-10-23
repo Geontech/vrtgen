@@ -3,7 +3,7 @@ BasicContext:
   payload:
     Reference Point Identifier: required
 
-BasicCommand:
-  type: command
+BasicControl:
+  type: control
   payload:
     RF Reference Frequency: required

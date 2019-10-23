@@ -96,11 +96,11 @@ class Enable(StructItem):
         Creates a field associated with this enable.
 
         If this enable field does not already have a name, sets the name to
-        the linked field's name plus the string " Enable".
+        the linked field's name.
         """
         assert self.indicator is None
         if self.name is None:
-            self.name = field.name + ' Enable'
+            self.name = field.name
         self.indicator = field
 
 class Reserved(StructItem):

@@ -20,9 +20,7 @@ Parser classes for generating VITA 49 packet configurations from Python
 dictionaries.
 """
 
-import logging
-
-from vrtgen.model import config
+from vrtgen.model.config import PacketType
 from vrtgen.types.prologue import ContextHeader, Prologue
 from vrtgen.types.trailer import Trailer
 from vrtgen.types.control import ControlAcknowledgeMode
@@ -68,40 +66,14 @@ class TimestampParser(MappingParser):
 TimestampParser.add_parser('integer', TimestampParser.parse_integer)
 TimestampParser.add_parser('fractional', TimestampParser.parse_fractional)
 
-class PrologueParser(SectionParser):
+class PacketParser(SectionParser):
     """
-    Base parser for packet prologue configuration.
+    Base parser for packet configuration.
     """
 
-PrologueParser.add_field_parser(Prologue.stream_id, alias='Stream ID')
-PrologueParser.add_field_parser(Prologue.class_id, field.ClassIDParser(), alias='Class ID')
-PrologueParser.add_parser('timestamp', TimestampParser())
-
-class PacketParser:
-    """
-    Base class for parsers that create and configure VITA 49 packets.
-    """
-    def __init__(self, name):
-        self.name = name
-        self.log = logging.getLogger(name)
-
-    def create_packet(self, name):
-        """
-        Creates a default packet configuration.
-        """
-        raise NotImplementedError()
-
-    def _get_parser(self):
-        raise NotImplementedError()
-
-    def parse(self, value):
-        """
-        Creates a packet configuration from a Python dictionary.
-        """
-        packet = self.create_packet(self.name)
-        parser = self._get_parser()
-        parser(self.log, packet, value)
-        return packet
+PacketParser.add_field_parser(Prologue.stream_id, alias='Stream ID')
+PacketParser.add_field_parser(Prologue.class_id, field.ClassIDParser(), alias='Class ID')
+PacketParser.add_parser('timestamp', TimestampParser())
 
 # Data Packet parser classes
 class TrailerParser(SectionParser):
@@ -121,27 +93,17 @@ TrailerParser.add_field_parser(Trailer.sample_frame)
 TrailerParser.add_parser(Trailer.user_defined.name, unimplemented_parser('User-defined bits'))
 TrailerParser.add_field_parser(Trailer.associated_context_packets)
 
-class DataSectionParser(PrologueParser):
-    """
-    Parser for Data Packet configuration sections.
-    """
-
-DataSectionParser.add_parser('Trailer', TrailerParser())
-
 class DataPacketParser(PacketParser):
     """
     Parser for Data Packet configuration.
     """
-    def create_packet(self, name):
-        return config.DataPacketConfiguration(name)
 
-    def _get_parser(self):
-        return DataSectionParser()
+DataPacketParser.add_parser('Trailer', TrailerParser())
 
 # Context Packet parser classes
-class ContextSectionParser(PrologueParser):
+class ContextPacketParser(PacketParser):
     """
-    Parser for Context Packet configuration sections.
+    Parser for Context Packet configuration.
     """
     @staticmethod
     def parse_tsm(log, context, value):
@@ -151,62 +113,19 @@ class ContextSectionParser(PrologueParser):
         context.timestamp_mode = value_parser.parse_tsm(value)
         log.debug('TSM = %s', context.timestamp_mode)
 
-ContextSectionParser.add_parser(
+ContextPacketParser.add_parser(
     ContextHeader.timestamp_mode.name,
-    ContextSectionParser.parse_tsm,
+    ContextPacketParser.parse_tsm,
     alias='TSM'
 )
-ContextSectionParser.add_parser('Payload', CIFPayloadParser())
-
-class ContextPacketParser(PacketParser):
-    """
-    Parser for Context Packet configuration.
-    """
-    def create_packet(self, name):
-        return config.ContextPacketConfiguration(name)
-
-    def _get_parser(self):
-        return ContextSectionParser()
+ContextPacketParser.add_parser('Payload', CIFPayloadParser())
 
 # Command Packet parser classes
 
-class CommandSectionParser(PrologueParser):
+class CommandPacketParser(PacketParser):
     """
-    Parser for Command Packet configuration sections.
+    Base parser for Command Packet configuration.
     """
-    _ACKNOWLEDGE_TYPES = {
-        'validation': config.Acknowledgement.VALIDATION,
-        'execution': config.Acknowledgement.EXECUTION,
-        'query-state': config.Acknowledgement.QUERY_STATE,
-    }
-    @classmethod
-    def _parse_acknowledge_type(cls, log, context, value):
-        try:
-            ack_type = cls._ACKNOWLEDGE_TYPES[value.casefold()]
-        except KeyError:
-            raise ValueError(value)
-        log.debug('Acknowledge %s', ack_type)
-        context.acknowledge.append(ack_type)
-
-    @classmethod
-    def parse_acknowledge(cls, log, context, value):
-        """
-        Parses acknowledgement packet types.
-        """
-        if isinstance(value, dict):
-            raise TypeError('acknowledgement packet types must be a sequence or scalar')
-
-        if not isinstance(value, list):
-            value = [value]
-
-        for item in value:
-            try:
-                cls._parse_acknowledge_type(log, context, item)
-            except ValueError:
-                log.warning("Invalid acknowledgement packet type '%s'", item)
-            except TypeError:
-                log.error('Acknowledgement packet type must be a string')
-
     @staticmethod
     def _parse_identification(value):
         if not isinstance(value, str):
@@ -217,27 +136,86 @@ class CommandSectionParser(PrologueParser):
 
     @classmethod
     def parse_controllee(cls, log, context, value):
+        """
+        Parses Controllee ID/UUID setting.
+        """
         context.controllee = cls._parse_identification(value)
         log.debug('Controllee ID = %s', context.controllee)
 
     @classmethod
     def parse_controller(cls, log, context, value):
+        """
+        Parses Controller ID/UUID setting.
+        """
         context.controller = cls._parse_identification(value)
         log.debug('Controller ID = %s', context.controller)
 
-CommandSectionParser.add_parser('Payload', CIFPayloadParser())
-CommandSectionParser.add_parser('Acknowledge', CommandSectionParser.parse_acknowledge)
-CommandSectionParser.add_field_parser(ControlAcknowledgeMode.action, alias='Action')
-CommandSectionParser.add_field_parser(ControlAcknowledgeMode.nack, alias='NACK')
-CommandSectionParser.add_parser('Controllee', CommandSectionParser.parse_controllee)
-CommandSectionParser.add_parser('Controller', CommandSectionParser.parse_controller)
-
-class CommandPacketParser(PacketParser):
+class PermitParser(SectionParser):
     """
-    Parser for Command Packet configuration.
+    Parser for 'permit' settings on Command Packets.
     """
-    def create_packet(self, name):
-        return config.CommandPacketConfiguration(name)
 
-    def _get_parser(self):
-        return CommandSectionParser()
+PermitParser.add_field_parser(ControlAcknowledgeMode.permit_partial, alias='Partial')
+PermitParser.add_field_parser(ControlAcknowledgeMode.permit_warnings, alias='Warnings')
+PermitParser.add_field_parser(ControlAcknowledgeMode.permit_errors, alias='Errors')
+
+CommandPacketParser.add_parser('Payload', CIFPayloadParser())
+CommandPacketParser.add_parser('Permit', PermitParser())
+CommandPacketParser.add_field_parser(ControlAcknowledgeMode.action_mode, alias='Action')
+CommandPacketParser.add_field_parser(ControlAcknowledgeMode.nack_only, alias='NACK')
+CommandPacketParser.add_parser('Controllee', CommandPacketParser.parse_controllee)
+CommandPacketParser.add_parser('Controller', CommandPacketParser.parse_controller)
+
+class AcknowledgeRequestParser(SectionParser):
+    """
+    Parser for acknowledgement packet requests in Control Packets.
+    """
+
+AcknowledgeRequestParser.add_field_parser(
+    ControlAcknowledgeMode.request_validation, alias='Validation'
+)
+AcknowledgeRequestParser.add_field_parser(
+    ControlAcknowledgeMode.request_execution, alias='Execution'
+)
+AcknowledgeRequestParser.add_field_parser(
+    ControlAcknowledgeMode.request_query, alias='Query-State'
+)
+
+class ControlPacketParser(CommandPacketParser):
+    """
+    Parser for Control Packet configuration.
+    """
+
+ControlPacketParser.add_parser('Acknowledge', AcknowledgeRequestParser())
+
+class AckSPacketParser(CommandPacketParser):
+    """
+    Parser for Acknowledge Query-Status Packet configuration.
+    """
+
+class AckVXPacketParser(CommandPacketParser):
+    """
+    Parser for Acknowledge Validation and Acknowledge Execution Packet
+    configuration.
+    """
+
+AckVXPacketParser.add_field_parser(ControlAcknowledgeMode.request_warning, alias='Warnings')
+AckVXPacketParser.add_field_parser(ControlAcknowledgeMode.request_error, alias='Errors')
+AckVXPacketParser.add_field_parser(ControlAcknowledgeMode.partial, alias='Partial')
+
+def create_parser(packet_type):
+    """
+    Returns a parser for the given packet type.
+    """
+    if packet_type == PacketType.DATA:
+        return DataPacketParser()
+    if packet_type == PacketType.CONTEXT:
+        return ContextPacketParser()
+    if packet_type == PacketType.CONTROL:
+        return ControlPacketParser()
+    if packet_type == PacketType.ACKV:
+        return AckSPacketParser()
+    if packet_type in (PacketType.ACKX, PacketType.ACKS):
+        return AckVXPacketParser()
+
+    raise ValueError("Invalid packet type '{}'".format(packet_type))

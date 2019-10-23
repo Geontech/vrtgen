@@ -43,7 +43,7 @@ namespace vrtgen {
         struct field_traits
         {
             static constexpr unsigned shift = pos - bits + 1;
-            static constexpr unsigned mask = (1 << bits) - 1;
+            static constexpr unsigned mask = ((1 << bits) - 1) << shift;
         };
 
         template <typename T, unsigned bits>
@@ -72,7 +72,9 @@ namespace vrtgen {
         {
             static inline unsigned store(bool value)
             {
-                return -1 & field_packing::mask;
+                // A little sleight-of-hand: value must be 0 or 1, so taking
+                // the negative integer value will set all bits to be the same
+                return (-value & field_packing::mask);
             }
         };
 
@@ -81,11 +83,10 @@ namespace vrtgen {
         {
             static inline signed load(unsigned value)
             {
+                // Extract sign bit in MSB and expand its value to all sign
+                // bits in the output type.
                 bool sign_bit = value & (1<<(bits-1));
-                if (sign_bit) {
-                    value |= ~field_packing::mask;
-                }
-                return value;
+                return (-sign_bit & ~field_packing::mask) | value;
             }
         };
 
@@ -151,7 +152,7 @@ namespace vrtgen {
             typedef detail::field_converter<T,bits,Converter> converter;
             // Fetch the stored bits in host order, then extract the field
             // bits
-            value_type value = (swap_type::swap(m_value) >> traits::shift) & traits::mask;
+            value_type value = (swap_type::swap(m_value) & traits::mask) >> traits::shift;
             return converter::load(value);
         }
 

@@ -16,6 +16,14 @@
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
 """
-Version information for vrtgen.
+No-op generator backend for syntax checking of YAML.
 """
-__version__ = '0.2.0'
+
+from .generator import Generator
+
+class Check(Generator):
+    """
+    Validates packet definitions.
+    """
+    def generate(self, packet):
+        pass

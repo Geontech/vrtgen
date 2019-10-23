@@ -63,7 +63,7 @@ TEST_CASE("Q9.7 fixed-point conversion", "[fixed]")
 
     // Minimum negative integer
     CHECK(fixed_type::to_int(-256.0) == int16_t(0x8000));
-    CHECK(fixed_type::from_int(0x8000) == -256.0);
+    CHECK(fixed_type::from_int(int16_t(0x8000)) == -256.0);
 
     // Smallest positive fraction
     CHECK(fixed_type::to_int(1.0/128.0) == 0x0001);
@@ -75,7 +75,7 @@ TEST_CASE("Q9.7 fixed-point conversion", "[fixed]")
 
     // Smallest negative fraction (binary rep is all 1s)
     CHECK(fixed_type::to_int(-1.0/128.0) == int16_t(0xFFFF));
-    CHECK(fixed_type::from_int(0xFFFF) == -1.0/128.0);
+    CHECK(fixed_type::from_int(int16_t(0xFFFF)) == -1.0/128.0);
 }
 
 TEST_CASE("UQ27.5 fixed-point conversion", "[fixed]")
