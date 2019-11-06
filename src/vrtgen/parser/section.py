@@ -20,7 +20,7 @@ Classes for parsing sections of a VITA 49 packet definition.
 """
 from vrtgen.types.struct import Struct
 
-from .field import StructFieldParser, SimpleFieldParser
+from .field import FieldParser, StructFieldParser, SimpleFieldParser
 from .mapping import MappingParser
 
 def bind_parser(name, parser):
@@ -49,15 +49,27 @@ class SectionParser(MappingParser):
         Registers a parser for a specific VITA 49 field.
         """
         assert field.type is not None
-        if issubclass(field.type, Struct):
-            if parser is None:
-                parser = StructFieldParser.factory(field)
-            else:
-                parser = StructFieldParser(parser)
-        else:
-            if parser is None:
-                parser = SimpleFieldParser.factory(field)
-            else:
-                parser = SimpleFieldParser(parser)
+        parser = cls._wrap_field_parser(field, parser)
         name = field.name
         cls.add_parser(name, bind_parser(name, parser), alias)
+
+    @staticmethod
+    def _wrap_field_parser(field, parser):
+        # Parser is already a field parser, pass through
+        if isinstance(parser, FieldParser):
+            return parser
+
+        # Otherwise it's a value parser, determine whether to treat it as a
+        # struct or a simple
+        if issubclass(field.type, Struct):
+            cls = StructFieldParser
+        else:
+            cls = SimpleFieldParser
+
+        # Value parser was given, use it
+        if parser is not None:
+            return cls(parser)
+
+        # All we have is a field, use the parser factory
+        return cls.factory(field)
+
