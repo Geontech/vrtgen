@@ -22,54 +22,36 @@
 namespace vrtgen {
     namespace detail {
         template <unsigned bytes>
-        struct pad_traits;
+        struct padded_base;
 
         template<>
-        struct pad_traits<2>
+        struct padded_base<2>
         {
-            typedef unsigned short pad_type;
+            unsigned short m_reserved{0};
         };
 
-        template <unsigned bytes>
-        struct field_base
+        template <typename T, unsigned bytes>
+        struct padded_type : private padded_base<bytes>, public T
         {
-            field_base() :
-                m_reserved(0)
-            {
-            }
-
-            typename pad_traits<bytes>::pad_type m_reserved;
+            using T::T;
         };
 
-        template<>
-        struct field_base<0>
+        template <typename T, unsigned bytes>
+        struct field_type
         {
+            typedef padded_type<T,bytes> type;
+        };
+
+        template <typename T>
+        struct field_type<T,0>
+        {
+            typedef T type;
         };
     }
 
     template <typename T>
-    struct field : private detail::field_base<sizeof(T) % 4>
+    struct field
     {
-    public:
-        typedef T packed_type;  
-        typedef typename T::value_type value_type;
-
-        explicit field(value_type value) :
-            m_value(value)
-        {
-        }
-
-        value_type get() const
-        {
-            return m_value.get();
-        }
-
-        void set(value_type value)
-        {
-            m_value.set(value);
-        }
-
-    private:
-        packed_type m_value;
+        typedef typename detail::field_type<T, sizeof(T)%4>::type type;
     };
 }
