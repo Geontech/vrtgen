@@ -22,6 +22,15 @@ from . import basic
 from .struct import Struct, Field, Reserved
 from .cifmeta import CIFFields
 from .cif0 import Gain
+from .user import UserDefinedType
+
+class DiscreteIO32(UserDefinedType, bits=32):
+    """
+    """
+
+class DiscreteIO64(UserDefinedType, bits=64):
+    """
+    """
 
 class Polarization(Struct):
     """
@@ -192,10 +201,10 @@ class CIF1(CIFFields):
     index_list = Field('Index List', None)#IndexListOptions)
 
     # Discrete I/O 32-bit (1/6): 32 additional bits of user-defined fields
-    discrete_io_32 = Field('Discrete I/O 32', basic.Integer32)
+    discrete_io_32 = Field('Discrete I/O 32', DiscreteIO32)
 
     # Discrete I/O 64-bit (1/7): 64 additional bits of user-defined fields
-    discrete_io_64 = Field('Discrete I/O 64', basic.Integer64)
+    discrete_io_64 = Field('Discrete I/O 64', DiscreteIO64)
 
     # Health Status (1/4): 16-bit identifier
     health_status = Field('Health Status', HealthStatus)

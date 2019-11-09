@@ -30,6 +30,7 @@ from vrtgen.types import control
 from vrtgen.types import cif0
 from vrtgen.types import cif1
 from vrtgen.types import struct
+from vrtgen.types import user
 
 from vrtgen.backend.cpp import types as cpptypes
 
@@ -72,6 +73,9 @@ def member_type(datatype):
     if issubclass(datatype, basic.NonZeroSize):
         base_type = cpptypes.int_type(datatype.bits, False)
         return 'nonzero_size<{}>'.format(base_type)
+    if issubclass(datatype, user.UserDefinedType):
+        base_type = cpptypes.int_type(datatype.bits, False)
+        return 'packed<{}>'.format(base_type)
     raise NotImplementedError(datatype.__name__)
 
 def format_docstring(doc):
@@ -261,7 +265,7 @@ class CppStruct:
             # of packed fields followed by 8 reserved bits, but there is no
             # native 24-bit type to hold the packed field.
             return True
-        return False 
+        return False
 
     def _process_field(self, field):
         align = 31 - field.offset
@@ -365,11 +369,14 @@ class LibraryGenerator:
         with open(filename, 'w') as fp:
             fp.write(template.render({'enums': enum_types}))
 
+    def field_to_typedef(self, field):
+        return self.create_field_typedef(field.name, field.type)
+
     @staticmethod
-    def field_to_typedef(field):
+    def create_field_typedef(name, datatype):
         return {
-            'name': cpptypes.name_to_identifier(field.name),
-            'type': 'field<{}>'.format(member_type(field.type)),
+            'name': cpptypes.name_to_identifier(name),
+            'type': 'typename field<{}>::type'.format(member_type(datatype)),
         }
 
     def generate_header(self, filename):
@@ -412,18 +419,9 @@ class LibraryGenerator:
         ]
 
         typedefs = [
-            {
-                'name': 'MessageID',
-                'type': 'field<{}>'.format(member_type(control.MessageIdentifier))
-            },
-            {
-                'name': 'ControlleeID',
-                'type': 'field<{}>'.format(member_type(basic.Identifier32))
-            },
-            {
-                'name': 'ControllerID',
-                'type': 'field<{}>'.format(member_type(basic.Identifier32))
-            },
+            self.create_field_typedef('MessageID', control.MessageIdentifier),
+            self.create_field_typedef('ControlleeID', basic.Identifier32),
+            self.create_field_typedef('ControllerID', basic.Identifier32),
         ]
         with open(filename, 'w') as fp:
             fp.write(template.render({
@@ -444,9 +442,10 @@ class LibraryGenerator:
 
         typedefs = []
         for field in cif.get_fields():
-            if not field.type or not issubclass(field.type, (basic.IntegerType, basic.FixedPointType)):
+            if not field.type:
                 continue
-            typedefs.append(self.field_to_typedef(field))
+            if issubclass(field.type, (basic.IntegerType, basic.FixedPointType, cif1.UserDefinedType)):
+                typedefs.append(self.field_to_typedef(field))
 
         template = self.env.get_template('cif.hpp')
         with open(filename, 'w') as fp:
