@@ -73,7 +73,7 @@ def optional_type(typename):
 def get_accessors(field, name=None):
     if name is None:
         name = field.name
-    identifier = cpptypes.name_to_identifier(field.name)
+    identifier = cpptypes.name_to_identifier(name)
     if isinstance(field, struct.Enable):
         getter = 'is{}Enabled'.format(identifier)
         setter = 'set{}Enabled'.format(identifier)
@@ -174,7 +174,7 @@ class CppPacket:
                 else:
                     subfield_name = subfield.name
                 sub_get, sub_set = get_accessors(subfield, name=subfield_name)
-                src_get, src_set = get_accessors(subfield.name)
+                src_get, src_set = get_accessors(subfield, name=subfield.name)
                 subfield_dict = {
                     'name': subfield_name,
                     'getter': sub_get,
@@ -243,7 +243,7 @@ class CppPacket:
         self.add_member(name, cpptypes.value_type(field.type), optional, value)
 
     def add_cam(self):
-        self.cam = { 
+        self.cam = {
             'name' : 'ControlAcknowledgeMode',
             'attr': 'cam',
             'type' : 'vrtgen::packing::ControlAcknowledgeMode',
@@ -380,7 +380,7 @@ class CppGenerator(Generator):
 
     def generate_command_prologue(self, cppstruct, packet):
         cppstruct.cifs[0]['enabled'] = True
-        
+
         self.generate_prologue(cppstruct, packet)
 
         # Add CAM configuration
