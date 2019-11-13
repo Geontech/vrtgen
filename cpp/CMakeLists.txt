@@ -152,10 +152,12 @@ add_executable(test_codegen
     tests/codegen/test_basic.cpp
     tests/codegen/test_control_ids.cpp
     tests/codegen/test_timestamp.cpp
+    tests/codegen/test_structs.cpp
 )
 add_codegen_file(test_codegen tests/codegen/basic.yaml)
 add_codegen_file(test_codegen tests/codegen/control_ids.yaml)
 add_codegen_file(test_codegen tests/codegen/timestamp.yaml)
+add_codegen_file(test_codegen tests/codegen/structs.yaml)
 
 target_link_libraries(test_codegen vrtgen)
 target_link_libraries(test_codegen Catch2)
