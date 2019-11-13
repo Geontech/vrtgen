@@ -246,7 +246,10 @@ class Struct(Container):
                 value = 0
             if hasattr(value, 'to_binary'):
                 value = value.to_binary()
-            word = (word << field.bits) | value
+            # Mask off any sign bits (also defensively protect against broken
+            # fields that exceed their allotted bits)
+            mask = (1 << field.bits) - 1
+            word = (word << field.bits) | (value & mask)
             bits += field.bits
             if bits % 32:
                 # Only pack on word boundaries
