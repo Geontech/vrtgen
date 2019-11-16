@@ -24,47 +24,96 @@ import warnings
 from . import basic
 from .container import Container, ContainerItem
 
-class StructItem(ContainerItem):
+class BitPosition:
     """
-    Base class for objects that require space in a binary structure.
+    Position of a bit within a VRT structure by word and bit.
+
+    Instances of this class are immutable.
     """
-    __slots__ = ('_word', '_offset')
-    def __init__(self, name, datatype, editable):
-        super().__init__(name, datatype, editable)
-        self._word = None
-        self._offset = None
+    __slots__ = ('_bit', '_word')
+    def __init__(self, bit, word=0):
+        self._bit = bit
+        self._word = word
 
     @property
     def word(self):
         """
-        First VRT word number at which this field resides.
-
-        Can only be set once. Subsequent attempts to overwrite the value raise
-        an AttributeError.
+        VRT word number of this position.
         """
         return self._word
 
-    @word.setter
-    def word(self, word):
-        if self._word is not None:
-            raise AttributeError('word is already set')
-        self._word = word
+    @property
+    def bit(self):
+        """
+        Bit number from within VRT word.
+
+        Bits are numbered in descending order from MSB (31) to LSB (0).
+        """
+        return self._bit
 
     @property
     def offset(self):
         """
-        Bit offset from MSB of VRT word.
+        Absolute bit offset from the MSB of the first word.
+
+        Bit offsets are numbered in ascending order, starting at 0 for the MSB
+        of the first word.
+        """
+        return self.word * 32 + (31 - self.bit)
+
+    @classmethod
+    def from_offset(cls, offset):
+        """
+        Creates a BitPosition from an absolute bit offset.
+        """
+        word = offset // 32
+        bit = 31 - (offset % 32)
+        return BitPosition(bit, word)
+
+    def __eq__(self, other):
+        return self.offset == other.offset
+
+    def __lt__(self, other):
+        return self.offset < other.offset
+
+    def __le__(self, other):
+        return (self == other) or (self < other)
+
+    def __gt__(self, other):
+        return not self <= other
+
+    def __ge__(self, other):
+        return not self < other
+
+    def __str__(self):
+        return '{}/{}'.format(self.word, self.bit)
+
+    def __repr__(self):
+        return '{}({},{})'.format(self.__class__.__name__, self.bit, self.word)
+
+class StructItem(ContainerItem):
+    """
+    Base class for objects that require space in a binary structure.
+    """
+    __slots__ = ('_position',)
+    def __init__(self, name, datatype, editable):
+        super().__init__(name, datatype, editable)
+        self._position = None
+
+    @property
+    def position(self):
+        """
+        VRT word and offset at which the first bit of this field resides.
 
         Can only be set once. Subsequent attempts to overwrite the value raise
         an AttributeError.
         """
-        return self._offset
+        return self._position
 
-    @offset.setter
-    def offset(self, offset):
-        if self._offset is not None:
-            raise AttributeError('offset is already set')
-        self._offset = offset
+    @position.setter
+    def position(self, position):
+        assert self._position is None
+        self._position = position
 
     @property
     def bits(self):
@@ -118,8 +167,7 @@ class Reserved(StructItem):
         Replaces these reserved bits with another field.
         """
         assert self.bits == field.bits
-        field.word = self.word
-        field.offset = self.offset
+        field.position = self.position
         return field
 
 class Field(StructItem):
@@ -163,34 +211,32 @@ class Struct(Container):
         assert isinstance(field, StructItem)
 
         # Check for rebound fields, usually from a base class
-        if field.offset is not None:
-            # If one is set, both must be
-            assert field.word is not None
+        if field.position is not None:
             cls._replace_field(field)
             return
 
-        word = cls.bits // 32
-        offset = 31 - (cls.bits % 32)
-        if not cls.check_alignment(offset, field.bits):
+        position = BitPosition.from_offset(cls.bits)
+        if not cls.check_alignment(position.bit, field.bits):
             msg = '{}.{} is not naturally aligned'.format(cls.__name__, field.attr)
             warnings.warn(msg)
-        field.word = word
-        field.offset = offset
+        field.position = position
         cls.bits += field.bits
         super()._add_field(field)
 
     @classmethod
     def _replace_field(cls, field):
-        index, current = cls._find_field(field.word, field.offset)
-        assert current is not None
-        cls._contents[index] = field
-        setattr(cls, current.attr, field)
+        index, current = cls._find_field(field.position)
+        if current is None:
+            cls.bits += field.bits
+            super()._add_field(field)
+        else:
+            cls._contents[index] = field
+            setattr(cls, current.attr, field)
 
     @classmethod
-    def _find_field(cls, word, offset):
-        for index in range(len(cls._contents)):
-            current = cls._contents[index]
-            if current.word == word and current.offset == offset:
+    def _find_field(cls, position):
+        for index, current in enumerate(cls._contents):
+            if current.position == position:
                 return index, current
         return -1, None
 

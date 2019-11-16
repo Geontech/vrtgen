@@ -157,7 +157,7 @@ class Member:
         return '{} {}'.format(self.type, self.name)
 
     def _add_field_doc(self, field):
-        self.doc.append('{} {}/{}'.format(field.name, field.word, field.offset))
+        self.doc.append('{} {}'.format(field.name, field.position))
 
 class BasicMember(Member):
     def __init__(self, name, field):
@@ -168,12 +168,12 @@ class BasicMember(Member):
 class Reserved(Member):
     def __init__(self, name, field):
         super().__init__(name, cpptypes.int_type(field.bits, False))
-        self.doc = ['Reserved {}/{}'.format(field.word, field.offset)]
+        self.doc = ['Reserved {}'.format(field.position)]
 
 class Tag:
     def __init__(self, field):
         self.name = tag_name(field)
-        self.offset = field.offset
+        self.offset = field.position.bit
         self.basetype = Tag._base_type(field.type)
         self.bits = field.bits
         self.converter = Tag._converter_type(field.type)
@@ -224,7 +224,7 @@ class Packed(Member):
 
     def link_field(self, field):
         # Check for wraparound into the next word
-        assert self.offset - self.bits == field.offset
+        assert self.offset - self.bits == field.position.bit
         self.bits += field.bits
         self._add_field_doc(field)
         if not isinstance(field, struct.Reserved):
@@ -268,14 +268,14 @@ class CppStruct:
         return False
 
     def _process_field(self, field):
-        align = 31 - field.offset
+        align = field.position.offset % 32
         if self._should_pack(field):
             # Pack the field into a larger data member; the field itself does
             # not need to be byte-aligned
             if self._current_packed is None:
                 # The data member does have to be byte-aligned
                 assert align % 8 == 0
-                self._add_packed(field.offset)
+                self._add_packed(field.position.bit)
             member = self._current_packed
             member.link_field(field)
         else:

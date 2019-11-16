@@ -21,7 +21,7 @@ from vrtgen.types import cif0, cif1
 from vrtgen.types import basic
 
 @pytest.mark.parametrize(
-    'name,offset',
+    'name,bit',
     [
         ('Context Field Change Indicator', 31),
         ('Reference Point Identifier', 30),
@@ -53,12 +53,12 @@ from vrtgen.types import basic
         ('CIF 1 Enable', 1),
     ]
 )
-def test_cif0_enables(name, offset):
+def test_cif0_enables(name, bit):
     field = cif0.CIF0.Enables.get_field(name)
-    assert field.offset == offset
+    assert field.position.bit == bit
 
 @pytest.mark.parametrize(
-    'name,offset',
+    'name,bit',
     [
         ('Phase Offset', 31),
         ('Polarization', 30),
@@ -88,9 +88,9 @@ def test_cif0_enables(name, offset):
         ('Buffer Size', 1),
     ]
 )
-def test_cif1_enables(name, offset):
+def test_cif1_enables(name, bit):
     field = cif1.CIF1.Enables.get_field(name)
-    assert field.offset == offset
+    assert field.position.bit == bit
 
 
 NonZero6 = basic.NonZeroSize.create(6)
