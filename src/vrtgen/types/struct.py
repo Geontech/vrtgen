@@ -91,6 +91,9 @@ class BitPosition:
     def __repr__(self):
         return '{}({},{})'.format(self.__class__.__name__, self.bit, self.word)
 
+    def __add__(self, bits):
+        return BitPosition.from_offset(self.offset + bits)
+
 class StructItem(ContainerItem):
     """
     Base class for objects that require space in a binary structure.
@@ -196,54 +199,74 @@ class Field(StructItem):
             self.enable.__set__(instance, True)
         super().__set__(instance, value)
 
-class Struct(Container):
-    """
-    Base class for structures that have a well-defined binary layout.
-    """
-    # Initialize size to 0, subclasses will update their own value
-    bits = 0
-
-    @classmethod
-    def _add_field(cls, field):
-        """
-        Adds a field to a struct class definition.
-        """
-        assert isinstance(field, StructItem)
-
-        # Check for rebound fields, usually from a base class
-        if field.position is not None:
-            cls._replace_field(field)
-            return
-
-        position = BitPosition.from_offset(cls.bits)
-        if not cls.check_alignment(position.bit, field.bits):
-            msg = '{}.{} is not naturally aligned'.format(cls.__name__, field.attr)
-            warnings.warn(msg)
-        field.position = position
-        cls.bits += field.bits
-        super()._add_field(field)
-
-    @classmethod
-    def _replace_field(cls, field):
-        index, current = cls._find_field(field.position)
-        if current is None:
-            cls.bits += field.bits
-            super()._add_field(field)
+class StructMeta(type):
+    def __init__(cls, name, bases, namespace, layout=True, **kwds):
+        super().__init__(name, bases, namespace, **kwds)
+        # Fields are collected in __init__ instead of __new__ because the
+        # superclass __init__ will call __set_name__ on all of the fields,
+        # which is useful for warning messages, etc.
+        fields = [v for v in namespace.values() if isinstance(v, StructItem)]
+        if layout:
+            base_fields = cls._contents
+            cls._contents = cls._layout_fields(fields, base_fields)
         else:
-            cls._contents[index] = field
-            setattr(cls, current.attr, field)
-
-    @classmethod
-    def _find_field(cls, position):
-        for index, current in enumerate(cls._contents):
-            if current.position == position:
-                return index, current
-        return -1, None
+            cls._contents = fields
+        cls.bits = StructMeta._total_bits(cls)
+        cls.validate(cls)
 
     @staticmethod
-    def check_alignment(offset, bits):
+    def _total_bits(cls):
+        if not cls._contents:
+            return 0
+
+        last = cls._contents[-1]
+        return last.position.offset + last.bits
+
+    @staticmethod
+    def validate(cls):
+        # Checks that the struct is an exact multiple of the VITA 49 word size
+        # (32 bits).
+        if cls.bits % 32:
+            msg = '{}.{} does not end on a word boundary'.format(cls.__module__, cls.__qualname__)
+            warnings.warn(msg)
+
+        for field in cls.get_contents():
+            if not cls._check_alignment(field.position.bit, field.bits):
+                msg = '{}.{} is not naturally aligned'.format(cls.__name__, field.attr)
+                warnings.warn(msg)
+
+    @staticmethod
+    def _layout_fields(fields, base_fields=[]):
+        field_list = base_fields[:]
+        pos = 0
+        for field in fields:
+            if field.position is not None:
+                StructMeta._replace(field_list, field)
+            else:
+                field.position = BitPosition.from_offset(pos)
+                field_list.append(field)
+            pos += field.bits
+        return field_list
+
+    @staticmethod
+    def _replace(field_list, field):
+        for index, existing in enumerate(field_list):
+            if field.position != existing.position:
+                continue
+
+            # Same position, replace exisiting field (assumed to be
+            # rebinding a reserved field, such as packet-specific bits in
+            # the header)
+            assert field.bits == existing.bits
+            field_list[index] = field
+            return
+
+        raise ValueError('no field at {}'.format(field.position))
+
+    @staticmethod
+    def _check_alignment(offset, bits):
         """
-        Returns true if a field  is naturally aligned within a struct based on
+        Returns true if a field is naturally aligned within a struct based on
         its starting offset.
         """
         # No alignment concerns for sub-byte fields
@@ -267,16 +290,10 @@ class Struct(Container):
         # Other cases TBD
         return True
 
-    @classmethod
-    def _validate(cls):
-        """
-        Checks that a struct class is an exact multiple of the VITA 49 word
-        size (32 bits).
-        """
-        if cls.bits % 32:
-            msg = '{}.{} does not end on a word boundary'.format(cls.__module__, cls.__qualname__)
-            warnings.warn(msg)
-
+class Struct(Container, metaclass=StructMeta):
+    """
+    Base class for structures that have a well-defined binary layout.
+    """
     def pack(self):
         """
         Packs field values into binary format.

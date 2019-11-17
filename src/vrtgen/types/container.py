@@ -21,7 +21,6 @@ Base container class.
 
 __all__ = (
     'ContainerItem',
-    'ContainerMeta',
     'Container',
 )
 
@@ -62,26 +61,7 @@ class ContainerItem:
     def _varname(self):
         return '_' + self.attr
 
-class ContainerMeta(type):
-    """
-    Metaclass for constructing container classes.
-    """
-    def __init__(cls, name, bases, namespace):
-        super().__init__(name, bases, namespace)
-        # Fields are collected in __init__ instead of __new__ because the
-        # superclass __init__ will call __set_name__ on all of the fields,
-        # which is useful for warning messages, etc.
-        for value in namespace.values():
-            if not isinstance(value, ContainerItem):
-                continue
-            cls._add_field(value)
-        cls._validate()
-
-    @staticmethod
-    def _validate():
-        return
-
-class Container(metaclass=ContainerMeta):
+class Container:
     """
     Base class for container types that support dynamic field lookup by name.
     """
@@ -89,14 +69,10 @@ class Container(metaclass=ContainerMeta):
     _contents = []
 
     def __init_subclass__(cls, *args, **kwds):
-        super().__init_subclass__(*args, **kwds)
+        super().__init_subclass__(*args)
         # Copy the contents list so that subclasses do not accidentally modify
         # base class contents
         cls._contents = cls._contents[:]
-
-    @classmethod
-    def _add_field(cls, field):
-        cls._contents.append(field)
 
     def get_value(self, name):
         """
