@@ -68,8 +68,8 @@ class Container:
     # Initialize contents to empty, subclasses will extend
     _contents = []
 
-    def __init_subclass__(cls, *args, **kwds):
-        super().__init_subclass__(*args)
+    def __init_subclass__(cls, **kwds):
+        super().__init_subclass__(**kwds)
         # Copy the contents list so that subclasses do not accidentally modify
         # base class contents
         cls._contents = cls._contents[:]

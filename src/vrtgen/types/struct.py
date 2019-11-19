@@ -200,6 +200,18 @@ class Field(StructItem):
         super().__set__(instance, value)
 
 class StructMeta(type):
+    """
+    Metaclass for creating binary struct classes.
+
+    On class creation, struct fields are laid out in order from the MSB of the
+    first word on. If the fields have already been laid out, such as from a
+    user-defined structure, the class declaration can include 'layout=False' to
+    skip layout.
+    """
+    # Pylint has difficulties with metaclass methods, mistakenly assuming that
+    # a call from the class instance is unbound. Disable the warning here since
+    # metaclasses are a special case.
+    #pylint: disable=no-value-for-parameter
     def __init__(cls, name, bases, namespace, layout=True, **kwds):
         super().__init__(name, bases, namespace, **kwds)
         # Fields are collected in __init__ instead of __new__ because the
@@ -207,14 +219,12 @@ class StructMeta(type):
         # which is useful for warning messages, etc.
         fields = [v for v in namespace.values() if isinstance(v, StructItem)]
         if layout:
-            base_fields = cls._contents
-            cls._contents = cls._layout_fields(fields, base_fields)
+            cls._layout_fields(fields)
         else:
             cls._contents = fields
-        cls.bits = StructMeta._total_bits(cls)
-        cls.validate(cls)
+        cls.bits = cls._total_bits()
+        cls._validate()
 
-    @staticmethod
     def _total_bits(cls):
         if not cls._contents:
             return 0
@@ -222,8 +232,7 @@ class StructMeta(type):
         last = cls._contents[-1]
         return last.position.offset + last.bits
 
-    @staticmethod
-    def validate(cls):
+    def _validate(cls):
         # Checks that the struct is an exact multiple of the VITA 49 word size
         # (32 bits).
         if cls.bits % 32:
@@ -231,26 +240,23 @@ class StructMeta(type):
             warnings.warn(msg)
 
         for field in cls.get_contents():
-            if not cls._check_alignment(field.position.bit, field.bits):
+            if not StructMeta._check_alignment(field.position.bit, field.bits):
                 msg = '{}.{} is not naturally aligned'.format(cls.__name__, field.attr)
                 warnings.warn(msg)
 
-    @staticmethod
-    def _layout_fields(fields, base_fields=[]):
-        field_list = base_fields[:]
+    def _layout_fields(cls, fields):
+        cls._contents = cls._contents[:]
         pos = 0
         for field in fields:
             if field.position is not None:
-                StructMeta._replace(field_list, field)
+                cls._replace(field)
             else:
                 field.position = BitPosition.from_offset(pos)
-                field_list.append(field)
+                cls._contents.append(field)
             pos += field.bits
-        return field_list
 
-    @staticmethod
-    def _replace(field_list, field):
-        for index, existing in enumerate(field_list):
+    def _replace(cls, field):
+        for index, existing in enumerate(cls._contents):
             if field.position != existing.position:
                 continue
 
@@ -258,7 +264,7 @@ class StructMeta(type):
             # rebinding a reserved field, such as packet-specific bits in
             # the header)
             assert field.bits == existing.bits
-            field_list[index] = field
+            cls._contents[index] = field
             return
 
         raise ValueError('no field at {}'.format(field.position))
@@ -294,6 +300,12 @@ class Struct(Container, metaclass=StructMeta):
     """
     Base class for structures that have a well-defined binary layout.
     """
+    def __init_subclass__(cls, layout=None, **kwds):
+        # This method is overridden only to swallow the 'layout' argument,
+        # which is used by the metaclass.
+        #pylint: disable=arguments-differ,unused-argument
+        super().__init_subclass__(**kwds)
+
     def pack(self):
         """
         Packs field values into binary format.

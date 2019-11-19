@@ -31,18 +31,19 @@ class CIFMeta(type):
     """
     Metaclass for CIF fields.
     """
+    #pylint: disable=no-value-for-parameter
     def __init__(cls, name, bases, namespace):
         super().__init__(name, bases, namespace)
         cls._contents = [v for v in namespace.values() if isinstance(v, StructItem)]
-        cls.Enables = CIFMeta.create_enables(cls)
+        if cls._contents:
+            cls.Enables = cls._create_enables()
 
-    @staticmethod
-    def create_enables(cif):
+    def _create_enables(cls):
         """
         Dynamically creates a struct class for the CIF prologue structure.
         """
         namespace = {}
-        for field in cif.get_contents():
+        for field in cls.get_contents():
             # Turn all non-reserved CIF bits into enable flags
             if isinstance(field, Reserved):
                 entry = Reserved(1)
@@ -57,10 +58,10 @@ class CIFMeta(type):
         #     indicate which CIF struct it's complaining about.
         #   * The qualified name does not appear to be set when dynamically
         #     creating a class
-        qualname = cif.__name__ + '.Enables'
-        cls = type(Struct)(qualname, (Struct,), namespace)
-        cls.__name__ = 'Enables'
-        return cls
+        qualname = cls.__name__ + '.Enables'
+        enables = type(Struct)(qualname, (Struct,), namespace)
+        enables.__name__ = 'Enables'
+        return enables
 
 class CIFFields(Container, metaclass=CIFMeta):
     """
