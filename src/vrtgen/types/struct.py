@@ -31,7 +31,7 @@ class BitPosition:
     Instances of this class are immutable.
     """
     __slots__ = ('_bit', '_word')
-    def __init__(self, bit, word=0):
+    def __init__(self, bit=31, word=0):
         self._bit = bit
         self._word = word
 
@@ -232,11 +232,13 @@ class StructMeta(Container.__class__):
         return super().__call__(*args, **kwds)
 
     def _total_bits(cls):
-        if not cls._contents:
-            return 0
+        return cls._end().offset
 
+    def _end(cls):
+        if not cls._contents:
+            return BitPosition()
         last = cls._contents[-1]
-        return last.position.offset + last.bits
+        return last.position + last.bits
 
     def _validate(cls):
         # Checks that the struct is an exact multiple of the VITA 49 word size
@@ -245,10 +247,17 @@ class StructMeta(Container.__class__):
             msg = '{}.{} does not end on a word boundary'.format(cls.__module__, cls.__qualname__)
             warnings.warn(msg)
 
+        pos = BitPosition()
         for field in cls.get_contents():
+            if field.position != pos:
+                msg = '{}.{} at {}, expected {}'.format(
+                    cls.__name__, field.attr, field.position, pos
+                )
+                raise TypeError(msg)
             if not StructMeta._check_alignment(field.position.bit, field.bits):
                 msg = '{}.{} is not naturally aligned'.format(cls.__name__, field.attr)
                 warnings.warn(msg)
+            pos += field.bits
 
     def _layout_fields(cls, fields):
         # Start with existing fields (if the new class is derived from another
@@ -258,14 +267,12 @@ class StructMeta(Container.__class__):
             cls._contents = cls._contents[:]
         else:
             cls._contents = []
-        pos = 0
         for field in fields:
             if field.position is not None:
                 cls._replace(field)
             else:
-                field.position = BitPosition.from_offset(pos)
+                field.position = cls._end()
                 cls._contents.append(field)
-            pos += field.bits
 
     def _replace(cls, field):
         for index, existing in enumerate(cls._contents):
