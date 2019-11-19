@@ -199,7 +199,7 @@ class Field(StructItem):
             self.enable.__set__(instance, True)
         super().__set__(instance, value)
 
-class StructMeta(type):
+class StructMeta(Container.__class__):
     """
     Metaclass for creating binary struct classes.
 
@@ -225,6 +225,12 @@ class StructMeta(type):
         cls.bits = cls._total_bits()
         cls._validate()
 
+    def __call__(cls, *args, **kwds):
+        if not cls._contents:
+            msg = "Can't instantiate abstract struct {} with no fields".format(cls.__name__)
+            raise TypeError(msg)
+        return super().__call__(*args, **kwds)
+
     def _total_bits(cls):
         if not cls._contents:
             return 0
@@ -245,7 +251,13 @@ class StructMeta(type):
                 warnings.warn(msg)
 
     def _layout_fields(cls, fields):
-        cls._contents = cls._contents[:]
+        # Start with existing fields (if the new class is derived from another
+        # struct), or an empty list
+        if hasattr(cls, '_contents'):
+            # Make a copy to avoid modifying base class
+            cls._contents = cls._contents[:]
+        else:
+            cls._contents = []
         pos = 0
         for field in fields:
             if field.position is not None:
@@ -305,6 +317,10 @@ class Struct(Container, metaclass=StructMeta):
         # which is used by the metaclass.
         #pylint: disable=arguments-differ,unused-argument
         super().__init_subclass__(**kwds)
+
+    @classmethod
+    def get_contents(cls):
+        return cls._contents
 
     def pack(self):
         """

@@ -27,7 +27,7 @@ __all__ = (
     'CIFFields',
 )
 
-class CIFMeta(type):
+class CIFMeta(Container.__class__):
     """
     Metaclass for CIF fields.
     """
@@ -67,3 +67,6 @@ class CIFFields(Container, metaclass=CIFMeta):
     """
     Base class for CIF fields.
     """
+    @classmethod
+    def get_contents(cls):
+        return cls._contents

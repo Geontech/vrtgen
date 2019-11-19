@@ -19,6 +19,8 @@
 Base container class.
 """
 
+import abc
+
 __all__ = (
     'ContainerItem',
     'Container',
@@ -61,19 +63,11 @@ class ContainerItem:
     def _varname(self):
         return '_' + self.attr
 
-class Container:
+class Container(abc.ABC):
     """
-    Base class for container types that support dynamic field lookup by name.
+    Abstract base class for container types that support dynamic field lookup
+    by name.
     """
-    # Initialize contents to empty, subclasses will extend
-    _contents = []
-
-    def __init_subclass__(cls, **kwds):
-        super().__init_subclass__(**kwds)
-        # Copy the contents list so that subclasses do not accidentally modify
-        # base class contents
-        cls._contents = cls._contents[:]
-
     def get_value(self, name):
         """
         Returns a field value by its VITA 49 name.
@@ -88,12 +82,11 @@ class Container:
         field = self.get_field(name)
         field.__set__(self, value)
 
-    @classmethod
+    @abc.abstractclassmethod
     def get_contents(cls):
         """
         Returns the complete contents of this container.
         """
-        return cls._contents
 
     @classmethod
     def get_fields(cls):
