@@ -72,4 +72,3 @@ class SectionParser(MappingParser):
 
         # All we have is a field, use the parser factory
         return cls.factory(field)
-

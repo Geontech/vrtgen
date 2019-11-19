@@ -26,10 +26,12 @@ from .user import UserDefinedType
 
 class DiscreteIO32(UserDefinedType, bits=32):
     """
+    Discrete I/O 32-bit [9.11].
     """
 
 class DiscreteIO64(UserDefinedType, bits=64):
     """
+    Discrete I/O 64-bit [9.11].
     """
 
 class Polarization(Struct):
