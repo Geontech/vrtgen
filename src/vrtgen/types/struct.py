@@ -94,14 +94,19 @@ class BitPosition:
     def __add__(self, bits):
         return BitPosition.from_offset(self.offset + bits)
 
+    def __sub__(self, other):
+        if isinstance(other, BitPosition):
+            return self.offset - other.offset
+        return BitPosition.from_offset(self.offset - other)
+
 class StructItem(ContainerItem):
     """
     Base class for objects that require space in a binary structure.
     """
     __slots__ = ('_position',)
-    def __init__(self, name, datatype, editable):
+    def __init__(self, name, datatype, editable, position=None):
         super().__init__(name, datatype, editable)
-        self._position = None
+        self._position = position
 
     @property
     def position(self):
@@ -130,11 +135,11 @@ class Enable(StructItem):
     Boolean flag to enable or disable a feature.
     """
     __slots__ = ('indicator',)
-    def __init__(self, name=None, bits=1):
+    def __init__(self, name=None, bits=1, position=None):
         # In some cases, such as Sample Frame in the data trailer, an enable
         # may be more than one bit. All bits must be set or clear to indicate
         # the state of the enable.
-        super().__init__(name, basic.BooleanType.create(bits), False)
+        super().__init__(name, basic.BooleanType.create(bits), False, position=position)
         self.indicator = None
 
     def __set_name__(self, owner, name):
@@ -159,8 +164,8 @@ class Reserved(StructItem):
     """
     Reserved bits in a struct. Always 0.
     """
-    def __init__(self, bits):
-        super().__init__('<reserved>', basic.IntegerType.create(bits), False)
+    def __init__(self, bits, position=None):
+        super().__init__('<reserved>', basic.IntegerType.create(bits), False, position=position)
 
     def __set__(self, instance, value):
         raise AttributeError('reserved fields cannot be set')
@@ -178,8 +183,8 @@ class Field(StructItem):
     Data field in a struct.
     """
     __slots__ = ('_unused', 'enable')
-    def __init__(self, name, datatype, unused=None, enable=None):
-        super().__init__(name, datatype, True)
+    def __init__(self, name, datatype, position=None, unused=None, enable=None):
+        super().__init__(name, datatype, True, position=position)
         self._unused = unused
         self.enable = enable
         if enable is not None:
