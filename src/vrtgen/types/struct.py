@@ -365,3 +365,9 @@ class Struct(Container, metaclass=StructMeta):
             word = 0
             bits = 0
         return data
+
+def create_struct(name, namespace):
+    """
+    Dynamically creates a new Struct class object.
+    """
+    return type(Struct)(name, (Struct,), namespace)
