@@ -24,12 +24,12 @@ from .cifmeta import CIFFields
 from .cif0 import Gain
 from .user import UserDefinedType
 
-class DiscreteIO32(UserDefinedType, bits=32):
+class DiscreteIO32(UserDefinedType, basic.IntegerType, signed=False, bits=32):
     """
     Discrete I/O 32-bit [9.11].
     """
 
-class DiscreteIO64(UserDefinedType, bits=64):
+class DiscreteIO64(UserDefinedType, basic.IntegerType, signed=False, bits=64):
     """
     Discrete I/O 64-bit [9.11].
     """
