@@ -101,6 +101,12 @@ class BinaryDumper(Generator):
                 cif1.set_value(field.name, True)
 
         prologue = cif0.pack()
+
+        # CIF enable struct classes are dynamically created when the containing
+        # class is created, which means the attributes are not recognized by
+        # pylint. Sometimes it flags access, others it doesn't, so turn off
+        # that particular warning here.
+        #pylint: disable=no-member
         if cif0.cif1_enable:
             prologue += cif1.pack()
 

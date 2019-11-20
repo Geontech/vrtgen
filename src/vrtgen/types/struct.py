@@ -204,131 +204,117 @@ class Field(StructItem):
             self.enable.__set__(instance, True)
         super().__set__(instance, value)
 
-class StructMeta(Container.__class__):
-    """
-    Metaclass for creating binary struct classes.
+def _last_position(fields):
+    if not fields:
+        return BitPosition()
+    last = fields[-1]
+    return last.position + last.bits
 
-    On class creation, struct fields are laid out in order from the MSB of the
-    first word on. If the fields have already been laid out, such as from a
-    user-defined structure, the class declaration can include 'layout=False' to
-    skip layout.
-    """
-    # Pylint has difficulties with metaclass methods, mistakenly assuming that
-    # a call from the class instance is unbound. Disable the warning here since
-    # metaclasses are a special case.
-    #pylint: disable=no-value-for-parameter
-    def __init__(cls, name, bases, namespace, layout=True, **kwds):
-        super().__init__(name, bases, namespace, **kwds)
-        # Fields are collected in __init__ instead of __new__ because the
-        # superclass __init__ will call __set_name__ on all of the fields,
-        # which is useful for warning messages, etc.
-        fields = [v for v in namespace.values() if isinstance(v, StructItem)]
-        if layout:
-            cls._layout_fields(fields)
+def _layout_fields(base_fields, fields):
+    # Start with the base fields and merge in the new ones
+    struct_fields = base_fields[:]
+    for field in fields:
+        if field.position is not None:
+            _replace(struct_fields, field)
         else:
-            cls._contents = fields
-        cls.bits = cls._total_bits()
-        cls._validate()
+            field.position = _last_position(struct_fields)
+            struct_fields.append(field)
+    return struct_fields
 
-    def __call__(cls, *args, **kwds):
-        if not cls._contents:
-            msg = "Can't instantiate abstract struct {} with no fields".format(cls.__name__)
+def _validate_struct(cls):
+    # Checks that the struct is an exact multiple of the VITA 49 word size
+    # (32 bits).
+    if cls.bits % 32:
+        msg = '{}.{} does not end on a word boundary'.format(cls.__module__, cls.__qualname__)
+        warnings.warn(msg)
+
+    pos = BitPosition()
+    for field in cls.get_contents():
+        if field.position != pos:
+            msg = '{}.{} at {}, expected {}'.format(
+                cls.__name__, field.attr, field.position, pos
+            )
             raise TypeError(msg)
-        return super().__call__(*args, **kwds)
-
-    def _total_bits(cls):
-        return cls._end().offset
-
-    def _end(cls):
-        if not cls._contents:
-            return BitPosition()
-        last = cls._contents[-1]
-        return last.position + last.bits
-
-    def _validate(cls):
-        # Checks that the struct is an exact multiple of the VITA 49 word size
-        # (32 bits).
-        if cls.bits % 32:
-            msg = '{}.{} does not end on a word boundary'.format(cls.__module__, cls.__qualname__)
+        if not _check_alignment(field.position.bit, field.bits):
+            msg = '{}.{} is not naturally aligned'.format(cls.__name__, field.attr)
             warnings.warn(msg)
+        pos += field.bits
 
-        pos = BitPosition()
-        for field in cls.get_contents():
-            if field.position != pos:
-                msg = '{}.{} at {}, expected {}'.format(
-                    cls.__name__, field.attr, field.position, pos
-                )
-                raise TypeError(msg)
-            if not StructMeta._check_alignment(field.position.bit, field.bits):
-                msg = '{}.{} is not naturally aligned'.format(cls.__name__, field.attr)
-                warnings.warn(msg)
-            pos += field.bits
+def _replace(field_list, field):
+    for index, existing in enumerate(field_list):
+        if field.position != existing.position:
+            continue
 
-    def _layout_fields(cls, fields):
-        # Start with existing fields (if the new class is derived from another
-        # struct), or an empty list
-        if hasattr(cls, '_contents'):
-            # Make a copy to avoid modifying base class
-            cls._contents = cls._contents[:]
-        else:
-            cls._contents = []
-        for field in fields:
-            if field.position is not None:
-                cls._replace(field)
-            else:
-                field.position = cls._end()
-                cls._contents.append(field)
+        # Same position, replace exisiting field (assumed to be
+        # rebinding a reserved field, such as packet-specific bits in
+        # the header)
+        assert field.bits == existing.bits
+        field_list[index] = field
+        return
 
-    def _replace(cls, field):
-        for index, existing in enumerate(cls._contents):
-            if field.position != existing.position:
-                continue
+    raise ValueError('no field at {}'.format(field.position))
 
-            # Same position, replace exisiting field (assumed to be
-            # rebinding a reserved field, such as packet-specific bits in
-            # the header)
-            assert field.bits == existing.bits
-            cls._contents[index] = field
-            return
-
-        raise ValueError('no field at {}'.format(field.position))
-
-    @staticmethod
-    def _check_alignment(offset, bits):
-        """
-        Returns true if a field is naturally aligned within a struct based on
-        its starting offset.
-        """
-        # No alignment concerns for sub-byte fields
-        if bits < 8:
-            return True
-
-        # Adjust from 0-based to 1-based indexing to determine alignment
-        pos = offset + 1
-        if bits in (8, 16, 32):
-            # Common power-of-two integer sizes should be naturally aligned
-            return (pos % bits) == 0
-        if bits == 24:
-            # 24-bit integers just need to be 8-bit aligned, presumably since
-            # they are not a "natural" register size
-            return (pos % 8) == 0
-        if bits == 64:
-            # 64-bit ints must be at least aligned to a 32-bit word boundary,
-            # but full 64-bit alignment does not appear to be a concern
-            return pos == 32
-
-        # Other cases TBD
+def _check_alignment(offset, bits):
+    """
+    Returns true if a field is naturally aligned within a struct based on
+    its starting offset.
+    """
+    # No alignment concerns for sub-byte fields
+    if bits < 8:
         return True
 
-class Struct(Container, metaclass=StructMeta):
+    # Adjust from 0-based to 1-based indexing to determine alignment
+    pos = offset + 1
+    if bits in (8, 16, 32):
+        # Common power-of-two integer sizes should be naturally aligned
+        return (pos % bits) == 0
+    if bits == 24:
+        # 24-bit integers just need to be 8-bit aligned, presumably since
+        # they are not a "natural" register size
+        return (pos % 8) == 0
+    if bits == 64:
+        # 64-bit ints must be at least aligned to a 32-bit word boundary,
+        # but full 64-bit alignment does not appear to be a concern
+        return pos == 32
+
+    # Other cases TBD
+    return True
+
+class Struct(Container):
     """
     Base class for structures that have a well-defined binary layout.
     """
-    def __init_subclass__(cls, layout=None, **kwds):
-        # This method is overridden only to swallow the 'layout' argument,
-        # which is used by the metaclass.
-        #pylint: disable=arguments-differ,unused-argument
+    def __init_subclass__(cls, layout=True, **kwds):
         super().__init_subclass__(**kwds)
+        # Find all of the new struct fields defined on this class by searching
+        # through the class dict; inherited fields are in the base class dict.
+        # Note that in Python 3.6+, dict preserves insertion order, so this
+        # will always return the fields in the order they are defined.
+        new_fields = [v for v in cls.__dict__.values() if isinstance(v, StructItem)]
+        # Start with existing fields (if the new class is derived from another
+        # struct), or an empty list
+        base_fields = getattr(cls, '_contents', [])
+        if layout:
+            cls._contents = _layout_fields(base_fields, new_fields)
+        else:
+            cls._contents = new_fields
+
+        if not cls._contents:
+            # Empty (abstract) structs do not have a size or require validation
+            return
+
+        # The total number of bits in the struct is the next bit offset
+        # following the last field
+        cls.bits = _last_position(cls._contents).offset
+
+        _validate_struct(cls)
+
+    def __init__(self):
+        if not getattr(self, '_contents', False):
+            name = type(self).__name__
+            msg = "Can't instantiate abstract struct {} with no fields".format(name)
+            raise TypeError(msg)
+        super().__init__()
 
     @classmethod
     def get_contents(cls):
@@ -366,8 +352,10 @@ class Struct(Container, metaclass=StructMeta):
             bits = 0
         return data
 
-def create_struct(name, namespace):
-    """
-    Dynamically creates a new Struct class object.
-    """
-    return type(Struct)(name, (Struct,), namespace)
+    @classmethod
+    def create_struct(cls, name, namespace, **kwds):
+        """
+        Dynamically creates a new Struct class object as a subclass of this
+        one.
+        """
+        return type(cls)(name, (cls,), namespace, **kwds)

@@ -142,4 +142,4 @@ class UserDefinedBuilder:
             namespace[attr] = field
         # Create the new struct class, skipping the field layout since we've
         # already done it here
-        return type(Struct)(name, (Struct,), namespace, layout=False)
+        return Struct.create_struct(name, namespace, layout=False)

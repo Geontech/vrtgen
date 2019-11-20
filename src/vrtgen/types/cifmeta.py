@@ -19,7 +19,7 @@
 CIF field metadata classes.
 """
 from .container import Container
-from .struct import StructItem, Field, Reserved, create_struct
+from .struct import Struct, StructItem, Field, Reserved
 from . import basic
 
 __all__ = (
@@ -47,7 +47,7 @@ def _create_enables(cif):
     #   * The qualified name does not appear to be set when dynamically
     #     creating a class
     qualname = cif.__name__ + '.Enables'
-    enables = create_struct(qualname, namespace)
+    enables = Struct.create_struct(qualname, namespace)
     enables.__name__ = 'Enables'
     enables.__module__ = cif.__module__
     return enables
