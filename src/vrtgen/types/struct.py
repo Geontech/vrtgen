@@ -167,6 +167,11 @@ class Reserved(StructItem):
     def __init__(self, bits, position=None):
         super().__init__('<reserved>', basic.IntegerType.create(bits), False, position=position)
 
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        return self.type(0)
+
     def __set__(self, instance, value):
         raise AttributeError('reserved fields cannot be set')
 
@@ -210,16 +215,46 @@ def _last_position(fields):
     last = fields[-1]
     return last.position + last.bits
 
-def _layout_fields(base_fields, fields):
+def _check_position(self, position, bits):
+    new_bits = position.offset + bits
+    if new_bits > self.bits:
+        raise ValueError('not enough bits')
+
+def _merge_fields(base_fields, fields):
     # Start with the base fields and merge in the new ones
     struct_fields = base_fields[:]
     for field in fields:
         if field.position is not None:
-            _replace(struct_fields, field)
+            existing = _find_field_at(base_fields, field.position)
+            _insert_field(struct_fields, field, bool(existing))
         else:
             field.position = _last_position(struct_fields)
             struct_fields.append(field)
     return struct_fields
+
+def _find_field_at(fields, position):
+    for field in fields:
+        if field.position == position:
+            return field
+    return None
+
+def _layout_fields(base_fields, new_fields, bits):
+    pos = BitPosition()
+    for field in _merge_fields(base_fields, new_fields):
+        gap = field.position - pos
+        if gap > 0:
+            yield Reserved(gap, position=pos)
+            pos += gap
+        yield field
+        pos = pos + field.bits
+
+    if bits is None:
+        return
+    remain = bits - pos.offset
+    if remain < 0:
+        raise ValueError('struct too large')
+    if remain > 0:
+        yield Reserved(bits - pos.offset, position=pos)
 
 def _validate_struct(cls):
     # Checks that the struct is an exact multiple of the VITA 49 word size
@@ -230,29 +265,51 @@ def _validate_struct(cls):
 
     pos = BitPosition()
     for field in cls.get_contents():
+        field_name = field.attr
+        if not field_name:
+            field_name = field.name
         if field.position != pos:
             msg = '{}.{} at {}, expected {}'.format(
-                cls.__name__, field.attr, field.position, pos
+                cls.__name__, field_name, field.position, pos
             )
             raise TypeError(msg)
         if not _check_alignment(field.position.bit, field.bits):
-            msg = '{}.{} is not naturally aligned'.format(cls.__name__, field.attr)
+            msg = '{}.{} at {} is not naturally aligned'.format(
+                cls.__name__, field_name, field.position
+            )
             warnings.warn(msg)
         pos += field.bits
 
-def _replace(field_list, field):
+def _check_overlap(first, last):
+    end = first.position + first.bits
+    if end > last.position:
+        msg = '{} overlaps {}'.format(first.name, last.name)
+        raise ValueError(msg)
+
+def _insert_field(field_list, field, replace=False):
     for index, existing in enumerate(field_list):
-        if field.position != existing.position:
-            continue
+        if field.position == existing.position:
+            if not replace:
+                msg = '{} conflicts with {}'.format(field.name, existing.name)
+                raise ValueError(msg)
+            if field.bits != existing.bits:
+                msg = '{} has different size than {}'.format(field.name, existing.name)
+                raise ValueError(msg)
+            assert field.bits == existing.bits
+            field_list[index] = field
+            return
 
-        # Same position, replace exisiting field (assumed to be
-        # rebinding a reserved field, such as packet-specific bits in
-        # the header)
-        assert field.bits == existing.bits
-        field_list[index] = field
-        return
+        if field.position < existing.position:
+            # New field is before existing, check that it doesn't overlap
+            # and insert before
+            _check_overlap(field, existing)
+            field_list.insert(index, field)
+            return
 
-    raise ValueError('no field at {}'.format(field.position))
+        # Check that current field ends before the new field starts
+        _check_overlap(existing, field)
+
+    field_list.append(field)
 
 def _check_alignment(offset, bits):
     """
@@ -284,7 +341,7 @@ class Struct(Container):
     """
     Base class for structures that have a well-defined binary layout.
     """
-    def __init_subclass__(cls, layout=True, **kwds):
+    def __init_subclass__(cls, bits=None, **kwds):
         super().__init_subclass__(**kwds)
         # Find all of the new struct fields defined on this class by searching
         # through the class dict; inherited fields are in the base class dict.
@@ -294,10 +351,7 @@ class Struct(Container):
         # Start with existing fields (if the new class is derived from another
         # struct), or an empty list
         base_fields = getattr(cls, '_contents', [])
-        if layout:
-            cls._contents = _layout_fields(base_fields, new_fields)
-        else:
-            cls._contents = new_fields
+        cls._contents = list(_layout_fields(base_fields, new_fields, bits))
 
         if not cls._contents:
             # Empty (abstract) structs do not have a size or require validation

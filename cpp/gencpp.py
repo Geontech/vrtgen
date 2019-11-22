@@ -444,7 +444,7 @@ class LibraryGenerator:
         for field in cif.get_fields():
             if not field.type:
                 continue
-            if issubclass(field.type, (basic.IntegerType, basic.FixedPointType, cif1.UserDefinedType)):
+            if issubclass(field.type, (basic.IntegerType, basic.FixedPointType)):
                 typedefs.append(self.field_to_typedef(field))
 
         template = self.env.get_template('cif.hpp')
