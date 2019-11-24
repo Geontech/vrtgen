@@ -37,5 +37,10 @@ def userdefined(cls):
     Decorator for classes that are set aside for user-defined bits.
     """
     cls.user_defined = True
-    cls.create_struct = classmethod(create_struct)
     return cls
+
+def is_user_defined(cls):
+    """
+    Returns true if a class has been marked as user-defined.
+    """
+    return getattr(cls, 'user_defined', False)
