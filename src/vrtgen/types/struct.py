@@ -187,13 +187,27 @@ class Field(StructItem):
     """
     Data field in a struct.
     """
-    __slots__ = ('_unused', 'enable')
+    __slots__ = ('_unused', '_enable')
     def __init__(self, name, datatype, position=None, unused=None, enable=None):
         super().__init__(name, datatype, True, position=position)
         self._unused = unused
-        self.enable = enable
+        self._enable = enable
         if enable is not None:
             enable.link(self)
+
+    @property
+    def enable(self):
+        """
+        The linked enable bit(s) for this field.
+        """
+        return self._enable
+
+    @enable.setter
+    def enable(self, enable):
+        assert self._enable is None
+        assert enable is not None
+        self._enable = enable
+        enable.link(self)
 
     def __get__(self, instance, owner):
         if instance is not None and self.enable:
