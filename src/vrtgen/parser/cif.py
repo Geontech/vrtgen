@@ -22,7 +22,8 @@ Parser classes for CIF fields.
 from vrtgen.types.cif0 import CIF0
 from vrtgen.types.cif1 import CIF1
 
-from .field import IndexListParser, UserDefinedFieldParser
+from .field import IndexListParser
+from .user import UserDefinedFieldParser
 from .section import SectionParser
 
 class CIFPayloadParser(SectionParser):
