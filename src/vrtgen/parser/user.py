@@ -23,8 +23,48 @@ from vrtgen.types import basic
 from vrtgen.types.struct import Enable, Field, Reserved
 from vrtgen.types import user
 
+from vrtgen.model.field import SimpleFieldConfiguration
+
 from .field import FieldParser
 from . import value as value_parser
+from .mapping import MappingParser
+
+class IndicatorParser:
+    def parse(self, value):
+        if isinstance(value, list):
+            raise TypeError('must be mapping or scalar')
+        if isinstance(value, dict):
+            if len(value) != 1:
+                raise TypeError('must be single-key mapping')
+            name, field_value = next(iter(value.items()))
+            return self.parse_options(name, field_value)
+        name = str(value)
+        if name.casefold() == 'reserved':
+            return Reserved(1)
+        return Field(name, basic.Boolean)
+
+    def parse_options(self, name, value):
+        # Reserved field only supports bit count
+        if name.casefold() == 'reserved':
+            return Reserved(int(value))
+
+        bits = 1
+        if isinstance(value, list):
+            raise TypeError('must be mapping or scalar')
+        if isinstance(value, dict):
+            for key, item in value.items():
+                optname = key.casefold()
+                if optname == 'bits':
+                    bits = int(item)
+                else:
+                    raise ValueError("invalid option '{}'".format(key))
+        else:
+            bits = int(value)
+        if bits == 1:
+            dtype = basic.Boolean
+        else:
+            dtype = basic.IntegerType.create(bits)
+        return Field(name, dtype)
 
 class UserFieldParser:
     def __init__(self, name):
@@ -71,19 +111,17 @@ class UserDefinedFieldParser(FieldParser):
             super().parse_option(log, field, name, value)
 
     def parse_sequence(self, log, field, value):
-        namespace = {}
         for index, item in enumerate(value):
             try:
-                self.parse_user_defined_field(log, namespace, field, item)
+                self.parse_user_defined_field(log, field, item)
             except (ValueError, TypeError) as exc:
                 log.error('Invalid user-defined field %d: %s', index, exc)
 
-        field.usertype = user.create_struct(field.type, field.type.__name__, namespace)
-        for content in field.usertype.get_contents():
+        for content in field.type.get_contents():
             log.debug("'%s' %s bits=%d", content.name, content.position, content.bits)
 
-    @classmethod
-    def _parse_indicators(cls, log, namespace, value):
+    @staticmethod
+    def _parse_indicators(log, context, value):
         if not isinstance(value, list):
             raise TypeError('indicators must be a sequence')
         fields = []
@@ -92,28 +130,22 @@ class UserDefinedFieldParser(FieldParser):
             # adding the field itself until all fields have been processed.
             # This ensures that all indicators are placed after the last
             # enable.
-            field = cls._parse_single(log, item)
+            field = IndicatorParser().parse(item)
             if isinstance(field, Reserved):
                 # Reserve equal number of bits in enable flags
-                cls._add_field(namespace, Reserved(field.bits))
+                reserved = Reserved(field.bits)
+                context.add_field(reserved)
             else:
                 # Create enable bit(s) linked to the field
                 field.enable = Enable(bits=field.bits)
-                cls._add_field(namespace, field.enable)
+                context.add_field(field.enable)
             fields.append(field)
 
         for field in fields:
-            cls._add_field(namespace, field)
-
-    @staticmethod
-    def _parse_bits(value):
-        try:
-            return int(value)
-        except:
-            raise TypeError('bits must a number')
+            context.add_field(field)
 
     @classmethod
-    def parse_user_defined_field(cls, log, namespace, field, value):
+    def parse_user_defined_field(cls, log, context, value):
         """
         Parses a definition for a user-defined field.
         """
@@ -124,57 +156,23 @@ class UserDefinedFieldParser(FieldParser):
                 raise TypeError('must be single-key mapping')
             name, field_value = next(iter(value.items()))
             if name.casefold() == 'indicators':
-                cls._parse_indicators(log, namespace, field_value)
+                cls._parse_indicators(log, context, field_value)
                 return
         else:
             name = str(value)
             field_value = None
-        options = cls._parse_single_field(log, name, namespace, field_value)
-        field = cls._add_field_with_options(name, namespace, **options)
+        options = cls._parse_single_field(log, name, field_value)
+        field = cls._add_field_with_options(name, **options)
         if options.get('optional', False):
             if isinstance(field, Reserved):
                 raise ValueError('can only specify size of reserved bits')
             else:
                 field.enable = Enable(name + ' Enable')
-                cls._add_field(namespace, field.enable)
-        cls._add_field(namespace, field)
+                context.add_field(field.enable)
+        context.add_field(field)
 
     @classmethod
-    def _parse_field_dict(cls, log, name, value):
-        # Reserved field only supports bit count
-        if name.casefold() == 'reserved':
-            return Reserved(cls._parse_bits(value))
-
-        bits = 1
-        if isinstance(value, list):
-            raise TypeError('must be mapping or scalar')
-        if isinstance(value, dict):
-            for key, item in value.items():
-                optname = key.casefold()
-                if optname == 'bits':
-                    bits = cls._parse_bits(item)
-        else:
-            bits = int(value)
-        if bits == 1:
-            dtype = basic.Boolean
-        else:
-            dtype = basic.IntegerType.create(bits)
-        return Field(name, dtype)
-
-    @classmethod
-    def _parse_single(cls, log, value):
-        if isinstance(value, dict):
-            if len(value) != 1:
-                raise TypeError('must be single-key mapping')
-            name, field_value = next(iter(value.items()))
-            return cls._parse_field_dict(log, name, field_value)
-        value = str(value)
-        if value.casefold() == 'reserved':
-            return Reserved(1)
-        return Field(value, basic.Boolean)
-
-    @classmethod
-    def _parse_single_field(cls, log, name, namespace, value):
+    def _parse_single_field(cls, log, name, value):
         if value is None:
             return {}
 
@@ -187,7 +185,7 @@ class UserDefinedFieldParser(FieldParser):
         return UserFieldParser(name).parse(log, value)
 
     @classmethod
-    def _add_field_with_options(cls, name, namespace, bits=1, optional=None):
+    def _add_field_with_options(cls, name, bits=1, optional=None):
         if name == 'reserved':
             return Reserved(bits)
 
@@ -196,18 +194,3 @@ class UserDefinedFieldParser(FieldParser):
         else:
             dtype = basic.IntegerType.create(bits)
         return Field(name, dtype)
-
-    @staticmethod
-    def _add_field(namespace, field):
-        if isinstance(field, Reserved):
-            count = sum((k.startswith('reserved_') for k in namespace.keys()))
-            attr = 'reserved_{}'.format(count + 1)
-            # Guard against pathological breakage...
-            assert attr not in namespace
-        else:
-            attr = '_'.join(field.name.lower().split())
-            if isinstance(field, Enable):
-                attr += '_enable'
-            if attr in namespace:
-                raise ValueError("duplicate name '{}'".format(field.name))
-        namespace[attr] = field

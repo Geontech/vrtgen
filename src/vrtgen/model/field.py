@@ -21,8 +21,8 @@ Types for configuration of packet fields and subfields.
 
 from enum import Enum, auto
 
-from vrtgen.types.struct import Struct
-from vrtgen.types.user import is_user_defined
+from vrtgen.types.struct import Enable, Field, Reserved, Struct
+from vrtgen.types import user
 
 class Mode(Enum):
     """
@@ -183,7 +183,7 @@ class FieldConfiguration:
         instance.
         """
         # The type may be none for unimplemented CIF fields
-        if is_user_defined(field.type):
+        if user.is_user_defined(field.type):
             cls = UserDefinedFieldConfiguration
         elif field.type is not None and issubclass(field.type, Struct):
             cls = StructFieldConfiguration
@@ -258,6 +258,7 @@ class ContainerFieldConfiguration(FieldConfiguration):
         config = FieldConfiguration.create(field, self.scope, mode)
         setattr(self, field.attr, config)
         self._fields[field.name.casefold()] = config
+        return config
 
 class UserDefinedFieldConfiguration(ContainerFieldConfiguration):
     """
@@ -266,25 +267,40 @@ class UserDefinedFieldConfiguration(ContainerFieldConfiguration):
     def __init__(self, *args, **kwds):
         super().__init__(*args, **kwds)
         self._type = None
+        self._namespace = {}
 
     @property
     def type(self):
         if self._type is None:
-            return super().type
+            self._type = user.create_struct(self.field.type, self.field.type.__name__, self._namespace)
         return self._type
 
     @type.setter
     def type(self, dtype):
         assert self._type is None
         self._type = dtype
-        for subfield in dtype.get_fields():
-            # By default, any field with an enable flag is assumed to be
-            # optional, otherwise the field is required.
-            if subfield.enable:
-                mode = Mode.OPTIONAL
-            else:
-                mode = Mode.REQUIRED
-            self._add_field(subfield, mode)
+
+    def add_field(self, field):
+        # Disallow adding fields after the struct definition has been created
+        assert self._type is None
+        if isinstance(field, Reserved):
+            count = sum((k.startswith('reserved_') for k in self._namespace.keys()))
+            attr = 'reserved_{}'.format(count + 1)
+            # Guard against pathological breakage...
+            assert attr not in self._namespace
+        else:
+            attr = '_'.join(field.name.lower().split())
+            if isinstance(field, Enable):
+                attr += '_enable'
+            if attr in self._namespace:
+                raise ValueError("duplicate name '{}'".format(field.name))
+        self._namespace[attr] = field
+
+        # Create field configuration for editable fields
+        if isinstance(field, Field):
+            # Assume optional if there is a linked enable
+            mode = Mode.OPTIONAL if field.enable else Mode.REQUIRED
+            self._add_field(field, mode)
 
 class StructFieldConfiguration(ContainerFieldConfiguration):
     """
