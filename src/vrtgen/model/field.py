@@ -272,7 +272,8 @@ class UserDefinedFieldConfiguration(ContainerFieldConfiguration):
     @property
     def type(self):
         if self._type is None:
-            self._type = user.create_struct(self.field.type, self.field.type.__name__, self._namespace)
+            cls = self.field.type
+            self._type = user.create_struct(cls, cls.__name__, self._namespace)
         return self._type
 
     @type.setter
@@ -281,10 +282,13 @@ class UserDefinedFieldConfiguration(ContainerFieldConfiguration):
         self._type = dtype
 
     def add_field(self, field):
+        """
+        Adds a field defintion to the user-defined struct type.
+        """
         # Disallow adding fields after the struct definition has been created
         assert self._type is None
         if struct.is_reserved(field):
-            count = sum((k.startswith('reserved_') for k in self._namespace.keys()))
+            count = sum((k.startswith('reserved_') for k in self._namespace))
             attr = 'reserved_{}'.format(count + 1)
             # Guard against pathological breakage...
             assert attr not in self._namespace
