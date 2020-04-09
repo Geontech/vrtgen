@@ -21,7 +21,7 @@ Types for configuration of packet fields and subfields.
 
 from enum import Enum, auto
 
-from vrtgen.types.struct import Enable, Field, Reserved, Struct
+from vrtgen.types import struct
 from vrtgen.types import user
 
 class Mode(Enum):
@@ -185,7 +185,7 @@ class FieldConfiguration:
         # The type may be none for unimplemented CIF fields
         if user.is_user_defined(field.type):
             cls = UserDefinedFieldConfiguration
-        elif field.type is not None and issubclass(field.type, Struct):
+        elif struct.is_struct(field.type):
             cls = StructFieldConfiguration
         else:
             cls = SimpleFieldConfiguration
@@ -283,21 +283,21 @@ class UserDefinedFieldConfiguration(ContainerFieldConfiguration):
     def add_field(self, field):
         # Disallow adding fields after the struct definition has been created
         assert self._type is None
-        if isinstance(field, Reserved):
+        if struct.is_reserved(field):
             count = sum((k.startswith('reserved_') for k in self._namespace.keys()))
             attr = 'reserved_{}'.format(count + 1)
             # Guard against pathological breakage...
             assert attr not in self._namespace
         else:
             attr = '_'.join(field.name.lower().split())
-            if isinstance(field, Enable):
+            if struct.is_enable(field):
                 attr += '_enable'
             if attr in self._namespace:
                 raise ValueError("duplicate name '{}'".format(field.name))
         self._namespace[attr] = field
 
         # Create field configuration for editable fields
-        if isinstance(field, Field):
+        if struct.is_field(field):
             # Assume optional if there is a linked enable
             mode = Mode.OPTIONAL if field.enable else Mode.REQUIRED
             self._add_field(field, mode)

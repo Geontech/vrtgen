@@ -223,6 +223,30 @@ class Field(StructItem):
             self.enable.__set__(instance, True)
         super().__set__(instance, value)
 
+def is_reserved(field):
+    """
+    Returns true if the argument is a reserved field.
+    """
+    return isinstance(field, Reserved)
+
+def is_enable(field):
+    """
+    Returns true if the argument is an enable flag.
+    """
+    return isinstance(field, Enable)
+
+def is_field(field):
+    """
+    Returns true if the argument is an editable field.
+    """
+    return isinstance(field, Field)
+
+def is_struct(obj):
+    """
+    Returns true if the argument is a struct class type.
+    """
+    return obj is not None and issubclass(obj, Struct)
+
 def _last_position(fields):
     if not fields:
         return BitPosition()
