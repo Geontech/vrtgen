@@ -38,10 +38,11 @@ set(CMAKE_CLEAN_FILES ${generated_header_files})
 
 # List template files used to generate headers, used to trigger a re-generate
 # step if they are modified
+set(template_path ${CMAKE_CURRENT_SOURCE_DIR}/python/vrtgen/backend/cpp/templates)
 set(template_files
     ${CMAKE_CURRENT_SOURCE_DIR}/templates/cif.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/templates/enums.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/python/vrtgen/backend/cpp/templates/struct.hpp
+    ${template_path}/enums.hpp
+    ${template_path}/struct.hpp
 )
 
 add_custom_command(

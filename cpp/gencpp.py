@@ -35,7 +35,11 @@ from vrtgen.types import user
 from vrtgen.backend.cpp import types as cpptypes
 from vrtgen.backend.cpp.jinja import JINJA_OPTIONS
 from vrtgen.backend.cpp import utils
+from vrtgen.backend.cpp.enums import format_enum
 from vrtgen.backend.cpp.struct import CppStruct, member_type, format_enable_methods, format_value_methods
+
+TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'templates')
+BACKEND_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'python/vrtgen/backend/cpp/templates')
 
 def is_enum(obj):
     # Ignore anything that isn't a BinaryEnum class
@@ -51,18 +55,6 @@ def get_structs(module):
             return False
         return obj.__module__ == module.__name__
     return [cls for _, cls in inspect.getmembers(module, is_struct)]
-
-def format_enum(enum):
-    # Create a format string that returns a hex constant (binary constants are
-    # a C++14 feature)
-    digits = int((enum.bits + 3) / 4)
-    format_string = '0x{{:0{}x}}'.format(digits)
-    return {
-        'name': enum.__name__,
-        'doc': utils.format_docstring(enum.__doc__),
-        'format': format_string.format,
-        'values': list(enum)
-    }
 
 class CppHeaderStruct(CppStruct):
     def _map_field(self, field, member):
@@ -88,9 +80,6 @@ class CppEnableStruct(CppStruct):
         else:
             methods = format_enable_methods(field, member)
         self.fields.append(methods)
-
-TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'templates')
-BACKEND_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'python/vrtgen/backend/cpp/templates')
 
 class LibraryGenerator:
     def __init__(self, includedir):
