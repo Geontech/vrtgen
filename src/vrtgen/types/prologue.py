@@ -20,7 +20,6 @@ Types used for VITA 49 packet prologues.
 """
 
 from .struct import Struct, Field, Reserved
-from .container import Container
 from . import basic, enums
 
 class ClassIdentifier(Struct):
@@ -83,7 +82,7 @@ class CommandHeader(Header):
         Field('Cancellation Packet', basic.Boolean)
     )
 
-class Prologue(Container):
+class Prologue(Struct):
     """
     VRT Packet Prologue (5).
     """

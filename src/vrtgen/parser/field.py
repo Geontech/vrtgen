@@ -183,56 +183,6 @@ SimpleFieldParser.register_type(enums.DataSampleType, value_parser.parse_data_sa
 SimpleFieldParser.register_type(enums.DataItemFormat, value_parser.parse_data_item_format)
 SimpleFieldParser.register_type(enums.ActionMode, value_parser.parse_action)
 
-class UserDefinedFieldParser(FieldParser):
-    """
-    Parser for configuring user-defined fields.
-    """
-    def parse_scalar(self, log, field, value):
-        raise TypeError('user-defined fields must be a sequence or mapping')
-
-    def parse_option(self, log, field, name, value):
-        if name.casefold() == 'fields':
-            if not isinstance(value, list):
-                raise TypeError('user-defined fields must be a sequence')
-            self.parse_sequence(log, field, value)
-        else:
-            super().parse_option(log, field, name, value)
-
-    def parse_sequence(self, log, field, value):
-        log = log.getChild(field.name)
-        for index, item in enumerate(value):
-            try:
-                self.parse_user_defined_field(log, field, item)
-            except (ValueError, TypeError) as exc:
-                log.error('Invalid user-defined field %d: %s', index, exc)
-
-    @staticmethod
-    def parse_user_defined_field(log, field, value):
-        """
-        Parses a definition for a user-defined field.
-        """
-        if not isinstance(value, dict):
-            raise TypeError('must be a mapping')
-        name = None
-        bits = 1
-        word = None
-        position = None
-        for attr_name, attr_value in value.items():
-            if attr_name == 'name':
-                name = attr_value
-            elif attr_name == 'bits':
-                bits = int(attr_value)
-            elif attr_name == 'position':
-                position = int(attr_value)
-            elif attr_name == 'word':
-                word = int(attr_value)
-            else:
-                raise ValueError('invalid attribute {}'.format(attr_name))
-        if name is None:
-            raise ValueError('no name given')
-        field.add_field(name, bits, word, position)
-        log.debug("'%s' bits=%d position=%s/%s", name, bits, word, position)
-
 class StructFieldParser(FieldParser):
     """
     Parser for handling struct field configuration.

@@ -19,9 +19,10 @@
 Base container class.
 """
 
+import abc
+
 __all__ = (
     'ContainerItem',
-    'ContainerMeta',
     'Container',
 )
 
@@ -62,42 +63,11 @@ class ContainerItem:
     def _varname(self):
         return '_' + self.attr
 
-class ContainerMeta(type):
+class Container(abc.ABC):
     """
-    Metaclass for constructing container classes.
+    Abstract base class for container types that support dynamic field lookup
+    by name.
     """
-    def __init__(cls, name, bases, namespace):
-        super().__init__(name, bases, namespace)
-        # Fields are collected in __init__ instead of __new__ because the
-        # superclass __init__ will call __set_name__ on all of the fields,
-        # which is useful for warning messages, etc.
-        for value in namespace.values():
-            if not isinstance(value, ContainerItem):
-                continue
-            cls._add_field(value)
-        cls._validate()
-
-    @staticmethod
-    def _validate():
-        return
-
-class Container(metaclass=ContainerMeta):
-    """
-    Base class for container types that support dynamic field lookup by name.
-    """
-    # Initialize contents to empty, subclasses will extend
-    _contents = []
-
-    def __init_subclass__(cls, *args, **kwds):
-        super().__init_subclass__(*args, **kwds)
-        # Copy the contents list so that subclasses do not accidentally modify
-        # base class contents
-        cls._contents = cls._contents[:]
-
-    @classmethod
-    def _add_field(cls, field):
-        cls._contents.append(field)
-
     def get_value(self, name):
         """
         Returns a field value by its VITA 49 name.
@@ -112,12 +82,11 @@ class Container(metaclass=ContainerMeta):
         field = self.get_field(name)
         field.__set__(self, value)
 
-    @classmethod
+    @abc.abstractclassmethod
     def get_contents(cls):
         """
         Returns the complete contents of this container.
         """
-        return cls._contents
 
     @classmethod
     def get_fields(cls):

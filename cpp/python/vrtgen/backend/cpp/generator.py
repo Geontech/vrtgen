@@ -31,55 +31,32 @@ from vrtgen.types import control
 from vrtgen.backend.generator import Generator, GeneratorOption
 
 from . import types as cpptypes
+from .jinja import JINJA_OPTIONS, do_namespace
+from .struct import CppStruct
 
 CIFS = (
     cif0.CIF0,
     cif1.CIF1,
 )
 
-def do_namespace(text, namespace):
-    """
-    Jinja filter to add a C++ namespace around a block of text.
-    """
-    if not namespace:
-        return text
-    def apply_namespace(text, namespace):
-        indent = ' '*4
-        prefix = ''
-        for segment in namespace.split('::'):
-            yield prefix + 'namespace ' + segment + '{'
-            prefix += indent
-        for line in text.splitlines():
-            yield prefix + line
-        for segment in namespace.split('::'):
-            prefix = prefix[:-len(indent)]
-            yield prefix + '}'
-    return '\n'.join(apply_namespace(text, namespace))
-
-JINJA_OPTIONS = {
-    'trim_blocks': True,
-    'lstrip_blocks': True,
-    'keep_trailing_newline': True,
-    'line_statement_prefix': '//%',
-    'block_start_string':    '/*%',
-    'block_end_string':      '%*/',
-    'comment_start_string':  '/*#',
-    'comment_end_string':    '#*/'
-}
-
 def optional_type(typename):
     return 'vrtgen::optional<{}>'.format(typename)
+
+def get_enabled_accessors(name):
+    identifier = cpptypes.name_to_identifier(name)
+    getter = 'is{}Enabled'.format(identifier)
+    setter = 'set{}Enabled'.format(identifier)
+    return (getter, setter)
 
 def get_accessors(field, name=None):
     if name is None:
         name = field.name
+    if struct.is_enable(field):
+        return get_enabled_accessors(name)
+
     identifier = cpptypes.name_to_identifier(name)
-    if isinstance(field, struct.Enable):
-        getter = 'is{}Enabled'.format(identifier)
-        setter = 'set{}Enabled'.format(identifier)
-    else:
-        getter = 'get' + identifier
-        setter = 'set' + identifier
+    getter = 'get' + identifier
+    setter = 'set' + identifier
     return (getter, setter)
 
 class CppPacket:
@@ -110,6 +87,7 @@ class CppPacket:
         self.fields = []
         self.members = []
         self.class_id = None
+        self.structs = []
 
     @property
     def is_variable_length(self):
@@ -162,10 +140,14 @@ class CppPacket:
             'attr': field.field.attr,
             'optional': field.is_optional,
         }
-        if issubclass(field.type, struct.Struct):
+        if struct.is_struct(field.type):
             packing['struct'] = True
             packing['fields'] = []
-            packing['type'] = 'vrtgen::packing::' + cpptypes.name_to_identifier(field.type.__name__)
+            if field.is_user_defined:
+                namespace = self.name + '::'
+            else:
+                namespace = 'vrtgen::packing::'
+            packing['type'] = namespace + cpptypes.name_to_identifier(field.type.__name__)
             for subfield in field.get_fields():
                 if subfield.is_disabled:
                     continue
@@ -187,6 +169,14 @@ class CppPacket:
                 }
                 if subfield.is_constant:
                     subfield_dict['value'] = cpptypes.literal(subfield.value, subfield.type)
+                if subfield.is_optional:
+                    subfield_dict['optional'] = True
+                    subfield_dict['check'] = sub_get.replace('get', 'has')
+                    getter, setter = get_enabled_accessors(subfield.name)
+                    subfield_dict['src']['enable'] = {
+                        'setter': setter,
+                        'getter': getter,
+                    }
                 packing['fields'].append(subfield_dict)
         else:
             packing['type'] = 'vrtgen::packing::' + identifier
@@ -201,11 +191,11 @@ class CppPacket:
         cif_field['cif'] = cif['number']
         self.fields.append(cif_field)
 
-        if issubclass(field.type, struct.Struct):
+        if struct.is_struct(field.type):
             for subfield in field.get_fields():
                 if subfield.is_disabled or subfield.is_constant:
                     continue
-                subfield_name = field.name + subfield.name
+                subfield_name = field.name + ' ' + subfield.name
                 self.add_member_from_field(subfield, name=subfield_name)
         else:
             self.add_member_from_field(field)
@@ -282,6 +272,8 @@ class CppPacket:
                 value = field.type()
         self.set_cam_field(field.field, value)
 
+    def add_struct(self, structdef):
+        self.structs.append(structdef)
 
 class CppGenerator(Generator):
     """
@@ -289,8 +281,7 @@ class CppGenerator(Generator):
     """
 
     def __init__(self):
-        template_path = os.path.join(os.path.dirname(__file__), 'templates')
-        loader = jinja2.FileSystemLoader(template_path)
+        loader = jinja2.PackageLoader(__package__, 'templates')
         self.env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
         self.env.filters['namespace'] = do_namespace
         self.output_dir = os.getcwd()
@@ -356,6 +347,8 @@ class CppGenerator(Generator):
         for field in packet.get_fields(Scope.CIF0, Scope.CIF1):
             if field.is_disabled:
                 continue
+            if field.is_user_defined:
+                cppstruct.add_struct(CppStruct(field.type))
             cppstruct.add_field(field)
 
     def generate_data(self, cppstruct, packet):

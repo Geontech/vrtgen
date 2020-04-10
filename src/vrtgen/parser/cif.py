@@ -22,7 +22,8 @@ Parser classes for CIF fields.
 from vrtgen.types.cif0 import CIF0
 from vrtgen.types.cif1 import CIF1
 
-from .field import IndexListParser, UserDefinedFieldParser
+from .field import IndexListParser
+from .user import UserDefinedFieldParser
 from .section import SectionParser
 
 class CIFPayloadParser(SectionParser):
@@ -67,8 +68,8 @@ CIFPayloadParser.add_field_parser(CIF1.aux_frequency)
 CIFPayloadParser.add_field_parser(CIF1.aux_gain)
 CIFPayloadParser.add_field_parser(CIF1.aux_bandwidth)
 CIFPayloadParser.add_parser(CIF1.index_list.name, IndexListParser())
-CIFPayloadParser.add_parser(CIF1.discrete_io_32.name, UserDefinedFieldParser())
-CIFPayloadParser.add_parser(CIF1.discrete_io_64.name, UserDefinedFieldParser())
+CIFPayloadParser.add_field_parser(CIF1.discrete_io_32, UserDefinedFieldParser())
+CIFPayloadParser.add_field_parser(CIF1.discrete_io_64, UserDefinedFieldParser())
 CIFPayloadParser.add_field_parser(CIF1.health_status)
 CIFPayloadParser.add_field_parser(CIF1.version_build_code)
 CIFPayloadParser.add_field_parser(CIF1.buffer_size)
