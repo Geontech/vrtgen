@@ -24,6 +24,7 @@ from vrtgen.types.struct import Enable, Field, Reserved, is_field
 
 from .field import FieldParser
 from . import value as value_parser
+from .utils import EMPTY, to_kvpair
 
 class ReservedParser:
     def __init__(self):
@@ -134,41 +135,24 @@ class UserDefinedFieldParser(FieldParser):
         """
         Parses a definition for a user-defined field.
         """
-        if isinstance(value, list):
-            raise TypeError('must be name or single-key mapping')
-        if isinstance(value, dict):
-            if len(value) != 1:
-                raise TypeError('must be single-key mapping')
-            name, field_value = next(iter(value.items()))
-            if name.casefold() == 'indicators':
-                cls._parse_indicators(log, context, field_value)
-            else:
-                cls._parse_single(log, context, name, field_value)
+        name, options = to_kvpair(value)
+        if name.casefold() == 'indicators':
+            if options is EMPTY:
+                raise ValueError('no indicators defined in block')
+            cls._parse_indicators(log, context, options)
         else:
-            cls._parse_single(log, context, str(value), None)
-
-    @classmethod
-    def _parse_single(cls, log, context, name, value):
-        parser = _get_user_parser(name)
-        if value is not None:
-            parser.parse(log, value)
-        field = parser.create()
-        if is_field(field) and field.enable:
-            context.add_field(field.enable)
-        context.add_field(field)
+            parser = _get_user_parser(name)
+            if options is not EMPTY:
+                parser.parse(log, options)
+            field = parser.create()
+            if is_field(field) and field.enable:
+                context.add_field(field.enable)
+            context.add_field(field)
 
     @classmethod
     def _parse_single_indicator(cls, log, value):
-        if isinstance(value, list):
-            raise TypeError('must be mapping or scalar')
-        if isinstance(value, dict):
-            if len(value) != 1:
-                raise TypeError('must be single-key mapping')
-            name, options = next(iter(value.items()))
-        else:
-            name = str(value)
-            options = None
+        name, options = to_kvpair(value)
         parser = _get_user_parser(name, indicator=True)
-        if options is not None:
+        if options is not EMPTY:
             parser.parse(log, options)
         return parser.create()
