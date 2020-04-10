@@ -281,8 +281,7 @@ class CppGenerator(Generator):
     """
 
     def __init__(self):
-        template_path = os.path.join(os.path.dirname(__file__), 'templates')
-        loader = jinja2.FileSystemLoader(template_path)
+        loader = jinja2.PackageLoader(__package__, 'templates')
         self.env = jinja2.Environment(loader=loader, **JINJA_OPTIONS)
         self.env.filters['namespace'] = do_namespace
         self.output_dir = os.getcwd()

@@ -38,8 +38,9 @@ from vrtgen.backend.cpp import utils
 from vrtgen.backend.cpp.enums import format_enum
 from vrtgen.backend.cpp.struct import CppStruct, member_type, format_enable_methods, format_value_methods
 
+# Non-generic template files (e.g., CIF enables and fields) are pulled from
+# local directory
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'templates')
-BACKEND_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'python/vrtgen/backend/cpp/templates')
 
 def is_enum(obj):
     # Ignore anything that isn't a BinaryEnum class
@@ -85,7 +86,7 @@ class LibraryGenerator:
     def __init__(self, includedir):
         self.loader = jinja2.loaders.ChoiceLoader([
             jinja2.FileSystemLoader(TEMPLATE_PATH),
-            jinja2.FileSystemLoader(BACKEND_TEMPLATE_PATH)
+            jinja2.PackageLoader('vrtgen.backend.cpp', 'templates'),
         ])
         self.env = jinja2.Environment(loader=self.loader, **JINJA_OPTIONS)
         self.includedir = includedir
