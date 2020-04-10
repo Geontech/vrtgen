@@ -73,9 +73,6 @@ def member_type(datatype):
     if issubclass(datatype, basic.NonZeroSize):
         base_type = cpptypes.int_type(datatype.bits, False)
         return 'nonzero_size<{}>'.format(base_type)
-    if issubclass(datatype, user.UserDefinedType):
-        base_type = cpptypes.int_type(datatype.bits, False)
-        return 'packed<{}>'.format(base_type)
     raise NotImplementedError(datatype.__name__)
 
 def format_docstring(doc):
