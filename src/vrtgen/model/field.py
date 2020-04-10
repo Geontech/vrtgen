@@ -176,6 +176,13 @@ class FieldConfiguration:
     def value(self, newval):
         self._set_value(newval)
 
+    @property
+    def is_user_defined(self):
+        """
+        True if this field has user-defined subfields.
+        """
+        return False
+
     @staticmethod
     def create(field, scope, mode=Mode.DISABLED):
         """
@@ -280,6 +287,10 @@ class UserDefinedFieldConfiguration(ContainerFieldConfiguration):
     def type(self, dtype):
         assert self._type is None
         self._type = dtype
+
+    @property
+    def is_user_defined(self):
+        return True
 
     def add_field(self, field):
         """

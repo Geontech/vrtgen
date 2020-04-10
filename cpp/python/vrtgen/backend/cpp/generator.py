@@ -32,6 +32,7 @@ from vrtgen.backend.generator import Generator, GeneratorOption
 
 from . import types as cpptypes
 from .jinja import JINJA_OPTIONS, do_namespace
+from .struct import CppStruct
 
 CIFS = (
     cif0.CIF0,
@@ -81,6 +82,7 @@ class CppPacket:
         self.fields = []
         self.members = []
         self.class_id = None
+        self.structs = []
 
     @property
     def is_variable_length(self):
@@ -133,10 +135,16 @@ class CppPacket:
             'attr': field.field.attr,
             'optional': field.is_optional,
         }
-        if issubclass(field.type, struct.Struct):
+        if struct.is_struct(field.type):
             packing['struct'] = True
             packing['fields'] = []
-            packing['type'] = 'vrtgen::packing::' + cpptypes.name_to_identifier(field.type.__name__)
+            if field.is_user_defined:
+                packing['type'] = '{}::{}'.format(
+                    cpptypes.name_to_identifier(self.name),
+                    cpptypes.name_to_identifier(field.type.__name__)
+                )
+            else:
+                packing['type'] = 'vrtgen::packing::' + cpptypes.name_to_identifier(field.type.__name__)
             for subfield in field.get_fields():
                 if subfield.is_disabled:
                     continue
@@ -172,11 +180,11 @@ class CppPacket:
         cif_field['cif'] = cif['number']
         self.fields.append(cif_field)
 
-        if issubclass(field.type, struct.Struct):
+        if struct.is_struct(field.type):
             for subfield in field.get_fields():
                 if subfield.is_disabled or subfield.is_constant:
                     continue
-                subfield_name = field.name + subfield.name
+                subfield_name = field.name + ' ' + subfield.name
                 self.add_member_from_field(subfield, name=subfield_name)
         else:
             self.add_member_from_field(field)
@@ -253,6 +261,8 @@ class CppPacket:
                 value = field.type()
         self.set_cam_field(field.field, value)
 
+    def add_struct(self, structdef):
+        self.structs.append(structdef)
 
 class CppGenerator(Generator):
     """
@@ -327,6 +337,8 @@ class CppGenerator(Generator):
         for field in packet.get_fields(Scope.CIF0, Scope.CIF1):
             if field.is_disabled:
                 continue
+            if field.is_user_defined:
+                cppstruct.add_struct(CppStruct(field.type))
             cppstruct.add_field(field)
 
     def generate_data(self, cppstruct, packet):

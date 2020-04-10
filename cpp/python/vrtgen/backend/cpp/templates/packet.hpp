@@ -17,6 +17,8 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
 
+//% from "struct.hpp" import define_struct
+
 //% macro define_packet(packet)
 namespace packing {
     struct {{packet.helper}};
@@ -81,6 +83,10 @@ public:
 
 //% endfor
 private:
+//% for structdef in packet.structs
+    {{define_struct(structdef)|indent(4)}}
+
+/*% endfor %*/
     friend struct {{packet.namespace}}::packing::{{packet.helper}};
 
 //% for field in packet.members

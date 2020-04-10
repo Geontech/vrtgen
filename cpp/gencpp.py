@@ -90,10 +90,14 @@ class CppEnableStruct(CppStruct):
         self.fields.append(methods)
 
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'templates')
+BACKEND_TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'python/vrtgen/backend/cpp/templates')
 
 class LibraryGenerator:
     def __init__(self, includedir):
-        self.loader = jinja2.FileSystemLoader(TEMPLATE_PATH)
+        self.loader = jinja2.loaders.ChoiceLoader([
+            jinja2.FileSystemLoader(TEMPLATE_PATH),
+            jinja2.FileSystemLoader(BACKEND_TEMPLATE_PATH)
+        ])
         self.env = jinja2.Environment(loader=self.loader, **JINJA_OPTIONS)
         self.includedir = includedir
 

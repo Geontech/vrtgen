@@ -121,7 +121,7 @@ class Tag:
         template_args = [self.basetype, self.offset, self.bits]
         if self.converter:
             template_args.append(self.converter)
-        return 'packed_tag<{}>'.format(','.join(str(arg) for arg in template_args))
+        return 'vrtgen::packed_tag<{}>'.format(','.join(str(arg) for arg in template_args))
 
     @staticmethod
     def _base_type(datatype):
@@ -171,7 +171,7 @@ class Packed(Member):
 
     @staticmethod
     def packed_type(bits):
-        return 'packed<{}>'.format(cpptypes.int_type(bits, False))
+        return 'vrtgen::packed<{}>'.format(cpptypes.int_type(bits, False))
 
 class CppStruct:
     def __init__(self, structdef):

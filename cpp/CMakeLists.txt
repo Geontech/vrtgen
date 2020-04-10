@@ -41,7 +41,7 @@ set(CMAKE_CLEAN_FILES ${generated_header_files})
 set(template_files
     ${CMAKE_CURRENT_SOURCE_DIR}/templates/cif.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/templates/enums.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/templates/struct.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/python/vrtgen/backend/cpp/templates/struct.hpp
 )
 
 add_custom_command(
