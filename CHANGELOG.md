@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - User-defined Discrete I/O fields, including indicators.
+### Removed
+- The packet type "command" was removed.
 
 ## [0.2.1] - 2019-11-13
 ### Fixed

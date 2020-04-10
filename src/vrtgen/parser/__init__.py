@@ -43,9 +43,6 @@ def parse_packet(name, value):
     packet_type = value.pop('type', None)
     if packet_type is None:
         raise RuntimeError('No packet type specified for ' + name)
-    if packet_type == 'command':
-        log.warning('"command" packet type is deprecated, using "control"')
-        packet_type = 'control'
 
     packet_type = PacketType(packet_type.casefold())
     packet = create_packet(packet_type, name)
