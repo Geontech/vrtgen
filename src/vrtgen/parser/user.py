@@ -66,7 +66,7 @@ class UserFieldParser:
             dtype = basic.IntegerType.create(self.bits)
         field = Field(self.name, dtype)
         if self.optional and not self.indicator:
-            field.enable = Enable(self.name + ' Enable')
+            field.enable = Enable(self.name)
         return field
 
     def parse_mapping(self, log, value):
@@ -128,7 +128,7 @@ class UserDefinedFieldParser(FieldParser):
                 context.add_field(reserved)
             else:
                 # Create enable bit(s) linked to the field
-                field.enable = Enable(field.name + ' Enable', bits=field.bits)
+                field.enable = Enable(field.name, bits=field.bits)
                 context.add_field(field.enable)
             fields.append(field)
 

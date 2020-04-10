@@ -42,16 +42,21 @@ CIFS = (
 def optional_type(typename):
     return 'vrtgen::optional<{}>'.format(typename)
 
+def get_enabled_accessors(name):
+    identifier = cpptypes.name_to_identifier(name)
+    getter = 'is{}Enabled'.format(identifier)
+    setter = 'set{}Enabled'.format(identifier)
+    return (getter, setter)
+
 def get_accessors(field, name=None):
     if name is None:
         name = field.name
+    if struct.is_enable(field):
+        return get_enabled_accessors(name)
+
     identifier = cpptypes.name_to_identifier(name)
-    if isinstance(field, struct.Enable):
-        getter = 'is{}Enabled'.format(identifier)
-        setter = 'set{}Enabled'.format(identifier)
-    else:
-        getter = 'get' + identifier
-        setter = 'set' + identifier
+    getter = 'get' + identifier
+    setter = 'set' + identifier
     return (getter, setter)
 
 class CppPacket:
@@ -139,12 +144,10 @@ class CppPacket:
             packing['struct'] = True
             packing['fields'] = []
             if field.is_user_defined:
-                packing['type'] = '{}::{}'.format(
-                    cpptypes.name_to_identifier(self.name),
-                    cpptypes.name_to_identifier(field.type.__name__)
-                )
+                namespace = self.name + '::'
             else:
-                packing['type'] = 'vrtgen::packing::' + cpptypes.name_to_identifier(field.type.__name__)
+                namespace = 'vrtgen::packing::'
+            packing['type'] = namespace + cpptypes.name_to_identifier(field.type.__name__)
             for subfield in field.get_fields():
                 if subfield.is_disabled:
                     continue
@@ -166,6 +169,14 @@ class CppPacket:
                 }
                 if subfield.is_constant:
                     subfield_dict['value'] = cpptypes.literal(subfield.value, subfield.type)
+                if subfield.is_optional:
+                    subfield_dict['optional'] = True
+                    subfield_dict['check'] = sub_get.replace('get', 'has')
+                    getter, setter = get_enabled_accessors(subfield.name)
+                    subfield_dict['src']['enable'] = {
+                        'setter': setter,
+                        'getter': getter,
+                    }
                 packing['fields'].append(subfield_dict)
         else:
             packing['type'] = 'vrtgen::packing::' + identifier
