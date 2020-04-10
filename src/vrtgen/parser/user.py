@@ -26,12 +26,20 @@ from .field import FieldParser
 from . import value as value_parser
 from .utils import EMPTY, to_kvpair
 
+def _parse_bits(value):
+    if not isinstance(value, int):
+        raise TypeError('bits must be an integer')
+    bits = int(value)
+    if bits <= 0:
+        raise ValueError('bits must be 1 or more')
+    return bits
+
 class ReservedParser:
     def __init__(self):
         self.bits = 1
 
     def parse(self, log, value):
-        self.bits = int(value)
+        self.bits = _parse_bits(value)
 
     def create(self):
         return Reserved(self.bits)
@@ -49,7 +57,7 @@ class UserFieldParser:
         elif value == 'optional':
             self.optional = True
         else:
-            self.bits = int(value)
+            self.bits = _parse_bits(value)
 
     def create(self):
         if self.bits == 1:
@@ -69,10 +77,7 @@ class UserFieldParser:
                 except TypeError as exc:
                     raise TypeError('optional {}'.format(exc))
             elif key == 'bits':
-                try:
-                    self.bits = int(val)
-                except:
-                    raise TypeError('bits must be a number')
+                self.bits = _parse_bits(val)
             else:
                 log.warning("Invalid option '%s'", key)
 
