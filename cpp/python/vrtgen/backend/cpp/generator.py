@@ -31,41 +31,12 @@ from vrtgen.types import control
 from vrtgen.backend.generator import Generator, GeneratorOption
 
 from . import types as cpptypes
+from .jinja import JINJA_OPTIONS, do_namespace
 
 CIFS = (
     cif0.CIF0,
     cif1.CIF1,
 )
-
-def do_namespace(text, namespace):
-    """
-    Jinja filter to add a C++ namespace around a block of text.
-    """
-    if not namespace:
-        return text
-    def apply_namespace(text, namespace):
-        indent = ' '*4
-        prefix = ''
-        for segment in namespace.split('::'):
-            yield prefix + 'namespace ' + segment + '{'
-            prefix += indent
-        for line in text.splitlines():
-            yield prefix + line
-        for segment in namespace.split('::'):
-            prefix = prefix[:-len(indent)]
-            yield prefix + '}'
-    return '\n'.join(apply_namespace(text, namespace))
-
-JINJA_OPTIONS = {
-    'trim_blocks': True,
-    'lstrip_blocks': True,
-    'keep_trailing_newline': True,
-    'line_statement_prefix': '//%',
-    'block_start_string':    '/*%',
-    'block_end_string':      '%*/',
-    'comment_start_string':  '/*#',
-    'comment_end_string':    '#*/'
-}
 
 def optional_type(typename):
     return 'vrtgen::optional<{}>'.format(typename)

@@ -33,17 +33,8 @@ from vrtgen.types import struct
 from vrtgen.types import user
 
 from vrtgen.backend.cpp import types as cpptypes
-
-JINJA_OPTIONS = {
-    'trim_blocks': True,
-    'lstrip_blocks': True,
-    'keep_trailing_newline': True,
-    'line_statement_prefix': '//%',
-    'block_start_string':    '/*%',
-    'block_end_string':      '%*/',
-    'comment_start_string':  '/*#',
-    'comment_end_string':    '#*/'
-}
+from vrtgen.backend.cpp.jinja import JINJA_OPTIONS
+from vrtgen.backend.cpp import utils
 
 def is_enum(obj):
     # Ignore anything that isn't a BinaryEnum class
@@ -75,16 +66,6 @@ def member_type(datatype):
         return 'nonzero_size<{}>'.format(base_type)
     raise NotImplementedError(datatype.__name__)
 
-def format_docstring(doc):
-    if not doc:
-        return
-    if doc.startswith('\n'):
-        doc = doc[1:]
-    indent = 0
-    while doc[indent].isspace():
-        indent += 1
-    for line in doc.rstrip().split('\n'):
-        yield line[indent:]
 
 def tag_name(field):
     return field.attr + '_tag'
@@ -96,7 +77,7 @@ def format_enum(enum):
     format_string = '0x{{:0{}x}}'.format(digits)
     return {
         'name': enum.__name__,
-        'doc': format_docstring(enum.__doc__),
+        'doc': utils.format_docstring(enum.__doc__),
         'format': format_string.format,
         'values': list(enum)
     }
@@ -235,7 +216,7 @@ class Packed(Member):
 class CppStruct:
     def __init__(self, structdef):
         self.name = structdef.__name__
-        self.doc = format_docstring(structdef.__doc__)
+        self.doc = utils.format_docstring(structdef.__doc__)
         self.fields = []
         self.members = []
         self._current_packed = None
@@ -432,7 +413,7 @@ class LibraryGenerator:
         enable = CppEnableStruct(cif.Enables)
         # Override name and docstring from parent CIFFields class
         enable.name = cif.__name__ + 'Enables'
-        enable.doc = format_docstring(cif.__doc__)
+        enable.doc = utils.format_docstring(cif.__doc__)
         structs.append(enable)
         for structdef in get_structs(module):
             structs.append(CppStruct(structdef))
