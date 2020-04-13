@@ -34,7 +34,29 @@ def _parse_bits(value):
         raise ValueError('bits must be 1 or more')
     return bits
 
-class ReservedParser:
+class FactoryParser:
+    """
+    Abstract base class to parse a user field definition and construct a field
+    instance.
+    """
+    def parse(self, log, value):
+        """
+        Parse a YAML configuration value.
+        """
+        raise NotImplementedError('parse')
+
+    def create(self):
+        """
+        Create an instance of the configured field.
+        """
+        raise NotImplementedError('create')
+
+class ReservedParser(FactoryParser):
+    """
+    Parses and creates reserved field configuration.
+
+    If a value is provided, it must be a number of bits.
+    """
     def __init__(self):
         self.bits = 1
 
@@ -44,7 +66,10 @@ class ReservedParser:
     def create(self):
         return Reserved(self.bits)
 
-class UserFieldParser:
+class UserFieldParser(FactoryParser):
+    """
+    Parses a definition for a user-defined field.
+    """
     def __init__(self, name, indicator=False):
         self.name = name
         self.optional = False
@@ -53,7 +78,7 @@ class UserFieldParser:
 
     def parse(self, log, value):
         if isinstance(value, dict):
-            self.parse_mapping(log, value)
+            self._parse_mapping(log, value)
         elif value == 'optional':
             self.optional = True
         else:
@@ -69,7 +94,7 @@ class UserFieldParser:
             field.enable = Enable(self.name)
         return field
 
-    def parse_mapping(self, log, value):
+    def _parse_mapping(self, log, value):
         for key, val in value.items():
             if key == 'optional':
                 try:
