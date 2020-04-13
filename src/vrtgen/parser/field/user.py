@@ -26,6 +26,8 @@ from vrtgen.types.struct import Enable, Field, Reserved, is_field
 
 from .base import FieldParser
 
+__all__ = ('UserDefinedFieldParser',)
+
 def _parse_bits(value):
     if not isinstance(value, int):
         raise TypeError('bits must be an integer')
