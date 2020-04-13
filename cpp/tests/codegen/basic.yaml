@@ -1,9 +1,7 @@
 BasicContext:
-  type: context
-  payload:
+  context:
     Reference Point Identifier: required
 
 BasicControl:
-  type: control
-  payload:
+  control:
     RF Reference Frequency: required

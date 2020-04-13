@@ -4,54 +4,54 @@
     fractional: picoseconds
 
 TestData:
-  type: data
-  Stream ID: required
-  Class ID:
-    OUI: FF-FF-FF
-    Information Class Code: 0x0001
-    Packet Class Code: 0x0001
-  timestamp:
-    integer: utc
-    fractional: picoseconds
-  trailer:
-    Calibrated Time:
-      required: true
-      default: true
-    Valid Data: true
-    AGC/MGC: required
-    Associated Context Packet Count: required
-    Over-range: false
-    Sample Loss: optional
-    #User-Defined: TODO
+  data:
+    Stream ID: required
+    Class ID:
+      OUI: FF-FF-FF
+      Information Class Code: 0x0001
+      Packet Class Code: 0x0001
+    timestamp:
+      integer: utc
+      fractional: picoseconds
+    trailer:
+      Calibrated Time:
+        required: true
+        default: true
+      Valid Data: true
+      AGC/MGC: required
+      Associated Context Packet Count: required
+      Over-range: false
+      Sample Loss: optional
+      #User-Defined: TODO
 
 TestMerge:
-  type: data
-  <<: *defaults
+  data:
+    <<: *defaults
 
 TestTSM:
-  type: context
-  Timestamp Mode: coarse
+  context:
+    Timestamp Mode: coarse
 
 TestClassID:
-  type: context
-  Class ID: required
+  context:
+    Class ID: required
 
 InvalidField:
-  type: data
-  IF Reference Frequency: 0.0
+  data:
+    IF Reference Frequency: 0.0
 
 TestContext:
-  type: context
-  Class ID: required
-  payload:
+  context:
+    Class ID: required
     IF Reference Frequency: optional
     Aux Frequency: optional
 
 TestCommand:
-  type: command
-  timestamp:
-    integer: utc
-    fractional: picoseconds
-  Class ID: required
-  payload:
+  control:
+    timestamp:
+      integer: utc
+      fractional: picoseconds
+    Class ID: required
     RF Reference Frequency: required
+
+Nothing: data

@@ -25,6 +25,7 @@ import yaml
 from vrtgen.model.config import create_packet, PacketType
 
 from .packet import create_parser
+from .utils import to_kvpair, EMPTY
 
 __all__ = (
     'parse_packet',
@@ -36,19 +37,19 @@ def parse_packet(name, value):
     """
     Parses a VITA 49 packet definition.
     """
-    if not isinstance(value, dict):
-        raise RuntimeError('Invalid definition for packet ' + name)
-
+    #if not isinstance(value, dict):
+    #    raise TypeError('Invalid definition for packet ' + name)
+    #if len(value) != 1:
+    #    raise ValueError('Must be single-element mapping')
     log = logging.getLogger(name)
-    packet_type = value.pop('type', None)
-    if packet_type is None:
-        raise RuntimeError('No packet type specified for ' + name)
 
+    packet_type, packet_value = to_kvpair(value)
     packet_type = PacketType(packet_type.casefold())
     packet = create_packet(packet_type, name)
     parser = create_parser(packet_type)
 
-    parser(log, packet, value)
+    if packet_value is not EMPTY:
+        parser(log, packet, packet_value)
 
     return packet
 
@@ -74,7 +75,7 @@ def parse_stream(stream):
                 packet = parse_packet(name, value)
                 packet.validate()
                 yield packet
-            except ValueError as exc:
-                logging.error("%s", str(exc))
+            except (ValueError, TypeError) as exc:
+                logging.error("Invalid packet definition '%s': %s", name, str(exc))
             except RuntimeError as exc:
                 logging.exception("%s %s", name, str(exc))

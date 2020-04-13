@@ -26,8 +26,7 @@ def parse_single(document):
 
 def test_data_defaults():
     document = """
-TestData:
-    type: data
+TestData: data
 """
     packet = parse_single(document)
     assert packet.name == 'TestData'
@@ -41,8 +40,8 @@ TestData:
 def test_data_stream_id():
     document = """
 StreamIDTest:
-    type: data
-    stream id: required
+    data:
+        stream id: required
 """
     packet = parse_single(document)
     assert packet.stream_id.is_required
@@ -51,8 +50,7 @@ StreamIDTest:
 
 def test_context_defaults():
     document = """
-TestContext:
-    type: context
+TestContext: context
 """
     packet = parse_single(document)
     assert packet.name == 'TestContext'
@@ -67,16 +65,15 @@ TestContext:
 def test_context_timestamp_mode():
     document = """
 TSMTest:
-    type: context
-    timestamp mode: coarse
+    context:
+        timestamp mode: coarse
 """
     packet = parse_single(document)
     assert packet.timestamp_mode == enums.TSM.COARSE
 
 def test_control_defaults():
     document = """
-TestControl:
-    type: control
+TestControl: control
 """
     packet = parse_single(document)
     assert packet.name == 'TestControl'
@@ -92,8 +89,7 @@ TestControl:
 
 def test_ackv_defaults():
     document = """
-TestAckV:
-    type: AckV
+TestAckV: AckV
 """
     packet = parse_single(document)
     assert packet.name == 'TestAckV'
@@ -109,8 +105,7 @@ TestAckV:
 
 def test_ackx_defaults():
     document = """
-TestAckX:
-    type: AckX
+TestAckX: AckX
 """
     packet = parse_single(document)
     assert packet.name == 'TestAckX'
@@ -126,8 +121,7 @@ TestAckX:
 
 def test_acks_defaults():
     document = """
-TestAckS:
-    type: AckS
+TestAckS: AckS
 """
     packet = parse_single(document)
     assert packet.name == 'TestAckS'
@@ -144,10 +138,10 @@ TestAckS:
 def test_timestamp():
     document = """
 TimestampTest:
-    type: data
-    timestamp:
-        integer: utc
-        fractional: picoseconds
+    data:
+        timestamp:
+            integer: utc
+            fractional: picoseconds
 """
     packet = parse_single(document)
     assert packet.tsi == enums.TSI.UTC

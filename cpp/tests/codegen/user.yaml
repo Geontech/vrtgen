@@ -1,6 +1,5 @@
 UserDefined:
-  type: Context
-  payload:
+  context:
     Discrete I/O 32:
       fields:
         # 8 bits worth of indicators
