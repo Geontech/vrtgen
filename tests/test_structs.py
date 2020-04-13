@@ -113,6 +113,48 @@ def test_struct_set():
     assert value.count_enable is True
     assert value.count == 14178
 
+def test_struct_pack():
+    """
+    Verify serializing fields to a byte string.
+    """
+    value = UnitTestStruct()
+    value.first = -30000
+    value.second = -17.625
+    value.third = True
+    value.count = 12345
+
+    # Data (grouped by 16 bits)
+    #  - 2 bytes for first: 0x8AD0 (-30000)
+    #  - 2 bytes for second: 0x00C0 (-17.625)
+    #  - 1 bit for third:  0x8000 (true)
+    #    15 bits reserved: 0x0000
+    #    =                 0x8000
+    #  - 1 bit for count enable: 0x8000 (true)
+    #    15 bits for count:      0x3039 (12345)
+    #    =                       0xB039
+    data = value.pack()
+    assert data == b'\x8A\xD0\xF7\x30\x80\x00\xB0\x39'
+
+def test_struct_unpack():
+    """
+    Verify deserializing fields from a byte string.
+    """
+    # Data (grouped by 16 bits)
+    #  - 2 bytes for first: 0x1234 (-32204)
+    #  - 2 bytes for second: 0x00C0 (1.5)
+    #  - 1 bit for third: 0x8000 (true)
+    #    15 bits reserved: 0x0000 = 0x8000
+    #  - 1 bit for count enable: 0x8000 (true)
+    #    15 bits for count:      0x0765 (4660)
+    #    =                       0x8765
+    data = b'\x82\x34\x00\xC0\x80\x00\x87\x65'
+    value = UnitTestStruct.unpack(data)
+    assert value.first == -32204
+    assert value.second == 1.5
+    assert value.third is True
+    assert value.count_enable is True
+    assert value.count == 1893
+
 def test_abstract_struct():
     """
     Verify that struct classes with no defined fields cannot be constructed.

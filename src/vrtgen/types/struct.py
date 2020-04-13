@@ -416,33 +416,62 @@ class Struct(Container):
         """
         Packs field values into binary format.
         """
-        data = bytes()
-        bits = 0
-        word = 0
+        # First convert field values to a sequence of 32-bit words, then use
+        # struct.pack() to turn that into a binary string. This lets us easily
+        # zero any unused or reserved bits.
+        words = [0] * (self.bits//32)
         for field in self.get_contents():
             value = field.__get__(self, type(self))
-            # Disabled indicator fields report a value of None, but should be
-            # packed as 0
+            # Disabled indicator fields report a value of None, but wil be
+            # packed as 0 (implicitly, because the bits are already 0)
             if value is None:
-                value = 0
+                continue
             if hasattr(value, 'to_binary'):
                 value = value.to_binary()
-            # Mask off any sign bits (also defensively protect against broken
-            # fields that exceed their allotted bits)
-            mask = (1 << field.bits) - 1
-            word = (word << field.bits) | (value & mask)
-            bits += field.bits
-            if bits % 32:
-                # Only pack on word boundaries
+            if field.bits == 64:
+                words[field.position.word] = value >> 32
+                words[field.position.word+1] = value & 0xFFFFFFFF
+            else:
+                # Mask off any sign bits (also defensively protect against
+                # broken fields that exceed their allotted bits)
+                mask = (1 << field.bits) - 1
+                shift = field.position.bit - field.bits + 1
+                words[field.position.word] |= (value & mask) << shift
+        return struct.pack('>{}L'.format(len(words)), *words)
+
+    @classmethod
+    def unpack(cls, data):
+        """
+        Creates an instance of this Struct deserialized from a binary string.
+        """
+        result = cls()
+        # Unpack raw binary data as a sequence of big-endian 32-bits words,
+        # then extract the values from there. Other than 64-bit values (which
+        # can be formed manually from two adjacent words), all types can be
+        # taken from a single word (i.e., no split values).
+        words = struct.unpack('>{}L'.format(cls.bits//32), data)
+        for field in result.get_contents():
+            # Setting an optional field after reading the enable flag clears
+            # the enable flag, so in that case, skip unpacking the value
+            if is_field(field) and field.enable is not None:
+                if not field.enable.__get__(result, cls):
+                    continue
+            if field.bits == 64:
+                value = (words[field.position.word] << 32) + words[field.position.word+1]
+            else:
+                value = words[field.position.word]
+                if field.bits < 32:
+                    # Extract only the relevant bits
+                    mask = (1 << field.bits) - 1
+                    shift = field.position.bit - field.bits + 1
+                    value = (value >> shift) & mask
+            if is_reserved(field):
+                assert value == 0
                 continue
-            if bits == 32:
-                fmt = 'L'
-            elif bits == 64:
-                fmt = 'Q'
-            data += struct.pack('>'+fmt, word)
-            word = 0
-            bits = 0
-        return data
+            if hasattr(field.type, 'from_binary'):
+                value = field.type.from_binary(value)
+            field.__set__(result, value)
+        return result
 
     @classmethod
     def create_struct(cls, name, namespace, **kwds):

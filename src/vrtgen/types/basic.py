@@ -64,9 +64,23 @@ def _range_check(cls, value):
     Validates numeric values against the minimum and maximum for a class.
     """
     if value > cls.maxval:
-        raise ValueError('{} cannot exceed {}'.format(cls.__name__, cls.maxval))
+        raise ValueError('{} > {} ({} max value)'.format(value, cls.maxval, cls.__name__, ))
     if value < cls.minval:
-        raise ValueError('{} cannot be less than {}'.format(cls.__name__, cls.minval))
+        raise ValueError('{} < {} ({} min value)'.format(value, cls.minval, cls.__name__, ))
+
+def _bitmask(bits):
+    return (1 << bits) - 1
+
+def _sign_extend(cls, value):
+    """
+    Converts an unsigned integer value of a given number of bits to a signed
+    integer value by sign extension.
+    """
+    # If the sign bit is set, convert to a negative number by sign
+    # extension (OR-ing all high bits).
+    if value & (1 << (cls.bits - 1)):
+        value |= ~cls.mask
+    return value
 
 class IntegerType(int):
     """
@@ -85,6 +99,7 @@ class IntegerType(int):
     def __init_subclass__(cls, bits, signed=True, **kwds):
         super().__init_subclass__(**kwds)
         cls.bits = bits
+        cls.mask = _bitmask(cls.bits)
         cls.signed = signed
         cls.minval, cls.maxval = IntegerType.range(bits, signed)
 
@@ -100,6 +115,12 @@ class IntegerType(int):
             minval = 0
             maxval = (2**bits) - 1
         return (minval, maxval)
+
+    @classmethod
+    def from_binary(cls, value):
+        if cls.signed:
+            value = _sign_extend(cls, value)
+        return value
 
     @staticmethod
     def create(bits, signed=True):
@@ -188,6 +209,7 @@ class NonZeroSize(int):
     def __init_subclass__(cls, bits, **kwds):
         super().__init_subclass__(**kwds)
         cls.bits = bits
+        cls.mask = _bitmask(cls.bits)
         cls.minval = 1
         cls.maxval = 2**bits
 
@@ -239,7 +261,7 @@ class FixedPointType(float):
         super().__init_subclass__(**kwds)
         cls.bits = bits
         cls.radix = radix
-        cls.mask = (1 << cls.bits) - 1
+        cls.mask = _bitmask(cls.bits)
         cls.scale = 1 << cls.radix
         minval, maxval = IntegerType.range(bits, signed=True)
         cls.minval = minval / cls.scale
@@ -266,8 +288,7 @@ class FixedPointType(float):
             raise ValueError('binary value {} too large for {}'.format(value, cls.__name__))
         # If the sign bit is set, convert to a negative number by sign
         # extension (OR-ing all high bits).
-        if value & (1 << (cls.bits - 1)):
-            value |= ~cls.mask
+        value = _sign_extend(cls, value)
         return cls(value / cls.scale)
 
     @staticmethod
