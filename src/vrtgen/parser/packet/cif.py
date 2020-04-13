@@ -19,8 +19,7 @@
 Parser classes for CIF fields.
 """
 
-from vrtgen.parser.field import IndexListParser
-from vrtgen.parser.user import UserDefinedFieldParser
+from vrtgen.parser.field import IndexListParser, UserDefinedFieldParser
 from vrtgen.types.cif0 import CIF0
 from vrtgen.types.cif1 import CIF1
 

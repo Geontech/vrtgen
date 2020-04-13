@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2020 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -20,11 +20,6 @@ Parsers for handling packet fields.
 """
 
 from vrtgen.model.field import Mode
-from vrtgen.types import enums
-from vrtgen.types import basic
-from vrtgen.types.prologue import ClassIdentifier
-
-from . import value as value_parser
 
 class FieldParser:
     """
@@ -132,137 +127,6 @@ class FieldParser:
             'optional': Mode.OPTIONAL,
             'disabled': Mode.DISABLED
         }.get(value.casefold(), None)
-
-class SimpleFieldParser(FieldParser):
-    """
-    Parser for handling simple field configuration.
-    """
-    __TYPES__ = {}
-
-    def __init__(self, parser):
-        self.value_parser = parser
-
-    def parse_scalar(self, log, field, value):
-        field.value = self.value_parser(value)
-        log.debug("Field '%s' = %s", field.name, field.value)
-        # If a value is given with no other qualifiers, consider the
-        # field value to be constant
-        log.debug("Field '%s' is CONSTANT", field.name)
-        field.set_constant()
-
-    def parse_option(self, log, field, name, value):
-        if name.casefold() == 'default':
-            field.value = self.value_parser(value)
-            log.debug("Field '%s' = %s", field.name, field.value)
-        else:
-            super().parse_option(log, field, name, value)
-
-    @classmethod
-    def register_type(cls, datatype, parser):
-        """
-        Registers a default value parser for a Python type.
-        """
-        cls.__TYPES__[datatype] = parser
-
-    @classmethod
-    def factory(cls, field):
-        """
-        Creates a simple parser for a given VITA 49 field.
-        """
-        parser = cls.__TYPES__.get(field.type, field.type)
-        return cls(parser)
-
-SimpleFieldParser.register_type(basic.Boolean, value_parser.parse_boolean)
-SimpleFieldParser.register_type(basic.OUI, value_parser.parse_oui)
-SimpleFieldParser.register_type(enums.TSI, value_parser.parse_tsi)
-SimpleFieldParser.register_type(enums.TSF, value_parser.parse_tsf)
-SimpleFieldParser.register_type(enums.SSI, value_parser.parse_ssi)
-SimpleFieldParser.register_type(enums.TSM, value_parser.parse_tsm)
-SimpleFieldParser.register_type(enums.PackingMethod, value_parser.parse_packing_method)
-SimpleFieldParser.register_type(enums.DataSampleType, value_parser.parse_data_sample_type)
-SimpleFieldParser.register_type(enums.DataItemFormat, value_parser.parse_data_item_format)
-SimpleFieldParser.register_type(enums.ActionMode, value_parser.parse_action)
-
-class StructFieldParser(FieldParser):
-    """
-    Parser for handling struct field configuration.
-
-    Binds struct value parsing with base field configuration.
-    """
-    def __init__(self, parser):
-        self.parser = parser
-
-    def parse_mapping(self, log, field, mapping):
-        self.parser(log, field, mapping)
-
-    @classmethod
-    def factory(cls, field):
-        """
-        Creates a struct parser for a given VITA 49 field.
-        """
-        parser = StructValueParser(field.type)
-        return cls(parser)
-
-class StructValueParser:
-    """
-    Parser for struct values.
-
-    Struct values in YAML must be a mapping, where each key corresponds to a
-    subfield.
-    """
-    def __init__(self, struct):
-        super().__init__()
-        self._parsers = {}
-        self._aliases = {}
-        for field in struct.get_fields():
-            self._parsers[field.name.casefold()] = SimpleFieldParser.factory(field)
-
-    def __call__(self, log, context, value):
-        if not isinstance(value, dict):
-            raise TypeError('Struct values must be a dictionary')
-
-        for field_name, field_value in value.items():
-            name = self.get_field_name(field_name)
-            try:
-                parser = self.get_field_parser(name)
-            except KeyError:
-                log.error("Invalid field '%s'", field_name)
-                continue
-
-            # If parser lookup succeeded, field lookup must succeed
-            field = context.get_field(name)
-            assert field is not None
-
-            parser(log.getChild(field.name), field, field_value)
-
-    def add_alias(self, name, alias):
-        """
-        Registers an alias for a field name.
-        """
-        self._aliases[alias.casefold()] = name
-
-    def get_field_name(self, name):
-        """
-        Resolves an alias for a field name.
-        """
-        return self._aliases.get(name.casefold(), name)
-
-    def get_field_parser(self, name):
-        """
-        Returns the parser for a field.
-        """
-        parser = self._parsers.get(name.casefold(), None)
-        if parser is None:
-            raise KeyError(name)
-        return parser
-
-class ClassIDParser(StructValueParser):
-    """
-    Parser for ClassIdentifier structs.
-    """
-    def __init__(self):
-        super().__init__(ClassIdentifier)
-        self.add_alias(ClassIdentifier.oui.name, 'OUI')
 
 class IndexListParser(FieldParser):
     """

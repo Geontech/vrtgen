@@ -19,12 +19,12 @@
 Parsers for handling user-defined fields.
 """
 
+from vrtgen.parser import value as value_parser
+from vrtgen.parser.utils import EMPTY, to_kvpair
 from vrtgen.types import basic
 from vrtgen.types.struct import Enable, Field, Reserved, is_field
 
-from .field import FieldParser
-from . import value as value_parser
-from .utils import EMPTY, to_kvpair
+from .base import FieldParser
 
 def _parse_bits(value):
     if not isinstance(value, int):
