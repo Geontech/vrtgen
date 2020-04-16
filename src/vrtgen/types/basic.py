@@ -80,13 +80,16 @@ class Boolean(BooleanType, bits=1):
 
 class BinaryNumberType:
     """
-    Mix-in base class for sized binary number types.
+    Base class for sized binary number types.
 
     Binary numbers have a bit size and may be signed or not. Common operations
     include bit masking, sign extension and range checking.
     """
-    @classmethod
-    def _init_binary_type(cls, bits, signed):
+    def __init_subclass__(cls, bits=None, signed=False, **kwds):
+        super().__init_subclass__(**kwds)
+        if not bits:
+            # Must be an abstract subclass.
+            return
         cls.bits = bits
         cls.signed = signed
         cls.mask = (1 << bits) - 1
@@ -145,7 +148,7 @@ class BinaryNumberType:
             value |= ~cls.mask
         return value
 
-class IntegerType(int, BinaryNumberType):
+class IntegerType(BinaryNumberType):
     """
     Base class for signed and unsigned integer types with specific bit widths.
 
@@ -155,13 +158,13 @@ class IntegerType(int, BinaryNumberType):
     __cached__ = {}
 
     def __new__(cls, value=0):
-        value = int.__new__(cls, value)
+        value = int(value)
         cls._range_check(value)
         return value
 
+    # pylint: disable=signature-differs
     def __init_subclass__(cls, bits, signed=True, **kwds):
-        super().__init_subclass__(**kwds)
-        cls._init_binary_type(bits, signed)
+        super().__init_subclass__(bits, signed, **kwds)
 
     @staticmethod
     def create(bits, signed=True):
@@ -232,7 +235,7 @@ class UInteger8(IntegerType, bits=8, signed=False):
     8-bit unsigned integer type.
     """
 
-class NonZeroSize(int, BinaryNumberType):
+class NonZeroSize(BinaryNumberType):
     """
     Base class for non-zero size fields, in which the binary representation is
     one less than the actual value.
@@ -240,14 +243,14 @@ class NonZeroSize(int, BinaryNumberType):
     __cached__ = {}
 
     def __new__(cls, value=1):
-        value = int.__new__(cls, value)
+        value = int(value)
         cls._range_check(value)
         return value
 
+    # pylint: disable=arguments-differ
     def __init_subclass__(cls, bits, **kwds):
-        super().__init_subclass__(**kwds)
         # In this case sizes are always unsigned
-        cls._init_binary_type(bits, signed=False)
+        super().__init_subclass__(bits, signed=False, **kwds)
 
     @classmethod
     def _get_range(cls):
@@ -286,7 +289,7 @@ class NonZeroSize(int, BinaryNumberType):
         NonZeroSize.__cached__[key] = newclass
         return newclass
 
-class FixedPointType(float, BinaryNumberType):
+class FixedPointType(BinaryNumberType):
     """
     Base class for fixed-point types, mapping to Python float for the actual
     value.
@@ -296,17 +299,17 @@ class FixedPointType(float, BinaryNumberType):
     __cached__ = {}
 
     def __new__(cls, value=0.0):
-        value = float.__new__(cls, value)
+        value = float(value)
         cls._range_check(value)
         return value
 
+    # pylint: disable=arguments-differ
     def __init_subclass__(cls, bits, radix, **kwds):
-        super().__init_subclass__(**kwds)
-        # Set radix and scale before initializing base class because they are
+        # Set radix and scale before calling base class hook because they are
         # needed for _get_range().
         cls.radix = radix
         cls.scale = 1 << cls.radix
-        cls._init_binary_type(bits, signed=True)
+        super().__init_subclass__(bits, signed=True, **kwds)
 
     @classmethod
     def _get_range(cls):
