@@ -422,8 +422,8 @@ class Struct(Container):
         words = [0] * (self.bits//32)
         for field in self.get_contents():
             value = field.__get__(self, type(self))
-            # Disabled indicator fields report a value of None, but wil be
-            # packed as 0 (implicitly, because the bits are already 0)
+            # Disabled indicator fields report a value of None, but will be
+            # packed as 0 (implicitly, because the bits are already 0).
             if value is None:
                 continue
             if hasattr(field.type, 'to_binary'):
