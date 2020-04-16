@@ -1,5 +1,0 @@
-TestDiscrete32:
-  control:
-    Discrete I/O 32:
-      - name: Output Enable
-        bits: 1
