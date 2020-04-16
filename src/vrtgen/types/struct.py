@@ -426,8 +426,8 @@ class Struct(Container):
             # packed as 0 (implicitly, because the bits are already 0)
             if value is None:
                 continue
-            if hasattr(value, 'to_binary'):
-                value = value.to_binary()
+            if hasattr(field.type, 'to_binary'):
+                value = field.type.to_binary(value)
             if field.bits == 64:
                 words[field.position.word] = value >> 32
                 words[field.position.word+1] = value & 0xFFFFFFFF

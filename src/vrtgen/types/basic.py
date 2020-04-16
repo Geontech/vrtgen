@@ -35,6 +35,16 @@ class BooleanType:
         super().__init_subclass__(**kwds)
         cls.bits = bits
 
+    @classmethod
+    def to_binary(cls, value):
+        """
+        Converts a boolean value to its binary representation of the correct
+        number of bits.
+        """
+        # Multi-bit booleans are all 1s; multiplying the bitmask by the value
+        # converts a bool to the right integer value.
+        return value * ((1 << cls.bits) - 1)
+
     @staticmethod
     def create(bits):
         """
@@ -83,15 +93,12 @@ class BinaryNumberType:
             maxval = (2**cls.bits) - 1
         return (minval, maxval)
 
-    def to_binary(self):
+    @classmethod
+    def to_binary(cls, value):
         """
         Converts this numeric value to to corresponding unsigned binary
         representation.
         """
-        return self._to_unsigned(self)
-
-    @classmethod
-    def _to_unsigned(cls, value):
         return value & cls.mask
 
     @classmethod
@@ -237,12 +244,13 @@ class NonZeroSize(int, BinaryNumberType):
     def _get_range(cls):
         return 1, 2**cls.bits
 
-    def to_binary(self):
+    @classmethod
+    def to_binary(cls, value):
         """
         Converts this non-zero size to its unsigned binary representation.
         """
         # Always unsigned, don't need superclass conversion
-        return self - 1
+        return value - 1
 
     @classmethod
     def from_binary(cls, value):
@@ -296,7 +304,8 @@ class FixedPointType(float, BinaryNumberType):
         minval, maxval = super()._get_range()
         return (minval / cls.scale, maxval / cls.scale)
 
-    def to_binary(self):
+    @classmethod
+    def to_binary(cls, value):
         """
         Converts this fixed-point value to its binary representation as an
         unsigned integer.
@@ -304,8 +313,8 @@ class FixedPointType(float, BinaryNumberType):
         # Shift radix point up so the least significant fractional bit is in
         # the ones place, then round and truncate to int. Then, mask the value
         # to convert it to unsigned.
-        value = int(round(self * self.scale))
-        return self._to_unsigned(value)
+        value = int(round(value * cls.scale))
+        return super().to_binary(value)
 
     @classmethod
     def from_binary(cls, value):
