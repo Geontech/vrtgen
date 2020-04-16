@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   **Existing YAML files must be updated to work with version 0.3.**
 ### Added
 - User-defined Discrete I/O fields, including indicators.
+- Python struct classes support unpacking from bytes.
 ### Removed
 - The packet type "command" was removed.
 
