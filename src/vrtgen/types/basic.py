@@ -36,6 +36,15 @@ class BooleanType:
         cls.bits = bits
 
     @classmethod
+    def from_binary(cls, value):
+        """
+        Converts an unsigned binary representation to a boolean value.
+        """
+        # Any non-zero value is true, although in a strict sense multi-bit
+        # booleans should be all 1s.
+        return bool(value)
+
+    @classmethod
     def to_binary(cls, value):
         """
         Converts a boolean value to its binary representation of the correct

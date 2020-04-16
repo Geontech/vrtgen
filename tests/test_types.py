@@ -125,7 +125,7 @@ Int7 = basic.IntegerType.create(7)
         (NonZero6, 12, 11),
         (NonZero6, 64, 63),
 
-        # Unsigned integer conversion is a no-op
+        # Unsigned integer conversion is a no-op.
         (basic.UInteger24, 301, 301),
         (basic.UInteger24, 16777215, 16777215),
 
@@ -144,3 +144,37 @@ Int7 = basic.IntegerType.create(7)
 def test_to_binary(datatype, value, expected):
     value = datatype(value)
     assert datatype.to_binary(value) == expected
+
+NonZero5 = basic.NonZeroSize.create(5)
+Int5 = basic.IntegerType.create(5)
+
+@pytest.mark.parametrize(
+    "datatype,value,expected",
+    [
+        # Boolean types are pretty forgiving, this mostly just checks API.
+        (basic.Boolean, 0, False),
+        (basic.Boolean, 1, True),
+        (Bool2, 0, False),
+        (Bool2, 3, True),
+
+        # Check that effective values of non-zeros sizes are one more than the
+        # binary representations.
+        (NonZero5, 0, 1),
+        (NonZero5, 15, 16),
+        (NonZero5, 31, 32),
+
+        # Unsigned integer conversion is a no-op.
+        (basic.UInteger16, 4500, 4500),
+        (basic.UInteger16, 65535, 65535),
+
+        # Check signed integer conversion, both byte- and non-byte-aligned.
+        (basic.Integer32, 4294967295, -1),
+        (basic.Integer32, 5892979, 5892979),
+        (basic.Integer32, 3315221642, -979745654),
+        (Int5, 14, 14),
+        (Int5, 31, -1),
+    ]
+)
+def test_from_binary(datatype, value, expected):
+    expected = datatype(expected)
+    assert datatype.from_binary(value) == expected
