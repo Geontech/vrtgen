@@ -22,6 +22,7 @@ from vrtgen.types.struct import Struct
 
 from .field import FieldParser, StructFieldParser, SimpleFieldParser
 from .mapping import MappingParser
+from .value import get_value_parser
 
 def bind_parser(name, parser):
     """
@@ -52,7 +53,7 @@ class SectionParser(MappingParser):
     @classmethod
     def add_field_parser(cls, field, parser=None, alias=None):
         """
-        Registers a parser for a specific VITA 49 field.
+        Registers a configuration parser for a specific VITA 49 field.
         """
         assert field.type is not None
         parser = cls._wrap_field_parser(field, parser)
@@ -60,9 +61,19 @@ class SectionParser(MappingParser):
         cls.add_parser(name, bind_parser(name, parser), alias)
 
     @classmethod
-    def add_field_value_parser(cls, field, parser, alias=None):
+    def add_field_value_parser(cls, field, parser=None, alias=None):
+        """
+        Registers a value parser for a specific VITA 49.2 field.
+
+        The parser must take a YAML scalar value and return a Python value
+        compatible with the field's data type.
+
+        Fields registered with this method will only accept a scalar value.
+        """
         assert field.type is not None
         name = field.name
+        if parser is None:
+            parser = get_value_parser(field.type)
         cls.add_parser(name, _bind_value_parser(name, parser), alias)
 
     @staticmethod

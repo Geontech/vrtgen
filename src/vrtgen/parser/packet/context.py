@@ -19,7 +19,6 @@
 Context packet parser classes.
 """
 
-from vrtgen.parser.value import parse_tsm, parse_boolean
 from vrtgen.types.prologue import ContextHeader
 
 from .cif import CIFPacketParser
@@ -29,5 +28,5 @@ class ContextPacketParser(CIFPacketParser):
     Parser for Context Packet configuration.
     """
 
-ContextPacketParser.add_field_value_parser(ContextHeader.timestamp_mode, parse_tsm, alias='TSM')
-ContextPacketParser.add_field_value_parser(ContextHeader.not_v49d0, parse_boolean, alias='Not V49.0')
+ContextPacketParser.add_field_value_parser(ContextHeader.timestamp_mode, alias='TSM')
+ContextPacketParser.add_field_value_parser(ContextHeader.not_v49d0, alias='Not V49.0')

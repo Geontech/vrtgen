@@ -19,9 +19,7 @@
 Parsers for handling simple (i.e., single-valued) fields.
 """
 
-from vrtgen.parser import value as value_parser
-from vrtgen.types import enums
-from vrtgen.types import basic
+from vrtgen.parser.value import get_value_parser
 
 from .base import FieldParser
 
@@ -61,16 +59,5 @@ class SimpleFieldParser(FieldParser):
         """
         Creates a simple parser for a given VITA 49 field.
         """
-        parser = cls.__TYPES__.get(field.type, field.type)
+        parser = get_value_parser(field.type)
         return cls(parser)
-
-SimpleFieldParser.register_type(basic.Boolean, value_parser.parse_boolean)
-SimpleFieldParser.register_type(basic.OUI, value_parser.parse_oui)
-SimpleFieldParser.register_type(enums.TSI, value_parser.parse_tsi)
-SimpleFieldParser.register_type(enums.TSF, value_parser.parse_tsf)
-SimpleFieldParser.register_type(enums.SSI, value_parser.parse_ssi)
-SimpleFieldParser.register_type(enums.TSM, value_parser.parse_tsm)
-SimpleFieldParser.register_type(enums.PackingMethod, value_parser.parse_packing_method)
-SimpleFieldParser.register_type(enums.DataSampleType, value_parser.parse_data_sample_type)
-SimpleFieldParser.register_type(enums.DataItemFormat, value_parser.parse_data_item_format)
-SimpleFieldParser.register_type(enums.ActionMode, value_parser.parse_action)
