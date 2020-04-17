@@ -36,6 +36,8 @@ TestData: data
     assert packet.tsf == enums.TSF.NONE
     assert packet.stream_id.is_disabled
     assert packet.class_id.is_disabled
+    assert not packet.not_v49d0
+    assert not packet.spectrum
 
 def test_data_stream_id():
     document = """
@@ -47,6 +49,18 @@ StreamIDTest:
     assert packet.stream_id.is_required
     assert packet.packet_type == config.PacketType.DATA
     assert packet.packet_type_code == enums.PacketType.SIGNAL_DATA_STREAM_ID
+
+def test_data_header():
+    document = """
+DataHeaderFields:
+    data:
+        not v49.0: true
+        spectrum: true
+"""
+    packet = parse_single(document)
+    assert packet.packet_type == config.PacketType.DATA
+    assert packet.not_v49d0
+    assert packet.spectrum
 
 def test_context_defaults():
     document = """
@@ -60,16 +74,19 @@ TestContext: context
     assert packet.tsf == enums.TSF.NONE
     assert packet.stream_id.is_mandatory
     assert packet.class_id.is_disabled
-    assert packet.timestamp_mode == enums.TSM.FINE
+    assert packet.tsm == enums.TSM.FINE
+    assert not packet.not_v49d0
 
-def test_context_timestamp_mode():
+def test_context_header():
     document = """
-TSMTest:
+ContextHeaderFields:
     context:
         timestamp mode: coarse
+        not v49.0: true
 """
     packet = parse_single(document)
-    assert packet.timestamp_mode == enums.TSM.COARSE
+    assert packet.tsm == enums.TSM.COARSE
+    assert packet.not_v49d0
 
 def test_control_defaults():
     document = """

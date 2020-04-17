@@ -119,9 +119,23 @@ class DataPacketConfiguration(PacketConfiguration):
     """
     def __init__(self, name):
         super().__init__(name, PacketType.DATA)
-        self.not_v49d0 = self._add_field(DataHeader.not_v49d0, Scope.HEADER, Mode.MANDATORY)
-        self.spectrum = self._add_field(DataHeader.spectrum, Scope.HEADER, Mode.MANDATORY)
+        self._not_v49d0 = self._add_field(DataHeader.not_v49d0, Scope.HEADER, Mode.MANDATORY)
+        self._spectrum = self._add_field(DataHeader.spectrum, Scope.HEADER, Mode.MANDATORY)
         self._add_fields(Trailer, Scope.TRAILER)
+
+    @property
+    def not_v49d0(self):
+        """
+        True if this packet is not compatible with VITA 49.0.
+        """
+        return self._not_v49d0.value
+
+    @property
+    def spectrum(self):
+        """
+        True if this packet contains spectral data.
+        """
+        return self._spectrum.value
 
     def _get_packet_type_code(self):
         if self.stream_id.is_enabled:
@@ -147,10 +161,24 @@ class ContextPacketConfiguration(CIFPacketConfiguration):
     """
     def __init__(self, name):
         super().__init__(name, PacketType.CONTEXT)
-        self.not_v49d0 = self._add_field(ContextHeader.not_v49d0, Scope.HEADER, Mode.MANDATORY)
-        self.timestamp_mode = self._add_field(
+        self._not_v49d0 = self._add_field(ContextHeader.not_v49d0, Scope.HEADER, Mode.MANDATORY)
+        self._tsm = self._add_field(
             ContextHeader.timestamp_mode, Scope.HEADER, Mode.MANDATORY
         )
+
+    @property
+    def not_v49d0(self):
+        """
+        True if this packet is not compatible with VITA 49.0.
+        """
+        return self._not_v49d0.value
+
+    @property
+    def tsm(self):
+        """
+        The current timestamp mode (TSM) value.
+        """
+        return self._tsm.value
 
     def _get_packet_type_code(self):
         return enums.PacketType.CONTEXT
