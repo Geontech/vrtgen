@@ -10,7 +10,12 @@ test:
         - pip install .
         - pip install pytest
     script:
-        - pytest --color=yes
+        - pytest --color=yes --junit-xml=vrtgen-tests.xml
+    artifacts:
+        paths:
+            - vrtgen-tests.xml
+        reports:
+            junit: vrtgen-tests.xml
 
 lint:
     stage: test
