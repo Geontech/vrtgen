@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - User-defined Discrete I/O fields, including indicators.
 - Python struct classes support unpacking from bytes.
+- Data packets may specificy spectrum mode, context and data may specify "Not a V49.0 packet" flag.
 ### Removed
 - The packet type "command" was removed.
 
