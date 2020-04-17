@@ -27,7 +27,8 @@ JINJA_OPTIONS = {
     'block_start_string':    '/*%',
     'block_end_string':      '%*/',
     'comment_start_string':  '/*#',
-    'comment_end_string':    '#*/'
+    'comment_end_string':    '#*/',
+    'line_comment_prefix':   '//#',
 }
 
 def do_namespace(text, namespace):
