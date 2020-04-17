@@ -48,13 +48,6 @@ class SimpleFieldParser(FieldParser):
             super().parse_option(log, field, name, value)
 
     @classmethod
-    def register_type(cls, datatype, parser):
-        """
-        Registers a default value parser for a Python type.
-        """
-        cls.__TYPES__[datatype] = parser
-
-    @classmethod
     def factory(cls, field):
         """
         Creates a simple parser for a given VITA 49 field.
