@@ -35,6 +35,25 @@ class BooleanType:
         super().__init_subclass__(**kwds)
         cls.bits = bits
 
+    @classmethod
+    def from_binary(cls, value):
+        """
+        Converts an unsigned binary representation to a boolean value.
+        """
+        # Any non-zero value is true, although in a strict sense multi-bit
+        # booleans should be all 1s.
+        return bool(value)
+
+    @classmethod
+    def to_binary(cls, value):
+        """
+        Converts a boolean value to its binary representation of the correct
+        number of bits.
+        """
+        # Multi-bit booleans are all 1s; multiplying the bitmask by the value
+        # converts a bool to the right integer value.
+        return value * ((1 << cls.bits) - 1)
+
     @staticmethod
     def create(bits):
         """
@@ -59,16 +78,77 @@ class Boolean(BooleanType, bits=1):
     One-bit boolean value type.
     """
 
-def _range_check(cls, value):
+class BinaryNumberType:
     """
-    Validates numeric values against the minimum and maximum for a class.
-    """
-    if value > cls.maxval:
-        raise ValueError('{} cannot exceed {}'.format(cls.__name__, cls.maxval))
-    if value < cls.minval:
-        raise ValueError('{} cannot be less than {}'.format(cls.__name__, cls.minval))
+    Base class for sized binary number types.
 
-class IntegerType(int):
+    Binary numbers have a bit size and may be signed or not. Common operations
+    include bit masking, sign extension and range checking.
+    """
+    def __init_subclass__(cls, bits=None, signed=False, **kwds):
+        super().__init_subclass__(**kwds)
+        if not bits:
+            # Must be an abstract subclass.
+            return
+        cls.bits = bits
+        cls.signed = signed
+        cls.mask = (1 << bits) - 1
+        cls.minval, cls.maxval = cls._get_range()
+
+    @classmethod
+    def _get_range(cls):
+        if cls.signed:
+            minval = -(2**(cls.bits-1))
+            maxval = -minval - 1
+        else:
+            minval = 0
+            maxval = (2**cls.bits) - 1
+        return (minval, maxval)
+
+    @classmethod
+    def to_binary(cls, value):
+        """
+        Converts this numeric value to to corresponding unsigned binary
+        representation.
+        """
+        return value & cls.mask
+
+    @classmethod
+    def from_binary(cls, value):
+        """
+        Converts an unsigned binary representation to the correct numeric type.
+        """
+        if value < 0:
+            raise ValueError('binary value must be unsigned')
+        if value >= (1 << cls.bits):
+            raise ValueError('binary value {} too large for {}'.format(value, cls.__name__))
+        if cls.signed:
+            value = cls._sign_extend(value)
+        return value
+
+    @classmethod
+    def _range_check(cls, value):
+        """
+        Validates numeric values against the minimum and maximum for a class.
+        """
+        if value > cls.maxval:
+            raise ValueError('{} > {} ({} max value)'.format(value, cls.maxval, cls.__name__, ))
+        if value < cls.minval:
+            raise ValueError('{} < {} ({} min value)'.format(value, cls.minval, cls.__name__, ))
+
+    @classmethod
+    def _sign_extend(cls, value):
+        """
+        Converts an unsigned integer value of this type's number of bits to a
+        signed integer value by sign extension.
+        """
+        # If the sign bit is set, convert to a negative number by sign
+        # extension (OR-ing all high bits).
+        if value & (1 << (cls.bits - 1)):
+            value |= ~cls.mask
+        return value
+
+class IntegerType(BinaryNumberType):
     """
     Base class for signed and unsigned integer types with specific bit widths.
 
@@ -78,28 +158,13 @@ class IntegerType(int):
     __cached__ = {}
 
     def __new__(cls, value=0):
-        value = int.__new__(cls, value)
-        _range_check(cls, value)
+        value = int(value)
+        cls._range_check(value)
         return value
 
+    # pylint: disable=signature-differs
     def __init_subclass__(cls, bits, signed=True, **kwds):
-        super().__init_subclass__(**kwds)
-        cls.bits = bits
-        cls.signed = signed
-        cls.minval, cls.maxval = IntegerType.range(bits, signed)
-
-    @staticmethod
-    def range(bits, signed):
-        """
-        Returns the minimum and maximum values for an integer type.
-        """
-        if signed:
-            minval = -(2**(bits-1))
-            maxval = -minval - 1
-        else:
-            minval = 0
-            maxval = (2**bits) - 1
-        return (minval, maxval)
+        super().__init_subclass__(bits, signed, **kwds)
 
     @staticmethod
     def create(bits, signed=True):
@@ -170,38 +235,41 @@ class UInteger8(IntegerType, bits=8, signed=False):
     8-bit unsigned integer type.
     """
 
-class NonZeroSize(int):
+class NonZeroSize(BinaryNumberType):
     """
     Base class for non-zero size fields, in which the binary representation is
     one less than the actual value.
     """
     __cached__ = {}
 
-    # In this case sizes are always unsigned
-    signed = False
-
     def __new__(cls, value=1):
-        value = int.__new__(cls, value)
-        _range_check(cls, value)
+        value = int(value)
+        cls._range_check(value)
         return value
 
+    # pylint: disable=arguments-differ
     def __init_subclass__(cls, bits, **kwds):
-        super().__init_subclass__(**kwds)
-        cls.bits = bits
-        cls.minval = 1
-        cls.maxval = 2**bits
+        # In this case sizes are always unsigned
+        super().__init_subclass__(bits, signed=False, **kwds)
 
-    def to_binary(self):
+    @classmethod
+    def _get_range(cls):
+        return 1, 2**cls.bits
+
+    @classmethod
+    def to_binary(cls, value):
         """
         Converts this non-zero size to its unsigned binary representation.
         """
-        return self - 1
+        # Always unsigned, don't need superclass conversion
+        return value - 1
 
     @classmethod
     def from_binary(cls, value):
         """
         Converts an unsigned binary representation to a non-zero size.
         """
+        # Don't need superclass conversion here.
         return cls(value + 1)
 
     @staticmethod
@@ -221,7 +289,7 @@ class NonZeroSize(int):
         NonZeroSize.__cached__[key] = newclass
         return newclass
 
-class FixedPointType(float):
+class FixedPointType(BinaryNumberType):
     """
     Base class for fixed-point types, mapping to Python float for the actual
     value.
@@ -231,21 +299,25 @@ class FixedPointType(float):
     __cached__ = {}
 
     def __new__(cls, value=0.0):
-        value = float.__new__(cls, value)
-        _range_check(cls, value)
+        value = float(value)
+        cls._range_check(value)
         return value
 
+    # pylint: disable=arguments-differ
     def __init_subclass__(cls, bits, radix, **kwds):
-        super().__init_subclass__(**kwds)
-        cls.bits = bits
+        # Set radix and scale before calling base class hook because they are
+        # needed for _get_range().
         cls.radix = radix
-        cls.mask = (1 << cls.bits) - 1
         cls.scale = 1 << cls.radix
-        minval, maxval = IntegerType.range(bits, signed=True)
-        cls.minval = minval / cls.scale
-        cls.maxval = maxval / cls.scale
+        super().__init_subclass__(bits, signed=True, **kwds)
 
-    def to_binary(self):
+    @classmethod
+    def _get_range(cls):
+        minval, maxval = super()._get_range()
+        return (minval / cls.scale, maxval / cls.scale)
+
+    @classmethod
+    def to_binary(cls, value):
         """
         Converts this fixed-point value to its binary representation as an
         unsigned integer.
@@ -253,21 +325,16 @@ class FixedPointType(float):
         # Shift radix point up so the least significant fractional bit is in
         # the ones place, then round and truncate to int. Then, mask the value
         # to convert it to unsigned.
-        return int(round(self * self.scale)) & self.mask
+        value = int(round(value * cls.scale))
+        return super().to_binary(value)
 
     @classmethod
     def from_binary(cls, value):
         """
         Converts an unsigned binary representation to a fixed-point value.
         """
-        if value < 0:
-            raise ValueError('binary value must be unsigned')
-        if value >= (1 << cls.bits):
-            raise ValueError('binary value {} too large for {}'.format(value, cls.__name__))
-        # If the sign bit is set, convert to a negative number by sign
-        # extension (OR-ing all high bits).
-        if value & (1 << (cls.bits - 1)):
-            value |= ~cls.mask
+        # Let the base class handle sign conversion and just scale the result.
+        value = super().from_binary(value)
         return cls(value / cls.scale)
 
     @staticmethod

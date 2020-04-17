@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2020 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -16,6 +16,7 @@
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
 """
-Version information for vrtgen.
+C++ backend package for VITA 49.2 packet generation.
 """
-__version__ = '0.3.0'
+
+from .generator import CppGenerator

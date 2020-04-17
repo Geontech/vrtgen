@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2020 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -16,6 +16,10 @@
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
 """
-Version information for vrtgen.
+Parsers for handling packet fields.
 """
-__version__ = '0.3.0'
+
+from .base import *
+from .simple import *
+from .struct import *
+from .user import *

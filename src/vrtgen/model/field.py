@@ -21,7 +21,8 @@ Types for configuration of packet fields and subfields.
 
 from enum import Enum, auto
 
-from vrtgen.types.struct import Struct
+from vrtgen.types import struct
+from vrtgen.types import user
 
 class Mode(Enum):
     """
@@ -45,6 +46,7 @@ class Scope(Enum):
         CIF1: CIF 1 fields (Context and Command packets only).
         TRAILER: Packet trailer (Data packet only).
     """
+    HEADER = auto()
     PROLOGUE = auto()
     CAM = auto()
     CIF0 = auto()
@@ -175,6 +177,13 @@ class FieldConfiguration:
     def value(self, newval):
         self._set_value(newval)
 
+    @property
+    def is_user_defined(self):
+        """
+        True if this field has user-defined subfields.
+        """
+        return False
+
     @staticmethod
     def create(field, scope, mode=Mode.DISABLED):
         """
@@ -182,9 +191,13 @@ class FieldConfiguration:
         instance.
         """
         # The type may be none for unimplemented CIF fields
-        if field.type is not None and issubclass(field.type, Struct):
-            return StructFieldConfiguration(field, scope, mode=mode)
-        return SimpleFieldConfiguration(field, scope, mode=mode)
+        if user.is_user_defined(field.type):
+            cls = UserDefinedFieldConfiguration
+        elif struct.is_struct(field.type):
+            cls = StructFieldConfiguration
+        else:
+            cls = SimpleFieldConfiguration
+        return cls(field, scope, mode=mode)
 
     def _get_value(self):
         raise NotImplementedError('_get_value')
@@ -214,19 +227,13 @@ class SimpleFieldConfiguration(FieldConfiguration):
     def _set_value(self, value):
         self._value = value
 
-class StructFieldConfiguration(FieldConfiguration):
+class ContainerFieldConfiguration(FieldConfiguration):
     """
-    Configuration for a structured field type.
+    Base class for field types that contain subfields.
     """
-    def __init__(self, field, scope, mode=Mode.DISABLED):
-        super().__init__(field, scope, mode)
+    def __init__(self, *args, **kwds):
+        super().__init__(*args, **kwds)
         self._fields = {}
-        for subfield in field.type.get_fields():
-            # By default, all struct fields are required. They can marked as
-            # optional or unused later.
-            config = FieldConfiguration.create(subfield, self.scope, Mode.REQUIRED)
-            setattr(self, subfield.attr, config)
-            self._fields[subfield.name.casefold()] = config
 
     def get_field(self, name):
         """
@@ -254,3 +261,70 @@ class StructFieldConfiguration(FieldConfiguration):
 
     def _set_value(self, value):
         raise AttributeError('cannot set struct value')
+
+    def _add_field(self, field, mode):
+        config = FieldConfiguration.create(field, self.scope, mode)
+        setattr(self, field.attr, config)
+        self._fields[field.name.casefold()] = config
+        return config
+
+class UserDefinedFieldConfiguration(ContainerFieldConfiguration):
+    """
+    Configuration for user-defined structure field types.
+    """
+    def __init__(self, *args, **kwds):
+        super().__init__(*args, **kwds)
+        self._type = None
+        self._namespace = {}
+
+    @property
+    def type(self):
+        if self._type is None:
+            cls = self.field.type
+            self._type = user.create_struct(cls, cls.__name__, self._namespace)
+        return self._type
+
+    @type.setter
+    def type(self, dtype):
+        assert self._type is None
+        self._type = dtype
+
+    @property
+    def is_user_defined(self):
+        return True
+
+    def add_field(self, field):
+        """
+        Adds a field defintion to the user-defined struct type.
+        """
+        # Disallow adding fields after the struct definition has been created
+        assert self._type is None
+        if struct.is_reserved(field):
+            count = sum((k.startswith('reserved_') for k in self._namespace))
+            attr = 'reserved_{}'.format(count + 1)
+            # Guard against pathological breakage...
+            assert attr not in self._namespace
+        else:
+            attr = '_'.join(field.name.lower().split())
+            if struct.is_enable(field):
+                attr += '_enable'
+            if attr in self._namespace:
+                raise ValueError("duplicate name '{}'".format(field.name))
+        self._namespace[attr] = field
+
+        # Create field configuration for editable fields
+        if struct.is_field(field):
+            # Assume optional if there is a linked enable
+            mode = Mode.OPTIONAL if field.enable else Mode.REQUIRED
+            self._add_field(field, mode)
+
+class StructFieldConfiguration(ContainerFieldConfiguration):
+    """
+    Configuration for a structured field type.
+    """
+    def __init__(self, field, scope, mode=Mode.DISABLED):
+        super().__init__(field, scope, mode)
+        for subfield in field.type.get_fields():
+            # By default, all struct fields are required. They can marked as
+            # optional or unused later.
+            self._add_field(subfield, Mode.REQUIRED)

@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2020 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -16,6 +16,17 @@
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
 """
-Version information for vrtgen.
+Context packet parser classes.
 """
-__version__ = '0.3.0'
+
+from vrtgen.types.prologue import ContextHeader
+
+from .cif import CIFPacketParser
+
+class ContextPacketParser(CIFPacketParser):
+    """
+    Parser for Context Packet configuration.
+    """
+
+ContextPacketParser.add_field_value_parser(ContextHeader.timestamp_mode, alias='TSM')
+ContextPacketParser.add_field_value_parser(ContextHeader.not_v49d0, alias='Not V49.0')

@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2020 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -16,6 +16,21 @@
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
 """
-Version information for vrtgen.
+Helper methods for generating C++ enumerations.
 """
-__version__ = '0.3.0'
+
+from . import utils
+
+def format_enum(enum):
+    """
+    Returns a description of a BinaryEnum type for use in code generation.
+    """
+    # Create a format string that returns a hex constant (binary constants are
+    # a C++14 feature)
+    digits = int((enum.bits + 3) / 4)
+    format_string = '0x{{:0{}x}}'.format(digits)
+    return {
+        'name': enum.__name__,
+        'doc': utils.format_docstring(enum.__doc__),
+        'values': [(e.name, format_string.format(e.value)) for e in enum]
+    }

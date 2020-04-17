@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2020-04-17
+### Changed
+- **The schema for YAML files has changed**.
+  Instead of requiring a top-level "type" key, each packet definition must contain a single-key mapping with the packet type and a mapping of its fields.
+  The "payload" key in context and command packets has also been removed; all packet fields should be under the type mapping.
+  **Existing YAML files must be updated to work with version 0.3.**
+### Added
+- User-defined Discrete I/O fields, including indicators.
+- Python struct classes support unpacking from bytes.
+- Data packets may specificy spectrum mode, context and data may specify "Not a V49.0 packet" flag.
+### Removed
+- The packet type "command" was removed.
+
 ## [0.2.1] - 2019-11-13
 ### Fixed
 - Using struct fields in packets works again in C++.

@@ -20,6 +20,7 @@ Parsers for field value types.
 """
 import re
 
+from vrtgen.types import basic
 from vrtgen.types import enums
 
 def parse_boolean(value):
@@ -257,3 +258,24 @@ def parse_identifier_format(value):
         return _IDENTIFIER_FORMAT_VALUES[value.casefold()]
     except KeyError:
         raise ValueError(value)
+
+# Type object to parse function table
+_PARSERS = {
+    basic.Boolean: parse_boolean,
+    basic.OUI: parse_oui,
+    enums.TSI: parse_tsi,
+    enums.TSF: parse_tsf,
+    enums.SSI: parse_ssi,
+    enums.TSM: parse_tsm,
+    enums.PackingMethod: parse_packing_method,
+    enums.DataSampleType: parse_data_sample_type,
+    enums.DataItemFormat: parse_data_item_format,
+    enums.ActionMode: parse_action,
+}
+def get_value_parser(datatype):
+    """
+    Returns a parser that converts a YAML value into the given data type.
+
+    If no specialized parser is registered, the data type constructor is used.
+    """
+    return _PARSERS.get(datatype, datatype)

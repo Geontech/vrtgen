@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 include(GNUInstallDirs)
 
-project(vrtgen-cpp VERSION 0.2.1 LANGUAGES CXX)
+project(vrtgen-cpp VERSION 0.3.0 LANGUAGES CXX)
 
 # On Mac OS X, give the system installation lowest priority so that virtual
 # environments can be found
@@ -18,6 +18,9 @@ execute_process(
 if(NOT import_vrtgen_error_code EQUAL 0)
     message(FATAL_ERROR "vrtgen Python module not found")
 endif()
+
+# Support per-target JUnit test output at configure time
+option(JUNIT_OUTPUT "Use JUnit output format for test results" OFF)
 
 # Generate a version header
 configure_file(
@@ -38,10 +41,11 @@ set(CMAKE_CLEAN_FILES ${generated_header_files})
 
 # List template files used to generate headers, used to trigger a re-generate
 # step if they are modified
+set(template_path ${CMAKE_CURRENT_SOURCE_DIR}/python/vrtgen/backend/cpp/templates)
 set(template_files
     ${CMAKE_CURRENT_SOURCE_DIR}/templates/cif.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/templates/enums.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/templates/struct.hpp
+    ${template_path}/enums.hpp
+    ${template_path}/struct.hpp
 )
 
 add_custom_command(
@@ -90,11 +94,7 @@ install(
     FILES_MATCHING PATTERN "*.hpp"
 )
 
-add_library(Catch2 INTERFACE)
-target_include_directories(Catch2 INTERFACE
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/Catch2/include
-)
-target_compile_features(Catch2 INTERFACE cxx_std_11)
+subdirs(external/Catch2)
 
 # Compile everything with most warnings
 add_compile_options(
@@ -125,10 +125,18 @@ target_link_libraries(test_libvrtgen Catch2)
 target_link_libraries(test_libvrtgen testutils)
 target_compile_options(test_libvrtgen PRIVATE -Wall -Wextra -Wpedantic)
 
-add_custom_target(run_test_libvrtgen
-    COMMAND test_libvrtgen $(TEST_OPTIONS)
+# Run the library tests, with optional JUnit output
+if(JUNIT_OUTPUT)
+    set(LIBVRTGEN_TEST_OPTIONS "-r junit" "-o test_libvrtgen-results.xml")
+    set_property(DIRECTORY APPEND PROPERTY
+        ADDITIONAL_MAKE_CLEAN_FILES
+            ${CMAKE_CURRENT_BINARY_DIR}/test_libvrtgen-results.xml
+    )
+endif()
+add_custom_target(check-libvrtgen
+    COMMAND test_libvrtgen ${LIBVRTGEN_TEST_OPTIONS} $(TEST_OPTIONS)
 )
-add_dependencies(check run_test_libvrtgen)
+add_dependencies(check check-libvrtgen)
 
 # Helper function to generate C++ source from a YAML file using vrtpktgen
 function(add_codegen_file TARGET YAML_FILE)
@@ -153,11 +161,13 @@ add_executable(test_codegen
     tests/codegen/test_control_ids.cpp
     tests/codegen/test_timestamp.cpp
     tests/codegen/test_structs.cpp
+    tests/codegen/test_user.cpp
 )
 add_codegen_file(test_codegen tests/codegen/basic.yaml)
 add_codegen_file(test_codegen tests/codegen/control_ids.yaml)
 add_codegen_file(test_codegen tests/codegen/timestamp.yaml)
 add_codegen_file(test_codegen tests/codegen/structs.yaml)
+add_codegen_file(test_codegen tests/codegen/user.yaml)
 
 target_link_libraries(test_codegen vrtgen)
 target_link_libraries(test_codegen Catch2)
@@ -170,10 +180,18 @@ target_include_directories(test_codegen PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen
 )
 
-add_custom_target(run_test_codegen
-    COMMAND test_codegen $(TEST_OPTIONS)
+# Run the code generator tests, with optional JUnit output
+if(JUNIT_OUTPUT)
+    set(CODEGEN_TEST_OPTIONS "-r junit" "-o test_codegen-results.xml")
+    set_property(DIRECTORY APPEND PROPERTY
+        ADDITIONAL_MAKE_CLEAN_FILES
+            ${CMAKE_CURRENT_BINARY_DIR}/test_codegen-results.xml
+    )
+endif()
+add_custom_target(check-codegen
+    COMMAND test_codegen ${CODEGEN_TEST_OPTIONS} $(TEST_OPTIONS)
 )
-add_dependencies(check run_test_codegen)
+add_dependencies(check check-codegen)
 
 # Packaging options
 set(CPACK_PACKAGE_NAME libvrtgen)

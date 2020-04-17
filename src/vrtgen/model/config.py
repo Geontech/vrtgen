@@ -23,7 +23,7 @@ from enum import Enum
 import warnings
 
 from vrtgen.types import enums
-from vrtgen.types.prologue import Prologue
+from vrtgen.types.prologue import Prologue, DataHeader, ContextHeader
 from vrtgen.types.trailer import Trailer
 from vrtgen.types.cif0 import CIF0
 from vrtgen.types.cif1 import CIF1
@@ -119,8 +119,23 @@ class DataPacketConfiguration(PacketConfiguration):
     """
     def __init__(self, name):
         super().__init__(name, PacketType.DATA)
-
+        self._not_v49d0 = self._add_field(DataHeader.not_v49d0, Scope.HEADER, Mode.MANDATORY)
+        self._spectrum = self._add_field(DataHeader.spectrum, Scope.HEADER, Mode.MANDATORY)
         self._add_fields(Trailer, Scope.TRAILER)
+
+    @property
+    def not_v49d0(self):
+        """
+        True if this packet is not compatible with VITA 49.0.
+        """
+        return self._not_v49d0.value
+
+    @property
+    def spectrum(self):
+        """
+        True if this packet contains spectral data.
+        """
+        return self._spectrum.value
 
     def _get_packet_type_code(self):
         if self.stream_id.is_enabled:
@@ -146,7 +161,24 @@ class ContextPacketConfiguration(CIFPacketConfiguration):
     """
     def __init__(self, name):
         super().__init__(name, PacketType.CONTEXT)
-        self.timestamp_mode = enums.TSM()
+        self._not_v49d0 = self._add_field(ContextHeader.not_v49d0, Scope.HEADER, Mode.MANDATORY)
+        self._tsm = self._add_field(
+            ContextHeader.timestamp_mode, Scope.HEADER, Mode.MANDATORY
+        )
+
+    @property
+    def not_v49d0(self):
+        """
+        True if this packet is not compatible with VITA 49.0.
+        """
+        return self._not_v49d0.value
+
+    @property
+    def tsm(self):
+        """
+        The current timestamp mode (TSM) value.
+        """
+        return self._tsm.value
 
     def _get_packet_type_code(self):
         return enums.PacketType.CONTEXT
@@ -209,6 +241,9 @@ class AcknowledgePacketConfiguration(CommandPacketConfiguration):
         self.partial = self._add_field(ControlAcknowledgeMode.partial, Scope.CAM)
 
 def create_packet(packet_type, name):
+    """
+    Returns a packet configuration for the given type.
+    """
     args = [name]
     if packet_type == PacketType.DATA:
         cls = DataPacketConfiguration

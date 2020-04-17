@@ -17,23 +17,36 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
 
+//% macro pack_subfield(field, subfield)
+{{field.attr}}->{{subfield.src.setter}}(packet.{{subfield.getter}}());
+//% endmacro
+
+//% macro pack_struct(field)
+{{field.type}}* {{field.attr}} = buffer.insert<{{field.type}}>();
+//%     for subfield in field.fields
+//%         if subfield.value is defined
+{{field.attr}}->{{subfield.src.setter}}({{subfield.value}});
+//%         elif subfield.optional
+if (packet.{{subfield.check}}()) {
+    {{field.attr}}->{{subfield.src.enable.setter}}(true);
+    {{pack_subfield(field, subfield)}}
+}
+//%         else
+{{pack_subfield(field, subfield)}}
+//%         endif
+//%     endfor
+//% endmacro
+
 //% macro pack_field(field)
 //%     if field.struct
-{{field.type}}* {{field.attr}} = buffer.insert<{{field.type}}>();
-//%         for subfield in field.fields
-//%             if subfield.value is defined
-{{field.attr}}->{{subfield.src.setter}}({{subfield.value}});
-//%             else
-{{field.attr}}->{{subfield.src.setter}}(packet.{{subfield.getter}}());
-//%             endif
-//%         endfor
+{{pack_struct(field)}}
 //%     else
 buffer.insert<{{field.type}}>(packet.get{{field.name}}());
 //%     endif
 //% endmacro
 
 //% macro unpack_field(field)
-//%     if field.struct:
+//%     if field.struct
 const {{field.type}}* {{field.attr}} = buffer.next<{{field.type}}>();
 {{unpack_struct(field)}}
 //%     else
@@ -41,12 +54,20 @@ packet.set{{field.name}}(buffer.get<{{field.type}}>());
 //%     endif
 //% endmacro
 
+//% macro unpack_subfield(field, subfield)
+packet.{{subfield.setter}}({{field.attr}}->{{subfield.src.getter}}());
+//% endmacro
+
 //% macro unpack_struct(field)
 //%     for subfield in field.fields
 //%         if subfield.value is defined
 ::validate({{field.attr}}->{{subfield.src.getter}}(), {{subfield.value}}, "invalid subfield {{subfield.title}}");
+//%         elif subfield.optional
+if ({{field.attr}}->{{subfield.src.enable.getter}}()) {
+    {{unpack_subfield(field, subfield)}}
+}
 //%         else
-packet.{{subfield.setter}}({{field.attr}}->{{subfield.src.getter}}());
+{{unpack_subfield(field, subfield)}}
 //%         endif
 //%     endfor
 //% endmacro

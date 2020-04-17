@@ -1,4 +1,3 @@
 RequiredStruct:
-  type: Context
-  payload:
+  context:
     Gain: required

@@ -25,8 +25,8 @@ namespace {{enum.name}} {
 //% endfor
      */
     enum Code {
-//% for item in enum['values']
-        {{item.name}} = {{enum.format(item.value)}},
+//% for label, value in enum['values']
+        {{label}} = {{value}},
 //% endfor
     };
 }

@@ -18,53 +18,55 @@
 """
 CIF field metadata classes.
 """
-from .container import Container, ContainerMeta
-from .struct import Struct, Field, Reserved
+from .container import Container
+from .struct import Struct, StructItem, Field, Reserved
 from . import basic
 
 __all__ = (
-    'CIFMeta',
     'CIFFields',
 )
 
-class CIFMeta(ContainerMeta):
+def _create_enables(cif):
     """
-    Metaclass for CIF fields.
+    Dynamically creates a struct class for a CIF prologue structure.
     """
-    def __init__(cls, name, bases, namespace):
-        super().__init__(name, bases, namespace)
-        # The enables struct needs to be created in __init__, not __new__, and
-        # after calling the superclass to ensure that the CIF fields have been
-        # populated (i.e., get_contents() returns a non-empty list).
-        cls.Enables = CIFMeta.create_enables(cls)
+    namespace = {}
+    for field in cif.get_contents():
+        # Turn all non-reserved CIF bits into enable flags
+        if isinstance(field, Reserved):
+            entry = Reserved(1)
+        else:
+            entry = Field(field.name, basic.Boolean)
+        namespace[field.attr] = entry
 
-    @staticmethod
-    def create_enables(cif):
-        """
-        Dynamically creates a struct class for the CIF prologue structure.
-        """
-        namespace = {}
-        for field in cif.get_contents():
-            # Turn all non-reserved CIF bits into enable flags
-            if isinstance(field, Reserved):
-                entry = Reserved(1)
-            else:
-                entry = Field(field.name, basic.Boolean)
-            namespace[field.attr] = entry
+    # Pass the qualified name (which includes the containing class) to
+    # Struct type object constructor and then remove it later. This helps
+    # solve two problems:
+    #   * If the struct is incorrectly sized, the warning message will
+    #     indicate which CIF struct it's complaining about.
+    #   * The qualified name does not appear to be set when dynamically
+    #     creating a class
+    qualname = cif.__name__ + '.Enables'
+    enables = Struct.create_struct(qualname, namespace)
+    enables.__name__ = 'Enables'
+    enables.__module__ = cif.__module__
+    return enables
 
-        # Pass the qualified name (which includes the containing class) to
-        # StructBuilder and then remove it later. This helps solve two
-        # problems:
-        #   * If the struct is incorrectly sized, the warning message will
-        #     indicate which CIF struct it's complaining about.
-        #   * The qualified name does not appear to be set when dynamically
-        #     creating a class
-        qualname = cif.__name__ + '.Enables'
-        cls = ContainerMeta(qualname, (Struct,), namespace)
-        cls.__name__ = 'Enables'
-        return cls
-
-class CIFFields(Container, metaclass=CIFMeta):
+class CIFFields(Container):
     """
     Base class for CIF fields.
     """
+    def __init__(self):
+        if not self.get_contents():
+            raise TypeError("Can't create abstract CIFFields class")
+        super().__init__()
+
+    def __init_subclass__(cls, **kwds):
+        super().__init_subclass__(**kwds)
+        cls.Enables = _create_enables(cls)
+
+    @classmethod
+    def get_contents(cls):
+        # In Python 3.6+, dict preserves insertion order, so this will always
+        # return the fields in the order they are defined
+        return [v for v in cls.__dict__.values() if isinstance(v, StructItem)]

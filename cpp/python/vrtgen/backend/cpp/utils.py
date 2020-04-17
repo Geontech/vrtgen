@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2020 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -16,6 +16,19 @@
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
 """
-Version information for vrtgen.
+Common utilities for C++ code generation.
 """
-__version__ = '0.3.0'
+
+def format_docstring(doc):
+    """
+    Formats a Python docstring as input text for a Doxygen comment.
+    """
+    if not doc:
+        return
+    if doc.startswith('\n'):
+        doc = doc[1:]
+    indent = 0
+    while doc[indent].isspace():
+        indent += 1
+    for line in doc.rstrip().split('\n'):
+        yield line[indent:]

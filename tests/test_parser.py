@@ -26,8 +26,7 @@ def parse_single(document):
 
 def test_data_defaults():
     document = """
-TestData:
-    type: data
+TestData: data
 """
     packet = parse_single(document)
     assert packet.name == 'TestData'
@@ -37,22 +36,35 @@ TestData:
     assert packet.tsf == enums.TSF.NONE
     assert packet.stream_id.is_disabled
     assert packet.class_id.is_disabled
+    assert not packet.not_v49d0
+    assert not packet.spectrum
 
 def test_data_stream_id():
     document = """
 StreamIDTest:
-    type: data
-    stream id: required
+    data:
+        stream id: required
 """
     packet = parse_single(document)
     assert packet.stream_id.is_required
     assert packet.packet_type == config.PacketType.DATA
     assert packet.packet_type_code == enums.PacketType.SIGNAL_DATA_STREAM_ID
 
+def test_data_header():
+    document = """
+DataHeaderFields:
+    data:
+        not v49.0: true
+        spectrum: true
+"""
+    packet = parse_single(document)
+    assert packet.packet_type == config.PacketType.DATA
+    assert packet.not_v49d0
+    assert packet.spectrum
+
 def test_context_defaults():
     document = """
-TestContext:
-    type: context
+TestContext: context
 """
     packet = parse_single(document)
     assert packet.name == 'TestContext'
@@ -62,21 +74,23 @@ TestContext:
     assert packet.tsf == enums.TSF.NONE
     assert packet.stream_id.is_mandatory
     assert packet.class_id.is_disabled
-    assert packet.timestamp_mode == enums.TSM.FINE
+    assert packet.tsm == enums.TSM.FINE
+    assert not packet.not_v49d0
 
-def test_context_timestamp_mode():
+def test_context_header():
     document = """
-TSMTest:
-    type: context
-    timestamp mode: coarse
+ContextHeaderFields:
+    context:
+        timestamp mode: coarse
+        not v49.0: true
 """
     packet = parse_single(document)
-    assert packet.timestamp_mode == enums.TSM.COARSE
+    assert packet.tsm == enums.TSM.COARSE
+    assert packet.not_v49d0
 
 def test_control_defaults():
     document = """
-TestControl:
-    type: control
+TestControl: control
 """
     packet = parse_single(document)
     assert packet.name == 'TestControl'
@@ -92,8 +106,7 @@ TestControl:
 
 def test_ackv_defaults():
     document = """
-TestAckV:
-    type: AckV
+TestAckV: AckV
 """
     packet = parse_single(document)
     assert packet.name == 'TestAckV'
@@ -109,8 +122,7 @@ TestAckV:
 
 def test_ackx_defaults():
     document = """
-TestAckX:
-    type: AckX
+TestAckX: AckX
 """
     packet = parse_single(document)
     assert packet.name == 'TestAckX'
@@ -126,8 +138,7 @@ TestAckX:
 
 def test_acks_defaults():
     document = """
-TestAckS:
-    type: AckS
+TestAckS: AckS
 """
     packet = parse_single(document)
     assert packet.name == 'TestAckS'
@@ -144,10 +155,10 @@ TestAckS:
 def test_timestamp():
     document = """
 TimestampTest:
-    type: data
-    timestamp:
-        integer: utc
-        fractional: picoseconds
+    data:
+        timestamp:
+            integer: utc
+            fractional: picoseconds
 """
     packet = parse_single(document)
     assert packet.tsi == enums.TSI.UTC

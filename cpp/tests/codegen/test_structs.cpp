@@ -36,8 +36,8 @@ TEST_CASE("Required default struct")
     vrtgen::packing::ContextHeader* header = buffer.insert<vrtgen::packing::ContextHeader>();
     header->setPacketType(vrtgen::PacketType::CONTEXT);
     header->setPacketSize(PACKED_SIZE / 4);
-    // NB: Generated packets always assume they're not V49.0 compliant
-    header->setNotaV49_0Packet(true);
+    // Packet is not configured with any 49.2 fields
+    header->setNotaV49_0Packet(false);
     buffer.insert<vrtgen::packing::StreamIdentifier>(STREAM_ID);
     vrtgen::packing::CIF0Enables* cif_0 = buffer.insert<vrtgen::packing::CIF0Enables>();
     cif_0->setGainEnabled(true);
