@@ -148,7 +148,9 @@ class ContextPacketConfiguration(CIFPacketConfiguration):
     def __init__(self, name):
         super().__init__(name, PacketType.CONTEXT)
         self.not_v49d0 = self._add_field(ContextHeader.not_v49d0, Scope.HEADER, Mode.MANDATORY)
-        self.timestamp_mode = self._add_field(ContextHeader.timestamp_mode, Scope.HEADER, Mode.MANDATORY)
+        self.timestamp_mode = self._add_field(
+            ContextHeader.timestamp_mode, Scope.HEADER, Mode.MANDATORY
+        )
 
     def _get_packet_type_code(self):
         return enums.PacketType.CONTEXT
@@ -211,6 +213,9 @@ class AcknowledgePacketConfiguration(CommandPacketConfiguration):
         self.partial = self._add_field(ControlAcknowledgeMode.partial, Scope.CAM)
 
 def create_packet(packet_type, name):
+    """
+    Returns a packet configuration for the given type.
+    """
     args = [name]
     if packet_type == PacketType.DATA:
         cls = DataPacketConfiguration
