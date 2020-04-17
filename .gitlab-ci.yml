@@ -36,11 +36,16 @@ test:cpp:
         - pip install .
         - cd cpp
         - pip install .
-        - cmake -B build .
+        - cmake -B build -DJUNIT_OUTPUT=yes .
         - cd build
         - export MAKEFLAGS="-j$(nproc)"
     script:
-        - make check TEST_OPTIONS="-s --use-colour=yes"
+        - make check
+    artifacts:
+        paths:
+            - cpp/build/*-results.xml
+        reports:
+            junit: cpp/build/*-results.xml
 
 # Build release RPMs
 rpmbuild:

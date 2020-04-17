@@ -19,6 +19,9 @@ if(NOT import_vrtgen_error_code EQUAL 0)
     message(FATAL_ERROR "vrtgen Python module not found")
 endif()
 
+# Support per-target JUnit test output at configure time
+option(JUNIT_OUTPUT "Use JUnit output format for test results" OFF)
+
 # Generate a version header
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/version.hpp.in"
@@ -122,10 +125,18 @@ target_link_libraries(test_libvrtgen Catch2)
 target_link_libraries(test_libvrtgen testutils)
 target_compile_options(test_libvrtgen PRIVATE -Wall -Wextra -Wpedantic)
 
-add_custom_target(run_test_libvrtgen
-    COMMAND test_libvrtgen $(TEST_OPTIONS)
+# Run the library tests, with optional JUnit output
+if(JUNIT_OUTPUT)
+    set(LIBVRTGEN_TEST_OPTIONS "-r junit" "-o test_libvrtgen-results.xml")
+    set_property(DIRECTORY APPEND PROPERTY
+        ADDITIONAL_MAKE_CLEAN_FILES
+            ${CMAKE_CURRENT_BINARY_DIR}/test_libvrtgen-results.xml
+    )
+endif()
+add_custom_target(check-libvrtgen
+    COMMAND test_libvrtgen ${LIBVRTGEN_TEST_OPTIONS} $(TEST_OPTIONS)
 )
-add_dependencies(check run_test_libvrtgen)
+add_dependencies(check check-libvrtgen)
 
 # Helper function to generate C++ source from a YAML file using vrtpktgen
 function(add_codegen_file TARGET YAML_FILE)
@@ -169,10 +180,18 @@ target_include_directories(test_codegen PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen
 )
 
-add_custom_target(run_test_codegen
-    COMMAND test_codegen $(TEST_OPTIONS)
+# Run the code generator tests, with optional JUnit output
+if(JUNIT_OUTPUT)
+    set(CODEGEN_TEST_OPTIONS "-r junit" "-o test_codegen-results.xml")
+    set_property(DIRECTORY APPEND PROPERTY
+        ADDITIONAL_MAKE_CLEAN_FILES
+            ${CMAKE_CURRENT_BINARY_DIR}/test_codegen-results.xml
+    )
+endif()
+add_custom_target(check-codegen
+    COMMAND test_codegen ${CODEGEN_TEST_OPTIONS} $(TEST_OPTIONS)
 )
-add_dependencies(check run_test_codegen)
+add_dependencies(check check-codegen)
 
 # Packaging options
 set(CPACK_PACKAGE_NAME libvrtgen)
