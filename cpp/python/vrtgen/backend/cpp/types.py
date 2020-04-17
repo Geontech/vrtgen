@@ -104,6 +104,12 @@ def value_type(datatype):
         return name_to_identifier(datatype.__name__)
     raise NotImplementedError(datatype.__name__)
 
+def bool_literal(value):
+    """
+    Returns a boolean value as a C++ literal.
+    """
+    return str(value).lower()
+
 def literal(value, datatype):
     """
     Returns a value as a C++ literal for a given data type.
@@ -111,5 +117,5 @@ def literal(value, datatype):
     if issubclass(datatype, enums.BinaryEnum):
         return enum_value(value)
     if issubclass(datatype, basic.BooleanType):
-        return str(value).lower()
+        return bool_literal(value)
     return str(value)

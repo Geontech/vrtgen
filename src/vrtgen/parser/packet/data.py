@@ -20,6 +20,8 @@ Data packet parser classes.
 """
 
 from vrtgen.parser.section import SectionParser
+from vrtgen.parser.value import parse_boolean
+from vrtgen.types.prologue import DataHeader
 from vrtgen.types.trailer import Trailer
 
 from .base import PacketParser, unimplemented_parser
@@ -46,4 +48,6 @@ class DataPacketParser(PacketParser):
     Parser for Data Packet configuration.
     """
 
+DataPacketParser.add_field_value_parser(DataHeader.not_v49d0, parse_boolean, alias='Not V49.0')
+DataPacketParser.add_field_value_parser(DataHeader.spectrum, parse_boolean, alias='Spectrum')
 DataPacketParser.add_parser('Trailer', TrailerParser())

@@ -35,6 +35,12 @@ def bind_parser(name, parser):
         return parser(log.getChild(field.name), field, value)
     return wrapped_parse
 
+def _bind_value_parser(name, parser):
+    def parse_and_set(log, field, value):
+        field.value = parser(value)
+        log.debug("Field '%s' = %s", field.name, field.value)
+    return bind_parser(name, parse_and_set)
+
 class SectionParser(MappingParser):
     """
     Base class for parsers that manage a section of a VITA 49 packet
@@ -52,6 +58,12 @@ class SectionParser(MappingParser):
         parser = cls._wrap_field_parser(field, parser)
         name = field.name
         cls.add_parser(name, bind_parser(name, parser), alias)
+
+    @classmethod
+    def add_field_value_parser(cls, field, parser, alias=None):
+        assert field.type is not None
+        name = field.name
+        cls.add_parser(name, _bind_value_parser(name, parser), alias)
 
     @staticmethod
     def _wrap_field_parser(field, parser):

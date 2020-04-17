@@ -1,5 +1,6 @@
 UserDefined:
   context:
+    Not V49.0: true
     Discrete I/O 32:
       fields:
         # 8 bits worth of indicators

@@ -109,12 +109,14 @@ class CppPacket:
             'enabled': False,
         })
 
-    def set_header_field(self, field, value, getter=None, setter=None):
+    def set_header_field(self, field, value=None, getter=None, setter=None):
         name = cpptypes.name_to_identifier(field.name)
         if getter is None:
             getter = 'get' + name
         if setter is None:
             setter = 'set' + name
+        if value is None:
+            value = cpptypes.literal(field.value, field.type)
         self.header['fields'].append({
             'name': name,
             'title': field.name,
@@ -353,8 +355,8 @@ class CppGenerator(Generator):
 
     def generate_data(self, cppstruct, packet):
         cppstruct.set_header_field(prologue.DataHeader.trailer_included, 'false')
-        cppstruct.set_header_field(prologue.DataHeader.not_v49d0, 'true')
-        cppstruct.set_header_field(prologue.DataHeader.spectrum, 'false')
+        for field in packet.get_fields(Scope.HEADER):
+            cppstruct.set_header_field(field)
 
         self.generate_prologue(cppstruct, packet)
 
@@ -364,8 +366,8 @@ class CppGenerator(Generator):
             cppstruct.add_member_from_field(field)
 
     def generate_context(self, cppstruct, packet):
-        cppstruct.set_header_field(prologue.ContextHeader.not_v49d0, 'true')
-        cppstruct.set_header_field(prologue.ContextHeader.timestamp_mode, cpptypes.enum_value(packet.timestamp_mode))
+        for field in packet.get_fields(Scope.HEADER):
+            cppstruct.set_header_field(field)
         cppstruct.cifs[0]['enabled'] = True
 
         self.generate_prologue(cppstruct, packet)

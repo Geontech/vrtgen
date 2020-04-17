@@ -46,6 +46,7 @@ class Scope(Enum):
         CIF1: CIF 1 fields (Context and Command packets only).
         TRAILER: Packet trailer (Data packet only).
     """
+    HEADER = auto()
     PROLOGUE = auto()
     CAM = auto()
     CIF0 = auto()

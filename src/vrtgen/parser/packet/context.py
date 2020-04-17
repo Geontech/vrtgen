@@ -19,7 +19,7 @@
 Context packet parser classes.
 """
 
-from vrtgen.parser.value import parse_tsm
+from vrtgen.parser.value import parse_tsm, parse_boolean
 from vrtgen.types.prologue import ContextHeader
 
 from .cif import CIFPacketParser
@@ -28,16 +28,6 @@ class ContextPacketParser(CIFPacketParser):
     """
     Parser for Context Packet configuration.
     """
-    @staticmethod
-    def parse_tsm(log, context, value):
-        """
-        Parses context packet timestamp mode.
-        """
-        context.timestamp_mode = parse_tsm(value)
-        log.debug('TSM = %s', context.timestamp_mode)
 
-ContextPacketParser.add_parser(
-    ContextHeader.timestamp_mode.name,
-    ContextPacketParser.parse_tsm,
-    alias='TSM'
-)
+ContextPacketParser.add_field_value_parser(ContextHeader.timestamp_mode, parse_tsm, alias='TSM')
+ContextPacketParser.add_field_value_parser(ContextHeader.not_v49d0, parse_boolean, alias='Not V49.0')

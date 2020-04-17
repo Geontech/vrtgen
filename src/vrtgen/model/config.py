@@ -23,7 +23,7 @@ from enum import Enum
 import warnings
 
 from vrtgen.types import enums
-from vrtgen.types.prologue import Prologue
+from vrtgen.types.prologue import Prologue, DataHeader, ContextHeader
 from vrtgen.types.trailer import Trailer
 from vrtgen.types.cif0 import CIF0
 from vrtgen.types.cif1 import CIF1
@@ -119,7 +119,8 @@ class DataPacketConfiguration(PacketConfiguration):
     """
     def __init__(self, name):
         super().__init__(name, PacketType.DATA)
-
+        self.not_v49d0 = self._add_field(DataHeader.not_v49d0, Scope.HEADER, Mode.MANDATORY)
+        self.spectrum = self._add_field(DataHeader.spectrum, Scope.HEADER, Mode.MANDATORY)
         self._add_fields(Trailer, Scope.TRAILER)
 
     def _get_packet_type_code(self):
@@ -146,7 +147,8 @@ class ContextPacketConfiguration(CIFPacketConfiguration):
     """
     def __init__(self, name):
         super().__init__(name, PacketType.CONTEXT)
-        self.timestamp_mode = enums.TSM()
+        self.not_v49d0 = self._add_field(ContextHeader.not_v49d0, Scope.HEADER, Mode.MANDATORY)
+        self.timestamp_mode = self._add_field(ContextHeader.timestamp_mode, Scope.HEADER, Mode.MANDATORY)
 
     def _get_packet_type_code(self):
         return enums.PacketType.CONTEXT
