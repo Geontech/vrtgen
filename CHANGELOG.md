@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - Fixed move semantics for C++ `vrtgen::optional<T>` class.
+- Minor whitespace fixes in generated C++ code.
 
 ## [0.3.0] - 2020-04-17
 ### Changed

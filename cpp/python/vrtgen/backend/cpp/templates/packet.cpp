@@ -19,7 +19,7 @@
 
 //% macro pack_subfield(field, subfield)
 {{field.attr}}->{{subfield.src.setter}}(packet.{{subfield.getter}}());
-//% endmacro
+//%- endmacro
 
 //% macro pack_struct(field)
 {{field.type}}* {{field.attr}} = buffer.insert<{{field.type}}>();
