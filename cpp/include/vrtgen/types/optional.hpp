@@ -20,6 +20,7 @@
 #pragma once
 
 #include <utility>
+#include <iostream>
 
 namespace vrtgen {
     template <typename T>
@@ -27,15 +28,16 @@ namespace vrtgen {
     public:
         typedef T value_type;
 
-        optional() :
-            m_value(nullptr)
+        optional() = default;
+
+        optional(const optional& other) :
+            m_value(_clone(other.m_value))
         {
         }
 
-        optional(optional&& other) :
-            m_value(other.m_value)
+        optional(optional&& other)
         {
-            other.m_value = nullptr;
+            swap(other);
         }
 
         explicit optional(const value_type& value) :
@@ -46,6 +48,19 @@ namespace vrtgen {
         ~optional()
         {
             clear();
+        }
+
+        optional& operator= (const optional& other)
+        {
+            optional clone(other);
+            swap(clone);
+            return *this;
+        }
+
+        optional& operator= (optional&& other)
+        {
+            swap(other);
+            return *this;
         }
 
         explicit operator bool () const
@@ -75,6 +90,13 @@ namespace vrtgen {
             std::swap(m_value, other.m_value);
         }
     private:
-        value_type* m_value;
+        static value_type* _clone(const value_type* value) {
+            if (!value) {
+                return nullptr;
+            }
+            return new value_type(*value);
+        }
+
+        value_type* m_value = nullptr;
     };
 }
