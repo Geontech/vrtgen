@@ -118,6 +118,7 @@ add_executable(test_libvrtgen
     tests/libvrtgen/control.cpp
     tests/libvrtgen/packed.cpp
     tests/libvrtgen/prologue.cpp
+    tests/libvrtgen/types.cpp
     tests/libvrtgen/utils.cpp
 )
 target_link_libraries(test_libvrtgen vrtgen)

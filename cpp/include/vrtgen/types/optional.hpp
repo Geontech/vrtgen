@@ -32,16 +32,22 @@ namespace vrtgen {
         {
         }
 
+        optional(optional&& other) :
+            m_value(other.m_value)
+        {
+            other.m_value = nullptr;
+        }
+
+        explicit optional(const value_type& value) :
+            m_value(new value_type(value))
+        {
+        }
+
         ~optional()
         {
             clear();
         }
 
-        explicit optional(const value_type& value) :
-            m_value(new value_type(value))
-        {            
-        }
- 
         explicit operator bool () const
         {
             return (m_value != nullptr);
