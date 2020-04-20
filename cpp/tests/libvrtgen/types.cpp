@@ -21,14 +21,54 @@
 
 #include "vrtgen/types.hpp"
 
-TEST_CASE("optional move operator", "[optional]")
+TEST_CASE("optional copy ctor", "[optional]")
 {
-    vrtgen::optional<int> src(1);
+    // Copy src to dest and verify that they have different underlying pointers
+    // by changing src's value.
+    vrtgen::optional<char> src('A');
+    vrtgen::optional<char> dest(src);
+    src.set('B');
 
-    vrtgen::optional<int> dest = std::move(src);
+    REQUIRE(src);
+    CHECK(src.get() == 'B');
+    REQUIRE(dest);
+    CHECK(dest.get() == 'A');
+}
+
+TEST_CASE("optional move ctor", "[optional]")
+{
+    // Explicitly move src to dest, which should leave it empty.
+    vrtgen::optional<int> src(1);
+    vrtgen::optional<int> dest(std::move(src));
+
     CHECK(!src);
-    REQUIRE(static_cast<bool>(dest));
+    REQUIRE(dest);
     CHECK(dest.get() == 1);
+}
+
+TEST_CASE("optional copy assignment", "[optional]")
+{
+    // Create src and dest first, then assign src to dest and verify that they
+    // have different underlying pointers by changing src's value.
+    vrtgen::optional<int> src(-1);
+    vrtgen::optional<int> dest;
+    dest = src;
+    src.set(-2);
+    REQUIRE(src);
+    CHECK(src.get() == -2);
+    REQUIRE(dest);
+    CHECK(dest.get() == -1);
+}
+
+TEST_CASE("optional move assignment", "[optional]")
+{
+    // Explicitly use move assignment and check that the source becomes empty.
+    vrtgen::optional<int> src(20);
+    vrtgen::optional<int> dest;
+    dest = std::move(src);
+    CHECK(!src);
+    REQUIRE(dest);
+    CHECK(dest.get() == 20);
 }
 
 TEST_CASE("optional class", "[optional]")
