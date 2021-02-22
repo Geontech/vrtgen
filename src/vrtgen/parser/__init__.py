@@ -22,9 +22,12 @@ import logging
 
 import yaml
 
-from vrtgen.model.config import create_packet, PacketType
+from vrtgen.model.config import create_configuration
+from vrtgen.model.config import InformationClassConfiguration
+from vrtgen.model.config import InformationType, PacketType
 
-from .packet import create_parser
+from . import packet
+from . import information
 from .utils import to_kvpair, EMPTY
 
 __all__ = (
@@ -33,48 +36,68 @@ __all__ = (
     'parse_stream'
 )
 
-def parse_packet(name, value):
+def _create_parser(config_type):
+    if isinstance(config_type, PacketType):
+        return packet.create_parser(config_type)
+    elif isinstance(config_type, InformationType):
+        return information.create_parser()
+
+def parse_configuration(name, value, include_files=[]):
     """
-    Parses a VITA 49 packet definition.
+    Parses a VITA 49 class definition.
     """
-    #if not isinstance(value, dict):
-    #    raise TypeError('Invalid definition for packet ' + name)
-    #if len(value) != 1:
-    #    raise ValueError('Must be single-element mapping')
     log = logging.getLogger(name)
+    config_type, config_value = to_kvpair(value)
+    try:
+        config_type = PacketType(config_type.casefold())
+    except:
+        try:
+            config_type = InformationType(config_type.casefold())
+        except:
+            raise ValueError('invalid class type {}'.format(config_type))
+    config = create_configuration(config_type, name)
+    parser = _create_parser(config_type)
 
-    packet_type, packet_value = to_kvpair(value)
-    packet_type = PacketType(packet_type.casefold())
-    packet = create_packet(packet_type, name)
-    parser = create_parser(packet_type)
+    if config_value is not EMPTY:
+        parser(log, config, config_value)
+    
+    if isinstance(config, InformationClassConfiguration):
+        for include_file in include_files:
+            info_class_packets = config.get_packet_classes()
+            packets = parse_file(include_file)
+            for packet in packets:
+                if packet.name in info_class_packets:
+                    config.add_packet(packet)
 
-    if packet_value is not EMPTY:
-        parser(log, packet, packet_value)
-
-    return packet
+    return config
 
 def parse_file(filename):
     """
-    Parses VITA 49 packet definitions from a YAML file.
+    Parses VITA 49 class definitions from a YAML file.
     """
     with open(filename, 'r') as file:
         yield from parse_stream(file)
 
 def parse_stream(stream):
     """
-    Parses VITA 49 packet definitions from a file-like object.
+    Parses VITA 49 class definitions from a file-like object.
     """
     document = yaml.safe_load(stream)
 
+    include_files = []
     for name, value in document.items():
         if name.startswith('.'):
             logging.debug("Skipping hidden entry %s", name)
+        elif name == 'include':
+            if not isinstance(value, list):
+                raise TypeError('includes must be a list')
+            include_files = value
         else:
-            logging.info('Processing packet %s', name)
+            logging.info('Processing YAML class definition: %s', name)
             try:
-                packet = parse_packet(name, value)
-                packet.validate()
-                yield packet
+                configuration = parse_configuration(name, value, include_files)
+                configuration.validate()
+                yield configuration
             except (ValueError, TypeError) as exc:
                 logging.error("Invalid packet definition '%s': %s", name, str(exc))
             except RuntimeError as exc:
