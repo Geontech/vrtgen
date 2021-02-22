@@ -79,6 +79,13 @@ class FieldConfiguration:
         return self.field.type
 
     @property
+    def alias(self):
+        """
+        Alias for the field.
+        """
+        return self.field.alias
+
+    @property
     def mode(self):
         """
         The configured usage of this field.
