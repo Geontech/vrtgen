@@ -111,7 +111,11 @@ class CppPacket:
 
     @property
     def is_data(self):
-        return ('DATA' in self.packet_type)
+        return ('data' in self.packet_type.lower())
+
+    @property
+    def is_context(self):
+        return ('context' in self.packet_type.lower())
 
     def __init_header(self, packet):
         self.header['type'] = header_type(packet.config_type)
