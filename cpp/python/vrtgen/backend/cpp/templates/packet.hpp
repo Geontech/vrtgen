@@ -19,90 +19,164 @@
 
 //% from "struct.hpp" import define_struct
 
-//% macro define_packet(packet)
-namespace packing {
-    struct {{packet.helper}};
+//% macro define_constructor(packet)
+//% set fields = []
+//% for cif in packet.cifs if cif.enabled
+//%     for field in cif.fields if field.member
+//%         do fields.append(field)
+//%     endfor
+//% endfor
+{{packet.name}}() :
+//% for field in packet.prologue.fields if field.member
+    {{field.member.identifier}}({{field.value}}){{',' if not loop.last or fields}}
+//% endfor
+//% for field in fields
+//%     if packet.is_reqs
+    {{field.member.identifier}}Enabled({{'false' if field.optional else 'true'}}){{',' if not loop.last}}
+//%     else
+    {{field.member.identifier}}({{field.value}}){{',' if not loop.last}}
+//%     endif
+//% endfor
+{
+}
+//% endmacro
+
+//% macro define_getter(field)
+{{field.member.datatype}} get{{field.identifier}}() const
+{
+//%     if field.optional
+    return {{field.member.identifier}}.get();
+//%     else
+    return {{field.member.identifier}};
+//%     endif
+}
+//% endmacro
+
+//% macro define_setter(field)
+void set{{field.identifier}}(const {{field.member.datatype}}& value)
+{
+//%     if field.optional
+    {{field.member.identifier}}.set(value);
+//%     else
+    {{field.member.identifier}} = value;
+//%     endif
+}
+//% endmacro
+
+//% macro define_has(field)
+bool has{{field.identifier}}() const
+{
+    return static_cast<bool>({{field.member.identifier}});
+}
+//% endmacro
+
+//% macro define_clear(field)
+void clear{{field.identifier}}()
+{
+    {{field.member.identifier}}.clear();
+}
+//% endmacro
+
+//% macro create_field_functions(packet)
+//% set fields = []
+//% for field in packet.prologue.fields if field.member
+/**
+ * {{field.identifier}} getter/setter
+ */
+{{define_getter(field) | trim}}
+
+{{define_setter(field) | trim}}
+
+//% endfor
+//% for cif in packet.cifs if cif.enabled
+//%     for field in cif.fields if field.member
+//%         if packet.is_reqs
+/**
+ * {{field.identifier}} enabled getter/setter
+ */
+bool is{{field.identifier}}Enabled() const
+{
+    return {{field.member.identifier}}Enabled;
 }
 
+void set{{field.identifier}}Enabled(const bool value)
+{
+    {{field.member.identifier}}Enabled = value;
+}
+
+//%         else
+//%             if field.optional
+{{define_has(field) | trim}}
+
+{{define_clear(field) | trim}}
+
+//%             endif
+{{define_getter(field) | trim}}
+
+{{define_setter(field) | trim}}
+
+//%         endif
+//%     endfor
+//% endfor
+//% if packet.is_data
+const uint8_t* getRawData() const
+{
+    return m_rawData.data();
+}
+
+size_t getRawDataSize() const
+{
+    return m_rawData.size();
+}
+
+void setRawData(const void* data, size_t len)
+{
+    m_rawData.resize(len);
+    std::memcpy(m_rawData.data(), data, len);
+}
+
+//% endif
+//% endmacro
+
+//% macro define_members(packet)
+//% set fields = []
+//% for field in packet.prologue.fields if field.member
+{{field.member.type}} {{field.member.identifier}};
+//% endfor
+//% for cif in packet.cifs if cif.enabled
+//%     for field in cif.fields if field.member
+//%         if packet.is_reqs
+bool {{field.member.identifier}}Enabled;
+//%         else
+{{field.member.type}} {{field.member.identifier}};
+//%         endif
+//%     endfor
+//% endfor
+//% if packet.is_data
+std::vector<uint8_t> m_rawData;
+//% endif
+//% endmacro
+
+//% macro define_packet(packet)
 /**
-//% for line in packet.doc
+//% if not packet.doc
+ * class {{packet.name}}
+//% else
+//%     for line in packet.doc
  * {{line}}
-//% endfor
+//%     endfor
+//% endif
  */
-class {{packet.name}} {
+class {{packet.name}}
+{
 public:
-    {{packet.name}}() :
-//% for field in packet.members
-        {{field.member.identifier}}({{field.value}}){{"," if not loop.last}}
-//% endfor
-    {
-    }
+    {{define_constructor(packet) | indent(4) | trim}}
 
-//% for field in packet.members
-//%     if field.optional
-    /**
-     * Check {{field.name}} presence
-     */
-    bool has{{field.identifier}}() const
-    {
-        return static_cast<bool>({{field.member.identifier}});
-    }
+    {{create_field_functions(packet) | indent(4) | trim}}
 
-    /**
-     * Clear {{field.name}} presence
-     */
-    void clear{{field.identifier}}()
-    {
-        {{field.member.identifier}}.clear();
-    }
-
-//%     endif
-    /**
-     * {{field.name}} getter
-     */
-    {{field.type}} get{{field.identifier}}() const
-    {
-//%     if field.optional
-        return {{field.member.identifier}}.get();
-//%     else
-        return {{field.member.identifier}};
-//%     endif
-    }
-
-    /**
-     * {{field.name}} setter
-     */
-    void set{{field.identifier}}({{field.type}} value)
-    {
-//%     if field.optional
-        {{field.member.identifier}}.set(value);
-//%     else
-        {{field.member.identifier}} = value;
-//%     endif
-    }
-
-//% endfor
 private:
-//% for structdef in packet.structs
-    {{define_struct(structdef)|indent(4)}}
-
-/*% endfor %*/
     friend struct {{packet.namespace}}::packing::{{packet.helper}};
 
-//% for field in packet.members
-    {{field.member.type}} {{field.member.identifier}};
-//% endfor
-};
-
-namespace packing {
-    struct {{packet.helper}} {
-        static bool match(const void* ptr, size_t length);
-
-        static size_t bytes_required(const {{packet.name}}& packet);
-
-        static void pack(const {{packet.name}}& packet, void* ptr, size_t bufsize);
-
-        static void unpack({{packet.name}}& packet, const void* ptr, size_t bufsize);
-    };
-}
+    {{define_members(packet) | indent(4)}}
+}; // end class {{packet.name}}
 //%- endmacro

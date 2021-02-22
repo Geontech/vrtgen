@@ -95,7 +95,7 @@ private:
 
 /*%     endif %*/
 /*% endfor %*/
-};
+}; // end struct {{struct.name}}
 //%- endmacro
 #pragma once
 

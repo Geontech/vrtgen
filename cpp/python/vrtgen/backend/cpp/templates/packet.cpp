@@ -16,41 +16,40 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
-
 //% macro pack_subfield(field, subfield)
-{{field.attr}}->{{subfield.src.setter}}(packet.{{subfield.getter}}());
-//%- endmacro
+{{field.attr}}->{{subfield.src.setter}}(packet.get{{field.identifier}}().{{subfield.src.getter}}());
+//% endmacro
 
 //% macro pack_struct(field)
 {{field.type}}* {{field.attr}} = buffer.insert<{{field.type}}>();
-//%     for subfield in field.fields
+//%     for subfield in field.subfields
 //%         if subfield.value is defined
 {{field.attr}}->{{subfield.src.setter}}({{subfield.value}});
 //%         elif subfield.optional
-if (packet.{{subfield.check}}()) {
+if (packet.get{{field.identifier}}().{{subfield.src.enable.getter}}()) {
     {{field.attr}}->{{subfield.src.enable.setter}}(true);
-    {{pack_subfield(field, subfield)}}
+    {{pack_subfield(field, subfield) | trim}}
 }
 //%         else
-{{pack_subfield(field, subfield)}}
+{{pack_subfield(field, subfield) | trim}}
 //%         endif
 //%     endfor
 //% endmacro
 
 //% macro pack_field(field)
 //%     if field.struct
-{{pack_struct(field)}}
+{{pack_struct(field) | trim}}
 //%     else
-buffer.insert<{{field.type}}>(packet.get{{field.name}}());
+buffer.insert<{{field.type}}>(packet.get{{field.identifier}}());
 //%     endif
 //% endmacro
 
 //% macro unpack_field(field)
 //%     if field.struct
 const {{field.type}}* {{field.attr}} = buffer.next<{{field.type}}>();
-{{unpack_struct(field)}}
+packet.set{{field.identifier}}(*{{field.attr}});
 //%     else
-packet.set{{field.name}}(buffer.get<{{field.type}}>());
+packet.set{{field.identifier}}(buffer.get<{{field.type}}>());
 //%     endif
 //% endmacro
 
@@ -59,22 +58,69 @@ packet.{{subfield.setter}}({{field.attr}}->{{subfield.src.getter}}());
 //% endmacro
 
 //% macro unpack_struct(field)
-//%     for subfield in field.fields
+//%     for subfield in field.subfields
 //%         if subfield.value is defined
 ::validate({{field.attr}}->{{subfield.src.getter}}(), {{subfield.value}}, "invalid subfield {{subfield.title}}");
 //%         elif subfield.optional
 if ({{field.attr}}->{{subfield.src.enable.getter}}()) {
-    {{unpack_subfield(field, subfield)}}
+    {{unpack_subfield(field, subfield) | trim}}
 }
 //%         else
-{{unpack_subfield(field, subfield)}}
+{{unpack_subfield(field, subfield) | trim}}
 //%         endif
 //%     endfor
 //% endmacro
 
-//% macro packet_impl(packet)
-using {{namespace}}::packing::{{packet.helper}};
+//% macro pack_cam(cam)
+{{cam.type}}* {{cam.attr}} = buffer.insert<{{cam.type}}>();
+//% for field in cam.fields
+{{cam.attr}}->{{field.setter}}({{field.value}});
+//% endfor
+//% endmacro
 
+//% macro unpack_cam(cam)
+const {{cam.type}}* {{cam.attr}} = buffer.get{{cam.name}}();
+//% for field in cam.fields
+::validate({{cam.attr}}->{{field.getter}}(), {{field.value}}, "invalid CAM field {{field.title}}");
+//% endfor
+//% endmacro
+
+//% macro pack_prologue(packet)
+//% for field in packet.prologue.fields if not field.post_cam
+{{pack_field(field) | trim}}
+//% endfor
+//% if packet.cam
+{{pack_cam(packet.cam) | trim}}
+//% endif
+//% for field in packet.prologue.fields if field.post_cam
+{{pack_field(field) | trim}}
+//% endfor
+//% endmacro
+
+//% macro unpack_prologue(packet)
+//% for field in packet.prologue.fields if not field.post_cam
+//%     if field.struct
+const {{field.type}}* {{field.attr}} = buffer.get{{field.identifier}}();
+{{unpack_struct(field) | trim}}
+//%     else
+packet.set{{field.identifier}}(buffer.get{{field.identifier}}());
+//%     endif
+//% endfor
+//% if packet.cam
+{{unpack_cam(packet.cam) | trim}}
+//% endif
+//% for field in packet.prologue.fields if field.post_cam
+//%     if field.struct
+const {{field.type}}* {{field.attr}} = buffer.get{{field.identifier}}();
+{{unpack_struct(field) | trim}}
+//%     else
+packet.set{{field.identifier}}(buffer.get{{field.identifier}}());
+//%     endif
+//% endfor
+//% endmacro
+
+//% macro define_match(packet)
+//% set prologue = packet.prologue
 bool {{packet.helper}}::match(const void* ptr, size_t bufsize)
 {
     vrtgen::InputBuffer buffer(ptr, bufsize);
@@ -84,19 +130,21 @@ bool {{packet.helper}}::match(const void* ptr, size_t bufsize)
         return false;
     }
 //% endfor
-//% if packet.class_id
-//%     set field = packet.class_id
-//%     for subfield in field.fields if subfield.value:
-    if (buffer.get{{field.name}}()->get{{subfield.name}}() != {{subfield.value}}) {
+//% if packet.cam
+    const {{packet.cam.type}}* {{packet.cam.attr}} = buffer.get{{packet.cam.name}}();
+//%     for field in packet.cam.fields
+    if ({{packet.cam.attr}}->{{field.getter}}() != {{field.value}}) {
         return false;
     }
 //%     endfor
 //% endif
     return true;
 }
+//% endmacro
 
+//% macro define_bytes_required(packet)
 //# Suppress warnings by only naming the argument if there are optional fields
-//% if packet.is_variable_length
+//% if packet.is_variable_length and not packet.is_reqs
 //%     set varname = 'packet'
 //% else
 //%     set varname = '/*unused*/'
@@ -104,24 +152,31 @@ bool {{packet.helper}}::match(const void* ptr, size_t bufsize)
 size_t {{packet.helper}}::bytes_required(const {{packet.name}}& {{varname}})
 {
     size_t bytes = sizeof({{packet.header.type}});
-//% for field in packet.prologue
+//% for field in packet.prologue.fields
     bytes += sizeof({{field.type}});
 //% endfor
+//% if packet.cam
+    bytes += sizeof({{packet.cam.type}});
+//% endif
 //% for cif in packet.cifs if cif.enabled
     bytes += sizeof({{cif.header}});
-//% endfor
-//% for field in packet.fields
-//%     if field.optional
-    if (packet.has{{field.name}}()) {
+//%     if not packet.is_reqs
+//%         for field in cif.fields 
+//%             if field.optional
+    if (packet.has{{field.identifier}}()) {
         bytes += sizeof({{field.type}});
     }
-//%     else
+//%             else
     bytes += sizeof({{field.type}});
+//%             endif
+//%         endfor
 //%     endif
 //% endfor
     return bytes;
 }
+//% endmacro
 
+//% macro define_pack(packet)
 void {{packet.helper}}::pack(const {{packet.name}}& packet, void* ptr, size_t bufsize)
 {
     vrtgen::OutputBuffer buffer(ptr, bufsize);
@@ -129,66 +184,73 @@ void {{packet.helper}}::pack(const {{packet.name}}& packet, void* ptr, size_t bu
 //% for field in packet.header.fields
     header->{{field.setter}}({{field.value}});
 //% endfor
-
-//% for field in packet.prologue
-    {{pack_field(field) | indent(4) | trim}}
-//% endfor
+    {{pack_prologue(packet) | indent(4) | trim}}
 //% for cif in packet.cifs if cif.enabled
 //%     if cif.number != 0
     cif_0->setCIF{{cif.number}}Enable(true);
 //%     endif
 //%     if not packet.fields
-    buffer.insert<{{cif.header}}>();
+    {{cif.header}}* cif_{{cif.number}} __attribute__((unused)) = buffer.insert<{{cif.header}}>();
 //%     else
     {{cif.header}}* cif_{{cif.number}} = buffer.insert<{{cif.header}}>();
 //%     endif
 //% endfor
-//% for field in packet.fields
-//%     if field.optional
-    if (packet.has{{field.name}}()) {
-        cif_{{field.cif}}->set{{field.name}}Enabled(true);
-        {{pack_field(field)}}
+//% for cif in packet.cifs if cif.enabled
+//%     for field in cif.fields
+//%         if field.optional
+//%             if packet.is_reqs
+    cif_{{cif.number}}->set{{field.identifier}}Enabled(packet.is{{field.identifier}}Enabled());
+//%             else
+    if (packet.has{{field.identifier}}()) {
+        cif_{{cif.number}}->set{{field.identifier}}Enabled(true);
+        {{pack_field(field) | indent(8) | trim}}
     }
-//%     else
-    cif_{{field.cif}}->set{{field.name}}Enabled(true);
+//%             endif
+//%         else
+    cif_{{cif.number}}->set{{field.identifier}}Enabled(true);
     {{pack_field(field) | indent(4) | trim}}
-//%     endif
-//% endfor
+//%         endif
+//%     endfor
+//% endfor 
+//% if packet.is_data
+    std::memcpy(buffer.get(), packet.getRawData(), packet.getRawDataSize());
+//% endif
     header->setPacketSize(buffer.size() / 4);
 }
+//% endmacro
 
-void {{packet.helper}}::unpack({{packet.name}}& packet, const void* ptr, size_t bufsize)
+//% macro define_unpack(packet)
+void {{packet.helper}}::unpack({{packet.name}}& packet, const void* ptr, std::size_t bufsize)
 {
     vrtgen::InputBuffer buffer(ptr, bufsize);
     const {{packet.header.type}}* header = reinterpret_cast<const {{packet.header.type}}*>(buffer.getHeader());
 //% for field in packet.header.fields
     ::validate(header->{{field.getter}}(), {{field.value}}, "invalid header field {{field.title}}");
 //% endfor
-
-//% for field in packet.prologue
-//%     if field.struct
-    const {{field.type}}* {{field.attr}} = buffer.get{{field.name}}();
-    {{unpack_struct(field) | indent(4) | trim}}
-//%     else
-    packet.set{{field.name}}(buffer.get{{field.name}}());
-//%     endif
-//% endfor
+    {{unpack_prologue(packet) | indent(4) | trim}}
 //% for cif in packet.cifs if cif.enabled
-    const {{cif.header}}* cif_{{cif.number}} = buffer.getCIF{{cif.number}}();
-    ::validate(cif_{{cif.number}}, "CIF{{cif.number}} missing");
-//% endfor
-//% for field in packet.fields
-//%     set cifvar = "cif_{}".format(field.cif)
-    if (!{{cifvar}}->is{{field.name}}Enabled()) {
-//%     if field.optional
-        packet.clear{{field.name}}();
-//%     else
+//%     set cifvar = 'cif_{}'.format(cif.number)
+    const {{cif.header}}* {{cifvar}} = buffer.getCIF{{cif.number}}();
+    ::validate({{cifvar}}, "CIF{{cif.number}} missing");
+//%     for field in cif.fields if field.member
+//%         if packet.is_reqs
+    packet.set{{field.identifier}}Enabled({{cifvar}}->is{{field.identifier}}Enabled());
+//%         else
+    if (!{{cifvar}}->is{{field.identifier}}Enabled()) {
+//%             if field.optional
+        packet.clear{{field.identifier}}();
+//%             else
         // ERROR
-//%     endif
+//%             endif
     } else {
         {{unpack_field(field) | indent(8) | trim}}
     }
+//%         endif   
+//%     endfor
 //% endfor
+//% if packet.is_data
+    packet.setRawData(ptr, bufsize-buffer.size());
+//% endif
 }
 //% endmacro
 
@@ -211,5 +273,13 @@ namespace {
 }
 
 //% for packet in packets
-{{packet_impl(packet)}}
+using {{namespace}}::packing::{{packet.helper}};
+
+{{define_match(packet) | trim}}
+
+{{define_bytes_required(packet) | trim}}
+
+{{define_pack(packet) | trim}}
+
+{{define_unpack(packet) | trim}}
 //% endfor
