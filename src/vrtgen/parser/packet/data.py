@@ -47,6 +47,6 @@ class DataPacketParser(PacketParser):
     Parser for Data Packet configuration.
     """
 
-DataPacketParser.add_field_value_parser(DataHeader.not_v49d0, alias='Not V49.0')
-DataPacketParser.add_field_value_parser(DataHeader.spectrum, alias='Spectrum')
-DataPacketParser.add_parser('Trailer', TrailerParser())
+DataPacketParser.add_field_value_parser(DataHeader.not_v49d0, alias='not-v49d0')
+DataPacketParser.add_field_value_parser(DataHeader.spectrum, alias='spectrum')
+DataPacketParser.add_parser('trailer', TrailerParser())
