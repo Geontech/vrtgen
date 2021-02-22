@@ -187,13 +187,14 @@ class Field(StructItem):
     """
     Data field in a struct.
     """
-    __slots__ = ('_unused', '_enable')
-    def __init__(self, name, datatype, position=None, unused=None, enable=None):
+    __slots__ = ('_unused', '_enable', '_alias')
+    def __init__(self, name, datatype, position=None, unused=None, enable=None, alias=None):
         super().__init__(name, datatype, True, position=position)
         self._unused = unused
         self._enable = enable
         if enable is not None:
             enable.link(self)
+        self._alias = alias
 
     @property
     def enable(self):
@@ -208,6 +209,13 @@ class Field(StructItem):
         assert enable is not None
         self._enable = enable
         enable.link(self)
+
+    @property
+    def alias(self):
+        """
+        The alias for the field.
+        """
+        return self._alias
 
     def __get__(self, instance, owner):
         if instance is not None and self.enable:
