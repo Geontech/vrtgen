@@ -64,6 +64,10 @@ add_custom_target(generate-headers DEPENDS ${generated_header_files})
 # Normal hand-written headers
 set(header_files
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/buffer.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/socket_address.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/socket_base.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/socket_endpoint.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/udp.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/field.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/fixed.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/packed.hpp

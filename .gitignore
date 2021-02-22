@@ -11,4 +11,5 @@ cpp/include/vrtgen/packing/*.hpp
 cpp/test_libvrtgen
 CMakeCache.txt
 cmake_install.cmake
+cpp/build
 .vscode
