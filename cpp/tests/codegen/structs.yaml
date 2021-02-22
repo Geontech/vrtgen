@@ -1,3 +1,4 @@
 RequiredStruct:
   context:
-    Gain: required
+    cif0:
+      gain: required

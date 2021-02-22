@@ -54,7 +54,7 @@ TEST_CASE("User-defined Discrete I/O 32") {
     auto header = buffer.insert<vrtgen::packing::ContextHeader>();
     header->setPacketType(vrtgen::PacketType::CONTEXT);
     header->setPacketSize(PACKED_SIZE / 4);
-    header->setNotaV49_0Packet(true);
+    header->setNotaV49d0Packet(true);
     buffer.insert<vrtgen::packing::StreamIdentifier>(STREAM_ID);
     auto cif_0 = buffer.insert<vrtgen::packing::CIF0Enables>();
     cif_0->setCIF1Enable(true);
@@ -65,10 +65,15 @@ TEST_CASE("User-defined Discrete I/O 32") {
     SECTION("Pack") {
         UserDefined packet_in;
         packet_in.setStreamIdentifier(STREAM_ID);
-        packet_in.setDiscreteIO32Flag(FLAG);
-        packet_in.setDiscreteIO32Number(NUMBER);
-        packet_in.setDiscreteIO32Sometimes(SOMETIMES);
-        packet_in.setDiscreteIO32Always(ALWAYS);
+        ::structs::userdefined::DiscreteIO32 dio32;
+        dio32.setFlagEnabled(true);
+        dio32.setFlag(FLAG);
+        dio32.setNumberEnabled(true);
+        dio32.setNumber(NUMBER);
+        dio32.setSometimesEnabled(true);
+        dio32.setSometimes(SOMETIMES);
+        dio32.setAlways(ALWAYS);
+        packet_in.setDiscreteIO32(dio32);
 
         REQUIRE(packing::UserDefinedHelper::bytes_required(packet_in) == PACKED_SIZE);
 
@@ -85,12 +90,12 @@ TEST_CASE("User-defined Discrete I/O 32") {
         UserDefined packet_out;
         packing::UserDefinedHelper::unpack(packet_out, expected.data(), expected.size());
         CHECK(packet_out.getStreamIdentifier() == STREAM_ID);
-        CHECK(packet_out.getDiscreteIO32Always() == ALWAYS);
-        REQUIRE(packet_out.hasDiscreteIO32Flag());
-        REQUIRE(packet_out.hasDiscreteIO32Number());
-        REQUIRE(packet_out.hasDiscreteIO32Sometimes());
-        CHECK(packet_out.getDiscreteIO32Flag() == FLAG);
-        CHECK(packet_out.getDiscreteIO32Number() == NUMBER);
-        CHECK(packet_out.getDiscreteIO32Sometimes() == SOMETIMES);
+        CHECK(packet_out.getDiscreteIO32().getAlways() == ALWAYS);
+        REQUIRE(packet_out.getDiscreteIO32().isFlagEnabled());
+        REQUIRE(packet_out.getDiscreteIO32().isNumberEnabled());
+        REQUIRE(packet_out.getDiscreteIO32().isSometimesEnabled());
+        CHECK(packet_out.getDiscreteIO32().getFlag() == FLAG);
+        CHECK(packet_out.getDiscreteIO32().getNumber() == NUMBER);
+        CHECK(packet_out.getDiscreteIO32().getSometimes() == SOMETIMES);
     }
 }
