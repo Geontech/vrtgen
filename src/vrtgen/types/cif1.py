@@ -18,7 +18,7 @@
 """
 Types and definitions for CIF1 fields.
 """
-from . import basic
+from . import basic, enums
 from .struct import Struct, Field, Reserved
 from .cifmeta import CIFFields
 from .cif0 import Gain
@@ -126,30 +126,30 @@ class CIF1(CIFFields):
     CIF1 Fields.
     """
     # Phase Offset (1/31): fixed-point 16/7, radians (upper 16 reserved)
-    phase_offset = Field('Phase Offset', basic.FixedPoint16r7)
+    phase_offset = Field(enums.CIF1Fields.PHASE_OFFSET.value, basic.FixedPoint16r7)
 
     # Polarization (1/30): [tilt, ellipticity], fixed-point 16/13, radians
-    polarization = Field('Polarization', Polarization)
+    polarization = Field(enums.CIF1Fields.POLARIZATION.value, Polarization)
 
     # 3-D Pointing Vector (1/29): [elevation, azimuthal], fixed-point 16/7, degrees
-    pointing_vector = Field('3-D Pointing Vector', PointingVector)
+    pointing_vector = Field(enums.CIF1Fields.POINTING_VECTOR.value, PointingVector)
 
     # 3-D Pointing Vector Structure (1/28): structured data
-    pointing_vector_struct = Field('3-D Pointing Vector Structure', None) # not implemented
+    pointing_vector_struct = Field(enums.CIF1Fields.POINTING_VECTOR_STRUCT.value, None) # not implemented
 
     # Spatial Scan Type (1/27): Generic 16-bit identifier
-    spatial_scan_type = Field('Spatial Scan Type', basic.Identifier16)
+    spatial_scan_type = Field(enums.CIF1Fields.SPATIAL_SCAN_TYPE.value, basic.Identifier16)
 
     # Spatial Reference Type (1/26): struct
-    spatial_reference_type = Field('Spatial Reference Type', None) # not implemented
+    spatial_reference_type = Field(enums.CIF1Fields.SPATIAL_REFERENCE_TYPE.value, None) # not implemented
 
     # Beam Widths (1/25): [horizonal, vertical]: fixed-point 16/7. degrees
     # NOTE: This field is referred to inconsistently in both singular and
     # plural forms.
-    beam_widths = Field('Beam Widths', BeamWidths)
+    beam_widths = Field(enums.CIF1Fields.BEAM_WIDTHS.value, BeamWidths)
 
     # Range (1/24): fixed-point 32/6, meters
-    range = Field('Range', basic.FixedPointType.create(32, 6))
+    range = Field(enums.CIF1Fields.RANGE.value, basic.FixedPointType.create(32, 6))
 
     # Reserved (1/23-21)
     reserved_23 = Reserved(1)
@@ -157,71 +157,71 @@ class CIF1(CIFFields):
     reserved_21 = Reserved(1)
 
     # Eb/No BER (1/20): [Eb/No, BER], fixed-point 16/7, dB
-    ebno_ber = Field('Eb/No BER', EbNoBER)
+    ebno_ber = Field(enums.CIF1Fields.EBNO_BER.value, EbNoBER)
 
     # Threshold (1/18): [stage2 (optional), stage1], fixed-point 16/7, dB
-    threshold = Field('Threshold', Threshold)
+    threshold = Field(enums.CIF1Fields.THRESHOLD.value, Threshold)
 
     # Compression Point (1/18): fixed-point 16/7, dBm
     # NOTE: Also called "1 dB Compression Point" and "1-dB Compression Point"
-    compression_point = Field('Compression Point', basic.FixedPoint16r7)
+    compression_point = Field(enums.CIF1Fields.COMPRESSION_POINT.value, basic.FixedPoint16r7)
 
     # Intercept Points (1/17): [2IIP, 3IIP], fixed-point 16/7, dBm
-    intercept_points = Field('Intercept Points', InterceptPoints)
+    intercept_points = Field(enums.CIF1Fields.INTERCEPT_POINTS.value, InterceptPoints)
 
     # SNR/Noise Figure (1/16): [SNR, Noise], fixed-point 16/7, dB
-    snr_noise_figure = Field('SNR/Noise Figure', SNRNoise)
+    snr_noise_figure = Field(enums.CIF1Fields.SNR_NOISE_FIGURE.value, SNRNoise)
 
     # Aux Frequency (1/15): fixed-point 64/20, Hz
-    aux_frequency = Field('Aux Frequency', basic.FixedPoint64r20)
+    aux_frequency = Field(enums.CIF1Fields.AUX_FREQUENCY.value, basic.FixedPoint64r20)
 
     # Aux Gain (1/14): [stage2 (optional), stage1], fixed-point 16/7, dB
-    aux_gain = Field('Aux Gain', Gain)
+    aux_gain = Field(enums.CIF1Fields.AUX_GAIN.value, Gain)
 
     # Aux Bandidth (1/13): fixed-point 64/20, Hz
-    aux_bandwidth = Field('Aux Bandwidth', basic.FixedPoint64r20)
+    aux_bandwidth = Field(enums.CIF1Fields.AUX_BANDWIDTH.value, basic.FixedPoint64r20)
 
     # Reserved (1/12)
     reserved_12 = Reserved(1)
 
     # Array of CIFS (1/11): This allows multiple CIF blocks, wnich makes for
     # some complex support code.
-    array_of_cifs = Field('Array of CIFS', None) # not implemented
+    array_of_cifs = Field(enums.CIF1Fields.ARRAY_OF_CIFS.value, None) # not implemented
 
     # Spectrum (1/10): multi-word structured data
-    spectrum = Field('Spectrum', None) # not implemented
+    spectrum = Field(enums.CIF1Fields.SPECTRUM.value, None) # not implemented
 
     # Sector Scan/Step (1/9): Array of records, with the exact format of the
     # records configurable. There is an overall header, much of which is run-
     # time (e.g., number of records), with a bitfield to enable specific
     # subfields.
-    sector_scan_step = Field('Sector Scan/Step', None) # not implemented
+    sector_scan_step = Field(enums.CIF1Fields.SECTOR_SCAN_STEP.value, None) # not implemented
 
     # Reserved (1/8)
     reserved_8 = Reserved(1)
 
     # Index List (1/7): Struct header with an array of identifiers (8, 16 or 32
     # bits). Only the entry size is configurable for code generation.
-    index_list = Field('Index List', None)#IndexListOptions)
+    index_list = Field(enums.CIF1Fields.INDEX_LIST.value, None)#IndexListOptions)
 
     # Discrete I/O 32-bit (1/6): 32 additional bits of user-defined fields
-    discrete_io_32 = Field('Discrete I/O 32', DiscreteIO32)
+    discrete_io_32 = Field(enums.CIF1Fields.DISCRETE_IO_32.value, DiscreteIO32)
 
     # Discrete I/O 64-bit (1/7): 64 additional bits of user-defined fields
-    discrete_io_64 = Field('Discrete I/O 64', DiscreteIO64)
+    discrete_io_64 = Field(enums.CIF1Fields.DISCRETE_IO_64.value, DiscreteIO64)
 
     # Health Status (1/4): 16-bit identifier
-    health_status = Field('Health Status', HealthStatus)
+    health_status = Field(enums.CIF1Fields.HEALTH_STATUS.value, HealthStatus)
 
     # V49 Spec Compliance (1/3): 32 bits for V49 compliance level, only four
     # values currently defined.
-    v49_spec_compliance = Field('V49 Spec Compliance', None) # not implmented
+    v49_spec_compliance = Field(enums.CIF1Fields.V49_SPEC_COMPLIANCE.value, None) # not implmented
 
     # Version and Build Code (1/2): struct, 32 bits
-    version_build_code = Field('Version and Build Code', VersionInformation)
+    version_build_code = Field(enums.CIF1Fields.VERSION_BUILD_CODE.value, VersionInformation)
 
     # Buffer Size (1/1): struct, 64 bits
-    buffer_size = Field('Buffer Size', BufferSize)
+    buffer_size = Field(enums.CIF1Fields.BUFFER_SIZE.value, BufferSize)
 
     # Reserved (1/0)
     reserved_0 = Reserved(1)
