@@ -54,6 +54,11 @@ namespace vrtgen {
                 return m_pos - m_start;
             }
 
+            T* get() const
+            {
+                return m_pos;
+            }
+
         private:
             T* const m_start;
             T* const m_end;
@@ -78,6 +83,11 @@ namespace vrtgen {
         size_t size() const
         {
             return m_buf.getpos();
+        }
+
+        char* get() const
+        {
+            return m_buf.get();
         }
 
     private:
