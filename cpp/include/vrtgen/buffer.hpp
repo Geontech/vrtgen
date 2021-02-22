@@ -263,6 +263,11 @@ namespace vrtgen {
             return next<T>()->get();
         }
 
+        size_t size() const
+        {
+            return m_buf.getpos();
+        }
+
     private:
         void parse_command_prologue()
         {
