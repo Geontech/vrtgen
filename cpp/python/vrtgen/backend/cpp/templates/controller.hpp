@@ -81,7 +81,7 @@ void set{{field.identifier}}(const {{field.member.datatype}}& value)
 //% endfor
 //% endmacro
 
-//% macro handle_data(packet)
+//% macro handle_datactxt(packet)
 void set{{packet.name}}Receive(const bool enable)
 {
     auto receiver = m_receivers["{{packet.name}}"];
@@ -91,7 +91,7 @@ void set{{packet.name}}Receive(const bool enable)
     }
 }
 
-void register{{packet.name}}Listener(std::function<void(SignalData&)>&& func)
+void register{{packet.name}}Listener(std::function<void({{packet.name}}&)>&& func)
 {
     m_{{packet.name}}Listener = std::move(func);
 }{{'\n'}}
@@ -103,14 +103,14 @@ void register{{packet.name}}Listener(std::function<void(SignalData&)>&& func)
 {{handle_query(packet) | trim}}{{'\n'}}
 //%     elif packet.is_reqx
 {{handle_configure(packet) | trim}}{{'\n'}}
-//%     elif packet.is_data
-{{handle_data(packet) | trim}}{{'\n'}}
+//%     elif packet.is_data or packet.is_context
+{{handle_datactxt(packet) | trim}}{{'\n'}}
 //%     endif
 //% endfor
 //% endmacro
 
-//% macro define_data_members(packets)
-//% set data_packets = []
+//% macro define_datactxt_members(packets)
+//% set datactxt_packets = []
 //% set controller = []
 //% for packet in packets
 //%     for field in packet.prologue.fields
@@ -119,19 +119,19 @@ void register{{packet.name}}Listener(std::function<void(SignalData&)>&& func)
 //%             do controller.append(true)
 //%         endif
 //%     endfor
-//%     if packet.is_data
-//%         do data_packets.append(packet.name)
+//%     if packet.is_data or packet.is_context
+//%         do datactxt_packets.append(packet.name)
 //%     endif
 //% endfor
-//% if data_packets
+//% if datactxt_packets
 std::thread m_recv_thread;
 std::atomic_bool m_receiving{ false };
 std::map<std::string, atomic_bool_ptr> m_receivers {
-//%     for packet in data_packets
+//%     for packet in datactxt_packets
     {{'{'}}"{{packet}}", std::make_shared<std::atomic_bool>(false){{'}'}}{{',' if not loop.last}}
 //%     endfor
 };
-//%     for packet in data_packets
+//%     for packet in datactxt_packets
 std::function<void({{packet}}&)> m_{{packet}}Listener;
 //%     endfor
 //% endif
@@ -163,19 +163,22 @@ void m_check_receivers(const bool enable)
 }
 //% endmacro
 
-//% macro define_data_member_funcs(packets, class_name)
-//% set has_data = []
+//% macro define_datactxt_member_funcs(packets, class_name)
+//% set datactxt = []
 //% for packet in packets
-//%     if packet.is_data
-//%         if not has_data
+//%     if packet.is_data or packet.is_context
+//%         do datactxt.append(packet)
+//%     endif
+//% endfor
+//% if datactxt
 void m_receiver_func()
 {
     message_buffer message;
     while(m_receiving) {
         endpoint_type endpoint;
         auto recv_length = m_datactxt_socket.receive_from(message.data(), message.size(), endpoint);
-//%             do has_data.append(true)
-//%         endif
+
+//%     for packet in datactxt
         if (packing::{{packet.helper}}::match(message.data(), recv_length)) {
             {{packet.name}} packet;
             packing::{{packet.helper}}::unpack(packet, message.data(), recv_length);
@@ -183,9 +186,7 @@ void m_receiver_func()
                 m_{{packet.name}}Listener(packet);
             }
         }
-//%     endif
-//% endfor
-//% if has_data
+//%     endfor
     }
 }
 
@@ -286,14 +287,14 @@ private:
     socket_type m_socket;
     socket_type m_datactxt_socket;
     vrtgen::MessageIdentifier m_messageID = 1;
-    {{define_data_members(packets) | indent(4) | trim}}
+    {{define_datactxt_members(packets) | indent(4) | trim}}
 
     vrtgen::MessageIdentifier m_nextMessageID()
     {
         return m_messageID++;
     }
 
-    {{define_data_member_funcs(packets, class_name) | indent(4) | trim}}
+    {{define_datactxt_member_funcs(packets, class_name) | indent(4) | trim}}
 
     {{define_packet_send_member_func() | indent(4) | trim}}
 

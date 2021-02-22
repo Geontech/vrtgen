@@ -42,7 +42,7 @@ virtual void set{{field.identifier}}(const {{field.member.datatype}}& value)
     // AUTO-GENERATED FUNCTION STUB
     // IMPLEMENT HARDWARE-SPECIFIC FUNCTIONALITY HERE
     throw std::runtime_error("set{{field.identifier}} not implemented");
-}{{'\n' if not loop.last}}
+}{{'\n'}}
 //%     endfor
 //% endfor
 //% endmacro

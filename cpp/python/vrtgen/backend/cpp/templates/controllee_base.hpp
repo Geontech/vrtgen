@@ -73,12 +73,13 @@ if (packing::{{packet.helper}}::match(m_message.data(), recv_length)) {
 if (packing::{{packet.helper}}::match(m_message.data(), recv_length)) {
     {{packet.name}} packet;
     packing::{{packet.helper}}::unpack(packet, m_message.data(), recv_length);
-    endpoint_type data_endpoint(endpoint.address().to_string(), endpoint.port()+1);
 //% for cif in packet.cifs if cif.enabled
 //%     for field in cif.fields if field.member
 //%         if field.optional
     if (packet.has{{field.identifier}}()) {
 //%             if 'DiscreteIO' in field.identifier
+        endpoint_type data_endpoint = endpoint;
+        data_endpoint.port(endpoint.port()+1);
         this->set{{field.identifier}}(packet.get{{field.identifier}}(), data_endpoint);
 //%             else
         this->set{{field.identifier}}(packet.get{{field.identifier}}());
@@ -86,6 +87,8 @@ if (packing::{{packet.helper}}::match(m_message.data(), recv_length)) {
     }
 //%         else
 //%             if 'DiscreteIO' in field.identifier
+    endpoint_type data_endpoint = endpoint;
+    data_endpoint.port(endpoint.port()+1);
     this->set{{field.identifier}}(packet.get{{field.identifier}}(), data_endpoint);
 //%             else
     this->set{{field.identifier}}(packet.get{{field.identifier}}());
