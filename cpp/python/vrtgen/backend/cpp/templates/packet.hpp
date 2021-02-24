@@ -44,7 +44,7 @@
 //% macro define_getter(field)
 {{field.member.datatype}} get{{field.identifier}}() const
 {
-//%     if field.optional
+//%     if field.optional or 'UUID' in field.member.type
     return {{field.member.identifier}}.get();
 //%     else
     return {{field.member.identifier}};
@@ -55,7 +55,7 @@
 //% macro define_setter(field)
 void set{{field.identifier}}(const {{field.member.datatype}}& value)
 {
-//%     if field.optional
+//%     if field.optional or 'UUID' in field.member.type
     {{field.member.identifier}}.set(value);
 //%     else
     {{field.member.identifier}} = value;

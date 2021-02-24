@@ -93,7 +93,12 @@ const {{cam.type}}* {{cam.attr}} = buffer.get{{cam.name}}();
 {{pack_cam(packet.cam) | trim}}
 //% endif
 //% for field in packet.prologue.fields if field.post_cam
+//%     if 'UUID' in field.member.type
+{{field.type}}* {{field.identifier.lower()}} = buffer.insert<{{field.type}}>();
+{{field.identifier.lower()}}->set({{field.member.type}}(packet.get{{field.identifier}}()).value());
+//%     else
 {{pack_field(field) | trim}}
+//%     endif
 //% endfor
 //% endmacro
 
@@ -113,6 +118,9 @@ packet.set{{field.identifier}}(buffer.get{{field.identifier}}());
 //%     if field.struct
 const {{field.type}}* {{field.attr}} = buffer.get{{field.identifier}}();
 {{unpack_struct(field) | trim}}
+//%     elif 'UUID' in field.member.type
+//%         set identifier = field.identifier[:-2] + 'UU' + field.identifier[-2:]
+packet.set{{field.identifier}}(buffer.get{{identifier}}());
 //%     else
 packet.set{{field.identifier}}(buffer.get{{field.identifier}}());
 //%     endif
@@ -185,13 +193,21 @@ void {{packet.helper}}::pack(const {{packet.name}}& packet, void* ptr, size_t bu
     header->{{field.setter}}({{field.value}});
 //% endfor
     {{pack_prologue(packet) | indent(4) | trim}}
+//% set has_mult_cif = []
 //% for cif in packet.cifs if cif.enabled
 //%     if cif.number != 0
-    cif_0->setCIF{{cif.number}}Enable(true);
+//%         do has_mult_cif.append(true)
 //%     endif
-//%     if not packet.fields
-    {{cif.header}}* cif_{{cif.number}} __attribute__((unused)) = buffer.insert<{{cif.header}}>();
+//% endfor
+//% for cif in packet.cifs if cif.enabled
+//%     if cif.number == 0
+//%         if has_mult_cif or cif.fields
+    {{cif.header}}* cif_{{cif.number}} = buffer.insert<{{cif.header}}>();
+//%         else
+    buffer.insert<{{cif.header}}>();
+//%         endif
 //%     else
+    cif_0->setCIF{{cif.number}}Enable(true);
     {{cif.header}}* cif_{{cif.number}} = buffer.insert<{{cif.header}}>();
 //%     endif
 //% endfor
