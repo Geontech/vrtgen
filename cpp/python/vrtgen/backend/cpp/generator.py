@@ -182,7 +182,8 @@ class CppPacket:
             self.__set_cam_field(control.ControlAcknowledgeMode.controllee_format, packet.controllee)
             if packet.controllee == enums.IdentifierFormat.WORD:
                 self.__add_prologue_field(control.CommandPrologue.controllee_id, post_cam=True)
-            # TODO: UUID support
+            elif packet.controllee == enums.IdentifierFormat.UUID:
+                self.__add_prologue_field(control.CommandPrologue.controllee_id_uuid, post_cam=True)
 
         # Controller
         controller_enable = packet.controller is not None
@@ -191,7 +192,8 @@ class CppPacket:
             self.__set_cam_field(control.ControlAcknowledgeMode.controller_format, packet.controller)
             if packet.controller == enums.IdentifierFormat.WORD:
                 self.__add_prologue_field(control.CommandPrologue.controller_id, post_cam=True)
-            # TODO: UUID support
+            elif packet.controller == enums.IdentifierFormat.UUID:
+                self.__add_prologue_field(control.CommandPrologue.controller_id_uuid, post_cam=True)
 
     def __init_payload(self, packet):
         for number in CIFS:
@@ -237,6 +239,9 @@ class CppPacket:
             'post_cam': post_cam,
             'member': self.__create_member(field.name, field_type)
         }
+        if 'UUID' in field_type:
+            prologue_field['type'] = PACKING_LIB + 'UUID'
+            prologue_field['member']['datatype'] = 'std::string'
         self.prologue['fields'].append(prologue_field)
 
     def __add_cam_field(self, field):

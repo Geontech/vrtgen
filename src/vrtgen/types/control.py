@@ -23,6 +23,7 @@ from .struct import Struct, Enable, Field, Reserved
 from .basic import Boolean, IntegerType, Identifier32
 from .prologue import Prologue
 from . import enums
+from uuid import uuid4, UUID
 
 __all__ = (
     'ControlAcknowledgeMode',
@@ -70,6 +71,11 @@ class MessageIdentifier(IntegerType, bits=32, signed=False):
     packets (8.4).
     """
 
+class UUIDIdentifier(IntegerType, bits=128, signed=False):
+    """
+    UUID Control Identifier type
+    """
+
 class CommandPrologue(Prologue):
     """
     Command Packet prologue.
@@ -78,3 +84,5 @@ class CommandPrologue(Prologue):
     message_id = Field('Message ID', MessageIdentifier)
     controllee_id = Field('Controllee ID', Identifier32)
     controller_id = Field('Controller ID', Identifier32)
+    controllee_id_uuid = Field('Controllee ID', UUIDIdentifier)
+    controller_id_uuid = Field('Controller ID', UUIDIdentifier)

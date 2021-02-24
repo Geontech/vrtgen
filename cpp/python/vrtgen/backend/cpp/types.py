@@ -20,6 +20,7 @@ Mappings of VRT types to C++ types.
 """
 
 from vrtgen.types import basic
+from vrtgen.types import control
 from vrtgen.types import enums
 from vrtgen.types import struct
 
@@ -90,6 +91,8 @@ def value_type(datatype):
     """
     if datatype == basic.StreamIdentifier:
         return 'vrtgen::StreamIdentifier'
+    if datatype == control.UUIDIdentifier:
+        return 'vrtgen::UUID'
     if issubclass(datatype, basic.BooleanType):
         return 'bool'
     if issubclass(datatype, enums.BinaryEnum):

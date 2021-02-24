@@ -19,7 +19,7 @@
 Classes and helper methods for generating C++ structures.
 """
 
-from vrtgen.types import enums, basic, struct
+from vrtgen.types import enums, basic, struct, control
 
 from . import types as cpptypes
 from . import utils
@@ -27,6 +27,8 @@ from . import utils
 def member_type(datatype):
     if datatype == basic.OUI:
         return 'OUI'
+    if datatype == control.UUIDIdentifier:
+        return 'big_endian<std::bitset<{}>>'.format(datatype.bits)
     if issubclass(datatype, enums.BinaryEnum):
         return cpptypes.enum_type(datatype)
     if issubclass(datatype, basic.IntegerType):

@@ -21,6 +21,7 @@
 #define _VRTGEN_TYPES_SWAP_HPP
 
 #include <inttypes.h>
+#include <bitset>
 
 namespace vrtgen {
     inline uint16_t swap16(uint16_t value)
@@ -54,6 +55,16 @@ namespace vrtgen {
                 ((value >> 24) & (mask << 16)) |
                 ((value >> 40) & (mask << 8)) |
                 (value >> 56));
+    }
+
+    inline std::bitset<128> swap128(const std::bitset<128> value)
+    {
+        const std::string value_str = value.to_string();
+        std::string swapped(value_str);
+        for (unsigned i=0; i<value_str.size(); i+=8) {
+            std::copy(value_str.begin()+i, value_str.begin()+(i+8), swapped.end()-(i+8));
+        }
+        return std::bitset<128>(swapped); 
     }
 
     namespace detail {
@@ -107,6 +118,16 @@ namespace vrtgen {
             static inline int_type swap(int_type value)
             {
                 return swap64(value);
+            }
+        };
+
+        template <>
+        struct byte_swap<16>
+        {
+            typedef std::bitset<128> int_type;
+            static inline int_type swap(const int_type value)
+            {
+                return swap128(value);
             }
         };
     }

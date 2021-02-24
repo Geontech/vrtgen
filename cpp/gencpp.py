@@ -151,6 +151,7 @@ class LibraryGenerator:
             self.create_field_typedef('MessageID', control.MessageIdentifier),
             self.create_field_typedef('ControlleeID', basic.Identifier32),
             self.create_field_typedef('ControllerID', basic.Identifier32),
+            self.create_field_typedef('UUID', control.UUIDIdentifier)
         ]
         with open(filename, 'w') as fp:
             fp.write(template.render({
