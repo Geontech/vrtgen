@@ -202,11 +202,18 @@ void m_send_packet(const T& packet, Tack& ack)
     size_t length = Thelper::bytes_required(packet);
     Thelper::pack(packet, message.data(), message.size());
     m_socket.send_to(message.data(), length, m_socket.endpoint());
-    size_t reply_length = m_socket.receive_from(message.data(), message.size(), m_socket.endpoint());
-    if (!Tackhelper::match(message.data(), reply_length)) {
+    std::future<size_t> reply_length = std::async(std::launch::async, [this, message]{
+        return m_socket.receive_from(const_cast<message_buffer::value_type*>(message.data()),
+                                     message.size(), m_socket.endpoint());
+    });
+    auto status = reply_length.wait_for(std::chrono::seconds(2));
+    if (status == std::future_status::timeout) {
+        throw std::runtime_error("timed out waiting for acknowledgement");;
+    }
+    if (!Tackhelper::match(message.data(), reply_length.get())) {
         throw std::runtime_error("incorrect acknowledgement type");
     }
-    Tackhelper::unpack(ack, message.data(), reply_length);
+    Tackhelper::unpack(ack, message.data(), reply_length.get());
 }
 //% endmacro
 
@@ -222,6 +229,7 @@ void m_send_packet(const T& packet, Tack& ack)
 #include <thread>
 #include <memory>
 #include <functional>
+#include <future>
 //%         break
 //%     endif
 //% endfor
