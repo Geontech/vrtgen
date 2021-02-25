@@ -21,7 +21,6 @@ Python dictionaries.
 """
 
 from vrtgen.parser.section import SectionParser
-from vrtgen.parser.packet import create_parser
 
 class PacketClassesParser(SectionParser):
     """

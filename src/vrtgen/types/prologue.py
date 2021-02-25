@@ -19,8 +19,8 @@
 Types used for VITA 49 packet prologues.
 """
 
-from .struct import Struct, Field, Reserved
-from . import basic, enums
+from vrtgen.types.struct import Struct, Field, Reserved
+from vrtgen.types import basic, enums
 
 class ClassIdentifier(Struct):
     """

@@ -21,6 +21,7 @@ Types for VITA 49 packet configurations.
 
 from enum import Enum
 import warnings
+import abc
 
 from vrtgen.types import enums
 from vrtgen.types.prologue import Prologue, DataHeader, ContextHeader
@@ -29,7 +30,7 @@ from vrtgen.types.cif0 import CIF0
 from vrtgen.types.cif1 import CIF1
 from vrtgen.types.control import ControlAcknowledgeMode
 
-from .field import FieldConfiguration, Mode, Scope
+from vrtgen.model.field import FieldConfiguration, Mode, Scope
 
 class InformationType(Enum):
     """
@@ -52,6 +53,7 @@ class BaseConfiguration:
     """
     Base class for VRT configurations.
     """
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, name, config_type):
         self.name = name
         self.config_type = config_type
@@ -62,6 +64,19 @@ class BaseConfiguration:
         """
         # Override or extend in subclasses to check for invalid combinations
         # of field configurations.
+
+    @property
+    def packet_type_code(self):
+        """
+        Returns the Packet Type Code for this packet configuration.
+        """
+        return self._get_packet_type_code()
+
+    @abc.abstractmethod
+    def _get_packet_type_code(self):
+        """
+        Return the packet type code for this packet
+        """
 
 class PacketConfiguration(BaseConfiguration):
     """
@@ -123,13 +138,6 @@ class PacketConfiguration(BaseConfiguration):
         """
         # Override or extend in subclasses to check for invalid combinations
         # of field configurations.
-
-    @property
-    def packet_type_code(self):
-        """
-        Returns the Packet Type Code for this packet configuration.
-        """
-        return self._get_packet_type_code()
 
     def _get_packet_type_code(self):
         raise NotImplementedError('packet_type_code')
@@ -208,6 +216,7 @@ class CommandPacketConfiguration(CIFPacketConfiguration):
     """
     Configuration for a Command Packet.
     """
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, name, packet_type):
         super().__init__(name, packet_type)
         self.controllee = None
@@ -267,24 +276,40 @@ class InformationClassConfiguration(BaseConfiguration):
     """
     Configuration for an Information Class.
     """
+    # pylint: disable=abstract-method
     def __init__(self, name):
         super().__init__(name, InformationType.INFORMATION)
         self._packet_classes = []
         self._packets = []
 
     def add_packet_class(self, packet_name):
+        """
+        Add packet class name to this Information class configuration
+        """
         self._packet_classes.append(packet_name)
 
     def get_packet_classes(self):
+        """
+        Returns the names of packets in this Information Class configuration
+        """
         return self._packet_classes
 
     def add_packet(self, packet):
+        """
+        Add packet class configuration to this Information class configuration
+        """
         self._packets.append(packet)
 
     def get_packets(self):
+        """
+        Returns the packet configurations in this Information Class configuration
+        """
         return self._packets
 
     def validate(self):
+        """
+        Validate all packet configurations have been added
+        """
         for packet_class in self._packet_classes:
             included = False
             for packet in self._packets:

@@ -21,7 +21,7 @@ Information class parser creation.
 
 from vrtgen.model.config import InformationType
 
-from .information import InformationClassParser
+from vrtgen.parser.informationclass.information import InformationClassParser
 
 def create_parser():
     """

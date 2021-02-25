@@ -19,7 +19,7 @@
 Parsers for handling packet fields.
 """
 
-from .base import *
-from .simple import *
-from .struct import *
-from .user import *
+from vrtgen.parser.field.base import *
+from vrtgen.parser.field.simple import *
+from vrtgen.parser.field.struct import *
+from vrtgen.parser.field.user import *

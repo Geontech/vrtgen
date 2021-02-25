@@ -30,7 +30,7 @@ from vrtgen.types.cif1 import CIF1
 
 from vrtgen.model.field import Scope
 
-from .generator import Generator, GeneratorOption
+from vrtgen.backend.generator import Generator, GeneratorOption
 
 __all__ = ('BinaryDumper')
 

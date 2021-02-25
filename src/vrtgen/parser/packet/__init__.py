@@ -21,9 +21,9 @@ Packet parser classes and helper methods.
 
 from vrtgen.model.config import PacketType
 
-from .command import ControlPacketParser, AckSPacketParser, AckVXPacketParser
-from .context import ContextPacketParser
-from .data import DataPacketParser
+from vrtgen.parser.packet.command import ControlPacketParser, AckSPacketParser, AckVXPacketParser
+from vrtgen.parser.packet.context import ContextPacketParser
+from vrtgen.parser.packet.data import DataPacketParser
 
 def create_parser(packet_type):
     """

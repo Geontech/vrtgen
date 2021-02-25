@@ -21,7 +21,7 @@ Parsers for handling simple (i.e., single-valued) fields.
 
 from vrtgen.parser.value import get_value_parser
 
-from .base import FieldParser
+from vrtgen.parser.field.base import FieldParser
 
 class SimpleFieldParser(FieldParser):
     """

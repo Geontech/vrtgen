@@ -21,8 +21,8 @@ Parsers for handling struct fields.
 
 from vrtgen.types.prologue import ClassIdentifier
 
-from .base import FieldParser
-from .simple import SimpleFieldParser
+from vrtgen.parser.field.base import FieldParser
+from vrtgen.parser.field.simple import SimpleFieldParser
 
 class StructFieldParser(FieldParser):
     """

@@ -18,11 +18,11 @@
 """
 Types and definitions for CIF1 fields.
 """
-from . import basic, enums
-from .struct import Struct, Field, Reserved
-from .cifmeta import CIFFields
-from .cif0 import Gain
-from .user import userdefined
+from vrtgen.types import basic, enums
+from vrtgen.types.struct import Struct, Field, Reserved
+from vrtgen.types.cifmeta import CIFFields
+from vrtgen.types.cif0 import Gain
+from vrtgen.types.user import userdefined
 
 class Polarization(Struct):
     """

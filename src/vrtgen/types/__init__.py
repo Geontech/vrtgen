@@ -19,5 +19,5 @@
 Types for Python VITA 49 data model.
 """
 
-from .basic import *
-from .enums import *
+from vrtgen.types.basic import *
+from vrtgen.types.enums import *

@@ -23,11 +23,12 @@ from .struct import Struct, Enable, Field, Reserved
 from .basic import Boolean, IntegerType, Identifier32
 from .prologue import Prologue
 from . import enums
-from uuid import uuid4, UUID
 
 __all__ = (
     'ControlAcknowledgeMode',
-    'MessageIdentifier'
+    'MessageIdentifier',
+    'UUIDIdentifier',
+    'CommandPrologue'
 )
 
 class ControlAcknowledgeMode(Struct):

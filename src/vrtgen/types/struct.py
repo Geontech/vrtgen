@@ -187,6 +187,7 @@ class Field(StructItem):
     """
     Data field in a struct.
     """
+    # pylint: disable=too-many-arguments
     __slots__ = ('_unused', '_enable', '_alias')
     def __init__(self, name, datatype, position=None, unused=None, enable=None, alias=None):
         super().__init__(name, datatype, True, position=position)

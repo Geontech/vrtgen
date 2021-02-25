@@ -19,11 +19,13 @@
 No-op generator backend for syntax checking of YAML.
 """
 
-from .generator import Generator
+from vrtgen.backend.generator import Generator
 
 class Check(Generator):
     """
     Validates packet definitions.
     """
     def generate(self, packet):
-        pass
+        """
+        Pass-through for syntax checking
+        """

@@ -18,10 +18,10 @@
 """
 Types and defintions for CIF0 fields.
 """
-from . import basic
-from . import enums
-from .struct import Struct, Field, Reserved
-from .cifmeta import CIFFields
+from vrtgen.types import basic
+from vrtgen.types import enums
+from vrtgen.types.struct import Struct, Field, Reserved
+from vrtgen.types.cifmeta import CIFFields
 
 class GeolocationAngle(basic.FixedPointType, bits=32, radix=22):
     """

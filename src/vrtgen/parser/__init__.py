@@ -27,11 +27,11 @@ from vrtgen.model.config import InformationClassConfiguration
 from vrtgen.model.config import InformationType, PacketType
 
 from vrtgen.parser import packet
-from vrtgen.parser import information
-from .utils import to_kvpair, EMPTY
+from vrtgen.parser import informationclass
+from vrtgen.parser.utils import to_kvpair, EMPTY
 
 __all__ = (
-    'parse_packet',
+    'parse_configuration',
     'parse_file',
     'parse_stream'
 )
@@ -39,10 +39,11 @@ __all__ = (
 def _create_parser(config_type):
     if isinstance(config_type, PacketType):
         return packet.create_parser(config_type)
-    elif isinstance(config_type, InformationType):
-        return information.create_parser()
+    if isinstance(config_type, InformationType):
+        return informationclass.create_parser()
+    raise ValueError('invalid class type {}'.format(config_type))
 
-def parse_configuration(name, value, include_files=[]):
+def parse_configuration(name, value, include_files=None):
     """
     Parses a VITA 49 class definition.
     """
@@ -50,24 +51,24 @@ def parse_configuration(name, value, include_files=[]):
     config_type, config_value = to_kvpair(value)
     try:
         config_type = PacketType(config_type.casefold())
-    except:
+    except ValueError:
         try:
             config_type = InformationType(config_type.casefold())
-        except:
-            raise ValueError('invalid class type {}'.format(config_type))
+        except ValueError as err:
+            raise err
     config = create_configuration(config_type, name)
     parser = _create_parser(config_type)
 
     if config_value is not EMPTY:
         parser(log, config, config_value)
-    
-    if isinstance(config, InformationClassConfiguration):
+
+    if isinstance(config, InformationClassConfiguration) and include_files:
         for include_file in include_files:
             info_class_packets = config.get_packet_classes()
             packets = parse_file(include_file)
-            for packet in packets:
-                if packet.name in info_class_packets:
-                    config.add_packet(packet)
+            for pkt in packets:
+                if pkt.name in info_class_packets:
+                    config.add_packet(pkt)
 
     return config
 
