@@ -26,8 +26,8 @@ from vrtgen.model.config import create_configuration
 from vrtgen.model.config import InformationClassConfiguration
 from vrtgen.model.config import InformationType, PacketType
 
-from . import packet
-from . import information
+from vrtgen.parser import packet
+from vrtgen.parser import information
 from .utils import to_kvpair, EMPTY
 
 __all__ = (
