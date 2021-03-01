@@ -1,0 +1,36 @@
+BasicContext:
+  context:
+    cif0:
+      reference-point-id: required
+
+BasicControl:
+  control:
+    cif0:
+      rf-reference-frequency: required
+
+AllCIF0Context:
+  context:
+    cif0:
+      reference-point-id: optional
+      bandwidth: optional
+      if-reference-frequency: optional
+      rf-reference-frequency: optional
+      rf-reference-frequency-offset: optional
+      if-band-offset: optional
+      reference-level: optional
+      gain: optional
+      over-range-count: optional
+      sample-rate: optional
+      timestamp-adjustment: optional
+      timestamp-calibration-time: optional
+      temperature: optional
+      device-id: optional
+      #state-event-indicators: optional
+      data-payload-format: optional
+      formatted-gps: optional
+      formatted-ins: optional
+      ecef-ephemeris: optional
+      relative-ephemeris: optional
+      ephemeris-reference-id: optional
+      #gps-ascii: optional
+      #context-assocation-lists: optional

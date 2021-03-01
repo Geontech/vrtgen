@@ -168,11 +168,11 @@ add_executable(test_codegen
     tests/codegen/test_structs.cpp
     tests/codegen/test_user.cpp
 )
-add_codegen_file(test_codegen tests/codegen/basic.yaml)
-add_codegen_file(test_codegen tests/codegen/control_ids.yaml)
-add_codegen_file(test_codegen tests/codegen/timestamp.yaml)
-add_codegen_file(test_codegen tests/codegen/structs.yaml)
-add_codegen_file(test_codegen tests/codegen/user.yaml)
+add_codegen_file(test_codegen tests/codegen/yamls/basic.yaml)
+add_codegen_file(test_codegen tests/codegen/yamls/control_ids.yaml)
+add_codegen_file(test_codegen tests/codegen/yamls/timestamp.yaml)
+add_codegen_file(test_codegen tests/codegen/yamls/structs.yaml)
+add_codegen_file(test_codegen tests/codegen/yamls/user.yaml)
 
 target_link_libraries(test_codegen vrtgen)
 target_link_libraries(test_codegen Catch2)

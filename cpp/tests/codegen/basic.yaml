@@ -1,9 +1,0 @@
-BasicContext:
-  context:
-    cif0:
-      reference-point-id: required
-
-BasicControl:
-  control:
-    cif0:
-      rf-reference-frequency: required
