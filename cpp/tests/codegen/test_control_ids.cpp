@@ -19,7 +19,7 @@
 
 #include "catch/catch.hpp"
 
-#include "control_ids.hpp"
+#include "yamls/control_ids.hpp"
 
 #include "bytes.hpp"
 

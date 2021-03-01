@@ -39,10 +39,14 @@ namespace vrtgen {
 
             static inline float_type from_int(int_type value)
             {
-                return value / SCALE;
+                float_type tmp = value / SCALE;
+                int_type int_part = static_cast<int_type>(tmp);
+                float_type frac_part = std::round(tmp*PREC) / PREC - int_part;
+                return static_cast<float_type>(int_part) + frac_part;
             }
         private:
             static constexpr float_type SCALE = (1 << radix);
+            static constexpr double PREC =  std::pow(10,sizeof(double));
         };
     }
 

@@ -19,7 +19,7 @@
 
 #include "catch/catch.hpp"
 
-#include "structs.hpp"
+#include "yamls/structs.hpp"
 
 #include "bytes.hpp"
 

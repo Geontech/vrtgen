@@ -19,7 +19,7 @@
 
 #include "catch/catch.hpp"
 
-#include "timestamp.hpp"
+#include "yamls/timestamp.hpp"
 
 #include <vector>
 

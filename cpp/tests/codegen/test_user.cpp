@@ -21,7 +21,7 @@
 
 #include <bytes.hpp>
 
-#include "user.hpp"
+#include "yamls/user.hpp"
 
 TEST_CASE("User-defined Discrete I/O 32") {
     const vrtgen::StreamIdentifier STREAM_ID = 0x39016501;

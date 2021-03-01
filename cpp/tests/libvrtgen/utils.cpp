@@ -116,19 +116,19 @@ TEST_CASE("Q16.16 fixed-point conversion", "[fixed]")
     CHECK(fixed_type::from_int(0x80000000) == -32768.0);
 
     // Smallest positive fraction
-    CHECK(fixed_type::to_int(1.0/65536.0) == 0x00000001);
-    CHECK(fixed_type::from_int(0x00000001) == 1.0/65536.0);
+    CHECK(fixed_type::to_int(0.00001526) == 0x00000001);
+    CHECK(fixed_type::from_int(0x00000001) == 0.00001526);
 
     // Maximum positive value
     // NOTE: If a float (32 bits) is used as the nearest data type, it does
     // not have enough mantissa precision to represent this value. The first
     // test fails, while the second passes with approximate equality.
-    CHECK(fixed_type::to_int(32768.0 - 1.0/65536.0) == 0x7FFFFFFF);
-    CHECK(fixed_type::from_int(0x7FFFFFFF) == Approx(32768.0 - 1.0/65536.0));
+    CHECK(fixed_type::to_int(32768.0 - 0.00001526) == int32_t(0x7FFFFFFF));
+    CHECK(fixed_type::from_int(0x7FFFFFFF) == 32768.0 - 0.00001526);
 
     // Smallest negative fraction (binary rep is all 1s)
-    CHECK(fixed_type::to_int(-1.0/65536.0) == int32_t(0xFFFFFFFF));
-    CHECK(fixed_type::from_int(0xFFFFFFFF) == -1.0/65536.0);
+    CHECK(fixed_type::to_int(-0.00001526) == int32_t(0xFFFFFFFF));
+    CHECK(fixed_type::from_int(0xFFFFFFFF) == -0.00001526);
 }
 
 TEST_CASE("Optional value")

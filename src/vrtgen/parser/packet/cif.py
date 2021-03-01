@@ -40,7 +40,8 @@ CIFParser.add_field_parser(CIF0.reference_level, alias='reference-level')
 CIFParser.add_field_parser(CIF0.gain, alias='gain')
 CIFParser.add_field_parser(CIF0.over_range_count, alias='over-range-count')
 CIFParser.add_field_parser(CIF0.sample_rate, alias='sample-rate')
-CIFParser.add_field_parser(CIF0.timestamp_calibration_time)
+CIFParser.add_field_parser(CIF0.timestamp_adjustment, alias='timestamp-adjustment')
+CIFParser.add_field_parser(CIF0.timestamp_calibration_time, alias='timestamp-calibration-time')
 CIFParser.add_field_parser(CIF0.temperature, alias='temperature')
 CIFParser.add_field_parser(CIF0.device_id, alias='device-id')
 # Not implemented: CIF0.state_event_indicators
@@ -49,7 +50,7 @@ CIFParser.add_field_parser(CIF0.formatted_gps, alias='formatted-gps')
 CIFParser.add_field_parser(CIF0.formatted_ins, alias='formatted-ins')
 CIFParser.add_field_parser(CIF0.ecef_ephemeris, alias='ecef-ephemeris')
 CIFParser.add_field_parser(CIF0.relative_ephemeris, alias='relative-ephemeris')
-CIFParser.add_field_parser(CIF0.ephemeris_ref_id, alias='epehemeris-reference-id')
+CIFParser.add_field_parser(CIF0.ephemeris_ref_id, alias='ephemeris-reference-id')
 # Not implemented: CIF0.gps_ascii
 # Not implemented: CIF0.context_association_lists
 

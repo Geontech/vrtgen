@@ -156,7 +156,7 @@ class CIF0(CIFFields):
     timestamp_adjustment = Field(enums.CIF0Fields.TIMESTAMP_ADJUSTMENT.value, basic.Integer64)
 
     # Timestamp Calibration Time (0/19): 1 word, depends on prologue TSI
-    timestamp_calibration_time = Field(enums.CIF0Fields.TIMESTAMP_CALIBRATION_TIME.value, basic.Integer32)
+    timestamp_calibration_time = Field(enums.CIF0Fields.TIMESTAMP_CALIBRATION_TIME.value, basic.UInteger32)
 
     # Temperature (0/18): fixed-point 16/6, degrees C (upper 16 reserved)
     temperature = Field(enums.CIF0Fields.TEMPERATURE.value, basic.FixedPointType.create(16, 6))
