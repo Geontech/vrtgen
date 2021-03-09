@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
-import os
+import os, subprocess
 
 import jinja2
 
@@ -484,9 +484,38 @@ class CppGenerator(Generator):
                 fp.write(template.render(context))
 
             template = self.env.get_template('controllee.hpp')
-            self.controllee_file = self.information_class.controllee_name + '.' + self.header_ext
-            with open(os.path.join(self.output_dir, self.controllee_file), 'w') as fp:
-                fp.write(template.render(context))
+            self.controllee_file = '{}.{}'.format(self.information_class.controllee_name, self.header_ext)
+            if not os.path.exists(self.controllee_file):
+                with open(os.path.join(self.output_dir, self.controllee_file), 'w') as fp:
+                    fp.write(template.render(context))
+            else:
+                controllee_orig_file = self.controllee_file + '.orig'
+                os.rename(self.controllee_file, controllee_orig_file)
+                with open(os.path.join(self.output_dir, self.controllee_file), 'w') as fp:
+                    fp.write(template.render(context))
+                # Check for diffs
+                do_patch = False
+                result = subprocess.run(['diff', '-u', self.controllee_file, controllee_orig_file],
+                                        stdout=subprocess.PIPE)
+                if len(result.stdout.decode('utf-8')):
+                    msg = 'Changes detected in {}. Would you like it auto-patched? [y/N] '
+                    msg = msg.format(self.controllee_file)
+                    req_patch = input(msg)
+                    if req_patch.lower() == 'y':
+                        do_patch = True
+                    else:
+                        print('Skipping auto-patch. Original file is: {}'.format(controllee_orig_file))
+                # Patch
+                if do_patch:
+                    patchfile = self.controllee_file + '.patch'
+                    with open(os.path.join(self.output_dir, patchfile), 'w') as fp:
+                        fp.write(result.stdout.decode('utf-8'))
+                    result = subprocess.run(['patch', self.controllee_file, patchfile])
+                    if result.returncode == 0:
+                        keep_orig = input('Keep original file? [y/N] ')
+                        if keep_orig.lower() != 'y':
+                            os.rename(controllee_orig_file, self.controllee_file)
+                        os.remove(patchfile)
 
     def generate_information_class(self, cppstruct, info_class):
         for packet in info_class.get_packets():
