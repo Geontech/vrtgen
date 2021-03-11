@@ -170,12 +170,14 @@ std::vector<uint8_t> m_rawData;
 class {{packet.name}}
 {
 public:
+    using helper = {{packet.namespace}}::packing::{{packet.helper}};
+
     {{define_constructor(packet) | indent(4) | trim}}
 
     {{create_field_functions(packet) | indent(4) | trim}}
 
 private:
-    friend struct {{packet.namespace}}::packing::{{packet.helper}};
+    friend helper;
 
     {{define_members(packet) | indent(4)}}
 }; // end class {{packet.name}}

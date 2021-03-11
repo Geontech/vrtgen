@@ -17,13 +17,11 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
 //% macro handle_query(packet)
-//% set helper = 'packing::' + packet.helper
-//% set ack_helper = 'packing::' + packet.ack.helper
 {{packet.ack.name}} send{{packet.name}}({{packet.name}}& packet)
 {
     packet.setMessageID(m_nextMessageID());
     {{packet.ack.name}} ack;
-    m_send_packet<{{helper}}, {{ack_helper}}>(packet, ack);
+    m_send_packet(packet, ack);
     return ack;
 }
 
@@ -35,7 +33,7 @@
     packet.setMessageID(m_nextMessageID());
     packet.set{{field.identifier}}Enabled(true);
     {{packet.ack.name}} ack;
-    m_send_packet<{{helper}}, {{ack_helper}}>(packet, ack);
+    m_send_packet(packet, ack);
     return ack.get{{field.identifier}}();
 }{{'\n'}}
 //%     endfor
@@ -43,8 +41,6 @@
 //% endmacro
 
 //% macro handle_configure(packet)
-//% set helper = 'packing::' + packet.helper
-//% set ack_helper = 'packing::' + packet.ack.helper
 {{packet.ack.name}} send{{packet.name}}({{packet.name}}& packet)
 {
     packet.setMessageID(m_nextMessageID());
@@ -56,7 +52,7 @@
 //%     endfor
 //% endif
     {{packet.ack.name}} ack;
-    m_send_packet<{{helper}}, {{ack_helper}}>(packet, ack);
+    m_send_packet(packet, ack);
     return ack;
 }
 
@@ -75,7 +71,7 @@ void set{{field.identifier}}(const {{field.member.datatype}}& value)
 //% endif
     packet.set{{field.identifier}}(value);
     {{packet.ack.name}} ack;
-    m_send_packet<{{helper}}, {{ack_helper}}>(packet, ack);
+    m_send_packet(packet, ack);
 }{{'\n'}}
 //%     endfor
 //% endfor
@@ -195,12 +191,12 @@ void m_receiver_func()
 //% endmacro
 
 //% macro define_packet_send_member_func()
-template <class Thelper, class Tackhelper, class T, class Tack>
-void m_send_packet(const T& packet, Tack& ack)
+template <class T, class AckT>
+void m_send_packet(const T& packet, AckT& ack)
 {
     message_buffer message;
-    size_t length = Thelper::bytes_required(packet);
-    Thelper::pack(packet, message.data(), message.size());
+    size_t length = T::helper::bytes_required(packet);
+    T::helper::pack(packet, message.data(), message.size());
     m_socket.send_to(message.data(), length, m_socket.endpoint());
     std::future<size_t> reply_length = std::async(std::launch::async, [this, message]{
         return m_socket.receive_from(const_cast<message_buffer::value_type*>(message.data()),
@@ -210,10 +206,11 @@ void m_send_packet(const T& packet, Tack& ack)
     if (status == std::future_status::timeout) {
         throw std::runtime_error("timed out waiting for acknowledgement");;
     }
-    if (!Tackhelper::match(message.data(), reply_length.get())) {
+    auto reply_length_val = reply_length.get();
+    if (!AckT::helper::match(message.data(), reply_length_val)) {
         throw std::runtime_error("incorrect acknowledgement type");
     }
-    Tackhelper::unpack(ack, message.data(), reply_length.get());
+    AckT::helper::unpack(ack, message.data(), reply_length_val);
 }
 //% endmacro
 
