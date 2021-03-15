@@ -198,7 +198,7 @@ void m_send_packet(const T& packet, AckT& ack)
     size_t length = T::helper::bytes_required(packet);
     T::helper::pack(packet, message.data(), message.size());
     m_socket.send_to(message.data(), length, m_socket.endpoint());
-    std::future<size_t> reply_length = std::async(std::launch::async, [this, message]{
+    std::future<size_t> reply_length = std::async(std::launch::async, [this, &message]{
         return m_socket.receive_from(const_cast<message_buffer::value_type*>(message.data()),
                                      message.size(), m_socket.endpoint());
     });
