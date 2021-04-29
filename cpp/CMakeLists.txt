@@ -64,7 +64,6 @@ add_custom_target(generate-headers DEPENDS ${generated_header_files})
 # Normal hand-written headers
 set(header_files
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/buffer.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/socket_address.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/socket_base.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/socket_endpoint.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/udp.hpp
@@ -122,6 +121,7 @@ add_executable(test_libvrtgen
     tests/libvrtgen/control.cpp
     tests/libvrtgen/packed.cpp
     tests/libvrtgen/prologue.cpp
+    tests/libvrtgen/socket.cpp
     tests/libvrtgen/types.cpp
     tests/libvrtgen/utils.cpp
 )
@@ -163,12 +163,14 @@ endfunction()
 
 add_executable(test_codegen
     tests/codegen/test_basic.cpp
+    tests/codegen/test_cif0.cpp
     tests/codegen/test_control_ids.cpp
     tests/codegen/test_timestamp.cpp
     tests/codegen/test_structs.cpp
     tests/codegen/test_user.cpp
 )
 add_codegen_file(test_codegen tests/codegen/yamls/basic.yaml)
+add_codegen_file(test_codegen tests/codegen/yamls/cif0.yaml)
 add_codegen_file(test_codegen tests/codegen/yamls/control_ids.yaml)
 add_codegen_file(test_codegen tests/codegen/yamls/timestamp.yaml)
 add_codegen_file(test_codegen tests/codegen/yamls/structs.yaml)

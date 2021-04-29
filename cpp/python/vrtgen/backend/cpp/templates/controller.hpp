@@ -197,20 +197,20 @@ void m_send_packet(const T& packet, AckT& ack)
     message_buffer message;
     size_t length = T::helper::bytes_required(packet);
     T::helper::pack(packet, message.data(), message.size());
-    m_socket.send_to(message.data(), length, m_socket.endpoint());
-    std::future<size_t> reply_length = std::async(std::launch::async, [this, &message]{
+    m_socket.send_to(message.data(), length, m_socket.dst());
+    std::future<ssize_t> recv_from_fut = std::async(std::launch::async, [this, &message]{
         return m_socket.receive_from(const_cast<message_buffer::value_type*>(message.data()),
-                                     message.size(), m_socket.endpoint());
+                                     message.size(), m_socket.dst());
     });
-    auto status = reply_length.wait_for(std::chrono::seconds(2));
+    auto status = recv_from_fut.wait_for(std::chrono::seconds(2));
     if (status == std::future_status::timeout) {
         throw std::runtime_error("timed out waiting for acknowledgement");;
     }
-    auto reply_length_val = reply_length.get();
-    if (!AckT::helper::match(message.data(), reply_length_val)) {
+    auto reply_length = recv_from_fut.get();
+    if (!AckT::helper::match(message.data(), reply_length)) {
         throw std::runtime_error("incorrect acknowledgement type");
     }
-    AckT::helper::unpack(ack, message.data(), reply_length_val);
+    AckT::helper::unpack(ack, message.data(), reply_length);
 }
 //% endmacro
 
@@ -252,33 +252,19 @@ public:
     explicit {{class_name}}(const endpoint_type& endpoint)
     {
         m_socket.bind(endpoint);
-        m_datactxt_socket.bind(endpoint_type(endpoint.address().to_string(), endpoint.port()+1));
-    }
-
-    /**
-     * @brief Connect to an open socket
-     * @param ip_addr The IP address of the scoket to connect to
-     * @param port The port number where the socket is listening
-     * @return true on success, otherwise false
-     */
-    bool connect(const endpoint_type& endpoint)
-    {
-        return m_socket.connect(endpoint);
-    }
-
-    /**
-     * @brief Disables sends or receives on the socket
-     * @param what The operations that will no longer be allowed
-     * @throws std::runtime_error Thrown on failure
-     */
-    void shutdown(const int what)
-    {
-        m_socket.shutdown(what);
+        auto datactxt_endpoint = endpoint;
+        datactxt_endpoint.port(endpoint.port()+1);
+        m_datactxt_socket.bind(datactxt_endpoint);
     }
 
     void setControlleeEndpoint(const endpoint_type& endpoint)
     {
-        m_socket.endpoint(endpoint);
+        m_socket.dst(endpoint);
+    }
+
+    const endpoint_type& getControlleeEndpoint() const
+    {
+        return m_socket.dst();
     }
 
     socket_type& socket() noexcept

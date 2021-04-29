@@ -30,11 +30,22 @@
 namespace vrtgen {
 namespace socket {
 
+/**
+ * @class socket_base
+ * @brief Socket base class
+ * 
+ * Base class for socket communications.
+ */
 class socket_base
 {
-    static constexpr auto invalid_socket = -1;
+    static constexpr auto INVALID_SOCKET = -1;
+    static constexpr auto STANDARD_PROTOCOL = 0;
 
 public:
+    /**
+     * @brief Destructor.
+     *        Closes the socket.
+     */
     virtual ~socket_base()
     {
         close();
@@ -54,13 +65,13 @@ public:
      */
     bool is_open() const noexcept
     {
-        return m_socket != invalid_socket;
+        return m_socket != INVALID_SOCKET;
     }
 
     /**
      * @brief Disables sends or receives on the socket
      * @param what The operations that will no longer be allowed
-     * @throws std::runtime_error Thrown on failure
+     * @throw std::runtime_error Thrown on failure
      */
     void shutdown(const int what)
     {
@@ -83,11 +94,10 @@ protected:
         }
     }
     
-    int m_socket{ invalid_socket };
-    int m_domain;
-    int m_type;
-    int m_protocol{ 0 };
-    bool m_connected{ false };
+    int m_socket{ INVALID_SOCKET }; /**< Socket file descriptor */
+    int m_domain; /**< Communication domain */
+    int m_type; /**< Socket type */
+    int m_protocol{ STANDARD_PROTOCOL }; /**< Socket protocol */
     
 }; // end class socket_base
 
