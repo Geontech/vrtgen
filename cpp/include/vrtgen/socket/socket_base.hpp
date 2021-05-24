@@ -26,6 +26,7 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <stdexcept>
+#include <sys/time.h>
 
 namespace vrtgen {
 namespace socket {
