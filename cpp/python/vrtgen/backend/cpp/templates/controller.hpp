@@ -21,7 +21,7 @@
 {
     packet.setMessageID(m_nextMessageID());
     {{packet.ack.name}} ack;
-    m_send_packet(packet, ack);
+    vrtgen::send_packet(m_socket, packet, ack);
     return ack;
 }
 
@@ -33,7 +33,7 @@
     packet.setMessageID(m_nextMessageID());
     packet.set{{field.identifier}}Enabled(true);
     {{packet.ack.name}} ack;
-    m_send_packet(packet, ack);
+    vrtgen::send_packet(m_socket, packet, ack);
     return ack.get{{field.identifier}}();
 }{{'\n'}}
 //%     endfor
@@ -52,7 +52,7 @@
 //%     endfor
 //% endif
     {{packet.ack.name}} ack;
-    m_send_packet(packet, ack);
+    vrtgen::send_packet(m_socket, packet, ack);
     return ack;
 }
 
@@ -71,29 +71,21 @@ void set{{field.identifier}}(const {{field.member.datatype}}& value)
 //% endif
     packet.set{{field.identifier}}(value);
     {{packet.ack.name}} ack;
-    m_send_packet(packet, ack);
+    vrtgen::send_packet(m_socket, packet, ack);
 }{{'\n'}}
 //%     endfor
 //% endfor
 //% endmacro
 
 //% macro handle_datactxt(packet)
-void set{{packet.name}}Receive(const bool enable)
-{
-    auto receiver = m_receivers["{{packet.name}}"];
-    if (receiver) {
-        *receiver = enable;
-        m_check_receivers(enable);
-    }
-}
-
-void register{{packet.name}}Listener(std::function<void({{packet.name}}&)>&& func)
+void register{{packet.name}}Listener(const std::function<void({{packet.name}}&)>&& func)
 {
     m_{{packet.name}}Listener = std::move(func);
 }{{'\n'}}
 //% endmacro
 
-//% macro define_functions(packets)
+//% macro define_functions(packets, class_name)
+//% set datactxt = []
 //% for packet in packets
 //%     if packet.is_reqs
 {{handle_query(packet) | trim}}{{'\n'}}
@@ -101,8 +93,26 @@ void register{{packet.name}}Listener(std::function<void({{packet.name}}&)>&& fun
 {{handle_configure(packet) | trim}}{{'\n'}}
 //%     elif packet.is_data or packet.is_context
 {{handle_datactxt(packet) | trim}}{{'\n'}}
+//%         do datactxt.append(packet)
 //%     endif
 //% endfor
+//% if datactxt
+void enableReceive()
+{
+    if (!m_receiving) {
+        m_receiving = true;
+        m_recv_thread = std::thread(&{{class_name}}::m_receiver_func, this);
+    }
+}
+
+void disableReceive()
+{
+    m_receiving = false;
+    if (m_recv_thread.joinable()) {
+        m_recv_thread.join();
+    }
+}
+//% endif
 //% endmacro
 
 //% macro define_datactxt_members(packets)
@@ -122,41 +132,10 @@ void register{{packet.name}}Listener(std::function<void({{packet.name}}&)>&& fun
 //% if datactxt_packets
 std::thread m_recv_thread;
 std::atomic_bool m_receiving{ false };
-std::map<std::string, atomic_bool_ptr> m_receivers {
-//%     for packet in datactxt_packets
-    {{'{'}}"{{packet}}", std::make_shared<std::atomic_bool>(false){{'}'}}{{',' if not loop.last}}
-//%     endfor
-};
 //%     for packet in datactxt_packets
 std::function<void({{packet}}&)> m_{{packet}}Listener;
 //%     endfor
 //% endif
-//% endmacro
-
-//% macro define_check_thread(class_name)
-void m_check_receivers(const bool enable)
-{
-    if (enable) {
-        if (!m_receiving) {
-            m_receiving = true;
-            m_recv_thread = std::thread(&{{class_name}}::m_receiver_func, this);
-        }
-    } else {
-        bool is_receiving = false;
-        for (const auto& receiver : m_receivers) {
-            if (receiver.second && *(receiver.second)) {
-                is_receiving = true;
-                break;
-            }
-        }
-        if (!is_receiving) {
-            m_receiving = false;
-            if (m_recv_thread.joinable()) {
-                m_recv_thread.join();
-            }
-        }
-    }
-}
 //% endmacro
 
 //% macro define_datactxt_member_funcs(packets, class_name)
@@ -173,6 +152,9 @@ void m_receiver_func()
     while(m_receiving) {
         endpoint_type endpoint;
         auto recv_length = m_datactxt_socket.receive_from(message.data(), message.size(), endpoint);
+        if (recv_length < 0) {
+            continue;
+        }
 
 //%     for packet in datactxt
         if (packing::{{packet.helper}}::match(message.data(), recv_length)) {
@@ -185,33 +167,7 @@ void m_receiver_func()
 //%     endfor
     }
 }
-
-{{define_check_thread(class_name) | trim}}
 //% endif
-//% endmacro
-
-//% macro define_packet_send_member_func()
-template <class T, class AckT>
-void m_send_packet(const T& packet, AckT& ack)
-{
-    message_buffer message;
-    size_t length = T::helper::bytes_required(packet);
-    T::helper::pack(packet, message.data(), message.size());
-    m_socket.send_to(message.data(), length, m_socket.dst());
-    std::future<ssize_t> recv_from_fut = std::async(std::launch::async, [this, &message]{
-        return m_socket.receive_from(const_cast<message_buffer::value_type*>(message.data()),
-                                     message.size(), m_socket.dst());
-    });
-    auto status = recv_from_fut.wait_for(std::chrono::seconds(2));
-    if (status == std::future_status::timeout) {
-        throw std::runtime_error("timed out waiting for acknowledgement");;
-    }
-    auto reply_length = recv_from_fut.get();
-    if (!AckT::helper::match(message.data(), reply_length)) {
-        throw std::runtime_error("incorrect acknowledgement type");
-    }
-    AckT::helper::unpack(ack, message.data(), reply_length);
-}
 //% endmacro
 
 //% macro define_controller(class_name)
@@ -226,7 +182,6 @@ void m_send_packet(const T& packet, AckT& ack)
 #include <thread>
 #include <memory>
 #include <functional>
-#include <future>
 //%         break
 //%     endif
 //% endfor
@@ -272,7 +227,7 @@ public:
         return m_socket;
     }
 
-    {{define_functions(packets) | indent(4) | trim}}
+    {{define_functions(packets, class_name) | indent(4) | trim}}
 
 private:
     socket_type m_socket;
@@ -286,8 +241,6 @@ private:
     }
 
     {{define_datactxt_member_funcs(packets, class_name) | indent(4) | trim}}
-
-    {{define_packet_send_member_func() | indent(4) | trim}}
 
 }; // end class {{class_name}}
 
