@@ -44,8 +44,8 @@ public:
      * @brief Constructor
      * @throw std::runtime_error Failed to create socket
      */
-    datagram_socket() :
-        socket_base(domain_type, SOCK_DGRAM)
+    datagram_socket(const size_t timeout=TIMEOUT) :
+        socket_base(domain_type, SOCK_DGRAM, timeout)
     {
     }
 

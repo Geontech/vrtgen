@@ -78,7 +78,21 @@ public:
         ::shutdown(m_socket, what);
     }
 
+    /**
+     * @brief Set receive timeout for socket
+     * @param timeout The desired socket receive timeout (in seconds)
+     */
+    void timeout(const size_t timeout)
+    {
+        struct timeval tv;
+        tv.tv_sec = timeout;
+        tv.tv_usec = 0;
+        setsockopt(m_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
+    }
+
 protected:
+    static constexpr auto TIMEOUT = 3; /**< Default socket timeout in seconds */
+
     /**
      * @brief Constructor
      * @param domain Communication domain
@@ -86,12 +100,16 @@ protected:
      * @param protocol Protocol to be used; default 0 is standard protocol
      * @throw std::runtime_error Failed to create socket
      */
-    socket_base(const int domain, const int type, const int protocol=0) :
+    socket_base(const int domain, const int type, const size_t timeout=TIMEOUT, const int protocol=0) :
         m_domain(domain), m_type(type), m_protocol(protocol)
     {
         if ((m_socket = ::socket(m_domain, m_type, m_protocol)) < 0) {
             throw std::runtime_error("Failed to create socket descriptor");
         }
+        struct timeval tv;
+        tv.tv_sec = timeout;
+        tv.tv_usec = 0;
+        setsockopt(m_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
     }
     
     int m_socket{ INVALID_SOCKET }; /**< Socket file descriptor */
