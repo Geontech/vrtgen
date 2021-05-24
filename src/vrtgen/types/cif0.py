@@ -23,17 +23,17 @@ from vrtgen.types import enums
 from vrtgen.types.struct import Struct, Field, Reserved
 from vrtgen.types.cifmeta import CIFFields
 
-class GeolocationAngle(basic.FixedPointType, bits=32, radix=22):
+class GeolocationAngle(basic.FixedPointType, bits=32, radix=22, resolution=9):
     """
     Geolocation Angle Format [Definition 9.4.5-1].
     """
 
-class CartesianCoordinate(basic.FixedPointType, bits=32, radix=5):
+class CartesianCoordinate(basic.FixedPointType, bits=32, radix=5, resolution=5):
     """
     Position coordinate format for ECEF Ephermeris [Rule 9.4.3-5].
     """
 
-class VelocityCoordinate(basic.FixedPointType, bits=32, radix=16):
+class VelocityCoordinate(basic.FixedPointType, bits=32, radix=16, resolution=8):
     """
     Velocity coordinate format for ECEF Ephemeris [Rule 9.4.3-7].
     """
@@ -63,13 +63,13 @@ class Geolocation(Struct):
     tsf = Field('TSF', enums.TSF)
     manufacturer_oui = Field('Manufacturer OUI', basic.OUI)
     # Integer timestamp should be 0xFFFFFFFF if TSI is 0
-    integer_timestamp = Field('Integer-second Timestamp', basic.Integer32)
+    integer_timestamp = Field('Integer-second Timestamp', basic.UInteger32)
     # Fractional timestamp should be 0xFFFFFFFFFFFFFFFF if TSF is 0
-    fractional_timestamp = Field('Fractional-second Timestamp', basic.Integer64)
+    fractional_timestamp = Field('Fractional-second Timestamp', basic.UInteger64)
     latitude = Field('Latitude', GeolocationAngle)
     longitude = Field('Longitude', GeolocationAngle)
-    altitude = Field('Altitude', basic.FixedPointType.create(32, 5))
-    ground_speed = Field('Speed Over Ground', basic.FixedPointType.create(32, 16))
+    altitude = Field('Altitude', basic.FixedPointType.create(32, 5, 3))
+    ground_speed = Field('Speed Over Ground', basic.FixedPointType.create(32, 16, 6))
     heading_angle = Field('Heading Angle', GeolocationAngle)
     track_angle = Field('Track Angle', GeolocationAngle)
     magnetic_variation = Field('Magnetic Variation', GeolocationAngle)
@@ -101,9 +101,9 @@ class Ephemeris(Struct):
     tsf = Field('TSF', enums.TSF)
     manufacturer_oui = Field('Manufacturer OUI', basic.OUI)
     # Integer timestamp should be 0xFFFFFFFF if TSI is 0
-    integer_timestamp = Field('Integer-second Timestamp', basic.Integer32)
+    integer_timestamp = Field('Integer-second Timestamp', basic.UInteger32)
     # Fractional timestamp should be 0xFFFFFFFFFFFFFFFF if TSF is 0
-    fractional_timestamp = Field('Fractional-second Timestamp', basic.Integer64)
+    fractional_timestamp = Field('Fractional-second Timestamp', basic.UInteger64)
     position_x = Field('Position X', CartesianCoordinate)
     position_y = Field('Position Y', CartesianCoordinate)
     position_z = Field('Position Z', CartesianCoordinate)
@@ -159,7 +159,7 @@ class CIF0(CIFFields):
     timestamp_calibration_time = Field(enums.CIF0Fields.TIMESTAMP_CALIBRATION_TIME.value, basic.UInteger32)
 
     # Temperature (0/18): fixed-point 16/6, degrees C (upper 16 reserved)
-    temperature = Field(enums.CIF0Fields.TEMPERATURE.value, basic.FixedPointType.create(16, 6))
+    temperature = Field(enums.CIF0Fields.TEMPERATURE.value, basic.FixedPointType.create(16, 6, 6))
 
     # Device Identifier (0/17): 64 bits total, structure
     device_id = Field(enums.CIF0Fields.DEVICE_IDENTIFIER.value, DeviceIdentifier)

@@ -26,7 +26,7 @@
 
 namespace vrtgen {
     namespace detail {
-        template <typename IntT, unsigned radix, typename FloatT=double>
+        template <typename IntT, unsigned radix, typename FloatT=double, unsigned prec=sizeof(double)>
         struct fixed_converter
         {
             typedef IntT int_type;
@@ -46,18 +46,18 @@ namespace vrtgen {
             }
         private:
             static constexpr float_type SCALE = (1 << radix);
-            static constexpr double PREC =  std::pow(10,sizeof(double));
+            static constexpr double PREC = std::pow(10,prec);
         };
     }
 
-    template <typename IntT, unsigned radix, typename FloatT=double>
+    template <typename IntT, unsigned radix, typename FloatT=double, unsigned prec=sizeof(double)>
     struct fixed
     {
     public:
         typedef IntT int_type;
         typedef FloatT float_type;
         typedef float_type value_type;
-        typedef detail::fixed_converter<int_type,radix,float_type> converter_type;
+        typedef detail::fixed_converter<int_type,radix,float_type,prec> converter_type;
 
         fixed() :
             m_value(0)

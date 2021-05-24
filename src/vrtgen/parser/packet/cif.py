@@ -30,6 +30,7 @@ class CIFParser(SectionParser):
     Base parser for configuring packets that contain CIF fields.
     """
 
+CIFParser.add_field_parser(CIF0.change_indicator, alias='change-indicator')
 CIFParser.add_field_parser(CIF0.reference_point_id, alias='reference-point-id')
 CIFParser.add_field_parser(CIF0.bandwidth, alias='bandwidth')
 CIFParser.add_field_parser(CIF0.if_frequency, alias='if-reference-frequency')

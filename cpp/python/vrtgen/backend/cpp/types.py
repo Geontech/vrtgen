@@ -76,11 +76,11 @@ def float_type(bits):
         return 'double'
     return 'float'
 
-def fixed_type(bits, radix, signed=True):
+def fixed_type(bits, radix, resolution, signed=True):
     """
     Returns the C++ fixed point packing class for a VRT fixed point type.
     """
-    return 'fixed<{},{},{}>'.format(int_type(bits, signed), radix, float_type(bits))
+    return 'fixed<{},{},{},{}>'.format(int_type(bits, signed), radix, float_type(bits), resolution)
 
 def value_type(datatype):
     """

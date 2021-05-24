@@ -149,7 +149,7 @@ class CIF1(CIFFields):
     beam_widths = Field(enums.CIF1Fields.BEAM_WIDTHS.value, BeamWidths)
 
     # Range (1/24): fixed-point 32/6, meters
-    range = Field(enums.CIF1Fields.RANGE.value, basic.FixedPointType.create(32, 6))
+    range = Field(enums.CIF1Fields.RANGE.value, basic.FixedPointType.create(32, 6, 6))
 
     # Reserved (1/23-21)
     reserved_23 = Reserved(1)

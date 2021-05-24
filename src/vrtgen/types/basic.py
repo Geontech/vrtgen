@@ -304,10 +304,11 @@ class FixedPointType(BinaryNumberType):
         return value
 
     # pylint: disable=arguments-differ
-    def __init_subclass__(cls, bits, radix, **kwds):
+    def __init_subclass__(cls, bits, radix, resolution, **kwds):
         # Set radix and scale before calling base class hook because they are
         # needed for _get_range().
         cls.radix = radix
+        cls.resolution = resolution
         cls.scale = 1 << cls.radix
         super().__init_subclass__(bits, signed=True, **kwds)
 
@@ -338,39 +339,39 @@ class FixedPointType(BinaryNumberType):
         return cls(value / cls.scale)
 
     @staticmethod
-    def create(bits, radix):
+    def create(bits, radix, resolution):
         """
         Creates new fixed-point types dynamically.
 
         If a fixed-point type has already been created with the same number of
         bits and radix point, returns the existing class object.
         """
-        key = (bits, radix)
+        key = (bits, radix, resolution)
         existing = FixedPointType.__cached__.get(key, None)
         if existing:
             return existing
         name = 'FixedPoint{:d}r{:d}'.format(bits, radix)
-        newclass = type(name, (FixedPointType,), {}, bits=bits, radix=radix)
+        newclass = type(name, (FixedPointType,), {}, bits=bits, radix=radix, resolution=resolution)
         FixedPointType.__cached__[key] = newclass
         return newclass
 
 # Common fixed-point types
-class FixedPoint64r20(FixedPointType, bits=64, radix=20):
+class FixedPoint64r20(FixedPointType, bits=64, radix=20, resolution=8):
     """
     64-bit fixed-point type with 20 fractional bits.
     """
 
-class FixedPoint32r16(FixedPointType, bits=32, radix=16):
+class FixedPoint32r16(FixedPointType, bits=32, radix=16, resolution=8):
     """
     32-bit fixed-point type with 16 fractional bits.
     """
 
-class FixedPoint16r7(FixedPointType, bits=16, radix=7):
+class FixedPoint16r7(FixedPointType, bits=16, radix=7, resolution=7):
     """
     16-bit fixed-point type with 7 fractional bits.
     """
 
-class FixedPoint16r13(FixedPointType, bits=16, radix=13):
+class FixedPoint16r13(FixedPointType, bits=16, radix=13, resolution=8):
     """
     16-bit fixed-point type with 13 fractional bits.
     """

@@ -49,7 +49,11 @@ buffer.insert<{{field.type}}>(packet.get{{field.identifier}}());
 const {{field.type}}* {{field.attr}} = buffer.next<{{field.type}}>();
 packet.set{{field.identifier}}(*{{field.attr}});
 //%     else
+//%         if field.identifier == 'ContextFieldChangeIndicator'
+packet.set{{field.identifier}}(true);
+//%         else
 packet.set{{field.identifier}}(buffer.get<{{field.type}}>());
+//%         endif
 //%     endif
 //% endmacro
 
@@ -170,7 +174,9 @@ size_t {{packet.helper}}::bytes_required(const {{packet.name}}& {{varname}})
     bytes += sizeof({{cif.header}});
 //%     if not packet.is_reqs
 //%         for field in cif.fields 
-//%             if field.optional
+//%             if field.identifier == 'ContextFieldChangeIndicator'
+//%                 do continue
+//%             elif field.optional
     if (packet.has{{field.identifier}}()) {
         bytes += sizeof({{field.type}});
     }
@@ -218,8 +224,12 @@ void {{packet.helper}}::pack(const {{packet.name}}& packet, void* ptr, size_t bu
     cif_{{cif.number}}->set{{field.identifier}}Enabled(packet.is{{field.identifier}}Enabled());
 //%             else
     if (packet.has{{field.identifier}}()) {
+//%                 if field.identifier == 'ContextFieldChangeIndicator'
+        cif_{{cif.number}}->set{{field.identifier}}(packet.get{{field.identifier}}());
+//%                 else
         cif_{{cif.number}}->set{{field.identifier}}Enabled(true);
         {{pack_field(field) | indent(8) | trim}}
+//%                 endif
     }
 //%             endif
 //%         else
@@ -252,7 +262,11 @@ void {{packet.helper}}::unpack({{packet.name}}& packet, const void* ptr, std::si
 //%         if packet.is_reqs
     packet.set{{field.identifier}}Enabled({{cifvar}}->is{{field.identifier}}Enabled());
 //%         else
+//%             if field.identifier == 'ContextFieldChangeIndicator'
+    if (!{{cifvar}}->get{{field.identifier}}()) {
+//%             else
     if (!{{cifvar}}->is{{field.identifier}}Enabled()) {
+//%             endif
 //%             if field.optional
         packet.clear{{field.identifier}}();
 //%             else
