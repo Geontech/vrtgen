@@ -181,6 +181,9 @@ private:
         while(m_listening) {
             endpoint_type endpoint;
             auto recv_length = m_socket.receive_from(m_message.data(), m_message.size(), endpoint);
+            if (recv_length < 0) {
+                continue;
+            }
 
 //% for packet in packets
 //%     if packet.is_reqs
