@@ -141,7 +141,7 @@ class CppPacket:
             self.__add_prologue_field(prologue.Prologue.stream_id)
         # Class ID
         if not packet.class_id.is_disabled:
-            self.__add_class_id(packet)
+            self.__add_prologue_field(prologue.Prologue.class_id)
         # Timestamp Integer
         if packet.tsi != enums.TSI.NONE:
             self.__add_prologue_field(prologue.Prologue.integer_timestamp)

@@ -170,12 +170,12 @@ namespace vrtgen {
             return m_ClassIdentifier;
         }
 
-        const vrtgen::packing::ClassIdentifier* getClassIdentifier() const
+        const vrtgen::packing::ClassIdentifier& getClassIdentifier() const
         {
             if (!hasClassIdentifier()) {
                 throw std::runtime_error("missing Class Identifier");
             }
-            return m_ClassIdentifier;
+            return *m_ClassIdentifier;
         }
 
         bool hasIntegerTimestamp() const
