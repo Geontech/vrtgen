@@ -12,4 +12,4 @@ TimestampGPS:
 TimestampFreeRunning:
   context:
     timestamp:
-      fractional: free running
+      fractional: free-running

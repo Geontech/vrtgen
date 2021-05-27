@@ -73,7 +73,7 @@ _TSF_VALUES = {
     'none':         enums.TSF.NONE,
     'samples':      enums.TSF.SAMPLE_COUNT,
     'picoseconds':  enums.TSF.REAL_TIME,
-    'free running': enums.TSF.FREE_RUNNING
+    'free-running': enums.TSF.FREE_RUNNING
 }
 
 def parse_tsf(value):
@@ -230,7 +230,7 @@ def parse_data_item_format(value):
 
 _ACTION_VALUES = {
     'none': enums.ActionMode.NO_ACTION,
-    'dry run': enums.ActionMode.DRY_RUN,
+    'dry-run': enums.ActionMode.DRY_RUN,
     'execute': enums.ActionMode.EXECUTE,
 }
 def parse_action(value):
