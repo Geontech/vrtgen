@@ -73,6 +73,7 @@ set(header_files
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/size.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/swap.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/utils.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/version.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/vrtgen.hpp
 )
