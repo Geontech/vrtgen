@@ -79,7 +79,7 @@ def test_parse_tsi_error():
     ('none', enums.TSF.NONE),
     ('samples', enums.TSF.SAMPLE_COUNT),
     ('picoseconds', enums.TSF.REAL_TIME),
-    ('free running', enums.TSF.FREE_RUNNING),
+    ('free-running', enums.TSF.FREE_RUNNING),
 )
 def test_parse_tsf(literal, expected):
     assert value.parse_tsf(literal) == expected
@@ -155,7 +155,7 @@ def test_parse_data_item_format_error():
 
 @parametrize_literals(
     ('none', enums.ActionMode.NO_ACTION),
-    ('dry run', enums.ActionMode.DRY_RUN),
+    ('dry-run', enums.ActionMode.DRY_RUN),
     ('execute', enums.ActionMode.EXECUTE),
 )
 def test_parse_action(literal, expected):
