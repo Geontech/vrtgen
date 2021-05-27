@@ -30,17 +30,17 @@ class TrailerParser(SectionParser):
     Parser for Data Packet Trailer configuration.
     """
 
-TrailerParser.add_field_parser(Trailer.calibrated_time)
-TrailerParser.add_field_parser(Trailer.valid_data)
-TrailerParser.add_field_parser(Trailer.reference_lock)
-TrailerParser.add_field_parser(Trailer.agc_mgc)
-TrailerParser.add_field_parser(Trailer.detected_signal)
-TrailerParser.add_field_parser(Trailer.spectral_inversion)
-TrailerParser.add_field_parser(Trailer.over_range)
-TrailerParser.add_field_parser(Trailer.sample_loss)
-TrailerParser.add_field_parser(Trailer.sample_frame)
+TrailerParser.add_field_parser(Trailer.calibrated_time, alias='calibrated-time')
+TrailerParser.add_field_parser(Trailer.valid_data, alias='valid-data')
+TrailerParser.add_field_parser(Trailer.reference_lock, alias='reference-lock')
+TrailerParser.add_field_parser(Trailer.agc_mgc, alias='agc-mgc')
+TrailerParser.add_field_parser(Trailer.detected_signal, alias='detected-signal')
+TrailerParser.add_field_parser(Trailer.spectral_inversion, alias='spectral-inversion')
+TrailerParser.add_field_parser(Trailer.over_range, alias='over-range')
+TrailerParser.add_field_parser(Trailer.sample_loss, alias='sample-loss')
+TrailerParser.add_field_parser(Trailer.sample_frame, alias='sample-frame')
 TrailerParser.add_parser(Trailer.user_defined.name, unimplemented_parser('User-defined bits'))
-TrailerParser.add_field_parser(Trailer.associated_context_packets)
+TrailerParser.add_field_parser(Trailer.associated_context_packets, alias='associated-context')
 
 class DataPacketParser(PacketParser):
     """
