@@ -1,0 +1,10 @@
+TunerInfo:
+  context:
+    timestamp:
+      integer: utc
+      fractional: picoseconds
+    cif0:
+      bandwidth: optional
+      rf-reference-frequency: optional
+      gain: optional
+      sample-rate: optional
