@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #

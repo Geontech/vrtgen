@@ -4,6 +4,7 @@ C++ support for `vrtgen`.
 `vrtgen-cpp` comprises a Python plugin for `vrtgen` and a C++ header-only library.
 
 This is a work-in-progress and almost assuredly will break repeatedly.
+A stable 1.0 release will be available in the next few months. Feeback is welcome.
 
 ## Dependencies
 
@@ -22,7 +23,7 @@ The Python plugin must be installed first to generate the C++ headers.
 To install the Python plugin:
 
 ```sh
-sudo pip3 install .
+pip3 install --user .
 ```
 
 Then, to build the C++ library:
@@ -38,6 +39,17 @@ On some Linux systems, CMake 3 is the default; run `cmake` instead of `cmake3`.
 
 The headers are installed to `/usr/local/include/vrtgen` by default.
 
+### Developer Setup
+
+To perform a "developer install":
+
+```sh
+pip3 install -e .
+```
+
+This will create a link to your project in the Python `site-packages` directory.
+It is strongly recommended to use a `venv` environment or Docker image for development.
+
 ## Usage
 
 The `vrtpktgen` program automatically discovers registered code generator plugins.
@@ -48,14 +60,3 @@ vrtpktgen cpp <yaml file>
 ```
 
 This will generate `.hpp` and `.cpp` files with the same basename as the input file.
-
-## Developer Setup
-
-To perform a "developer install":
-
-```sh
-pip3 install -e .
-```
-
-This will create a link to your project in the Python `site-packages` directory.
-It is strongly recommended to use a `venv` environment or Docker image for development.

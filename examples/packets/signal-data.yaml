@@ -1,0 +1,7 @@
+SignalData:
+  data:
+    stream-id: required
+    class-id: required
+    timestamp:
+      integer: utc
+      fractional: picoseconds

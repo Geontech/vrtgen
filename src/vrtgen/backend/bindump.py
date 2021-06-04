@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -30,7 +30,7 @@ from vrtgen.types.cif1 import CIF1
 
 from vrtgen.model.field import Scope
 
-from .generator import Generator, GeneratorOption
+from vrtgen.backend.generator import Generator, GeneratorOption
 
 __all__ = ('BinaryDumper')
 

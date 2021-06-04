@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -19,18 +19,19 @@ from vrtgen.types import enums
 from vrtgen.model import config
 from vrtgen import parser
 
-def parse_single(document):
+def parse_document(document):
     packets = list(parser.parse_stream(document))
     assert len(packets) == 1
     return packets[0]
 
 def test_data_defaults():
     document = """
-TestData: data
+TestData:
+  data
 """
-    packet = parse_single(document)
+    packet = parse_document(document)
     assert packet.name == 'TestData'
-    assert packet.packet_type == config.PacketType.DATA
+    assert packet.config_type == config.PacketType.DATA
     assert packet.packet_type_code == enums.PacketType.SIGNAL_DATA
     assert packet.tsi == enums.TSI.NONE
     assert packet.tsf == enums.TSF.NONE
@@ -41,34 +42,36 @@ TestData: data
 
 def test_data_stream_id():
     document = """
-StreamIDTest:
-    data:
-        stream id: required
+TestDataStreamID:
+  data:
+    stream-id: required
 """
-    packet = parse_single(document)
+    packet = parse_document(document)
+    assert packet.name == 'TestDataStreamID'
     assert packet.stream_id.is_required
-    assert packet.packet_type == config.PacketType.DATA
+    assert packet.config_type == config.PacketType.DATA
     assert packet.packet_type_code == enums.PacketType.SIGNAL_DATA_STREAM_ID
 
 def test_data_header():
     document = """
 DataHeaderFields:
-    data:
-        not v49.0: true
-        spectrum: true
+  data:
+    not-v49d0: true
+    spectrum: true
 """
-    packet = parse_single(document)
-    assert packet.packet_type == config.PacketType.DATA
+    packet = parse_document(document)
+    assert packet.config_type == config.PacketType.DATA
     assert packet.not_v49d0
     assert packet.spectrum
 
 def test_context_defaults():
     document = """
-TestContext: context
+TestContext:
+  context
 """
-    packet = parse_single(document)
+    packet = parse_document(document)
     assert packet.name == 'TestContext'
-    assert packet.packet_type == config.PacketType.CONTEXT
+    assert packet.config_type == config.PacketType.CONTEXT
     assert packet.packet_type_code == enums.PacketType.CONTEXT
     assert packet.tsi == enums.TSI.NONE
     assert packet.tsf == enums.TSF.NONE
@@ -80,21 +83,59 @@ TestContext: context
 def test_context_header():
     document = """
 ContextHeaderFields:
-    context:
-        timestamp mode: coarse
-        not v49.0: true
+  context:
+    tsm: coarse
+    not-v49d0: true
 """
-    packet = parse_single(document)
+    packet = parse_document(document)
     assert packet.tsm == enums.TSM.COARSE
     assert packet.not_v49d0
 
+def test_context_all_cif0():
+    document = """
+ContextAllCIF0:
+  context:
+    cif0:
+      reference-point-id: optional
+      bandwidth: optional
+      if-reference-frequency: optional
+      rf-reference-frequency: optional
+      rf-reference-frequency-offset: optional
+      if-band-offset: optional
+      reference-level: optional
+      gain: optional
+      over-range-count: optional
+      sample-rate: optional
+      timestamp-adjustment: optional
+      timestamp-calibration-time: optional
+      temperature: optional
+      device-id: optional
+      state-event-indicators: optional
+      signal-data-format: optional
+      formatted-gps: optional
+      formatted-ins: optional
+      ecef-ephemeris: optional
+      relative-ephemeris: optional
+      ephemeris-reference-id: optional
+      gps-ascii: optional
+      context-assocation-list: optional
+      cif7-enable: optional
+      cif3-enable: optional
+      cif1-enable: optional
+"""
+    packet = parse_document(document)
+    assert packet.name == 'ContextAllCIF0'
+    assert packet.config_type == config.PacketType.CONTEXT
+    assert packet.packet_type_code == enums.PacketType.CONTEXT
+
 def test_control_defaults():
     document = """
-TestControl: control
+TestControl:
+  control
 """
-    packet = parse_single(document)
+    packet = parse_document(document)
     assert packet.name == 'TestControl'
-    assert packet.packet_type == config.PacketType.CONTROL
+    assert packet.config_type == config.PacketType.CONTROL
     assert packet.packet_type_code == enums.PacketType.COMMAND
     assert packet.tsi == enums.TSI.NONE
     assert packet.tsf == enums.TSF.NONE
@@ -106,11 +147,12 @@ TestControl: control
 
 def test_ackv_defaults():
     document = """
-TestAckV: AckV
+TestAckV:
+  ackv
 """
-    packet = parse_single(document)
+    packet = parse_document(document)
     assert packet.name == 'TestAckV'
-    assert packet.packet_type == config.PacketType.ACKV
+    assert packet.config_type == config.PacketType.ACKV
     assert packet.packet_type_code == enums.PacketType.COMMAND
     assert packet.tsi == enums.TSI.NONE
     assert packet.tsf == enums.TSF.NONE
@@ -122,11 +164,12 @@ TestAckV: AckV
 
 def test_ackx_defaults():
     document = """
-TestAckX: AckX
+TestAckX:
+  ackx
 """
-    packet = parse_single(document)
+    packet = parse_document(document)
     assert packet.name == 'TestAckX'
-    assert packet.packet_type == config.PacketType.ACKX
+    assert packet.config_type == config.PacketType.ACKX
     assert packet.packet_type_code == enums.PacketType.COMMAND
     assert packet.tsi == enums.TSI.NONE
     assert packet.tsf == enums.TSF.NONE
@@ -138,11 +181,12 @@ TestAckX: AckX
 
 def test_acks_defaults():
     document = """
-TestAckS: AckS
+TestAckS:
+  acks
 """
-    packet = parse_single(document)
+    packet = parse_document(document)
     assert packet.name == 'TestAckS'
-    assert packet.packet_type == config.PacketType.ACKS
+    assert packet.config_type == config.PacketType.ACKS
     assert packet.packet_type_code == enums.PacketType.COMMAND
     assert packet.tsi == enums.TSI.NONE
     assert packet.tsf == enums.TSF.NONE
@@ -155,11 +199,94 @@ TestAckS: AckS
 def test_timestamp():
     document = """
 TimestampTest:
-    data:
-        timestamp:
-            integer: utc
-            fractional: picoseconds
+  data:
+    timestamp:
+      integer: utc
+      fractional: picoseconds
 """
-    packet = parse_single(document)
+    packet = parse_document(document)
     assert packet.tsi == enums.TSI.UTC
     assert packet.tsf == enums.TSF.REAL_TIME
+
+def test_class_identifier():
+    document = """
+TestDataClassID:
+  data:
+    stream-id: required
+    class-id: required
+"""
+    packet = parse_document(document)
+    assert packet.name == 'TestDataClassID'
+    assert packet.config_type == config.PacketType.DATA
+    assert packet.packet_type_code == enums.PacketType.SIGNAL_DATA_STREAM_ID
+    assert packet.stream_id.is_required
+    assert packet.class_id.is_required
+
+def test_extends():
+    document = """
+include:
+  - 'tests/yamls/test-extends.yaml'
+
+TestContextExtends:
+  context:
+    extends:
+      - TestContext
+    cif0:
+      formatted-gps: required
+"""
+    packet = parse_document(document)
+    assert packet.name == 'TestContextExtends'
+    assert packet.config_type == config.PacketType.CONTEXT
+    assert packet.packet_type_code == enums.PacketType.CONTEXT
+    assert len(packet.extends) == 1
+    field_name = enums.CIF0Fields.FORMATTED_GPS.value
+    assert packet.get_field(field_name).is_required
+
+def test_information_class():
+    document = """
+include:
+  - 'tests/yamls/test-include.yaml'
+
+TestInformation:
+  information:
+    packet-classes:
+      - TestData
+      - TestContext
+      - TestControl
+"""
+    info_class = parse_document(document)
+    packets = info_class.get_packets()
+    assert len(packets) == 3
+    packet_0 = packets[0]
+    assert packet_0.name == 'TestData'
+    assert packet_0.config_type == config.PacketType.DATA
+    assert packet_0.packet_type_code == enums.PacketType.SIGNAL_DATA
+    assert packet_0.tsi == enums.TSI.NONE
+    assert packet_0.tsf == enums.TSF.NONE
+    assert packet_0.stream_id.is_disabled
+    assert packet_0.class_id.is_disabled
+    assert not packet_0.not_v49d0
+    assert not packet_0.spectrum
+
+    packet_1 = packets[1]
+    assert packet_1.name == 'TestContext'
+    assert packet_1.config_type == config.PacketType.CONTEXT
+    assert packet_1.packet_type_code == enums.PacketType.CONTEXT
+    assert packet_1.tsi == enums.TSI.NONE
+    assert packet_1.tsf == enums.TSF.NONE
+    assert packet_1.stream_id.is_mandatory
+    assert packet_1.class_id.is_disabled
+    assert packet_1.tsm == enums.TSM.FINE
+    assert not packet_1.not_v49d0
+
+    packet_2 = packets[2]
+    assert packet_2.name == 'TestControl'
+    assert packet_2.config_type == config.PacketType.CONTROL
+    assert packet_2.packet_type_code == enums.PacketType.COMMAND
+    assert packet_2.tsi == enums.TSI.NONE
+    assert packet_2.tsf == enums.TSF.NONE
+    assert packet_2.stream_id.is_mandatory
+    assert packet_2.class_id.is_disabled
+    assert not packet_2.ackv.value
+    assert not packet_2.ackx.value
+    assert not packet_2.acks.value

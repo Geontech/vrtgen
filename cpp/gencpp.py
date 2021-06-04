@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -151,6 +151,7 @@ class LibraryGenerator:
             self.create_field_typedef('MessageID', control.MessageIdentifier),
             self.create_field_typedef('ControlleeID', basic.Identifier32),
             self.create_field_typedef('ControllerID', basic.Identifier32),
+            self.create_field_typedef('UUID', control.UUIDIdentifier)
         ]
         with open(filename, 'w') as fp:
             fp.write(template.render({
@@ -167,7 +168,9 @@ class LibraryGenerator:
         enable.doc = utils.format_docstring(cif.__doc__)
         structs.append(enable)
         for structdef in get_structs(module):
-            structs.append(CppStruct(structdef))
+            struct_ = CppStruct(structdef)
+            self.apply_rules(struct_)
+            structs.append(struct_)
 
         typedefs = []
         for field in cif.get_fields():
@@ -183,6 +186,34 @@ class LibraryGenerator:
                 'structs': structs,
                 'typedefs': typedefs,
             }))
+
+    def apply_rules(self, struct_):
+        if struct_.name == 'Geolocation':
+            # Rule 9.4.5-6
+            struct_.set_member_max_value('Integer-second Timestamp')
+            struct_.set_member_max_value('Fractional-second Timestamp')
+            # Rule 9.4.5-18
+            struct_.set_member_max_value('Latitude')
+            struct_.set_member_max_value('Longitude')
+            struct_.set_member_max_value('Altitude')
+            struct_.set_member_max_value('Speed Over Ground')
+            struct_.set_member_max_value('Heading Angle')
+            struct_.set_member_max_value('Track Angle')
+            struct_.set_member_max_value('Magnetic Variation')
+        if struct_.name == 'Ephemeris':
+            # Rules 9.4.3-4 & 9.4.5-6
+            struct_.set_member_max_value('Integer-second Timestamp')
+            struct_.set_member_max_value('Fractional-second Timestamp')
+            # Rule 9.4.3-8
+            struct_.set_member_max_value('Position X')
+            struct_.set_member_max_value('Position Y')
+            struct_.set_member_max_value('Position Z')
+            struct_.set_member_max_value('Attitude Alpha')
+            struct_.set_member_max_value('Attitude Beta')
+            struct_.set_member_max_value('Attitude Phi')
+            struct_.set_member_max_value('Velocity dX')
+            struct_.set_member_max_value('Velocity dY')
+            struct_.set_member_max_value('Velocity dZ')
 
     def headers(self):
         for target in self.TARGETS:

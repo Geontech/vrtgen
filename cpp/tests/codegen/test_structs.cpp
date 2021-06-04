@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Geon Technologies, LLC
+ * Copyright (C) 2021 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -19,7 +19,7 @@
 
 #include "catch/catch.hpp"
 
-#include "structs.hpp"
+#include "yamls/structs.hpp"
 
 #include "bytes.hpp"
 
@@ -37,7 +37,7 @@ TEST_CASE("Required default struct")
     header->setPacketType(vrtgen::PacketType::CONTEXT);
     header->setPacketSize(PACKED_SIZE / 4);
     // Packet is not configured with any 49.2 fields
-    header->setNotaV49_0Packet(false);
+    header->setNotaV49d0Packet(false);
     buffer.insert<vrtgen::packing::StreamIdentifier>(STREAM_ID);
     vrtgen::packing::CIF0Enables* cif_0 = buffer.insert<vrtgen::packing::CIF0Enables>();
     cif_0->setGainEnabled(true);
@@ -48,8 +48,10 @@ TEST_CASE("Required default struct")
     SECTION("Pack") {
         RequiredStruct packet_in;
         packet_in.setStreamIdentifier(STREAM_ID);
-        packet_in.setGainStage1(GAIN_1);
-        packet_in.setGainStage2(GAIN_2);
+        vrtgen::packing::Gain gain;
+        gain.setStage1(GAIN_1);
+        gain.setStage2(GAIN_2);
+        packet_in.setGain(gain);
 
         REQUIRE(packing::RequiredStructHelper::bytes_required(packet_in) == PACKED_SIZE);
 
@@ -66,7 +68,7 @@ TEST_CASE("Required default struct")
         RequiredStruct packet_out;
         packing::RequiredStructHelper::unpack(packet_out, expected.data(), expected.size());
         CHECK(packet_out.getStreamIdentifier() == STREAM_ID);
-        CHECK(packet_out.getGainStage1() == GAIN_1);
-        CHECK(packet_out.getGainStage2() == GAIN_2);
+        CHECK(packet_out.getGain().getStage1() == GAIN_1);
+        CHECK(packet_out.getGain().getStage2() == GAIN_2);
     }
 }

@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -21,8 +21,8 @@ Parsers for handling struct fields.
 
 from vrtgen.types.prologue import ClassIdentifier
 
-from .base import FieldParser
-from .simple import SimpleFieldParser
+from vrtgen.parser.field.base import FieldParser
+from vrtgen.parser.field.simple import SimpleFieldParser
 
 class StructFieldParser(FieldParser):
     """

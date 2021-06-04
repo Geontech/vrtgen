@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -21,6 +21,7 @@ Types for VITA 49 packet configurations.
 
 from enum import Enum
 import warnings
+import abc
 
 from vrtgen.types import enums
 from vrtgen.types.prologue import Prologue, DataHeader, ContextHeader
@@ -29,7 +30,13 @@ from vrtgen.types.cif0 import CIF0
 from vrtgen.types.cif1 import CIF1
 from vrtgen.types.control import ControlAcknowledgeMode
 
-from .field import FieldConfiguration, Mode, Scope
+from vrtgen.model.field import FieldConfiguration, Mode, Scope
+
+class InformationType(Enum):
+    """
+    V49.2 information class types.
+    """
+    INFORMATION = 'information'
 
 class PacketType(Enum):
     """
@@ -42,18 +49,47 @@ class PacketType(Enum):
     ACKX = 'ackx'
     ACKS = 'acks'
 
-class PacketConfiguration:
+class BaseConfiguration:
+    """
+    Base class for VRT configurations.
+    """
+    # pylint: disable=too-many-instance-attributes
+    def __init__(self, name, config_type):
+        self.name = name
+        self.config_type = config_type
+
+    def validate(self):
+        """
+        Validates the current configuration.
+        """
+        # Override or extend in subclasses to check for invalid combinations
+        # of field configurations.
+
+    @property
+    def packet_type_code(self):
+        """
+        Returns the Packet Type Code for this packet configuration.
+        """
+        return self._get_packet_type_code()
+
+    @abc.abstractmethod
+    def _get_packet_type_code(self):
+        """
+        Return the packet type code for this packet
+        """
+
+class PacketConfiguration(BaseConfiguration):
     """
     Base class for VRT packet configuration.
     """
     def __init__(self, name, packet_type):
-        self.name = name
-        self.packet_type = packet_type
+        super().__init__(name, packet_type)
         self._fields = []
         self.tsi = enums.TSI()
         self.tsf = enums.TSF()
         self.stream_id = self._add_field(Prologue.stream_id, Scope.PROLOGUE)
         self.class_id = self._add_field(Prologue.class_id, Scope.PROLOGUE)
+        self.extends = []
 
     def get_fields(self, *scopes):
         """
@@ -102,13 +138,6 @@ class PacketConfiguration:
         """
         # Override or extend in subclasses to check for invalid combinations
         # of field configurations.
-
-    @property
-    def packet_type_code(self):
-        """
-        Returns the Packet Type Code for this packet configuration.
-        """
-        return self._get_packet_type_code()
 
     def _get_packet_type_code(self):
         raise NotImplementedError('packet_type_code')
@@ -187,6 +216,7 @@ class CommandPacketConfiguration(CIFPacketConfiguration):
     """
     Configuration for a Command Packet.
     """
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, name, packet_type):
         super().__init__(name, packet_type)
         self.controllee = None
@@ -200,6 +230,8 @@ class CommandPacketConfiguration(CIFPacketConfiguration):
         self.ackv = self._add_field(ControlAcknowledgeMode.request_validation, Scope.CAM)
         self.ackx = self._add_field(ControlAcknowledgeMode.request_execution, Scope.CAM)
         self.acks = self._add_field(ControlAcknowledgeMode.request_query, Scope.CAM)
+        self.ackw = self._add_field(ControlAcknowledgeMode.request_warning, Scope.CAM)
+        self.acke = self._add_field(ControlAcknowledgeMode.request_error, Scope.CAM)
 
     def get_acknowledge(self, packet_type):
         """
@@ -240,20 +272,70 @@ class AcknowledgePacketConfiguration(CommandPacketConfiguration):
         self.errors = self._add_field(ControlAcknowledgeMode.request_error, Scope.CAM)
         self.partial = self._add_field(ControlAcknowledgeMode.partial, Scope.CAM)
 
-def create_packet(packet_type, name):
+class InformationClassConfiguration(BaseConfiguration):
     """
-    Returns a packet configuration for the given type.
+    Configuration for an Information Class.
+    """
+    # pylint: disable=abstract-method
+    def __init__(self, name):
+        super().__init__(name, InformationType.INFORMATION)
+        self._packet_classes = []
+        self._packets = []
+
+    def add_packet_class(self, packet_name):
+        """
+        Add packet class name to this Information class configuration
+        """
+        self._packet_classes.append(packet_name)
+
+    def get_packet_classes(self):
+        """
+        Returns the names of packets in this Information Class configuration
+        """
+        return self._packet_classes
+
+    def add_packet(self, packet):
+        """
+        Add packet class configuration to this Information class configuration
+        """
+        self._packets.append(packet)
+
+    def get_packets(self):
+        """
+        Returns the packet configurations in this Information Class configuration
+        """
+        return self._packets
+
+    def validate(self):
+        """
+        Validate all packet configurations have been added
+        """
+        for packet_class in self._packet_classes:
+            included = False
+            for packet in self._packets:
+                if packet.name == packet_class:
+                    included = True
+                    break
+            if not included:
+                err = 'Packet class {} not included in file'.format(packet_class)
+                raise ValueError(err)
+
+def create_configuration(config_type, name):
+    """
+    Returns a VRT configuration for the given type.
     """
     args = [name]
-    if packet_type == PacketType.DATA:
+    if config_type == PacketType.DATA:
         cls = DataPacketConfiguration
-    elif packet_type == PacketType.CONTEXT:
+    elif config_type == PacketType.CONTEXT:
         cls = ContextPacketConfiguration
-    elif packet_type == PacketType.CONTROL:
+    elif config_type == PacketType.CONTROL:
         cls = ControlPacketConfiguration
-    elif packet_type in (PacketType.ACKV, PacketType.ACKX, PacketType.ACKS):
+    elif config_type in (PacketType.ACKV, PacketType.ACKX, PacketType.ACKS):
         cls = AcknowledgePacketConfiguration
-        args.append(packet_type)
+        args.append(config_type)
+    elif config_type == InformationType.INFORMATION:
+        cls = InformationClassConfiguration
     else:
-        raise ValueError(packet_type)
+        raise ValueError(config_type)
     return cls(*args)

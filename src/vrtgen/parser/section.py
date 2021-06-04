@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -20,9 +20,9 @@ Classes for parsing sections of a VITA 49 packet definition.
 """
 from vrtgen.types.struct import Struct
 
-from .field import FieldParser, StructFieldParser, SimpleFieldParser
-from .mapping import MappingParser
-from .value import get_value_parser
+from vrtgen.parser.field import FieldParser, StructFieldParser, SimpleFieldParser
+from vrtgen.parser.mapping import MappingParser
+from vrtgen.parser.value import get_value_parser
 
 def bind_parser(name, parser):
     """

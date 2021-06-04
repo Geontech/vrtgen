@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -18,9 +18,9 @@
 """
 CIF field metadata classes.
 """
-from .container import Container
-from .struct import Struct, StructItem, Field, Reserved
-from . import basic
+from vrtgen.types.container import Container
+from vrtgen.types.struct import Struct, StructItem, Field, Reserved
+from vrtgen.types import basic
 
 __all__ = (
     'CIFFields',
@@ -67,6 +67,9 @@ class CIFFields(Container):
 
     @classmethod
     def get_contents(cls):
+        """
+        Get the contents of this CIFFields class
+        """
         # In Python 3.6+, dict preserves insertion order, so this will always
         # return the fields in the order they are defined
         return [v for v in cls.__dict__.values() if isinstance(v, StructItem)]

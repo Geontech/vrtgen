@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Geon Technologies, LLC
+ * Copyright (C) 2021 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -54,6 +54,11 @@ namespace vrtgen {
                 return m_pos - m_start;
             }
 
+            T* get() const
+            {
+                return m_pos;
+            }
+
         private:
             T* const m_start;
             T* const m_end;
@@ -80,6 +85,11 @@ namespace vrtgen {
             return m_buf.getpos();
         }
 
+        char* get() const
+        {
+            return m_buf.get();
+        }
+
     private:
         detail::overlay_buffer<char> m_buf;
     };
@@ -98,6 +108,8 @@ namespace vrtgen {
             m_MessageID(nullptr),
             m_ControlleeID(nullptr),
             m_ControllerID(nullptr),
+            m_ControlleeUUID(nullptr),
+            m_ControllerUUID(nullptr),
             m_CIF0(nullptr),
             m_CIF1(nullptr)
         {
@@ -158,12 +170,12 @@ namespace vrtgen {
             return m_ClassIdentifier;
         }
 
-        const vrtgen::packing::ClassIdentifier* getClassIdentifier() const
+        const vrtgen::packing::ClassIdentifier& getClassIdentifier() const
         {
             if (!hasClassIdentifier()) {
                 throw std::runtime_error("missing Class Identifier");
             }
-            return m_ClassIdentifier;
+            return *m_ClassIdentifier;
         }
 
         bool hasIntegerTimestamp() const
@@ -207,7 +219,7 @@ namespace vrtgen {
 
         bool hasControlleeID() const
         {
-            return m_ControlleeID;
+            return m_ControlleeID || m_ControlleeUUID;
         }
 
         vrtgen::GenericIdentifier32 getControlleeID() const
@@ -218,9 +230,17 @@ namespace vrtgen {
             return m_ControlleeID->get();
         }
 
+        std::string getControlleeUUID() const
+        {
+            if (!m_ControlleeUUID) {
+                throw std::logic_error("no Controllee UUID");
+            }
+            return vrtgen::UUID(m_ControlleeUUID->get()).get();
+        }
+
         bool hasControllerID() const
         {
-            return m_ControllerID;
+            return m_ControllerID || m_ControllerUUID;
         }
 
         vrtgen::GenericIdentifier32 getControllerID() const
@@ -229,6 +249,14 @@ namespace vrtgen {
                 throw std::logic_error("no Controller ID");
             }
             return m_ControllerID->get();
+        }
+
+        std::string getControllerUUID() const
+        {
+            if (!m_ControllerUUID) {
+                throw std::logic_error("no Controller UUID");
+            }
+            return vrtgen::UUID(m_ControllerUUID->get()).get();
         }
 
         const vrtgen::packing::CIF0Enables* getCIF0() const
@@ -253,6 +281,11 @@ namespace vrtgen {
             return next<T>()->get();
         }
 
+        size_t size() const
+        {
+            return m_buf.getpos();
+        }
+
     private:
         void parse_command_prologue()
         {
@@ -264,7 +297,7 @@ namespace vrtgen {
                     m_ControlleeID = m_buf.next<const vrtgen::packing::ControlleeID>();
                     break;
                 case vrtgen::IdentifierFormat::UUID:
-                    // TODO: UUID support
+                    m_ControlleeUUID = m_buf.next<const vrtgen::packing::UUID>();
                     break;
                 }
             }
@@ -274,7 +307,7 @@ namespace vrtgen {
                     m_ControllerID = m_buf.next<const vrtgen::packing::ControllerID>();
                     break;
                 case vrtgen::IdentifierFormat::UUID:
-                    // TODO: UUID support
+                    m_ControllerUUID = m_buf.next<const vrtgen::packing::UUID>();
                     break;
                 }
             }
@@ -290,6 +323,8 @@ namespace vrtgen {
         const vrtgen::packing::MessageID* m_MessageID;
         const vrtgen::packing::ControlleeID* m_ControlleeID;
         const vrtgen::packing::ControllerID* m_ControllerID;
+        const vrtgen::packing::UUID* m_ControlleeUUID;
+        const vrtgen::packing::UUID* m_ControllerUUID;
         const vrtgen::packing::CIF0Enables* m_CIF0;
         const vrtgen::packing::CIF1Enables* m_CIF1;
     };

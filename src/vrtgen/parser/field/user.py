@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -24,7 +24,7 @@ from vrtgen.parser.utils import EMPTY, to_kvpair
 from vrtgen.types import basic
 from vrtgen.types.struct import Enable, Field, Reserved, is_field
 
-from .base import FieldParser
+from vrtgen.parser.field.base import FieldParser
 
 __all__ = ('UserDefinedFieldParser',)
 

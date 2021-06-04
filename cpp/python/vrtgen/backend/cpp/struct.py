@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -19,7 +19,7 @@
 Classes and helper methods for generating C++ structures.
 """
 
-from vrtgen.types import enums, basic, struct
+from vrtgen.types import enums, basic, struct, control
 
 from . import types as cpptypes
 from . import utils
@@ -27,13 +27,15 @@ from . import utils
 def member_type(datatype):
     if datatype == basic.OUI:
         return 'OUI'
+    if datatype == control.UUIDIdentifier:
+        return 'big_endian<std::bitset<{}>>'.format(datatype.bits)
     if issubclass(datatype, enums.BinaryEnum):
         return cpptypes.enum_type(datatype)
     if issubclass(datatype, basic.IntegerType):
         base_type = cpptypes.int_type(datatype.bits, datatype.signed)
         return 'big_endian<{}>'.format(base_type)
     if issubclass(datatype, basic.FixedPointType):
-        return cpptypes.fixed_type(datatype.bits, datatype.radix)
+        return cpptypes.fixed_type(datatype.bits, datatype.radix, datatype.resolution)
     if issubclass(datatype, basic.NonZeroSize):
         base_type = cpptypes.int_type(datatype.bits, False)
         return 'nonzero_size<{}>'.format(base_type)
@@ -87,12 +89,17 @@ class Member:
     def __init__(self, name, datatype):
         self.name = 'm_' + name
         self.type = datatype
+        self.value = None
         self.doc = []
 
     @property
     def decl(self):
         assert self.type is not None
-        return '{} {}'.format(self.type, self.name)
+        decl = '{} {}'.format(self.type, self.name)
+        if self.value:
+            decl += '{{{}{}}}'.format(self.value, 'u' if 'uint' in self.type else '')
+
+        return decl
 
     def _add_field_doc(self, field):
         self.doc.append('{} {}'.format(field.name, field.position))
@@ -190,6 +197,18 @@ class CppStruct:
     @property
     def reserved(self):
         return [f for f in self.members if isinstance(f, Reserved)]
+
+    def set_member_value(self, name, value):
+        for member in self.members:
+            if isinstance(member, BasicMember):
+                if member.field and member.field.name == name:
+                    member.value = value
+
+    def set_member_max_value(self, name):
+        for member in self.members:
+            if isinstance(member, BasicMember):
+                if member.field and member.field.name == name:
+                    member.value = member.field.type._get_range()[1]
 
     def _should_pack(self, field):
         if field.bits % 8:

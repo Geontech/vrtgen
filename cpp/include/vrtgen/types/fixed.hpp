@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Geon Technologies, LLC
+ * Copyright (C) 2021 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -26,7 +26,7 @@
 
 namespace vrtgen {
     namespace detail {
-        template <typename IntT, unsigned radix, typename FloatT=double>
+        template <typename IntT, unsigned radix, typename FloatT=double, unsigned prec=sizeof(double)>
         struct fixed_converter
         {
             typedef IntT int_type;
@@ -39,21 +39,25 @@ namespace vrtgen {
 
             static inline float_type from_int(int_type value)
             {
-                return value / SCALE;
+                float_type tmp = value / SCALE;
+                int_type int_part = static_cast<int_type>(tmp);
+                float_type frac_part = std::round(tmp*PREC) / PREC - int_part;
+                return static_cast<float_type>(int_part) + frac_part;
             }
         private:
             static constexpr float_type SCALE = (1 << radix);
+            static constexpr double PREC = std::pow(10,prec);
         };
     }
 
-    template <typename IntT, unsigned radix, typename FloatT=double>
+    template <typename IntT, unsigned radix, typename FloatT=double, unsigned prec=sizeof(double)>
     struct fixed
     {
     public:
         typedef IntT int_type;
         typedef FloatT float_type;
         typedef float_type value_type;
-        typedef detail::fixed_converter<int_type,radix,float_type> converter_type;
+        typedef detail::fixed_converter<int_type,radix,float_type,prec> converter_type;
 
         fixed() :
             m_value(0)
