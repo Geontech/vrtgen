@@ -239,7 +239,7 @@ void {{packet.helper}}::pack(const {{packet.name}}& packet, void* ptr, size_t bu
 //%     endfor
 //% endfor 
 //% if packet.is_data
-    std::memcpy(buffer.get(), packet.getRawData(), packet.getRawDataSize());
+    std::memcpy(buffer.get(), packet.getPayload(), packet.getPayloadSize());
 //% endif
     header->setPacketSize(buffer.size() / 4);
 }
@@ -279,7 +279,7 @@ void {{packet.helper}}::unpack({{packet.name}}& packet, const void* ptr, std::si
 //%     endfor
 //% endfor
 //% if packet.is_data
-    packet.setRawData(ptr, bufsize-buffer.size());
+    packet.setPayload(static_cast<const uint8_t*>(ptr)+buffer.size(), bufsize-buffer.size());
 //% endif
 }
 //% endmacro

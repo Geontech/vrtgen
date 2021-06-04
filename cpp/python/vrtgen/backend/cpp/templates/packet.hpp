@@ -119,20 +119,20 @@ void set{{field.identifier}}Enabled(const bool value)
 //%     endfor
 //% endfor
 //% if packet.is_data
-const uint8_t* getRawData() const
+const uint8_t* getPayload() const
 {
-    return m_rawData.data();
+    return m_payload.data();
 }
 
-size_t getRawDataSize() const
+size_t getPayloadSize() const
 {
-    return m_rawData.size();
+    return m_payload.size();
 }
 
-void setRawData(const void* data, size_t len)
+void setPayload(const void* data, size_t len)
 {
-    m_rawData.resize(len);
-    std::memcpy(m_rawData.data(), data, len);
+    m_payload.resize(len);
+    std::memcpy(m_payload.data(), data, len);
 }
 
 //% endif
@@ -153,7 +153,7 @@ bool {{field.member.identifier}}Enabled;
 //%     endfor
 //% endfor
 //% if packet.is_data
-std::vector<uint8_t> m_rawData;
+std::vector<uint8_t> m_payload;
 //% endif
 //% endmacro
 
