@@ -7,7 +7,7 @@ available in the next few months. Feeback is welcome.
 
 ## Dependencies
 
-`vrtgen` requires Python 3.6 pip. It is also recommended to install `wheel` package for Python 3.6.
+`vrtgen` requires Python 3.6 as well as `pip` for Python 3.6.
 
 ## Installation
 
@@ -15,6 +15,7 @@ Installation via `pip` is recommended, as it will automatically install the requ
 To install via `pip`:
 
 ```sh
+sudo pip3 install --upgrade pip
 pip3 install --user .
 ```
 
@@ -38,6 +39,7 @@ To perform a "developer install" using a virtual environment:
 ```sh
 python3 -m venv venv
 . venv/bin/activate
+pip install --upgrade pip
 pip install -e .
 ```
 
