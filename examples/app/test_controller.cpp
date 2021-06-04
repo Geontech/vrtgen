@@ -3,42 +3,55 @@
 
 #include "RDCInformationController.hpp"
 
-double sample_rate = 10000.;
-
 void handleTunerInfo(TunerInfo& packet)
 {
+    std::cout << "Received context packet..." << std::endl;
     if (packet.hasSampleRate()) { 
-        sample_rate = packet.getSampleRate();
+        std::cout << "New sample rate is: " << packet.getSampleRate() << std::endl;
+    }
+    if (packet.hasRFReferenceFrequency()) {
+        std::cout << "New frequency is: " << packet.getRFReferenceFrequency() << std::endl;
     }
 }
 
 void handleSignalData(SignalData& packet)
 {
-    auto data = packet.getRawData();
-    std::vector<float> t(packet.getRawDataSize() / sizeof(float));
-    std::vector<float> x(t.size());
+    auto data = packet.getPayload();
+    std::cout << "Got data " << packet.getPayloadSize() << " bytes" << std::endl;
 
-    for (unsigned i=0; i<x.size(); ++i) {
-        t[i] = i/sample_rate;
-        x[i] = *(reinterpret_cast<const float*>(data));
+    // Verify data
+    std::vector<float> ramp(packet.getPayloadSize() / sizeof(float));
+    auto got_ramp = true;
+    for (size_t i=0; i<ramp.size(); ++i) {
+        auto data_val = *(reinterpret_cast<const float*>(data));
+        if (data_val != (i + 1)) {
+            std::cout << "Ramp failed at index: " << i
+                      << " (" << data_val << " vs " << (i+1) << ")" << std::endl;
+            got_ramp = false;
+            break;
+        }
         data += sizeof(float);
     }
 
-    // plot data
+    if (got_ramp) {
+        std::cout << "Data ramp is valid." << std::endl;
+    } else {
+        std::cout << "Failed to get data ramp." << std::endl;
+    }
 }
 
 int main()
 {
     std::string ip = "127.0.0.1";
     unsigned short port = 5000;
-    vrtgen::socket::endpoint::udp::v4 server_endpoint(ip, port);
-    vrtgen::socket::endpoint::udp::v4 my_endpoint(ip, port+1000);
+    vrtgen::socket::endpoint::udp::v4 controllee_endpoint(ip, port);
+    vrtgen::socket::endpoint::udp::v4 controller_endpoint(ip, port+1000);
 
     // Create a client instance
-    RDCInformationController controller(my_endpoint);
+    RDCInformationController controller(controller_endpoint);
 
     // Point socket to radio endpoint
-    controller.setControlleeEndpoint(server_endpoint);
+    controller.setControlleeEndpoint(controllee_endpoint);
 
     // Make API function calls
     double freq = 50;

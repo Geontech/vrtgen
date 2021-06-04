@@ -46,7 +46,7 @@ public:
     
     void setGain(const double gain)
     {
-        m_amp = pow(10.0, gain/10.0);
+        m_gain = gain;
         message_buffer message;
         TunerInfo packet;
         vrtgen::packing::Gain gainret;
@@ -68,11 +68,6 @@ public:
         m_socket.send_to(message.data(), length, m_socket.dst());
     }
 
-    double getFrequency()
-    {
-        return m_freq;
-    }
-
     void setSampleRate(const double rate)
     {
         m_rate = rate;
@@ -84,34 +79,32 @@ public:
         m_socket.send_to(message.data(), length, m_socket.dst());
     }
 
-    void setTransferLen(const int len)
+    double getFrequency()
     {
-        m_xfer_len = len;
+        return m_freq;
     }
 
 private:
-    double m_amp{1};
     double m_freq{50};
     double m_rate{10000};
-    int m_xfer_len{1000};
+    double m_gain{1};
     std::atomic_bool m_streaming;
     std::thread m_thread;
     socket_type m_socket;
-    const double twopi = 2. * M_PI;
 
     void m_thread_func()
     {
         while (m_streaming) {
             std::array<float, 1000> data;
             for (unsigned i=0; i<data.size(); ++i) {
-                data[i] = m_amp*std::sin(twopi*m_freq*(i/m_rate));
+                data[i] = i + 1;
             }
             auto len = data.size() * sizeof(float);
             message_buffer message;
             SignalData packet;
-            packet.setRawData(data.data(), len);
+            packet.setPayload(data.data(), len);
             size_t length = packing::SignalDataHelper::bytes_required(packet) +
-                            packet.getRawDataSize();            
+                            packet.getPayloadSize();
             packing::SignalDataHelper::pack(packet, message.data(), message.size());
             m_socket.send_to(message.data(), length, m_socket.dst());
             std::this_thread::sleep_for(std::chrono::seconds(1));
