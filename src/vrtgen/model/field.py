@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -77,6 +77,13 @@ class FieldConfiguration:
         Data type of the field.
         """
         return self.field.type
+
+    @property
+    def alias(self):
+        """
+        Alias for the field.
+        """
+        return self.field.alias
 
     @property
     def mode(self):

@@ -1,0 +1,4 @@
+TestContext:
+  context:
+    cif0:
+      reference-point-id: required

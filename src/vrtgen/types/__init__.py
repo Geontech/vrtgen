@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -19,5 +19,5 @@
 Types for Python VITA 49 data model.
 """
 
-from .basic import *
-from .enums import *
+from vrtgen.types.basic import *
+from vrtgen.types.enums import *

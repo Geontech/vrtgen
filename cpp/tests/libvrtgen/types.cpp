@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Geon Technologies, LLC
+ * Copyright (C) 2021 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *

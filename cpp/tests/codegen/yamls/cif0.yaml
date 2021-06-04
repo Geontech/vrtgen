@@ -1,0 +1,54 @@
+AllCIF0ContextOptional:
+  context:
+    cif0:
+      change-indicator: optional
+      reference-point-id: optional
+      bandwidth: optional
+      if-reference-frequency: optional
+      rf-reference-frequency: optional
+      rf-reference-frequency-offset: optional
+      if-band-offset: optional
+      reference-level: optional
+      gain: optional
+      over-range-count: optional
+      sample-rate: optional
+      timestamp-adjustment: optional
+      timestamp-calibration-time: optional
+      temperature: optional
+      device-id: optional
+      #state-event-indicators: optional
+      data-payload-format: optional
+      formatted-gps: optional
+      formatted-ins: optional
+      ecef-ephemeris: optional
+      relative-ephemeris: optional
+      ephemeris-reference-id: optional
+      #gps-ascii: optional
+      #context-assocation-lists: optional
+
+AllCIF0ContextRequired:
+  context:
+    cif0:
+      reference-point-id: required
+      bandwidth: required
+      if-reference-frequency: required
+      rf-reference-frequency: required
+      rf-reference-frequency-offset: required
+      if-band-offset: required
+      reference-level: required
+      gain: required
+      over-range-count: required
+      sample-rate: required
+      timestamp-adjustment: required
+      timestamp-calibration-time: required
+      temperature: required
+      device-id: required
+      #state-event-indicators: required
+      data-payload-format: required
+      formatted-gps: required
+      formatted-ins: required
+      ecef-ephemeris: required
+      relative-ephemeris: required
+      ephemeris-reference-id: required
+      #gps-ascii: required
+      #context-assocation-lists: required

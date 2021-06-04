@@ -1,5 +1,0 @@
-# Test for controllee and controller IDs
-ControlIDs:
-  control:
-    Controllee: word
-    Controller: word

@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -19,9 +19,7 @@
 Mappings of VRT types to C++ types.
 """
 
-from vrtgen.types import basic
-from vrtgen.types import enums
-from vrtgen.types import struct
+from vrtgen.types import basic, control, enums, struct, prologue
 
 def name_to_identifier(name):
     """
@@ -75,11 +73,11 @@ def float_type(bits):
         return 'double'
     return 'float'
 
-def fixed_type(bits, radix, signed=True):
+def fixed_type(bits, radix, resolution, signed=True):
     """
     Returns the C++ fixed point packing class for a VRT fixed point type.
     """
-    return 'fixed<{},{},{}>'.format(int_type(bits, signed), radix, float_type(bits))
+    return 'fixed<{},{},{},{}>'.format(int_type(bits, signed), radix, float_type(bits), resolution)
 
 def value_type(datatype):
     """
@@ -90,6 +88,10 @@ def value_type(datatype):
     """
     if datatype == basic.StreamIdentifier:
         return 'vrtgen::StreamIdentifier'
+    if datatype == prologue.ClassIdentifier:
+        return 'vrtgen::packing::ClassIdentifier'
+    if datatype == control.UUIDIdentifier:
+        return 'vrtgen::UUID'
     if issubclass(datatype, basic.BooleanType):
         return 'bool'
     if issubclass(datatype, enums.BinaryEnum):

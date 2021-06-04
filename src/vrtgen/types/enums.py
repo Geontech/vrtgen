@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -18,7 +18,7 @@
 """
 Enumeration types used in VITA 49.
 """
-from enum import IntEnum, EnumMeta
+from enum import Enum, IntEnum, EnumMeta
 
 class BinaryEnumMeta(EnumMeta):
     """
@@ -343,3 +343,67 @@ class TimestampControlMode(BinaryEnum, bits=3):
     RESERVED_5 = 0b101
     RESERVED_6 = 0b110
     TIMING_ISSUES = 0b111
+
+class CIF0Fields(Enum):
+    """
+    CIF0 fields
+    """
+    CHANGE_INDICATOR = 'Context Field Change Indicator'
+    REFERENCE_POINT_ID = 'Reference Point Identifier'
+    BANDWIDTH = 'Bandwidth'
+    IF_REFERENCE_FREQUENCY = 'IF Reference Frequency'
+    RF_REFERENCE_FREQUENCY = 'RF Reference Frequency'
+    RF_REFERENCE_FREQUENCY_OFFSET = 'RF Reference Frequency Offset'
+    IF_BAND_OFFSET = 'IF Band Offset'
+    REFERENCE_LEVEL = 'Reference Level'
+    GAIN = 'Gain'
+    OVER_RANGE_COUNT = 'Over-Range Count'
+    SAMPLE_RATE = 'Sample Rate'
+    TIMESTAMP_ADJUSTMENT = 'Timestamp Adjustment'
+    TIMESTAMP_CALIBRATION_TIME = 'Timestamp Calibration Time'
+    TEMPERATURE = 'Temperature'
+    DEVICE_IDENTIFIER = 'Device ID'
+    STATE_EVENT_INDICATORS = 'State/Event Indicators'
+    SIGNAL_DATA_PAYLOAD_FORMAT = 'Signal Data Packet Payload Format'
+    FORMATTED_GPS = 'Formatted GPS'
+    FORMATTED_INS = 'Formatted INS'
+    ECEF_EPHEMERIS = 'ECEF Ephemeris'
+    RELATIVE_EPHEMERIS = 'Relative Ephemeris'
+    EPHEMERIS_REFERENCE_ID = 'Ephemeris Reference ID'
+    GPS_ASCII = 'GPS ASCII'
+    CONTEXT_ASSOCIATION_LISTS = 'Context Association Lists'
+    CIF7_ENABLE = 'Field Attributes Enable'
+    CIF3_ENABLE = 'CIF 3 Enable'
+    CIF2_ENABLE = 'CIF 2 Enable'
+    CIF1_ENABLE = 'CIF 1 Enable'
+
+class CIF1Fields(Enum):
+    """
+    CIF1 Fields
+    """
+    PHASE_OFFSET = 'Phase Offset'
+    POLARIZATION = 'Polarization'
+    POINTING_VECTOR = '3-D Pointing Vector'
+    POINTING_VECTOR_STRUCT = '3-D Pointing Vector Structure'
+    SPATIAL_SCAN_TYPE = 'Spatial Scan Type'
+    SPATIAL_REFERENCE_TYPE = 'Spatial Reference Type'
+    BEAM_WIDTHS = 'Beam Widths'
+    RANGE = 'Range'
+    EBNO_BER = 'Eb/No BER'
+    THRESHOLD = 'Threshold'
+    COMPRESSION_POINT = 'Compression Point'
+    INTERCEPT_POINTS = 'Intercept Points'
+    SNR_NOISE_FIGURE = 'SNR/Noise Figure'
+    AUX_FREQUENCY = 'Aux Frequency'
+    AUX_GAIN = 'Aux Gain'
+    AUX_BANDWIDTH = 'Aux Bandwidth'
+    ARRAY_OF_CIFS = 'Array of CIFS'
+    SPECTRUM = 'Spectrum'
+    SECTOR_SCAN_STEP = 'Sector Scan/Step'
+    INDEX_LIST = 'Index List'
+    DISCRETE_IO_32 = 'Discrete I/O 32'
+    DISCRETE_IO_64 = 'Discrete I/O 64'
+    HEALTH_STATUS = 'Health Status'
+    V49_SPEC_COMPLIANCE = 'V49 Spec Compliance'
+    VERSION_BUILD_CODE = 'Version and Build Code'
+    BUFFER_SIZE = 'Buffer Size'

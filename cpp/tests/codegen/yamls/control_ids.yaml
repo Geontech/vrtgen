@@ -1,0 +1,10 @@
+# Test for controllee and controller IDs
+ControlIDs:
+  control:
+    controllee: word
+    controller: word
+
+UUIDControlIDs:
+  control:
+    controllee: uuid
+    controller: uuid

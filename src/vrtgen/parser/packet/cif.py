@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -23,52 +23,54 @@ from vrtgen.parser.field import IndexListParser, UserDefinedFieldParser
 from vrtgen.types.cif0 import CIF0
 from vrtgen.types.cif1 import CIF1
 
-from .base import PacketParser
+from vrtgen.parser.section import SectionParser
 
-class CIFPacketParser(PacketParser):
+class CIFParser(SectionParser):
     """
     Base parser for configuring packets that contain CIF fields.
     """
 
-CIFPacketParser.add_field_parser(CIF0.reference_point_id)
-CIFPacketParser.add_field_parser(CIF0.bandwidth)
-CIFPacketParser.add_field_parser(CIF0.if_frequency)
-CIFPacketParser.add_field_parser(CIF0.rf_frequency)
-CIFPacketParser.add_field_parser(CIF0.rf_frequency_offset)
-CIFPacketParser.add_field_parser(CIF0.if_band_offset)
-CIFPacketParser.add_field_parser(CIF0.reference_level)
-CIFPacketParser.add_field_parser(CIF0.gain)
-CIFPacketParser.add_field_parser(CIF0.over_range_count)
-CIFPacketParser.add_field_parser(CIF0.sample_rate)
-CIFPacketParser.add_field_parser(CIF0.timestamp_calibration_time)
-CIFPacketParser.add_field_parser(CIF0.temperature)
-CIFPacketParser.add_field_parser(CIF0.device_id)
+CIFParser.add_field_parser(CIF0.change_indicator, alias='change-indicator')
+CIFParser.add_field_parser(CIF0.reference_point_id, alias='reference-point-id')
+CIFParser.add_field_parser(CIF0.bandwidth, alias='bandwidth')
+CIFParser.add_field_parser(CIF0.if_frequency, alias='if-reference-frequency')
+CIFParser.add_field_parser(CIF0.rf_frequency, alias='rf-reference-frequency')
+CIFParser.add_field_parser(CIF0.rf_frequency_offset, alias='rf-reference-frequency-offset')
+CIFParser.add_field_parser(CIF0.if_band_offset, alias='if-band-offset')
+CIFParser.add_field_parser(CIF0.reference_level, alias='reference-level')
+CIFParser.add_field_parser(CIF0.gain, alias='gain')
+CIFParser.add_field_parser(CIF0.over_range_count, alias='over-range-count')
+CIFParser.add_field_parser(CIF0.sample_rate, alias='sample-rate')
+CIFParser.add_field_parser(CIF0.timestamp_adjustment, alias='timestamp-adjustment')
+CIFParser.add_field_parser(CIF0.timestamp_calibration_time, alias='timestamp-calibration-time')
+CIFParser.add_field_parser(CIF0.temperature, alias='temperature')
+CIFParser.add_field_parser(CIF0.device_id, alias='device-id')
 # Not implemented: CIF0.state_event_indicators
-CIFPacketParser.add_field_parser(CIF0.data_format, alias='Data Payload Format')
-CIFPacketParser.add_field_parser(CIF0.formatted_gps)
-CIFPacketParser.add_field_parser(CIF0.formatted_ins)
-CIFPacketParser.add_field_parser(CIF0.ecef_ephemeris)
-CIFPacketParser.add_field_parser(CIF0.relative_ephemeris)
-CIFPacketParser.add_field_parser(CIF0.ephemeris_ref_id)
+CIFParser.add_field_parser(CIF0.data_format, alias='data-payload-format')
+CIFParser.add_field_parser(CIF0.formatted_gps, alias='formatted-gps')
+CIFParser.add_field_parser(CIF0.formatted_ins, alias='formatted-ins')
+CIFParser.add_field_parser(CIF0.ecef_ephemeris, alias='ecef-ephemeris')
+CIFParser.add_field_parser(CIF0.relative_ephemeris, alias='relative-ephemeris')
+CIFParser.add_field_parser(CIF0.ephemeris_ref_id, alias='ephemeris-reference-id')
 # Not implemented: CIF0.gps_ascii
 # Not implemented: CIF0.context_association_lists
 
-CIFPacketParser.add_field_parser(CIF1.phase_offset)
-CIFPacketParser.add_field_parser(CIF1.polarization)
-CIFPacketParser.add_field_parser(CIF1.pointing_vector)
-CIFPacketParser.add_field_parser(CIF1.spatial_scan_type)
-CIFPacketParser.add_field_parser(CIF1.beam_widths)
-CIFPacketParser.add_field_parser(CIF1.range)
-CIFPacketParser.add_field_parser(CIF1.ebno_ber)
-CIFPacketParser.add_field_parser(CIF1.threshold)
-CIFPacketParser.add_field_parser(CIF1.compression_point)
-CIFPacketParser.add_field_parser(CIF1.snr_noise_figure)
-CIFPacketParser.add_field_parser(CIF1.aux_frequency)
-CIFPacketParser.add_field_parser(CIF1.aux_gain)
-CIFPacketParser.add_field_parser(CIF1.aux_bandwidth)
-CIFPacketParser.add_parser(CIF1.index_list.name, IndexListParser())
-CIFPacketParser.add_field_parser(CIF1.discrete_io_32, UserDefinedFieldParser())
-CIFPacketParser.add_field_parser(CIF1.discrete_io_64, UserDefinedFieldParser())
-CIFPacketParser.add_field_parser(CIF1.health_status)
-CIFPacketParser.add_field_parser(CIF1.version_build_code)
-CIFPacketParser.add_field_parser(CIF1.buffer_size)
+CIFParser.add_field_parser(CIF1.phase_offset, alias='phase-offset')
+CIFParser.add_field_parser(CIF1.polarization, alias='polarization')
+CIFParser.add_field_parser(CIF1.pointing_vector, alias='3d-pointing-vector')
+CIFParser.add_field_parser(CIF1.spatial_scan_type, alias='spatial-scan')
+CIFParser.add_field_parser(CIF1.beam_widths, alias='beam-width')
+CIFParser.add_field_parser(CIF1.range, alias='range')
+CIFParser.add_field_parser(CIF1.ebno_ber, alias='ebno-ber')
+CIFParser.add_field_parser(CIF1.threshold, alias='threshold')
+CIFParser.add_field_parser(CIF1.compression_point, alias='compression-point')
+CIFParser.add_field_parser(CIF1.snr_noise_figure, alias='snr-noise-figure')
+CIFParser.add_field_parser(CIF1.aux_frequency, alias='aux-frequency')
+CIFParser.add_field_parser(CIF1.aux_gain, alias='aux-gain')
+CIFParser.add_field_parser(CIF1.aux_bandwidth, alias='aux-bandwidth')
+CIFParser.add_parser(CIF1.index_list.name, IndexListParser())
+CIFParser.add_field_parser(CIF1.discrete_io_32, UserDefinedFieldParser(), alias='discrete-io-32')
+CIFParser.add_field_parser(CIF1.discrete_io_64, UserDefinedFieldParser(), alias='discrete-io-64')
+CIFParser.add_field_parser(CIF1.health_status, alias='health-status')
+CIFParser.add_field_parser(CIF1.version_build_code, alias='version-build-code')
+CIFParser.add_field_parser(CIF1.buffer_size, alias='buffer-size')

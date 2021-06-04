@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -61,11 +61,28 @@ class TimestampParser(MappingParser):
 TimestampParser.add_parser('integer', TimestampParser.parse_integer)
 TimestampParser.add_parser('fractional', TimestampParser.parse_fractional)
 
+class ExtendsParser(SectionParser):
+    """
+    Parser for packet class extension list.
+    """
+    def parse_mapping(self, log, context, mapping):
+        """
+        Configures a context object from the values in th extnds list.
+        """
+        for packet_class in mapping:
+            context.extends.append(packet_class)
+
+    def __call__(self, log, context, value):
+        if not isinstance(value, list):
+            raise TypeError('extends must be a list')
+        self.parse_mapping(log, context, value)
+
 class PacketParser(SectionParser):
     """
     Base parser for packet configuration.
     """
 
-PacketParser.add_field_parser(Prologue.stream_id, alias='Stream ID')
-PacketParser.add_field_parser(Prologue.class_id, field.ClassIDParser(), alias='Class ID')
+PacketParser.add_field_parser(Prologue.stream_id, alias='stream-id')
+PacketParser.add_field_parser(Prologue.class_id, field.ClassIDParser(), alias='class-id')
 PacketParser.add_parser('timestamp', TimestampParser())
+PacketParser.add_parser('extends', ExtendsParser())

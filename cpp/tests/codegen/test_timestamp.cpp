@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Geon Technologies, LLC
+ * Copyright (C) 2021 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -19,7 +19,7 @@
 
 #include "catch/catch.hpp"
 
-#include "timestamp.hpp"
+#include "yamls/timestamp.hpp"
 
 #include <vector>
 

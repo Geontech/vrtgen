@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -19,8 +19,8 @@
 Types used for VITA 49 packet prologues.
 """
 
-from .struct import Struct, Field, Reserved
-from . import basic, enums
+from vrtgen.types.struct import Struct, Field, Reserved
+from vrtgen.types import basic, enums
 
 class ClassIdentifier(Struct):
     """
@@ -54,7 +54,7 @@ class DataHeader(Header):
         Field('Trailer Included', basic.Boolean)
     )
     not_v49d0 = Header.packet_specific_25.rebind(
-        Field('Not a V49.0 Packet', basic.Boolean)
+        Field('Not a V49d0 Packet', basic.Boolean)
     )
     spectrum = Header.packet_specific_24.rebind(
         Field('Signal Spectrum or Signal Time Data Packet', basic.Boolean)
@@ -65,7 +65,7 @@ class ContextHeader(Header):
     VRT Packet Header with Context Packet-Specific Indicator Bits (5.1.1.1)
     """
     not_v49d0 = Header.packet_specific_25.rebind(
-        Field('Not a V49.0 Packet', basic.Boolean)
+        Field('Not a V49d0 Packet', basic.Boolean)
     )
     timestamp_mode = Header.packet_specific_24.rebind(
         Field('Timestamp Mode', enums.TSM)

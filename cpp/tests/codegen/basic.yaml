@@ -1,7 +1,0 @@
-BasicContext:
-  context:
-    Reference Point Identifier: required
-
-BasicControl:
-  control:
-    RF Reference Frequency: required

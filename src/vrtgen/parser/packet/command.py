@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -23,18 +23,19 @@ from vrtgen.parser import value as value_parser
 from vrtgen.parser.section import SectionParser
 from vrtgen.types.control import ControlAcknowledgeMode
 
-from .cif import CIFPacketParser
+from .base import PacketParser
+from .cif import CIFParser
 
 class PermitParser(SectionParser):
     """
     Parser for 'permit' settings on Command Packets.
     """
 
-PermitParser.add_field_parser(ControlAcknowledgeMode.permit_partial, alias='Partial')
-PermitParser.add_field_parser(ControlAcknowledgeMode.permit_warnings, alias='Warnings')
-PermitParser.add_field_parser(ControlAcknowledgeMode.permit_errors, alias='Errors')
+PermitParser.add_field_parser(ControlAcknowledgeMode.permit_partial, alias='partial')
+PermitParser.add_field_parser(ControlAcknowledgeMode.permit_warnings, alias='warnings')
+PermitParser.add_field_parser(ControlAcknowledgeMode.permit_errors, alias='errors')
 
-class CommandPacketParser(CIFPacketParser):
+class CommandPacketParser(PacketParser):
     """
     Base parser for Command Packet configuration.
     """
@@ -62,11 +63,13 @@ class CommandPacketParser(CIFPacketParser):
         context.controller = cls._parse_identification(value)
         log.debug('Controller ID = %s', context.controller)
 
-CommandPacketParser.add_parser('Permit', PermitParser())
-CommandPacketParser.add_field_parser(ControlAcknowledgeMode.action_mode, alias='Action')
-CommandPacketParser.add_field_parser(ControlAcknowledgeMode.nack_only, alias='NACK')
+CommandPacketParser.add_parser('permit', PermitParser())
+CommandPacketParser.add_field_parser(ControlAcknowledgeMode.action_mode, alias='action')
+#CommandPacketParser.add_field_parser(ControlAcknowledgeMode.nack_only, alias='NACK')
 CommandPacketParser.add_parser('Controllee', CommandPacketParser.parse_controllee)
 CommandPacketParser.add_parser('Controller', CommandPacketParser.parse_controller)
+CommandPacketParser.add_parser('cif0', CIFParser())
+CommandPacketParser.add_parser('cif1', CIFParser())
 
 class AcknowledgeRequestParser(SectionParser):
     """
@@ -74,13 +77,22 @@ class AcknowledgeRequestParser(SectionParser):
     """
 
 AcknowledgeRequestParser.add_field_parser(
-    ControlAcknowledgeMode.request_validation, alias='Validation'
+    ControlAcknowledgeMode.nack_only, alias='negative'
 )
 AcknowledgeRequestParser.add_field_parser(
-    ControlAcknowledgeMode.request_execution, alias='Execution'
+    ControlAcknowledgeMode.request_validation, alias='validation'
 )
 AcknowledgeRequestParser.add_field_parser(
-    ControlAcknowledgeMode.request_query, alias='Query-State'
+    ControlAcknowledgeMode.request_execution, alias='execution'
+)
+AcknowledgeRequestParser.add_field_parser(
+    ControlAcknowledgeMode.request_query, alias='query-state'
+)
+AcknowledgeRequestParser.add_field_parser(
+    ControlAcknowledgeMode.request_warning, alias='warnings'
+)
+AcknowledgeRequestParser.add_field_parser(
+    ControlAcknowledgeMode.request_error, alias='errors'
 )
 
 class ControlPacketParser(CommandPacketParser):
@@ -88,7 +100,7 @@ class ControlPacketParser(CommandPacketParser):
     Parser for Control Packet configuration.
     """
 
-ControlPacketParser.add_parser('Acknowledge', AcknowledgeRequestParser())
+ControlPacketParser.add_parser('acknowledge', AcknowledgeRequestParser())
 
 class AckSPacketParser(CommandPacketParser):
     """
@@ -101,6 +113,6 @@ class AckVXPacketParser(CommandPacketParser):
     configuration.
     """
 
-AckVXPacketParser.add_field_parser(ControlAcknowledgeMode.request_warning, alias='Warnings')
-AckVXPacketParser.add_field_parser(ControlAcknowledgeMode.request_error, alias='Errors')
-AckVXPacketParser.add_field_parser(ControlAcknowledgeMode.partial, alias='Partial')
+AckVXPacketParser.add_field_parser(ControlAcknowledgeMode.request_warning, alias='warnings')
+AckVXPacketParser.add_field_parser(ControlAcknowledgeMode.request_error, alias='errors')
+AckVXPacketParser.add_field_parser(ControlAcknowledgeMode.partial, alias='partial')

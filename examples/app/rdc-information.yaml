@@ -1,0 +1,13 @@
+include:
+  - '../packets/querytuner-command.yaml'
+  - '../packets/configuretuner-command.yaml'
+  - '../packets/signal-data.yaml'
+  - '../packets/tunerinfo-context.yaml'
+
+RDCInformation:
+  information:
+    packet-classes:
+      - QueryTuner
+      - ConfigureTuner
+      - SignalData
+      - TunerInfo

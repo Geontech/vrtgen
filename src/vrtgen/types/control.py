@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -26,7 +26,9 @@ from . import enums
 
 __all__ = (
     'ControlAcknowledgeMode',
-    'MessageIdentifier'
+    'MessageIdentifier',
+    'UUIDIdentifier',
+    'CommandPrologue'
 )
 
 class ControlAcknowledgeMode(Struct):
@@ -70,6 +72,11 @@ class MessageIdentifier(IntegerType, bits=32, signed=False):
     packets (8.4).
     """
 
+class UUIDIdentifier(IntegerType, bits=128, signed=False):
+    """
+    UUID Control Identifier type
+    """
+
 class CommandPrologue(Prologue):
     """
     Command Packet prologue.
@@ -78,3 +85,5 @@ class CommandPrologue(Prologue):
     message_id = Field('Message ID', MessageIdentifier)
     controllee_id = Field('Controllee ID', Identifier32)
     controller_id = Field('Controller ID', Identifier32)
+    controllee_id_uuid = Field('Controllee ID', UUIDIdentifier)
+    controller_id_uuid = Field('Controller ID', UUIDIdentifier)

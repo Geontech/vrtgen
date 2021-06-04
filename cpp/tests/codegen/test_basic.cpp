@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Geon Technologies, LLC
+ * Copyright (C) 2021 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -19,7 +19,7 @@
 
 #include "catch/catch.hpp"
 
-#include "basic.hpp"
+#include "yamls/basic.hpp"
 
 #include <vector>
 #include <bytes.hpp>
@@ -44,7 +44,7 @@ TEST_CASE("Basic context message") {
     CHECK(header->getPacketSize() == 4);
     CHECK(header->getTimestampMode() == vrtgen::TSM::FINE);
     // NB: As configured, BasicContextPacket is V49.0-compatible
-    CHECK_FALSE(header->getNotaV49_0Packet());
+    CHECK_FALSE(header->getNotaV49d0Packet());
 
     CHECK(packing::BasicContextHelper::match(data.data(), data.size()));
 

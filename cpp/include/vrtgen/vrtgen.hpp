@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Geon Technologies, LLC
+ * Copyright (C) 2021 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -23,6 +23,7 @@
 #include <vrtgen/buffer.hpp>
 #include <vrtgen/enums.hpp>
 #include <vrtgen/types.hpp>
+#include <vrtgen/utils.hpp>
 #include <vrtgen/packing/header.hpp>
 #include <vrtgen/packing/trailer.hpp>
 #include <vrtgen/packing/cif0.hpp>

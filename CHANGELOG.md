@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2021-06-03
+### Added
+- Support for including other YAML files containing packet definitions
+- Support for Information Class YAML configurations
+- Generation of Controllee and Controller classes from Information Class specification
+- Socket classes to libvrtgen
+- Example packets and demo application
+### Changed
+- **The schema for YAML files has changed**.
+  All mappings in YAML configurations are now lowercase separated with dashes. See doc/yaml-guide.md for details.
+  **Existing YAML files must be updated to work with version 0.3.**
 ## [0.3.1] - 2020-04-20
 ### Changed
 - Fixed copy and move semantics for C++ `vrtgen::optional<T>` class.

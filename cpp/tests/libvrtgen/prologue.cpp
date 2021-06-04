@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Geon Technologies, LLC
+ * Copyright (C) 2021 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -102,7 +102,7 @@ TEST_CASE("Data Header getter methods")
     }
     SECTION("Not a V49.0 Packet") {
         data[0] = 0x02;
-        REQUIRE(header.getNotaV49_0Packet());
+        REQUIRE(header.getNotaV49d0Packet());
     }
     SECTION("Signal Spectrum or Signal Time Data Packet") {
         data[0] = 0x01;
@@ -122,7 +122,7 @@ TEST_CASE("Data Header setter methods")
         REQUIRE(data == bytes({0x04, 0x00, 0x00, 0x00}));
     }
     SECTION("Not a V49.0 Packet") {
-        header.setNotaV49_0Packet(true);
+        header.setNotaV49d0Packet(true);
         REQUIRE(data == bytes({0x02, 0x00, 0x00, 0x00}));
     }
     SECTION("Signal Spectrum or Signal Time Data Packet") {
@@ -139,9 +139,9 @@ TEST_CASE("Context Header getter methods")
     ContextHeader& header = *reinterpret_cast<ContextHeader*>(data.data());
 
     SECTION("Not a V49.0 Packet") {
-        CHECK_FALSE(header.getNotaV49_0Packet());
+        CHECK_FALSE(header.getNotaV49d0Packet());
         data[0] = 0x02;
-        REQUIRE(header.getNotaV49_0Packet());
+        REQUIRE(header.getNotaV49d0Packet());
     }
     SECTION("Timestamp Mode") {
         CHECK(header.getTimestampMode() == vrtgen::TSM::FINE);
@@ -158,7 +158,7 @@ TEST_CASE("Context Header setter methods")
     ContextHeader& header = *reinterpret_cast<ContextHeader*>(data.data());
 
     SECTION("Not a V49.0 Packet") {
-        header.setNotaV49_0Packet(true);
+        header.setNotaV49d0Packet(true);
         REQUIRE(data == bytes({0x02, 0x00, 0x00, 0x00}));
     }
     SECTION("Timestamp Mode") {

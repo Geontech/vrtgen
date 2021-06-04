@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Geon Technologies, LLC
+# Copyright (C) 2021 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -21,12 +21,15 @@ Context packet parser classes.
 
 from vrtgen.types.prologue import ContextHeader
 
-from .cif import CIFPacketParser
+from .base import PacketParser
+from .cif import CIFParser
 
-class ContextPacketParser(CIFPacketParser):
+class ContextPacketParser(PacketParser):
     """
     Parser for Context Packet configuration.
     """
 
-ContextPacketParser.add_field_value_parser(ContextHeader.timestamp_mode, alias='TSM')
-ContextPacketParser.add_field_value_parser(ContextHeader.not_v49d0, alias='Not V49.0')
+ContextPacketParser.add_field_value_parser(ContextHeader.timestamp_mode, alias='tsm')
+ContextPacketParser.add_field_value_parser(ContextHeader.not_v49d0, alias='not-v49d0')
+ContextPacketParser.add_parser('cif0', CIFParser())
+ContextPacketParser.add_parser('cif1', CIFParser())
