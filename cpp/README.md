@@ -4,7 +4,7 @@ C++ support for `vrtgen`.
 `vrtgen-cpp` comprises a Python plugin for `vrtgen` and a C++ header-only library.
 
 This is a work-in-progress and almost assuredly will break repeatedly.
-A stable 1.0 release will be available in the next few months. Feeback is welcome.
+A stable 1.0 release will be available in the next few months. Feedback is welcome.
 
 ## Dependencies
 
