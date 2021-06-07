@@ -3,7 +3,7 @@
 Generates native-language classes/structs for V49.2 packet definitons in a YAML configuration file.
 
 This is a work-in-progress and almost assuredly will break repeatedly. A stable 1.0 release will be
-available in the next few months. Feeback is welcome.
+available in the next few months. Feedback is welcome.
 
 ## Dependencies
 
@@ -68,6 +68,12 @@ vrtpktgen --help
 ## Testing
 
 The included test suite verifies the YAML parser and Python data model.
+Running the tests requires the `pytest` package to be installed.
+
+```sh
+pip3 install --user pytest
+```
+
 To run the test suite, from within the base directory:
 
 ```sh
