@@ -7,7 +7,12 @@ available in the next few months. Feedback is welcome.
 
 ## Dependencies
 
-`vrtgen` requires Python 3.6 as well as `pip` for Python 3.6.
+`vrtgen` requires Python >= 3.7 as well as `pip` for Python >= 3.7.
+
+To build the C++ header library, CMake 3.17 or later must be installed.
+
+Generated C++ code requires C++20 support.
+The only dependency is the C++ header library.
 
 ## Installation
 
@@ -23,11 +28,18 @@ This will install both the `vrtgen` Python modules and the `vrtpktgen` executabl
 
 ### Backend Installation
 
-`vrtgen` uses a plug-in system to install different native-language backends.
-Each backend must be installed before being available to the `vrtpktgen` executable.
+To build the C++ library tests and install the header files:
 
-A C++ backend is available in the `cpp` subdirectory of the source.
-For more information, see [cpp/README.md](./cpp/README.md).
+```sh
+cmake3 -B build
+cd build
+make
+sudo make install
+```
+
+On some Linux systems, CMake 3 is the default; run `cmake` instead of `cmake3`.
+
+The headers are installed to `/usr/local/include/vrtgen` by default.
 
 ### Developer Setup
 
@@ -47,35 +59,17 @@ pip install -e .
 
 This package installs a `vrtpktgen` executable in your path.
 The `vrtpktgen` program supports backend plug-ins to target different output types.
-By default, the `check` and `bindump` backends are installed.
+By default, the `cpp` backend is installed.
 
 Select an available backend with the first positional argument.
-To validate a YAML file, use the `check` backend:
 
-```sh
-vrtpktgen check <path-to-file.yml>
 ```
-
-Invalid packet configurations will be flagged with warnings and errors.
+vrtpktgen cpp <filename>.yaml
+```
 
 Help is available with the `--help` (or `-h`) option.
 To get general help or to check which backends are available:
 
 ```sh
 vrtpktgen --help
-```
-
-## Testing
-
-The included test suite verifies the YAML parser and Python data model.
-Running the tests requires the `pytest` package to be installed.
-
-```sh
-pip3 install --user pytest
-```
-
-To run the test suite, from within the base directory:
-
-```sh
-pytest
 ```

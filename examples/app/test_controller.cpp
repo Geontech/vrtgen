@@ -20,104 +20,133 @@
 #include <iostream>
 #include <chrono>
 
-#include "RDCInformationController.hpp"
+#include "ExampleInfoController.hpp"
 
-void handleTunerInfo(TunerInfo& packet)
+void handle_example_context(ExampleContext& packet)
 {
-    std::cout << "Received context packet..." << std::endl;
-    if (packet.hasSampleRate()) { 
-        std::cout << "New sample rate is: " << packet.getSampleRate() << std::endl;
+    std::cout << "----- Received context packet -----" << std::endl;
+    if (packet.has_bandwidth()) { 
+        std::cout << "  Context bandwidth is: " << packet.bandwidth() << std::endl;
     }
-    if (packet.hasRFReferenceFrequency()) {
-        std::cout << "New frequency is: " << packet.getRFReferenceFrequency() << std::endl;
+    if (packet.has_rf_ref_frequency()) {
+        std::cout << "  Context frequency is: " << packet.rf_ref_frequency() << std::endl;
     }
+    if (packet.has_sample_rate()) { 
+        std::cout << "  Context sample rate is: " << packet.sample_rate() << std::endl;
+    }
+    if (packet.has_gain()) {
+        std::cout << "  Context gain is: " << packet.gain().stage_1() << std::endl;
+    }
+    std::cout << "-----------------------------------\n" << std::endl;
 }
 
-void handleSignalData(SignalData& packet)
+void handle_signal_data(SignalData& packet)
 {
-    auto data = packet.getPayload();
-    std::cout << "Got data " << packet.getPayloadSize() << " bytes" << std::endl;
+    std::cout << "----- Received data packet -----" << std::endl;
+    std::cout << "  Trailer Valid Data: " << packet.valid_data() << std::endl;
+    auto data = packet.payload();
+    std::cout << "  Got " << packet.payload_size() << " bytes" << std::endl;
 
     // Verify data
-    std::vector<float> ramp(packet.getPayloadSize() / sizeof(float));
+    std::vector<uint16_t> ramp(packet.payload_size() / sizeof(float));
     auto got_ramp = true;
     for (size_t i=0; i<ramp.size(); ++i) {
-        auto data_val = *(reinterpret_cast<const float*>(data));
+        auto data_val = *(reinterpret_cast<const uint16_t*>(data));
         if (data_val != (i + 1)) {
-            std::cout << "Ramp failed at index: " << i
-                      << " (" << data_val << " vs " << (i+1) << ")" << std::endl;
+            std::cout << "  Ramp failed at index: " << i
+                      << " (" << data_val << " vs " << i/*(i+1)*/ << ")" << std::endl;
             got_ramp = false;
             break;
         }
-        data += sizeof(float);
+        data += sizeof(uint16_t);
     }
 
     if (got_ramp) {
-        std::cout << "Data ramp is valid." << std::endl;
+        std::cout << "  Data ramp is valid." << std::endl;
     } else {
-        std::cout << "Failed to get data ramp." << std::endl;
+        std::cout << "  Failed to get data ramp." << std::endl;
     }
+    std::cout << "--------------------------------\n" << std::endl;
 }
 
 int main()
 {
-    std::string ip = "127.0.0.1";
-    unsigned short port = 5000;
-    vrtgen::socket::endpoint::udp::v4 controllee_endpoint(ip, port);
-    vrtgen::socket::endpoint::udp::v4 controller_endpoint(ip, port+1000);
+    try {
+        std::string ip = "127.0.0.1";
+        unsigned short controllee_cmd_port = 5000;
+        unsigned short controller_cmd_port = 5001;
+        unsigned short controller_data_ctxt_port = 5002;
 
-    // Create a client instance
-    RDCInformationController controller(controller_endpoint);
+        // Create a client instance
+        ExampleInfoController controller({ ip, controller_cmd_port });
 
-    // Point socket to radio endpoint
-    controller.setControlleeEndpoint(controllee_endpoint);
+        // Point socket to radio endpoint
+        controller.controllee_endpoint({ ip, controllee_cmd_port });
 
-    // Make API function calls
-    double freq = 50;
-    // Command functions
-    std::cout << "Setting RF Reference Frequency to " << freq << "..." << std::endl;
-    controller.setRFReferenceFrequency(freq);
-    
-    std::cout << "Getting RF Reference Frequency..." << std::endl;
-    auto get_freq = controller.getRFReferenceFrequency();
+        // Setup data/context recv socket
+        controller.data_ctxt_src_endpoint({ ip, controller_data_ctxt_port });
 
-    // Register data listener
-    std::cout << "Registering data and context listeners..." << std::endl;
-    controller.registerSignalDataListener(handleSignalData);
-    controller.registerTunerInfoListener(handleTunerInfo);
+        // Send control packets
+        std::cout << ">>> Sending control packet..." << std::endl;
+        ExampleControl ctrl_packet;
+        ctrl_packet.stream_id(0x1234);
+        ctrl_packet.rf_ref_frequency(100e6);
+        ctrl_packet.bandwidth(1e6);
+        ctrl_packet.sample_rate(2e6);
+        auto ackx = controller.send_example_control(ctrl_packet);
+        std::cout << ">>> Received acknowledgement packet..." << std::endl;
 
-    // Start data receive
-    std::cout << "Enabling data stream..." << std::endl;
-    controller.enableReceive();
-    ::structs::configuretuner::DiscreteIO32 discrete_io_32;
-    discrete_io_32.setStreamEnableEnabled(true);
-    discrete_io_32.setStreamEnable(true);
-    controller.setDiscreteIO32(discrete_io_32);
-    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
-    
-    std::cout << "Changing frequency to: " << 100 << std::endl;
-    controller.setRFReferenceFrequency(100);
-    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
-    
-    std::cout << "Setting sample rate to: " << 20000 << std::endl;
-    controller.setSampleRate(20000.);
-    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
-    
-    std::cout << "Setting gain to: " << 2 << std::endl;
-    vrtgen::packing::Gain gain;
-    gain.setStage1(2.);
-    controller.setGain(gain);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+        // Register data listener
+        std::cout << ">>> Registering data and context listeners..." << std::endl;
+        controller.register_signal_data_listener(handle_signal_data);
+        controller.register_example_context_listener(handle_example_context);
 
-    // Stop data receive
-    std::cout << "Disabling data stream..." << std::endl;
-    controller.disableReceive();
-    discrete_io_32.setStreamEnable(false);
-    controller.setDiscreteIO32(discrete_io_32);   
+        // Start data receive
+        std::cout << ">>> Enabling data stream..." << std::endl;
+        controller.enable_receive();
+        example_control::structs::DiscreteIO32 discrete_io_32;
+        discrete_io_32.stream_enable_enable(true);
+        discrete_io_32.stream_enable(true);
+        ctrl_packet.discrete_io_32(discrete_io_32);
+        ackx = controller.send_example_control(ctrl_packet);
+        std::cout << ">>> Received acknowledgement packet..." << std::endl;
+        ctrl_packet.reset_discrete_io_32();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+        
+        std::cout << ">>> Changing frequency to: 200e6" << std::endl;
+        ctrl_packet.rf_ref_frequency(200e6);
+        ackx = controller.send_example_control(ctrl_packet);
+        std::cout << ">>> Received acknowledgement packet..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        
+        std::cout << ">>> Setting sample rate to: 4e6" << std::endl;
+        ctrl_packet.sample_rate(4e6);
+        ackx = controller.send_example_control(ctrl_packet);
+        std::cout << ">>> Received acknowledgement packet..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        
+        std::cout << ">>> Setting gain to: 2" << std::endl;
+        vrtgen::packing::Gain gain;
+        gain.stage_1(2.);
+        ctrl_packet.gain(gain);
+        ackx = controller.send_example_control(ctrl_packet);
+        std::cout << ">>> Received acknowledgement packet..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        // Stop data receive
+        std::cout << ">>> Disabling data stream..." << std::endl;
+        controller.disable_receive();
+        discrete_io_32.stream_enable(false);
+        ctrl_packet.discrete_io_32(discrete_io_32);   
+        ackx = controller.send_example_control(ctrl_packet);
+        std::cout << ">>> Received acknowledgement packet..." << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-    std::cout << "Done!" << std::endl;
+        std::cout << "Done!" << std::endl;
+    } catch(const std::exception& ex) {
+        std::cerr << "Error: " << ex.what() << std::endl;
+        return ~0;
+    }
 
     return 0;
 }

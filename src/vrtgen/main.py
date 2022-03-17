@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Geon Technologies, LLC
+# Copyright (C) 2022 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -78,7 +78,8 @@ def main():
                 dest=attr,
                 type=option.type,
                 help=option.help,
-                default=option.default
+                default=option.default,
+                choices=option.choices
             )
 
     # Load all registered generators and include their command line options
@@ -107,9 +108,9 @@ def main():
     for filename in args.filename:
         logging.debug('Parsing %s', filename)
         generator.start_file(filename)
-        for packet in parser.parse_file(filename):
+        for name,packet in parser.parse_file(filename, generator.get_loader()):
             try:
-                generator.generate(packet)
+                generator.generate(name, packet)
             except RuntimeError as exc:
                 logging.error('Generator error: %s', exc)
         generator.end_file()

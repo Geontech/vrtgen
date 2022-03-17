@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Geon Technologies, LLC
+# Copyright (C) 2022 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -18,4 +18,4 @@
 """
 Version information for vrtgen.
 """
-__version__ = '0.4.0'
+__version__ = '0.6.0'

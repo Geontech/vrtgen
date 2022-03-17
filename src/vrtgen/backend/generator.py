@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Geon Technologies, LLC
+# Copyright (C) 2019 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -61,6 +61,14 @@ class Generator(abc.ABC):
         Must be implemented by subclasses.
         """
 
+    @abc.abstractmethod
+    def get_loader(self):
+        """
+        Gets the yaml loader
+
+        Must be implemented by subclasses.
+        """
+
     @classmethod
     def get_options(cls):
         """
@@ -75,12 +83,13 @@ class GeneratorOption:
     When defining a generator, options should be declared as class-level
     attributes.
     """
-    def __init__(self, opt, doc=None, dtype=None, defval=None):
+    def __init__(self, opt, doc=None, dtype=None, defval=None, choices=None):
         self.opt = opt
         self.help = doc
         self.type = dtype
         self.default = defval
         self.attr = None
+        self.choices = None
 
     def __set_name__(self, owner, name):
         self.attr = '_' + name

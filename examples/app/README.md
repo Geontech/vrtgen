@@ -2,8 +2,8 @@
 
 This example is meant to be a simple demonstration of various packet classes
 being aggregated together to form a transactional interface for VITA 49.2. The
-following instructions assume that `vrtgen` and `vrtgen/cpp` have been
-installed per their respective READMEs.
+following instructions assume that `vrtgen` has been previously built from
+the top level of the repository.
 
 ## Generating VITA 49.2 Code
 
@@ -27,28 +27,29 @@ YAML. These packet specifications can be found one directory back at
 ## Implement Stub Functions
 
 At this point, running `make` will succeed, but the code isn't quite ready to
-be executed. If the code were to be executed, there would be exceptions thrown
-by the Controllee application because certain functions have not yet been
-implemented. Examining the `RDCInformationControllee.hpp` file we can see why:
+be executed. If the code were to be executed, there would be an exception thrown
+by the Controllee application because the control packet callback handler would
+not have been implemented yet. Examining the `ExampleInformationClassControllee.hpp`
+file we can see why:
 
 ```
-virtual double getBandwidth()
+virtual void handle_example_control(const ExampleControl& packet)
 {
     // AUTO-GENERATED FUNCTION STUB
-    // IMPLEMENT HARDWARE-SPECIFIC FUNCTIONALITY HERE
-    throw std::runtime_error("getBandwidth not implemented");
+    // IMPLEMENT PACKET HANDLING FUNCTIONALITY HERE
+    throw std::runtime_error("handle_example_control not implemented");
 }
 ```
 
-All of the functions in this file are stubbed out to throw a
+All packet handlers in this file get stubbed out to throw a
 `std::runtime_error` by default. The functions in this file are left as stubs
-to be implemented with the hardware-specific functionality that is required
-to interface with the radio.
+to be implemented with the specific functionality that is required for the
+user's application.
 
 To add in some functionality to the Controllee interface, run the following:
 
 ```
-cp .RDCInformationControllee.hpp RDCInformationControllee.hpp
+cp .ExampleInfoControllee.hpp ExampleInfoControllee.hpp
 ```
 
 ## Build
@@ -60,7 +61,7 @@ make
 ## Run
 
 In a terminal window first launch the Controllee interface to act as the mock
-radiohead waiting for VRT commands.
+application waiting for VRT commands.
 
 ```
 ./test_controllee

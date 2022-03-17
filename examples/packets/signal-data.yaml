@@ -1,7 +1,10 @@
-SignalData:
-  data:
-    stream-id: required
-    class-id: required
-    timestamp:
-      integer: utc
-      fractional: picoseconds
+SignalData: !Data
+  stream_id: !StreamID
+  class_id: !ClassID
+    oui: FF-EE-DD
+    packet_code: 0xA
+  timestamp: !Timestamp
+    integer: utc
+    fractional: picoseconds
+  trailer: !Trailer
+    valid_data: required

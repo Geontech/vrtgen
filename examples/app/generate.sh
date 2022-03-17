@@ -1,3 +1,3 @@
 #!/bin/bash
 
-vrtpktgen cpp rdc-information.yaml
+vrtpktgen cpp example-information.yaml

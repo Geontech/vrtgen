@@ -19,22 +19,29 @@
 
 #include <iostream>
 
-#include "RDCInformationControllee.hpp"
+#include "ExampleInfoControllee.hpp"
 
 int main()
 {
-    // Create a controllee instance
-    RDCInformationControllee controllee;
-
-    // Bind this server for incoming vrt messages
     std::string ip = "127.0.0.1";
     unsigned short port = 5000;
-    vrtgen::socket::endpoint::udp::v4 listen_endpoint(ip, port);
-    if (!controllee.bind(listen_endpoint)) {
-        std::cerr << "Failed to bind controllee socket" << std::endl;
-        return ~0;
+
+    // Create a controllee instance
+    ExampleInfoControllee controllee({ ip, port });
+    std::cout << "Successfully bound controllee socket to: " << controllee.cmd_socket().src().to_string() << std::endl;
+
+    // Enable TCP accept
+    if (!controllee.cmd_socket().listen()) {
+        std::cout << "Socket failed to listen. Exiting..." << std::endl;
+        return 1;
     }
-    std::cout << "Successfully bound controllee socket to: " << listen_endpoint.to_string() << std::endl;
+    std::cout << "Listening for connections..." << std::endl;
+    controllee.cmd_socket().timeout(10);
+    if (!controllee.cmd_socket().accept()) {
+        std::cout << "Socket failed to accept incoming connections. Exiting..." << std::endl;
+        return 1;
+    }
+    std::cout << "Accepted incoming connection..." << std::endl;
 
     // Listen
     controllee.vrt_listen();

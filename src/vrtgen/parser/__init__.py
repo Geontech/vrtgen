@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Geon Technologies, LLC
+# Copyright (C) 2019 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -15,91 +15,60 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
-"""
-Main package for VITA 49 packet configuration parsing.
-"""
-import logging
+import yaml, logging
 
-import yaml
-
-from vrtgen.model.config import create_configuration
-from vrtgen.model.config import InformationClassConfiguration
-from vrtgen.model.config import InformationType, PacketType
-
-from vrtgen.parser import packet
-from vrtgen.parser import informationclass
-from vrtgen.parser.utils import to_kvpair, EMPTY
+from vrtgen.parser.model.command import AcknowledgePacket
+from vrtgen.parser.model.information import InformationClass
 
 __all__ = (
-    'parse_configuration',
     'parse_file',
     'parse_stream'
 )
 
-def _create_parser(config_type):
-    if isinstance(config_type, PacketType):
-        return packet.create_parser(config_type)
-    if isinstance(config_type, InformationType):
-        return informationclass.create_parser()
-    raise ValueError('invalid class type {}'.format(config_type))
-
-def parse_configuration(name, value, include_files=None):
-    """
-    Parses a VITA 49 class definition.
-    """
-    log = logging.getLogger(name)
-    config_type, config_value = to_kvpair(value)
-    try:
-        config_type = PacketType(config_type.casefold())
-    except ValueError:
-        try:
-            config_type = InformationType(config_type.casefold())
-        except ValueError as err:
-            raise err
-    config = create_configuration(config_type, name)
-    parser = _create_parser(config_type)
-
-    if config_value is not EMPTY:
-        parser(log, config, config_value)
-
-    if isinstance(config, InformationClassConfiguration) and include_files:
-        for include_file in include_files:
-            info_class_packets = config.get_packet_classes()
-            packets = parse_file(include_file)
-            for pkt in packets:
-                if pkt.name in info_class_packets:
-                    config.add_packet(pkt)
-
-    return config
-
-def parse_file(filename):
+def parse_file(filename, loader):
     """
     Parses VITA 49 class definitions from a YAML file.
     """
     with open(filename, 'r') as file:
-        yield from parse_stream(file)
+        yield from parse_stream(file, loader)
 
-def parse_stream(stream):
+def parse_stream(stream, loader):
     """
     Parses VITA 49 class definitions from a file-like object.
     """
-    document = yaml.safe_load(stream)
-
-    include_files = []
-    for name, value in document.items():
+    parsed = yaml.load(stream, Loader=loader)
+    parsed_packets = {}
+    has_information_class = False
+    for name, value in parsed.items():
+        if isinstance(value, InformationClass):
+            has_information_class = True
+            break
+    for name, value in parsed.items():
         if name.startswith('.'):
             logging.debug("Skipping hidden entry %s", name)
         elif name == 'include':
             if not isinstance(value, list):
-                raise TypeError('includes must be a list')
-            include_files = value
+                raise TypeError('include must be a list')
+            for filename in value:
+                for inc_name, inc_value in parse_file(filename, loader):
+                    parsed_packets[inc_name] = inc_value
+        elif isinstance(value, InformationClass):
+            class_names = value.packet_classes.values
+            for pkt_name in class_names:
+                packet = parsed_packets.get(pkt_name, None)
+                if packet:
+                    packet.class_id.information_code.value = value.code
+                    yield pkt_name,packet
+                else:
+                    raise ValueError('Unknown packet class:', pkt_name)
+            yield name,value
         else:
             logging.info('Processing YAML class definition: %s', name)
-            try:
-                configuration = parse_configuration(name, value, include_files)
-                configuration.validate()
-                yield configuration
-            except (ValueError, TypeError) as exc:
-                logging.error("Invalid packet definition '%s': %s", name, str(exc))
-            except RuntimeError as exc:
-                logging.exception("%s %s", name, str(exc))
+            parsed_packets[name] = value
+            if isinstance(value, AcknowledgePacket):
+                ctrl_packet = parsed_packets.get(value.responds_to, None)
+                if not ctrl_packet:
+                    raise ValueError('Unknown control packet provided in responds_to for', name)
+                value.update_from_control(ctrl_packet)
+            if not has_information_class:
+                yield name,value
