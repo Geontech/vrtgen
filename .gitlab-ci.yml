@@ -1,74 +1,389 @@
 stages:
+    - build
     - test
     - package
 
-image: python:3.6-alpine
-
-test:
-    stage: test
+.pre:centos:7:
     before_script:
-        - pip install .
-        - pip install pytest
+        - yum -y update
+        - yum install -y epel-release centos-release-scl
+        - yum install -y make cmake3 devtoolset-10-gcc-c++ rh-python38-python-pip which
+        # Enable updated packages
+        # Note: scl enable failing in ci, manually modifying $PATH
+        # - scl enable devtoolset-10 /bin/bash
+        # - scl enable rh-python38 /bin/bash
+        - export PATH=/opt/rh/devtoolset-10/root/usr/bin:$PATH
+        - export PATH=/opt/rh/rh-python38/root/usr/local/bin:/opt/rh/rh-python38/root/usr/bin:$PATH
+        - python -m pip install --upgrade pip
+        - python -m pip install pytest pylint
+        - python -m pip install .
+        - cmake3 -B build -DJUNIT_OUTPUT=yes .
+        - export MAKEFLAGS="-j$(nproc)"
+
+.pre:rockylinux:8:
+    before_script:
+        - yum -y update
+        - yum install -y python38-pip gcc-toolset-10-gcc-c++ make cmake libarchive
+        # Enable updated packages
+        - export PATH=/opt/rh/gcc-toolset-10/root/usr/bin:$PATH
+        - python3 -m pip install --upgrade pip
+        - python3 -m pip install pytest pylint
+        - python3 -m pip install .
+        - cmake -B build -DJUNIT_OUTPUT=yes .
+        - export MAKEFLAGS="-j$(nproc)"
+
+.pre:ubuntu:18.04:
+    before_script:
+        - echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+        - apt update
+        - apt install -y software-properties-common wget
+        # Extra repositories for g++, python, and cmake
+        - add-apt-repository -y ppa:ubuntu-toolchain-r/test
+        - add-apt-repository -y ppa:deadsnakes/ppa
+        - wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
+        - apt-add-repository -y 'deb https://apt.kitware.com/ubuntu/ bionic main'
+        - apt update
+        # Install g++
+        - apt install -y g++-10
+        - export CXX=g++-10
+        # Install Python 3.8
+        - apt install -y python3.8-full
+        - wget https://bootstrap.pypa.io/get-pip.py
+        - python3.8 get-pip.py
+        # Install cmake
+        - apt install -y cmake
+        - python3.8 -m pip install --upgrade pip
+        - python3.8 -m pip install pytest pylint
+        - python3.8 -m pip install .
+        - cmake -B build -DJUNIT_OUTPUT=yes .
+        - export MAKEFLAGS="-j$(nproc)"
+
+.pre:ubuntu:20.04:
+    before_script:
+        - echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+        - apt update
+        - apt install -y g++-10 python3-pip wget software-properties-common
+        - wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
+        - apt-add-repository -y 'deb https://apt.kitware.com/ubuntu/ focal main'
+        - apt update
+        - apt install -y cmake
+        - export CXX=g++-10
+        - python3 -m pip install --upgrade pip
+        - python3 -m pip install pytest pylint
+        - python3 -m pip install .
+        - cmake -B build -DJUNIT_OUTPUT=yes .
+        - export MAKEFLAGS="-j$(nproc)"
+
+# Build Stage Jobs
+build:centos:7:
+    image: centos:7
+    stage: build
+    extends: .pre:centos:7
     script:
-        - pytest --color=yes --junit-xml=vrtgen-tests.xml
-    artifacts:
-        paths:
-            - vrtgen-tests.xml
-        reports:
-            junit: vrtgen-tests.xml
+        - make -C build
 
-lint:
+build:rockylinux:8:
+    image: rockylinux/rockylinux:8
+    stage: build
+    extends: .pre:rockylinux:8
+    script:
+        - make -C build
+
+build:ubuntu:18.04:
+    image: ubuntu:18.04
+    stage: build
+    extends: .pre:ubuntu:18.04
+    script:
+        - make -C build
+
+build:ubuntu:20.04:
+    image: ubuntu:20.04
+    stage: build
+    extends: .pre:ubuntu:20.04
+    script:
+        - make -C build
+
+# Centos 7 Testing
+lint:centos:7:
+    image: centos:7
     stage: test
-    before_script:
-        - apk add gcc musl-dev
-        - pip install .
-        - pip install pylint
+    extends: .pre:centos:7
+    dependencies:
+        - build:centos:7
+    needs: ["build:centos:7"]
     script:
         # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
         # Unfortunately, even if the command completely fails (e.g., invalid
         # path) it still exits with 0.
         - pylint -f colorized --exit-zero src/
 
-test:cpp:
+test:centos:7:
+    image: centos:7
     stage: test
-    before_script:
-        - apk add g++ make cmake
-        - pip install .
-        - cd cpp
-        - pip install .
-        - cmake -B build -DJUNIT_OUTPUT=yes .
-        - cd build
-        - export MAKEFLAGS="-j$(nproc)"
+    extends: .pre:centos:7
+    dependencies:
+        - build:centos:7
+    needs: ["build:centos:7"]
     script:
-        - make check
+        - pytest --color=yes --junit-xml=vrtgen-pytests.xml
     artifacts:
         paths:
-            - cpp/build/*-results.xml
+            - vrtgen-pytests.xml
         reports:
-            junit: cpp/build/*-results.xml
+            junit: vrtgen-pytests.xml
 
-# Build release RPMs
-rpmbuild:
+test:cpp:centos:7:
+    image: centos:7
+    stage: test
+    extends: .pre:centos:7
+    dependencies:
+        - build:centos:7
+    needs: ["build:centos:7"]   
+    script:
+        - make -C build check
+    artifacts:
+        paths:
+            - build/*-results.xml
+        reports:
+            junit: build/*-results.xml
+
+# Centos 8 Testing
+lint:rockylinux:8:
+    image: rockylinux/rockylinux:8
+    stage: test
+    extends: .pre:rockylinux:8
+    dependencies:
+        - build:rockylinux:8
+    needs: ["build:rockylinux:8"]
+    script:
+        # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
+        # Unfortunately, even if the command completely fails (e.g., invalid
+        # path) it still exits with 0.
+        - pylint -f colorized --exit-zero src/
+
+test:rockylinux:8:
+    image: rockylinux/rockylinux:8
+    stage: test
+    extends: .pre:rockylinux:8
+    dependencies:
+        - build:rockylinux:8
+    needs: ["build:rockylinux:8"]
+    script:
+        - pytest --color=yes --junit-xml=vrtgen-pytests.xml
+    artifacts:
+        paths:
+            - vrtgen-pytests.xml
+        reports:
+            junit: vrtgen-pytests.xml
+
+test:cpp:rockylinux:8:
+    image: rockylinux/rockylinux:8
+    stage: test
+    extends: .pre:rockylinux:8
+    dependencies:
+        - build:rockylinux:8
+    needs: ["build:rockylinux:8"]
+    script:
+        - make -C build check
+    artifacts:
+        paths:
+            - build/*-results.xml
+        reports:
+            junit: build/*-results.xml
+
+# Ubuntu 18.04 Testing
+lint:ubuntu:18.04:
+    image: ubuntu:18.04
+    stage: test
+    extends: .pre:ubuntu:18.04
+    dependencies:
+        - build:ubuntu:18.04
+    needs: ["build:ubuntu:18.04"]
+    script:
+        # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
+        # Unfortunately, even if the command completely fails (e.g., invalid
+        # path) it still exits with 0.
+        - pylint -f colorized --exit-zero src/
+
+test:ubuntu:18.04:
+    image: ubuntu:18.04
+    stage: test
+    extends: .pre:ubuntu:18.04
+    dependencies:
+        - build:ubuntu:18.04
+    needs: ["build:ubuntu:18.04"]
+    script:
+        - pytest --color=yes --junit-xml=vrtgen-pytests.xml
+    artifacts:
+        paths:
+            - vrtgen-pytests.xml
+        reports:
+            junit: vrtgen-pytests.xml
+
+test:cpp:ubuntu:18.04:
+    image: ubuntu:18.04
+    stage: test
+    extends: .pre:ubuntu:18.04
+    dependencies:
+        - build:ubuntu:18.04
+    needs: ["build:ubuntu:18.04"]
+    script:
+        - make -C build check
+    artifacts:
+        paths:
+            - build/*-results.xml
+        reports:
+            junit: build/*-results.xml
+
+# Ubuntu 20.04 Testing
+lint:ubuntu:20.04:
+    image: ubuntu:20.04
+    stage: test
+    extends: .pre:ubuntu:20.04
+    dependencies:
+        - build:ubuntu:20.04
+    needs: ["build:ubuntu:20.04"]
+    script:
+        # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
+        # Unfortunately, even if the command completely fails (e.g., invalid
+        # path) it still exits with 0.
+        - pylint -f colorized --exit-zero src/
+
+test:ubuntu:20.04:
+    image: ubuntu:20.04
+    stage: test
+    extends: .pre:ubuntu:20.04
+    dependencies:
+        - build:ubuntu:20.04
+    needs: ["build:ubuntu:20.04"]
+    script:
+        - pytest --color=yes --junit-xml=vrtgen-pytests.xml
+    artifacts:
+        paths:
+            - vrtgen-pytests.xml
+        reports:
+            junit: vrtgen-pytests.xml
+
+test:cpp:ubuntu:20.04:
+    image: ubuntu:20.04
+    stage: test
+    extends: .pre:ubuntu:20.04
+    dependencies:
+        - build:ubuntu:20.04
+    needs: ["build:ubuntu:20.04"]
+    script:
+        - make -C build check
+    artifacts:
+        paths:
+            - build/*-results.xml
+        reports:
+            junit: build/*-results.xml
+
+# Build release RPMs/debs
+rpmbuild:centos:7:
     stage: package
     image: centos:7
-    before_script:
-        - yum install -y epel-release rpm-build python3
-        - yum install -y cmake3 gcc-c++ make
+    extends: .pre:centos:7
+    dependencies:
+        - build:centos:7
+    needs: [
+        "build:centos:7",
+        "lint:centos:7",
+        "test:centos:7",
+        "test:cpp:centos:7"
+    ]
     script:
-        # Base package
-        - python3 setup.py bdist_rpm
-        # C++ codegen plugin
-        - cd cpp
-        - python3 setup.py bdist_rpm --dist-dir ../dist
-        - cd ..
+        - yum install -y rpm-build
+        - python3.7 setup.py bdist_rpm --requires="python3-PyYAML python3-jinja2"
         # C++ library packaging (requires installing Python RPMs)
         - yum install -y dist/vrtgen-*.noarch.rpm
-        - cmake3 -B release cpp
+        - cmake3 -B release
         - cd release
         - cpack3 -G RPM
         - mv *.rpm ../dist
     artifacts:
         paths:
             - dist/*.rpm
+    only:
+        - tags
+
+rpmbuild:rockylinux:8:
+    stage: package
+    image: rockylinux/rockylinux:8
+    extends: .pre:rockylinux:8
+    dependencies:
+        - build:rockylinux:8
+    needs: [
+        "build:rockylinux:8",
+        "lint:rockylinux:8",
+        "test:rockylinux:8",
+        "test:cpp:rockylinux:8"
+    ]
+    script:
+        - yum install -y rpm-build
+        - python3 setup.py bdist_rpm --requires="python3-pyyaml python3-jinja2"
+        # C++ library packaging (requires installing Python RPMs)
+        - yum install -y dist/vrtgen-*.noarch.rpm
+        - cmake -B release
+        - cd release
+        - cpack -G RPM
+        - mv *.rpm ../dist
+    artifacts:
+        paths:
+            - dist/*.rpm
+    only:
+        - tags
+
+debbuild:ubuntu:18.04:
+    stage: package
+    image: ubuntu:18.04
+    extends: .pre:ubuntu:18.04
+    dependencies:
+        - build:ubuntu:18.04
+    needs: [
+        "build:ubuntu:18.04",
+        "lint:ubuntu:18.04",
+        "test:ubuntu:18.04",
+        "test:cpp:ubuntu:18.04"
+    ]
+    script:
+        - apt install -y python3-stdeb fakeroot python-all dh-python
+        - python3 setup.py --command-packages=stdeb.command bdist_deb
+        # C++ library packaging (requires installing Python RPMs)
+        - apt install -y ./deb_dist/*.deb
+        - cmake -B release
+        - cd release
+        - cpack -G DEB
+        - mv *.deb ../deb_dist
+    artifacts:
+        paths:
+            - deb_dist/*.deb
+    only:
+        - tags
+       
+debbuild:ubuntu:20.04:
+    stage: package
+    image: ubuntu:20.04
+    extends: .pre:ubuntu:20.04
+    dependencies:
+        - build:ubuntu:20.04
+    needs: [
+        "build:ubuntu:20.04",
+        "lint:ubuntu:20.04",
+        "test:ubuntu:20.04",
+        "test:cpp:ubuntu:20.04"
+    ]
+    script:
+        - apt install -y python3-stdeb fakeroot python-all dh-python
+        - python3 setup.py --command-packages=stdeb.command bdist_deb
+        # C++ library packaging (requires installing Python RPMs)
+        - apt install -y ./deb_dist/*.deb
+        - cmake -B release
+        - cd release
+        - cpack -G DEB
+        - mv *.deb ../deb_dist
+    artifacts:
+        paths:
+            - deb_dist/*.deb
     only:
         - tags
