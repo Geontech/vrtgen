@@ -172,9 +172,9 @@ class {{ class_name }}
     using data_ctxt_endpoint_type = typename data_ctxt_socket_type::endpoint_type;
 {%   endif %}
 {% endfor %}
-protected:
 {% for packet in packets if packet.is_control %}
 {%   if loop.first %}
+protected:
     using cmd_endpoint_type = typename cmd_socket_type::endpoint_type;
 {%   endif %}
 {% endfor %}
@@ -183,12 +183,72 @@ public:
     {{ class_name }}() = default;
     virtual ~{{ class_name }}()
     {
+{% for packet in packets if packet.is_control %}
+{%   if loop.first %}
         _listening = false;
         if (_recv_thread.joinable()) {
             _recv_thread.join();
         }
+{%   endif %}
+{% endfor %}
+    }
+{% for packet in packets if (packet.is_data or packet.is_context) %}
+{%   if loop.first %}
+
+    /**
+    * @brief Bind the data/context recv socket to the desired endpoint for receiving data/context packets
+    */
+    void data_ctxt_src_endpoint(const data_ctxt_endpoint_type& endpoint)
+    {
+        if (!_data_ctxt_recv_socket.bind(endpoint)) {
+            throw std::runtime_error("Failed to bind data/context receive socket to " + endpoint.to_string());
+        }
     }
 
+    /**
+    * @brief Get the source endpoint for receiving data and context packets
+    */
+    const data_ctxt_endpoint_type& data_ctxt_src_endpoint() const
+    {
+        return _data_ctxt_recv_socket.src();
+    }
+
+    /**
+    * @brief Return a reference to the data/context recv socket for data/context packets
+    */
+    data_ctxt_socket_type& data_ctxt_recv_socket() noexcept
+    {
+        return _data_ctxt_recv_socket;
+    }
+
+    /**
+    * @brief Set the destination endpoint to send data and context packets to
+    */
+    void data_ctxt_dst_endpoint(const data_ctxt_endpoint_type& endpoint)
+    {
+        _data_ctxt_send_socket.dst(endpoint);
+    }
+
+    /**
+    * @brief Get the destination endpoint to send data and context packets to
+    */
+    const data_ctxt_endpoint_type& data_ctxt_dst_endpoint() const
+    {
+        return _data_ctxt_send_socket.dst();
+    }
+
+    /**
+    * @brief Return a reference to the data/context send socket for sending data/context packets
+    */
+    data_ctxt_socket_type& data_ctxt_send_socket() noexcept
+    {
+        return _data_ctxt_send_socket;
+    }
+{%   endif %}
+{% endfor %}
+
+{% for packet in packets if packet.is_control %}
+{%   if loop.first %}
     cmd_socket_type& cmd_socket() noexcept
     {
         return _cmd_socket;
@@ -202,7 +262,7 @@ public:
         }
     }
 
-{% for packet in packets if packet.is_control %}
+{%   endif %}
     virtual void handle_{{ packet.name | to_snake }}(const {{ packet.name }}& packet) = 0;
 {% if loop.last %}
 
@@ -221,9 +281,9 @@ protected:
 {%   endif %}
 {% endfor %}
 
-private:
 {% for packet in packets if packet.is_control %}
 {%   if loop.first %}
+private:
     std::thread _recv_thread;
     std::atomic_bool _listening{ false };
 {%   endif %}
