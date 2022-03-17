@@ -1,0 +1,38 @@
+/*#
+ * Copyright (C) 2021 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- from "macros/helper/match.jinja2" import define_match %}
+{%- from "macros/helper/bytes_required.jinja2" import define_bytes_required %}
+{%- from "macros/helper/pack.jinja2" import define_pack %}
+{%- from "macros/helper/unpack.jinja2" import define_unpack %}
+#include <vrtgen/buffer.hpp>
+#include "{{ header }}"
+
+{% for packet in packets %}
+using {{namespace}}::packing::{{packet.helper}};
+
+{{ define_match(packet, type_helper) | trim }}
+
+{{ define_bytes_required(packet, type_helper) | trim }}
+
+{{ define_pack(packet, type_helper) | trim }}
+
+{{ define_unpack(packet, type_helper) | trim }}
+
+{% endfor %}

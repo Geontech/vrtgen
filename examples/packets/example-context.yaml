@@ -1,0 +1,9 @@
+ExampleContext: !Context
+  timestamp: !Timestamp
+    integer: utc
+    fractional: picoseconds
+  cif_0: !CIF0
+    bandwidth: optional
+    rf_ref_frequency: optional
+    gain: optional
+    sample_rate: optional

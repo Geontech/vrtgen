@@ -1,0 +1,80 @@
+/*#
+ * Copyright (C) 2021 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+{% from "packet.hpp.jinja2" import define_packet, define_class %}
+{% from "enums.hpp.jinja2" import define_enum %}
+#pragma once
+
+#include <cstddef>
+#include <vector>
+#include <cstring>
+#include <vrtgen/vrtgen.hpp>
+
+namespace packing {
+{%   for packet in packets %}
+    struct {{packet.helper}};
+{%   endfor %}
+} // end namespace packing
+{%   for packet in packets if packet.enums %}
+{%     if loop.first %}
+
+namespace enums {
+{%     endif %}
+{%     for enum in packet.enums %}
+{{ define_enum(enum) }}
+
+{%     endfor %}
+{%     if loop.last %}
+} // end namespace enums
+{%     endif %}
+{%   endfor %}
+{%   for packet in packets if packet.structs %}
+{%     if loop.first %}
+
+namespace structs {
+{%     endif %}
+{%     for struct in packet.structs %}
+{{ define_class(struct) }}
+
+{%     endfor %}
+{%     if loop.last %}
+} // end namespace structs
+{%     endif %}
+{%   endfor %}
+
+{%     for packet in packets %}
+{{ define_packet(packet) }}
+
+{%     endfor %}
+
+/**
+ * namespace packing
+ */
+namespace packing {
+
+{%     for packet in packets %}
+    struct {{ packet.helper }}
+    {
+        static bool match(const void* ptr, size_t length);
+        static size_t bytes_required(const {{packet.name}}& packet);
+        static std::vector<uint8_t> pack(const {{packet.name}}& packet);
+        static void unpack({{packet.name}}& packet, const void* ptr, size_t bufsize);
+    }; // end struct {{packet.helper}}
+
+{%     endfor %}
+} // end namespace packing

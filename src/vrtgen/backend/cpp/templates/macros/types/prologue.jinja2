@@ -1,0 +1,64 @@
+/*#
+ * Copyright (C) 2021 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- import "macros/types/basic.jinja2" as basic %}
+
+{%- macro public_functions(packet, type_helper) %}
+{{ basic.const_ref_getter(packet.header, type_helper) | trim }}
+
+{{ basic.getters_and_setters(packet.header.packet_count, type_helper) | trim }}
+
+{% if packet.stream_id.enabled %}
+{{ basic.getters_and_setters(packet.stream_id, type_helper) | trim }}
+
+{% endif %}
+{% if packet.class_id.enabled %}
+{{ basic.const_ref_getter(packet.class_id, type_helper) | trim }}
+
+{% endif %}
+{% if packet.timestamp.enabled %}
+{%     if packet.timestamp.integer.enabled %}
+{{ basic.getters_and_setters(packet.timestamp.integer, type_helper) | trim }}
+
+{%     endif %}
+{%     if packet.timestamp.fractional.enabled %}
+{{ basic.getters_and_setters(packet.timestamp.fractional, type_helper) | trim }}
+
+{%     endif %}
+{% endif %}
+{% endmacro %}
+
+{%- macro members(packet, type_helper) %}
+{{ basic.member(packet.header, type_helper) | trim }}
+{{ basic.member(packet.header.packet_count, type_helper) | trim }}
+{% if packet.stream_id.enabled %}
+{{ basic.member(packet.stream_id, type_helper) | trim }}
+{% endif %}
+{% if packet.class_id.enabled %}
+{{ basic.member(packet.class_id, type_helper) | trim }}
+{% endif %}
+{% if packet.timestamp.enabled %}
+{%   if packet.timestamp.integer.enabled %}
+{{ basic.member(packet.timestamp.integer, type_helper) | trim }}
+{%   endif %}
+{%   if packet.timestamp.fractional.enabled %}
+{{ basic.member(packet.timestamp.fractional, type_helper) | trim }}
+{%   endif %}
+{% endif %}
+{% endmacro %}

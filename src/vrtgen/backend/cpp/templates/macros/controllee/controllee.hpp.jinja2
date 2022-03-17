@@ -1,0 +1,149 @@
+/*#
+ * Copyright (C) 2021 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+{%- macro handle_query(packet) %}
+{% if packet.cif0.enabled %}
+{%   for field in packet.cif0.fields if field.enabled and not field.indicator_only %}
+virtual {{ type_helper.value_type(field.type_) }} {{ field.getter }}()
+{
+    // AUTO-GENERATED FUNCTION STUB
+    // IMPLEMENT HARDWARE-SPECIFIC FUNCTIONALITY HERE
+    throw std::runtime_error("{{ field.getter }} getter not implemented");
+}
+
+{%   endfor %}
+{% endif %}
+{% if packet.cif1.enabled %}
+{%   for field in packet.cif1.fields if field.enabled and not field.indicator_only %}
+virtual {{ type_helper.value_type(field.type_) }} {{ field.getter }}()
+{
+    // AUTO-GENERATED FUNCTION STUB
+    // IMPLEMENT HARDWARE-SPECIFIC FUNCTIONALITY HERE
+    throw std::runtime_error("{{ field.getter }} getter not implemented");
+}
+
+{%   endfor %}
+{% endif %}
+{% if packet.cif2.enabled %}
+{%   for field in packet.cif2.fields if field.enabled and not field.indicator_only %}
+virtual {{ type_helper.value_type(field.type_) }} {{ field.getter }}()
+{
+    // AUTO-GENERATED FUNCTION STUB
+    // IMPLEMENT HARDWARE-SPECIFIC FUNCTIONALITY HERE
+    throw std::runtime_error("{{ field.getter }} getter not implemented");
+}
+
+{%   endfor %}
+{% endif %}
+{% endmacro %}
+
+{%- macro define_cif_configure(packet, cif) %}
+{% for field in cif.fields if field.enabled and not field.indicator_only %}
+{%   if packet.config.warnings_enabled and packet.config.errors_enabled %}
+virtual warnings_errors_tup_t {{ field.setter }}(const {{ type_helper.value_type(field.type_) }}{{ '&' if not type_helper.is_scalar(field.type_) }} value)
+{%   elif packet.config.warnings_enabled or packet.config.errors_enabled %}
+virtual warnings_errors_t {{ field.setter }}(const {{ type_helper.value_type(field.type_) }}{{ '&' if not type_helper.is_scalar(field.type_) }} value)
+{%   else %}
+virtual void {{ field.setter }}(const {{ type_helper.value_type(field.type_) }}{{ '&' if not type_helper.is_scalar(field.type_) }} value)
+{%   endif %}
+{
+    // AUTO-GENERATED FUNCTION STUB
+    // IMPLEMENT HARDWARE-SPECIFIC FUNCTIONALITY HERE
+    throw std::runtime_error("{{ field.setter }} setter not implemented");
+}
+
+{% endfor %}
+{% endmacro %}
+
+{%- macro handle_configure(packet) %}
+{% if packet.cif0.enabled %}
+{{ define_cif_configure(packet, packet.cif0) | trim }}
+
+{% endif %}
+{% if packet.cif1.enabled %}
+{{ define_cif_configure(packet, packet.cif1) | trim }}
+
+{% endif %}
+{% if packet.cif2.enabled %}
+{{ define_cif_configure(packet, packet.cif2) | trim }}
+
+{% endif %}
+{% endmacro %}
+
+{%- macro handle_data(packet) %}
+virtual void send_{{ packet.name | to_snake }}({{ packet.name }}& value)
+{
+    // AUTO-GENERATED FUNCTION STUB
+    // IMPLEMENT HARDWARE-SPECIFIC FUNCTIONALITY HERE
+    throw std::runtime_error("send_{{ packet.name | to_snake }} not implemented");
+}
+{% endmacro %}
+
+{%- macro define_controllee(class_name, base_class_name) %}
+#ifndef {{ class_name.upper() }}_HPP
+#define {{ class_name.upper() }}_HPP
+
+#include <stdexcept>
+
+#include "{{ base_class_name }}.hpp"
+
+class {{ class_name }} : public {{ base_class_name }}
+{
+
+public:
+    {{ class_name }}() = default;
+    virtual ~{{ class_name }}() = default;
+
+    /**
+     * @brief Mark the start of a packet being processed
+     * @param message_id Packet message identifier
+     * @param controller_id Optional packet controller identifier
+     * 
+     * This function is executed prior to any callbacks.
+     */
+    virtual void packet_begin(uint32_t message_id, std::variant<std::monostate, uint32_t, std::string> controller_id={})
+    {
+        // Default behavior is a noop  
+    }
+    
+    /**
+     * @brief Mark the end of a packet being processed
+     * @param message_id Packet message identifier
+     * @param controller_id Optional packet controller identifier
+     * 
+     * This function is executed after all callbacks have completed.
+     */
+    virtual void packet_end(uint32_t message_id, std::variant<std::monostate, uint32_t, std::string> controller_id={})
+    {
+        // Default behavior is a noop
+    }
+
+{% for packet in packets if not packet.is_ack %}
+{%   if packet.config.is_control_s %}
+    {{ handle_query(packet) | indent(4) | trim }}
+
+{%   elif packet.config.is_control_x %}
+    {{ handle_configure(packet) | indent(4) | trim }}
+
+{%   endif %}
+{% endfor %}
+}; // end class {{ class_name }}
+
+#endif // {{ class_name.upper() }}_HPP
+{% endmacro %}
+{{ define_controllee(controllee_name, controllee_base_name) | trim }}

@@ -1,0 +1,111 @@
+/*
+ * Copyright (C) 2021 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+ */
+
+#include "catch.hpp"
+#include "bytes.hpp"
+
+#include "vrtgen/types/packed.hpp"
+#include "vrtgen/packing/prologue.hpp"
+
+using namespace vrtgen::packing;
+
+TEST_CASE("ClassIdentifier", "[prologue]")
+{
+    ClassIdentifier class_id;
+    ClassIdentifier unpack_class_id;
+    bytes packed_bytes{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+
+    SECTION("Zero on construction")
+    {
+        class_id.pack_into(packed_bytes.data());
+        CHECK(packed_bytes == bytes{ 0, 0, 0, 0, 0, 0, 0, 0 });
+    }
+
+    SECTION("Pad Bit Count")
+    {
+        // Verify zero on construction
+        CHECK(class_id.pad_bits() == 0);
+        // Setter
+        class_id.pad_bits(0b10101);
+        // Getter check set value
+        CHECK(class_id.pad_bits() == 0b10101);
+        // Pack
+        class_id.pack_into(packed_bytes.data());
+        // Verify packed bits
+        CHECK(packed_bytes[0] == 0xA8);
+        // Unpack
+        unpack_class_id.unpack_from(packed_bytes.data());
+        // Verify unpacked value
+        CHECK(unpack_class_id.pad_bits() == 0b10101);
+    }
+
+    SECTION("OUI")
+    {
+        // Verify zero on construction
+        CHECK(class_id.oui() == 0);
+        // Setter
+        class_id.oui(0xABCDEF);
+        // Getter check set value
+        CHECK(class_id.oui() == 0xABCDEF);
+        // Pack
+        class_id.pack_into(packed_bytes.data());
+        // Verify packed bits
+        CHECK(range(packed_bytes, 1, 4) == bytes{ 0xAB, 0xCD, 0xEF });
+        // Unpack
+        unpack_class_id.unpack_from(packed_bytes.data());
+        // Verify unpacked value
+        CHECK(unpack_class_id.oui() == 0xABCDEF);
+    }
+
+    SECTION("Information Class Code")
+    {
+        // Verify zero on construction
+        CHECK(class_id.information_code() == 0);
+        // Setter
+        class_id.information_code(0x123);
+        // Getter check set value
+        CHECK(class_id.information_code() == 0x123);
+        // Pack
+        class_id.pack_into(packed_bytes.data());
+        // Verify packed bits
+        CHECK(range(packed_bytes, 4, 6) == bytes{ 0x01, 0x23 });
+        // Unpack
+        unpack_class_id.unpack_from(packed_bytes.data());
+        // Verify unpacked value
+        CHECK(unpack_class_id.information_code() == 0x123);
+    }
+
+    SECTION("Packet Class Code")
+    {
+        // Verify zero on construction
+        CHECK(class_id.packet_code() == 0);
+        // Setter
+        class_id.packet_code(0x123);
+        // Getter check set value
+        CHECK(class_id.packet_code() == 0x123);
+        // Pack
+        class_id.pack_into(packed_bytes.data());
+        // Verify packed bits
+        CHECK(range(packed_bytes, 6, 8) == bytes{ 0x01, 0x23 });
+        // Unpack
+        unpack_class_id.unpack_from(packed_bytes.data());
+        // Verify unpacked value
+        CHECK(unpack_class_id.packet_code() == 0x123);
+    }
+}

@@ -1,0 +1,55 @@
+TestData1: !Data
+  stream_id: !StreamID
+
+TestData2: !Data
+  class_id: !ClassID
+    oui: FF-EE-DD
+    packet_code: 0x1234
+
+TestData3: !Data
+  timestamp: !Timestamp
+    integer: utc
+
+TestData4: !Data
+  timestamp: !Timestamp
+    fractional: picoseconds
+
+TestData5: !Data
+  timestamp: !Timestamp
+    integer: utc
+    fractional: picoseconds
+
+TestData6: !Data
+  trailer: !Trailer
+
+TestData7: !Data
+  trailer: !Trailer
+    valid_data: optional
+    agc_mgc: required
+
+TestData8: !Data
+  stream_id: !StreamID
+  class_id: !ClassID
+    oui: FF-EE-DD
+    packet_code: 0x1234
+
+TestData9: !Data
+  stream_id: !StreamID
+  class_id: !ClassID
+    oui: FF-EE-DD
+    packet_code: 0x1234
+  timestamp: !Timestamp
+    integer: utc
+    fractional: picoseconds
+
+TestData10: !Data
+  stream_id: !StreamID
+  class_id: !ClassID
+    oui: FF-EE-DD
+    packet_code: 0x1234
+  timestamp: !Timestamp
+    integer: utc
+    fractional: picoseconds
+  trailer: !Trailer
+      valid_data: optional
+      agc_mgc: required

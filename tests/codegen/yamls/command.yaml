@@ -1,0 +1,76 @@
+# TestCommandPacket: !Command
+#   cam: !ControlAcknowledgeMode
+#     permit_partial: true
+#     permit_warnings: true
+#     permit_errors: true
+#     action_mode: execute
+#     nack_only: false
+#     request_execution: true
+#     request_warning: true
+#     request_error: true      
+#   controllee_id: word
+#   controller_id: uuid
+
+SampleControl: !Control
+  cam: !ControlAcknowledgeMode
+    permit_partial: true
+    permit_warnings: true
+    permit_errors: true
+    action_mode: execute
+    nack_only: false
+    req_x: true
+    req_w: true
+    req_er: true
+  controllee_id: word
+  controller_id: uuid
+  class_id: !ClassID
+    oui: FF-EE-DD
+    packet_code: 0x1234
+  timestamp: !Timestamp
+    integer: utc
+    fractional: picoseconds
+  cif_0: !CIF0
+    bandwidth: optional
+    rf_frequency: optional
+    sample_rate: required
+    gain: required
+  cif_1: !CIF1
+    sector_step_scan: !SectorStepScan
+      subfield_cif: !SectorStepScanCIF
+        f2_stop_frequency: required
+
+SampleControlAck: !Ack
+  responds_to: SampleControl
+  class_id: !ClassID
+    oui: FF-EE-DD
+    packet_code: 0x1235
+
+SampleControlQ: !Control
+  cam: !ControlAcknowledgeMode
+    permit_partial: true
+    permit_warnings: true
+    permit_errors: true
+    action_mode: none
+    nack_only: false
+    req_s: true
+    req_w: true
+    req_er: true
+  controllee_id: word
+  controller_id: uuid
+  class_id: !ClassID
+    oui: FF-EE-DD
+    packet_code: 0x1234
+  timestamp: !Timestamp
+    integer: utc
+    fractional: picoseconds
+  cif_0: !CIF0
+    bandwidth: optional
+    rf_frequency: optional
+    sample_rate: required
+    gain: required
+
+SampleControlQAck: !Ack
+  responds_to: SampleControlQ
+  class_id: !ClassID
+    oui: FF-EE-DD
+    packet_code: 0x1235

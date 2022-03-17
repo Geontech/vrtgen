@@ -1,0 +1,264 @@
+/*#
+ * Copyright (C) 2021 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+{%- macro handle_data_callback(packet) %}
+virtual void send_{{ packet.name | to_snake }}({{packet.name}}& packet) = 0;
+{% endmacro %}
+
+{%- macro define_cif_query(packet, cif) %}
+{% for field in cif.fields if field.enabled and not field.indicator_only %}
+{%   if field.is_optional %}
+{%     if packet.config.is_control_s %}
+if (packet.{{ field.name }}_enabled()) {
+{%     else %}
+if (packet.has_{{ field.name }}()) {
+{%     endif %}
+    ack.{{ field.setter }}(this->{{ field.getter }}());
+}
+{%   else %}
+ack.{{ field.setter }}(this->{{ field.getter }}());
+{%   endif %}
+{% endfor %}
+{% endmacro %}
+
+{%- macro handle_query(packet) %}
+if ({{ packet.name }}::helper::match(m_message.data(), recv_length)) {
+    {{ packet.name }} packet;
+    {{ packet.name }}::helper::unpack(packet, m_message.data(), recv_length);
+    {{ packet.name }}Ack ack;
+{% if packet.cif0.enabled %}
+    {{ define_cif_query(packet, packet.cif0) | indent(4) | trim }}
+{% endif %}
+{% if packet.cif1.enabled %}
+    {{ define_cif_query(packet, packet.cif1) | indent(4) | trim }}
+{% endif %}
+{% if packet.cif2.enabled %}
+    {{ define_cif_query(packet, packet.cif2) | indent(4) | trim }}
+{% endif %}
+    ack.{{ packet.stream_id.setter }}(packet.{{ packet.stream_id.getter }}());
+    ack.{{ packet.message_id.setter }}(packet.{{ packet.message_id.setter }}());
+    auto packed_data = {{ packet.name }}Ack::helper::pack(ack);
+    m_socket.send_to(packed_data.data(), packed_data.size(), endpoint);
+}
+{% endmacro %}
+
+{%- macro define_cif_configure(packet, cif, wif, eif) %}
+{% for field in cif.fields if field.enabled and not field.indicator_only %}
+{%   if field.is_optional %}
+if (packet.has_{{ field.name }}()) {
+{%     if packet.config.warnings_enabled and packet.config.errors_enabled %}
+    auto {{ field.name }}_warn_err = this->{{ field.setter }}(packet.{{ field.getter }}());
+    auto {{ field.name }}_warnings = std::get<0>({{ field.name }}_warn_err);
+    if ({{ field.name }}_warnings.has_value()) {
+        ack.{{ field.name }}_warnings({{ field.name }}_warnings.value());
+    }
+    auto {{ field.name }}_errors = std::get<1>({{ field.name }}_warn_err);
+    if ({{ field.name }}_errors.has_value()) {
+        ack.{{ field.name }}_errors({{ field.name }}_errors.value());
+    }
+{%     elif packet.config.warnings_enabled %}
+    auto {{ field.name }}_warnings = this->{{ field.setter }}(packet.{{ field.getter }}());
+    if ({{ field.name }}_warnings.has_value()) {
+        ack.{{ field.name }}_warnings({{ field.name }}_warnings.value());
+    }
+{%     elif packet.config.errors_enabled %}
+    auto {{ field.name }}_errors = this->{{ field.setter }}(packet.{{ field.getter }}());
+    if ({{ field.name }}_errors.has_value()) {
+        ack.{{ field.name }}_errors({{ field.name }}_errors.value());
+    }
+{%     else %}
+    this->{{ field.setter }}(packet.{{ field.getter }}());
+{%     endif %}
+}
+{%   else %}
+{%     if packet.config.warnings_enabled and packet.config.errors_enabled %}
+auto {{ field.name }}_warn_err = this->{{ field.setter }}(packet.{{ field.getter }}());
+auto {{ field.name }}_warnings = std::get<0>({{ field.name }}_warn_err);
+if ({{ field.name }}_warnings.has_value()) {
+    ack.{{ field.name }}_warnings({{ field.name }}_warnings.value());
+}
+auto {{ field.name }}_errors = std::move(std::get<1>({{ field.name }}_warn_err));
+if ({{ field.name }}_errors.has_value()) {
+    ack.{{ field.name }}_errors({{ field.name }}_errors.value());
+}
+{%     elif packet.config.warnings_enabled %}
+auto {{ field.name }}_warnings = this->{{ field.setter }}(packet.{{ field.getter }}());
+if ({{ field.name }}_warnings.has_value()) {
+    ack.{{ field.name }}_warnings({{ field.name }}_warnings.value());
+}
+{%     elif packet.config.errors_enabled %}
+auto {{ field.name }}_errors = this->{{ field.setter }}(packet.{{ field.getter }}());
+if ({{ field.name }}_errors.has_value()) {
+    ack.{{ field.name }}_errors({{ field.name }}_errors.value());
+}
+{%     else %}
+this->{{ field.setter }}(packet.{{ field.getter }}());
+{%     endif %}
+{%   endif %}
+{% endfor %}
+{% endmacro %}
+
+{%- macro handle_configure(packet) %}
+if ({{ packet.name }}::helper::match(m_message.data(), recv_length)) {
+    {{ packet.name }} packet;
+    {{ packet.name }}::helper::unpack(packet, m_message.data(), recv_length);
+    {{ packet.name }}Ack ack;
+{% if packet.cif0.enabled %}
+    {{ define_cif_configure(packet, packet.cif0, packet.wif0, packet.eif0) | indent(4) | trim }}
+{% endif %}
+{% if packet.cif1.enabled %}
+    {{ define_cif_configure(packet, packet.cif1) | indent(4) | trim }}
+{% endif %}
+{% if packet.cif2.enabled %}
+    {{ define_cif_configure(packet, packet.cif2) | indent(4) | trim }}
+{% endif %}
+    ack.{{ packet.stream_id.setter }}(packet.{{ packet.stream_id.getter }}());
+    ack.{{ packet.message_id.setter }}(packet.{{ packet.message_id.setter }}());
+    auto packed_data = {{ packet.name }}Ack::helper::pack(ack);
+    m_socket.send_to(packed_data.data(), packed_data.size(), endpoint);
+}
+{% endmacro %}
+
+{%- macro handle_data(packet) %}
+if ({{ packet.name }}::helper::match(m_message.data(), recv_length)) {
+    {{ packet.name }} packet;
+    {{ packet.name }}::helper::unpack(packet, m_message.data(), recv_length);
+}
+{% endmacro %}
+
+{%- macro define_controllee_base(class_name) %}
+#ifndef {{ class_name.upper() }}_HPP
+#define {{ class_name.upper() }}_HPP
+
+#include <array>
+#include <thread>
+#include <atomic>
+#include <map>
+#include <memory>
+#include <optional>
+#include <tuple>
+#include <variant>
+#include <vrtgen/vrtgen.hpp>
+#include <vrtgen/socket.hpp>
+
+#include "{{ header }}"
+
+class {{ class_name }}
+{
+{% for packet in packets if packet.is_control %}
+{%   if loop.first %}
+    using cmd_socket_type = vrtgen::socket::{{ cmd_socket }}::v4;
+    using message_buffer = std::array<char, 65536>;
+{%   endif %}
+{% endfor %}
+{% for packet in packets if (packet.is_data or packet.is_context) %}
+{%  if loop.first %}
+    using data_ctxt_socket_type = vrtgen::socket::udp::v4;
+    using data_ctxt_endpoint_type = typename data_ctxt_socket_type::endpoint_type;
+{%   endif %}
+{% endfor %}
+protected:
+{% for packet in packets if packet.is_control %}
+{%   if loop.first %}
+    using cmd_endpoint_type = typename cmd_socket_type::endpoint_type;
+{%   endif %}
+{% endfor %}
+
+public:
+    {{ class_name }}() = default;
+    virtual ~{{ class_name }}()
+    {
+        _listening = false;
+        if (_recv_thread.joinable()) {
+            _recv_thread.join();
+        }
+    }
+
+    cmd_socket_type& cmd_socket() noexcept
+    {
+        return _cmd_socket;
+    }
+
+    void vrt_listen()
+    {
+        if (!_listening) {
+            _listening = true;
+            _recv_thread = std::thread(&{{ class_name }}::_listener_func, this);
+        }
+    }
+
+{% for packet in packets if packet.is_control %}
+    virtual void handle_{{ packet.name | to_snake }}(const {{ packet.name }}& packet) = 0;
+{% if loop.last %}
+
+{% endif %}
+{% endfor %}
+protected:
+{% for packet in packets if (packet.is_control and packet.controller_id.enabled) %}
+{%   if loop.first %}
+    cmd_socket_type _cmd_socket;
+{%   endif %}
+{% endfor %}
+{% for packet in packets if (packet.is_data or packet.is_context) %}
+{%   if loop.first %}
+    data_ctxt_socket_type _data_ctxt_recv_socket;
+    data_ctxt_socket_type _data_ctxt_send_socket;
+{%   endif %}
+{% endfor %}
+
+private:
+{% for packet in packets if packet.is_control %}
+{%   if loop.first %}
+    std::thread _recv_thread;
+    std::atomic_bool _listening{ false };
+{%   endif %}
+{% endfor %}
+{% for packet in packets if packet.is_control %}
+{%   if loop.first %}
+
+    void _listener_func()
+    {
+        while(_listening) {
+            message_buffer message;
+{%     if cmd_socket == 'tcp' %}
+            auto recv_length = _cmd_socket.read_some(message.data(), message.size());
+{%     elif cmd_sock == 'udp' %}
+            cmd_endpoint_type endpoint;
+            auto recv_length = _cmd_socket.receive_from(message.data(), m_message.size(), endpoint);
+{%     endif %}
+            if (recv_length <= 0) {
+                continue;
+            }
+
+{%   endif %}
+            if (!packing::{{ packet.helper }}::match(message.data(), recv_length)) {
+                {{ packet.name }} packet;
+                {{ packet.name }}::helper::unpack(packet, message.data(), recv_length);
+                this->handle_{{ packet.name | to_snake }}(packet);
+            }
+{%   if loop.last %}
+        }
+    }
+{%   endif %}
+{% endfor %}
+
+}; // end class {{ class_name }}
+
+#endif // {{ class_name.upper() }}_HPP
+{% endmacro %}
+{{ define_controllee_base(controllee_base_name) }}

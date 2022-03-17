@@ -1,0 +1,236 @@
+/*#
+ * Copyright (C) 2021 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- macro pack_cif_field(field, type_helper) %}
+{% if field.type_.reserved_bits != 0 %}
+buffer.insert(static_cast<int{{ field.type_.reserved_bits }}_t>(0)); // {{ field.name }} reserved bits
+{% endif %}
+{% if field.type_.is_array_of_records %}
+auto* {{ field.name }} = buffer.insert(packet.{{ field.getter }}());
+{% else %}
+buffer.insert(packet._{{ field.name }}{{ '.value()' if field.is_optional }});
+{% endif %}
+{% endmacro %}
+
+{%- macro pack_cif(cif, type_helper) %}
+{% for field in cif.fields if field.enabled %}
+{%   if field.indicator_only %}
+{{ cif.name }}->{{ field.setter }}(packet.{{ field.getter }}());
+{%   elif field.is_optional %}
+if (packet.has_{{ field.name }}()) {
+    {{ pack_cif_field(field, type_helper) | indent(4) | trim }}
+    {{ cif.name }}->{{ field.setter }}(true);
+}
+{%   else %}
+{{ pack_cif_field(field, type_helper) | trim }}
+{{ cif.name }}->{{ field.setter }}(true);
+{%     if field.type_.is_array_of_records %}
+{%       for subfield in field.type_.subfield_cif.fields if subfield.enabled %}
+{{ field.name }}.{{ field.type_.subfield_cif.getter }}().{{ subfield.setter }}(true);
+{%       endfor %}
+{%     endif %}
+{%   endif %}
+{% endfor %}
+{% endmacro %}
+
+{%- macro pack_wif(wif, type_helper) %}
+if ({{ wif.name }}) {
+{% for field in wif.fields if field.enabled %}
+    if (packet.has_{{ field.getter }}_warnings()) {
+        {{ wif.name }}->{{ field.setter }}(true);
+        buffer.insert(packet.{{ field.getter }}_warnings());
+    }
+{% endfor %}
+}
+{% endmacro %}
+
+{%- macro pack_eif(eif, type_helper) %}
+if ({{ eif.name }}) {
+{% for field in eif.fields if field.enabled %}
+    if (packet.has_{{ field.getter }}_errors()) {
+        {{ eif.name }}->{{ field.setter }}(true);
+        buffer.insert(packet.{{ field.getter }}_errors());
+    }
+{% endfor %}
+}
+{% endmacro %}
+
+{%- macro define_pack(packet, type_helper) %}
+std::vector<uint8_t> {{ packet.helper }}::pack(const {{ packet.name }}& packet)
+{
+    auto bytes_required = {{ packet.helper }}::bytes_required(packet);
+    std::vector<uint8_t> packed_data(bytes_required, 0);
+    vrtgen::Buffer buffer(packed_data.data(), packed_data.size());
+    {{ type_helper.member_type(packet.header) }} header;
+{% for field in packet.header.fields if field.enabled %}
+{%     if field.name == packet.header.packet_count.name %}
+    header.{{ field.setter }}(packet.{{ field.getter }}());
+{%     elif field.name != packet.header.packet_size.name %}
+    header.{{field.setter}}({{ type_helper.literal_value(field) }});
+{%     endif %}
+{% endfor %}
+    buffer.insert(header);
+{% if packet.stream_id.enabled %}
+    buffer.insert(packet._{{ packet.stream_id.name }});
+{% endif %}
+{% if packet.class_id.enabled %}
+    buffer.insert(packet.{{ packet.class_id.getter }}());
+{% endif %}
+{% if packet.timestamp.enabled %}
+{%     if packet.timestamp.integer.enabled %}
+    buffer.insert(packet._{{ packet.timestamp.integer.name }});
+{%     endif %}
+{%     if packet.timestamp.fractional.enabled %}
+    buffer.insert(packet._{{ packet.timestamp.fractional.name }});
+{%     endif %}
+{% endif %}
+{% if packet.cam.enabled %}
+    {{ type_helper.value_type(packet.cam) }} {{ packet.cam.name }};
+{%   for field in packet.cam.fields if field.enabled %}
+    {{ packet.cam.name }}.{{ field.setter }}({{ type_helper.literal_value(field) }});
+{%   endfor %}
+    buffer.insert({{ packet.cam.name }});
+{% endif %}
+{% if packet.message_id.enabled %}
+    buffer.insert(packet._{{ packet.message_id.name }});
+{% endif %}
+{% if packet.controllee_id.enabled %}
+    buffer.insert(packet.{{ packet.controllee_id.getter }}());
+{% endif %}
+{% if packet.controller_id.enabled %}
+    buffer.insert(packet.{{ packet.controller_id.getter }}());
+{% endif %}
+{% if packet.cif0.enabled %}
+    auto* {{ packet.cif0.name }} = buffer.insert({{ type_helper.value_type(packet.cif0) }}{});
+{%   if packet.cif1.enabled %}
+    {{ type_helper.value_type(packet.cif1) }}* {{ packet.cif1.name }}{ nullptr };
+    if (packet.has_{{ packet.cif1.name }}_fields()) {
+        {{ packet.cif1.name }} = buffer.insert({{ type_helper.value_type(packet.cif1) }}{});
+        {{ packet.cif0.name }}->cif1_enable(true);
+    }
+{%   endif %}
+{%   if packet.cif2.enabled %}
+    {{ type_helper.value_type(packet.cif2) }}* {{ packet.cif2.name }}{ nullptr };
+    if (packet.has_{{ packet.cif2.name }}_fields()) {
+        {{ packet.cif2.name }} = buffer.insert({{ type_helper.value_type(packet.cif2) }}{});
+        {{ packet.cif0.name }}->cif2_enable(true);
+    }
+{%   endif %}
+{%   if packet.requires_cif_functions %}
+    {{ pack_cif(packet.cif0, type_helper) | indent(4) | trim }}
+{%   endif %}
+{% endif %}
+{% if packet.cif1.enabled and packet.requires_cif_functions %}
+    {{ pack_cif(packet.cif1, type_helper) | indent(4) | trim }}
+{% endif %}
+{% if packet.cif2.enabled and packet.requires_cif_functions %}
+    {{ pack_cif(packet.cif2, type_helper) | indent(4) | trim }}
+{% endif %}
+{% if packet.warnings_enabled %}
+    {{ type_helper.value_type(packet.wif0) }}* {{ packet.wif0.name }}{ nullptr };
+    if (packet.has_{{ packet.wif0.name }}_warnings()) {
+        {{ packet.wif0.name }} = buffer.insert(packet.{{ packet.wif0.getter }}());
+    }
+{%   if packet.wif1.enabled %}
+    {{ type_helper.value_type(packet.wif1) }}* {{ packet.wif1.name }} = nullptr;
+    if (packet.has_{{ packet.wif1.name }}_warnings()) {
+        if (!{{ packet.wif0.name }}) {
+            {{ packet.wif0.name }} = buffer.insert(packet.{{ packet.wif0.getter }}());
+        }
+        {{ packet.wif1.name }} = buffer.insert(packet.{{ packet.wif1.getter }}());
+        {{ packet.wif0.name }}->wif1_enable(true);
+    }
+{%   endif %}
+{%   if packet.wif2.enabled %}
+    {{ type_helper.value_type(packet.wif2) }}* {{ packet.wif2.name }} = nullptr;
+    if (packet.has_{{ packet.wif2.name }}_warnings()) {
+        if (!{{ packet.wif0.name }}) {
+            {{ packet.wif0.name }} = buffer.insert(packet.{{ packet.wif0.getter }}());
+        }
+        {{ packet.wif2.name }} = buffer.insert(packet.{{ packet.wif2.getter }}());
+        {{ packet.wif0.name }}->wif2_enable(true);
+    }
+{%   endif %}
+{% endif %}
+{% if packet.errors_enabled %}
+    {{ type_helper.value_type(packet.eif0) }}* {{ packet.eif0.name }} = nullptr;
+    if (packet.has_{{ packet.eif0.name }}_errors()) {
+        {{ packet.eif0.name }} = buffer.insert(packet.{{ packet.eif0.getter }}());
+    }
+{%   if packet.eif1.enabled %}
+    {{ type_helper.value_type(packet.eif1) }}* {{ packet.eif1.name }} = nullptr;
+    if (packet.has_{{ packet.eif1.name }}_errors()) {
+        if (!{{ packet.eif0.name }}) {
+            {{ packet.eif0.name }} = buffer.insert(packet.{{ packet.eif0.getter }}());
+        }
+        {{ packet.eif1.name }} = buffer.insert(packet.{{ packet.eif1.getter }}());
+        {{ packet.eif0.name }}->eif1_enable(true);
+    }
+{%   endif %}
+{%   if packet.eif2.enabled %}
+    {{ type_helper.value_type(packet.eif2) }}* {{ packet.eif2.name }} = nullptr;
+    if (packet.has_{{ packet.eif2.name }}_errors()) {
+        if (!{{ packet.eif0.name }}) {
+            {{ packet.eif0.name }} = buffer.insert(packet.{{ packet.eif0.getter }}());
+        }
+        {{ packet.eif2.name }} = buffer.insert(packet.{{ packet.eif2.getter }}());
+        {{ packet.eif0.name }}->eif2_enable(true);
+    }
+{%   endif %}
+{% endif %}
+{% if packet.warnings_enabled %}
+    {{ pack_wif(packet.wif0, type_helper) | indent(4) | trim }}
+{%   if packet.wif1.enabled %}
+    {{ pack_wif(packet.wif1, type_helper) | indent(4) | trim }}
+{%   endif %}
+{%   if packet.wif2.enabled %}
+    {{ pack_wif(packet.wif2, type_helper) | indent(4) | trim }}
+{%   endif %}
+{% endif %}
+{% if packet.errors_enabled %}
+    {{ pack_eif(packet.eif0, type_helper) | indent(4) | trim }}
+{%   if packet.eif1.enabled %}
+    {{ pack_eif(packet.eif1, type_helper) | indent(4) | trim }}
+{%   endif %}
+{%   if packet.eif2.enabled %}
+    {{ pack_eif(packet.eif2, type_helper) | indent(4) | trim }}
+{%   endif %}
+{% endif %}
+{% if packet.is_data %}
+    buffer.insert(packet.payload(), packet.payload_size());
+{%   if packet.trailer.enabled %}
+    {{ type_helper.member_type(packet.trailer) }} trailer;
+{%     for field in packet.trailer.fields if field.enabled %}
+{%       if field.is_optional %}
+    if (packet.has_{{ field.name }}()) {
+        trailer.{{ field.setter }}_enable(true);
+        trailer.{{ field.setter }}(packet.{{ field.getter }}());
+    }
+{%       else %}
+    trailer.{{ field.setter }}_enable(true);
+    trailer.{{ field.setter }}(packet.{{ field.getter }}());
+{%       endif %}
+{%     endfor %}
+    buffer.insert(trailer);
+{%   endif %}
+{% endif %}
+    buffer.update_packet_size();
+    return packed_data;
+}
+{% endmacro %}

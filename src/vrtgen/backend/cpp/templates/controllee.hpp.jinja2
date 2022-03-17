@@ -1,0 +1,79 @@
+/*#
+ * Copyright (C) 2021 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+{%- macro handle_data(packet) %}
+virtual void send_{{ packet.name | to_snake }}({{ packet.name }}& value)
+{
+    // AUTO-GENERATED FUNCTION STUB
+    // IMPLEMENT HARDWARE-SPECIFIC FUNCTIONALITY HERE
+    throw std::runtime_error("send_{{ packet.name | to_snake }} not implemented");
+}
+{% endmacro %}
+
+{%- macro handle_packet_callback(packet) %}
+virtual void handle_{{ packet.name | to_snake }}(const {{ packet.name }}& packet)
+{
+    // AUTO-GENERATED FUNCTION STUB
+    // IMPLEMENT PACKET HANDLING FUNCTIONALITY HERE
+    throw std::runtime_error("handle_{{ packet.name | to_snake }} not implemented");
+}
+{% endmacro %}
+
+{%- macro define_controllee(class_name, base_class_name) %}
+#ifndef {{ class_name.upper() }}_HPP
+#define {{ class_name.upper() }}_HPP
+
+#include <stdexcept>
+
+#include "{{ base_class_name }}.hpp"
+
+class {{ class_name }} : public {{ base_class_name }}
+{
+
+public:
+{% set has_datactxt = [] %}
+{% set has_ctrl = [] %}
+{% for packet in packets %}
+{%   if packet.is_data or packet.is_control %}
+{%     do has_datactxt.append(packet.name) %}
+{%   endif %}
+{%   if packet.is_control %}
+{%     do has_ctrl.append(packet.name) %}
+{%   endif %}
+{% endfor %}
+{% if has_ctrl %}
+    explicit {{ class_name }}(const cmd_endpoint_type& endpoint)
+    {
+        if (!_cmd_socket.bind(endpoint)) {
+            throw std::runtime_error("Failed to bind socket during {{ class_name }} construction");
+        }
+    }
+{% else %}
+    {{ class_name }}() = default;
+{% endif %}
+    virtual ~{{ class_name }}() = default;
+
+{% for packet in packets if packet.is_control %}
+    {{ handle_packet_callback(packet) | indent(4) | trim }}
+
+{% endfor %}
+}; // end class {{ class_name }}
+
+#endif // {{ class_name.upper() }}_HPP
+{% endmacro %}
+{{ define_controllee(controllee_name, controllee_base_name) | trim }}

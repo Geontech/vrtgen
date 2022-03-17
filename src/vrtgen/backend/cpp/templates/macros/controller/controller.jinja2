@@ -1,0 +1,254 @@
+/*#
+ * Copyright (C) 2021 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- macro controller_id_functions(packet, type_helper) %}
+{{ type_helper.value_type(packet.controller_id) }} {{ packet.controller_id.name }}() const
+{
+    return _{{ packet.controller_id.name }};
+}
+
+void {{ packet.controller_id.name }}({{ type_helper.value_type(packet.controller_id) }} id)
+{
+    _{{ packet.controller_id.name }} = id;
+}
+{% endmacro %}
+
+{%- macro handle_control(packet, type_helper) %}
+auto send_{{ packet.name | to_snake }}({{ packet.name }}& packet)
+{
+    packet.message_id(_next_message_id());
+{% if packet.controller_id.enabled %}
+    packet.controller_id(_{{ packet.controller_id.name }});
+{% endif %}
+{% set ack_list = [] %}
+{% if packet.cam.enabled %}
+{%   if (packet.cam.req_v.enabled and (packet.cam.req_v.value is true)) %}
+{%     do ack_list.append('ackv') %}
+{%   endif %}
+{%   if (packet.cam.req_x.enabled and (packet.cam.req_x.value is true)) %}
+{%     do ack_list.append('ackx') %}
+{%   endif %}
+{%   if (packet.cam.req_s.enabled and (packet.cam.req_s.value is true)) %}
+{%     do ack_list.append('acks') %}
+{%   endif %}
+{% endif %}
+{% for ack_t in ack_list %}
+    {{ packet.name }}Ack {{ ack_t }};
+{% endfor %}
+{% for ack_t in ack_list %}
+{%   if loop.first %}
+    vrtgen::send_packet(
+        _cmd_socket,
+        packet,
+{%   endif %}
+        {{ ack_t }}{{ ',' if not loop.last }}
+{%   if loop.last %}
+    );
+{%   endif %}
+{% endfor %}
+{% for ack_t in ack_list %}
+    return std::make_tuple(
+        {{ ack_t }}{{ ',' if not loop.last }}
+    );
+{% endfor %}
+}
+
+{% endmacro %}
+
+{%- macro data_ctxt_rx(packet, type_helper) %}
+/**
+ * @brief Register a callback listener for incoming {{ packet.name }} packets
+ */
+void register_{{ packet.name | to_snake }}_listener(const std::function<void({{ packet.name }}&)>&& func)
+{
+    _{{ packet.name | to_snake }}_listener = std::move(func);
+}
+{% endmacro %}
+
+{%- macro data_ctxt_tx(packet, type_helper) %}
+/**
+ * @brief Send a {{ packet.name }} packet
+ */
+void send_{{ packet.name | to_snake }}(const {{ packet.name }}& packet)
+{
+    auto packed_data = {{ packet.name }}::helper::pack(packet);
+    _data_ctxt_send_socket.send_to(packed_data.data(), packed_data.size(), _data_ctxt_send_socket.dst());
+}
+{% endmacro %}
+
+{%- macro data_ctxt_functions(packet, type_helper) %}
+{{ data_ctxt_rx(packet, type_helper) | trim }}
+
+{{ data_ctxt_tx(packet, type_helper) | trim }}
+
+{% endmacro %}
+
+{%- macro define_functions(packets, class_name, type_helper) %}
+{% for packet in packets if (packet.is_control and packet.controller_id.enabled) %}
+{%   if loop.first %}
+{{ controller_id_functions(packet, type_helper) | trim }}
+
+{%   endif %}
+{% endfor %}
+{% for packet in packets if packet.is_control %}
+{{ handle_control(packet, type_helper) | trim }}
+
+{% endfor %}
+{% for packet in packets if (packet.is_data or packet.is_context) %}
+{{ data_ctxt_functions(packet, type_helper) | trim }}
+
+{%   if loop.last %}
+/**
+ * @brief Enable the receive thread to listen for data and context packets
+ */
+void enable_receive()
+{
+    if (!_receiving) {
+        _receiving = true;
+        _recv_thread = std::thread(&{{ class_name }}::_receiver_func, this);
+    }
+}
+
+/**
+ * @brief Disable the receive thread to stop listening for data and context packets
+ */
+void disable_receive()
+{
+    _receiving = false;
+    if (_recv_thread.joinable()) {
+        _recv_thread.join();
+    }
+}
+
+{%   endif %}
+{% endfor %}
+{% endmacro %}
+
+{%- macro members(packets, type_helper) %}
+{% for packet in packets if (packet.is_control and packet.controller_id.enabled) %}
+{%   if loop.first %}
+cmd_socket_type _cmd_socket;
+uint32_t _message_id{ 1 };
+{%   endif %}
+{% endfor %}
+{% for packet in packets if (packet.is_control and packet.controller_id.enabled) %}
+{%   if loop.first %}
+{{ type_helper.value_type(packet.controller_id) }} _{{ packet.controller_id.name }};
+{%   endif %}
+{% endfor %}
+{% for packet in packets if (packet.is_data or packet.is_context) %}
+{%   if loop.first %}
+data_ctxt_socket_type _data_ctxt_recv_socket;
+data_ctxt_socket_type _data_ctxt_send_socket;
+std::thread _recv_thread;
+std::atomic_bool _receiving{ false };
+{%   endif %}
+std::function<void({{ packet.name }}&)> _{{ packet.name | to_snake }}_listener;
+{% endfor %}
+{% endmacro %}
+
+{%- macro socket_functions(packets, cmd_socket) %}
+{% for packet in packets if packet.is_control %}
+{%   if loop.first %}
+/**
+ * @brief Set the destination endpoint of the controllee to send control packets to
+ */
+void controllee_endpoint(const cmd_endpoint_type& endpoint)
+{
+{% if cmd_socket == 'tcp' %}
+    if (!_cmd_socket.connect(endpoint)) {
+        throw std::runtime_error("Failed to connect command socket to " + endpoint.to_string());
+    }
+{% else %}
+    _cmd_socket.dst(endpoint);
+{% endif %}
+}
+
+/**
+ * @brief Get the destination endpoint of the controllee to send control packets to
+ */
+const cmd_endpoint_type& controllee_endpoint() const
+{
+    return _cmd_socket.dst();
+}
+
+/**
+ * @brief Return a reference to the command socket for sending control packets
+ */
+cmd_socket_type& cmd_socket() noexcept
+{
+    return _cmd_socket;
+}
+
+{%   endif %}
+{% endfor %}
+{% for packet in packets if (packet.is_data or packet.is_context) %}
+{%   if loop.first %}
+/**
+ * @brief Bind the data/context recv socket to the desired endpoint for receiving data/context packets
+ */
+void data_ctxt_src_endpoint(const data_ctxt_endpoint_type& endpoint)
+{
+    if (!_data_ctxt_recv_socket.bind(endpoint)) {
+        throw std::runtime_error("Failed to bind data/context receive socket to " + endpoint.to_string());
+    }
+}
+
+/**
+ * @brief Get the source endpoint for receiving data and context packets
+ */
+const data_ctxt_endpoint_type& data_ctxt_src_endpoint() const
+{
+    return _data_ctxt_recv_socket.src();
+}
+
+/**
+ * @brief Return a reference to the data/context recv socket for data/context packets
+ */
+data_ctxt_socket_type& data_ctxt_recv_socket() noexcept
+{
+    return _data_ctxt_recv_socket;
+}
+
+/**
+ * @brief Set the destination endpoint to send data and context packets to
+ */
+void data_ctxt_dst_endpoint(const data_ctxt_endpoint_type& endpoint)
+{
+    _data_ctxt_send_socket.dst(endpoint);
+}
+
+/**
+ * @brief Get the destination endpoint to send data and context packets to
+ */
+const data_ctxt_endpoint_type& data_ctxt_dst_endpoint() const
+{
+    return _data_ctxt_send_socket.dst();
+}
+
+/**
+ * @brief Return a reference to the data/context send socket for sending data/context packets
+ */
+data_ctxt_socket_type& data_ctxt_send_socket() noexcept
+{
+    return _data_ctxt_send_socket;
+}
+{%   endif %}
+{% endfor %}
+{% endmacro %}

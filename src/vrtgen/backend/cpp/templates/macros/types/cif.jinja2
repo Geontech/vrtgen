@@ -1,0 +1,133 @@
+/*#
+ * Copyright (C) 2021 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- import "macros/types/basic.jinja2" as basic %}
+
+{%- macro cif_functions(cif, type_helper) %}
+{% if cif.all_optional_fields %}
+bool has_{{ cif.name }}_fields() const noexcept
+{
+{% for field in cif.fields if field.enabled %}
+    {{ 'return ' if loop.first else '       ' }}has_{{ field.name }}(){{ ' ||' if not loop.last else ';' }}
+{% endfor %}
+}
+
+{% endif %}
+{% for field in cif.fields if field.enabled %}
+{{ basic.optional_functions(field, type_helper, cif) | trim }}
+
+{{ basic.getters_and_setters(field, type_helper, cif) | trim }}
+
+{% endfor %}
+{% endmacro %}
+
+{%- macro cif_enable_functions(cif, type_helper) %}
+{% if cif.all_optional_fields %}
+bool has_{{ cif.name }}_fields() const noexcept
+{
+{% for field in cif.fields if field.enabled and not field.indicator_only %}
+    {{ 'return ' if loop.first else '       ' }}{{ field.name }}_enabled(){{ ' ||' if not loop.last else ';' }}
+{% endfor %}
+}
+
+{% endif %}
+{% for field in cif.fields if field.enabled and not field.indicator_only %}
+/**
+ * @brief Check if {{ field.name }} is enabled in {{ cif.name }}
+ * @return true if {{ field.name }} is enabled in {{ cif.name }}, otherwise false
+ */
+bool {{ field.name }}_enabled() const noexcept
+{
+    return m_{{ cif.name }}.{{ field.getter }}();
+}
+
+/**
+ * @brief Check if {{ field.name }} is enabled in {{ cif.name }}
+ * @param value Value to set {{ field.name }} in {{ cif.name }}
+ */
+void {{ field.name }}_enabled(bool value) noexcept
+{
+    m_{{ cif.name }}.{{ field.setter }}(value);
+}
+
+{% endfor %}
+{% endmacro %}
+
+{%- macro cif_members(cif, type_helper) %}
+{% for field in cif.fields if field.enabled %}
+{{ basic.member(field, type_helper) | trim }}
+{% endfor %}
+{% endmacro %}
+
+{%- macro public_functions(packet, type_helper) %}
+{% if packet.cif0.enabled %}
+{{ basic.const_ref_getter(packet.cif0, type_helper) | trim }}
+
+{%   if packet.requires_cif_functions %}
+{{ cif_functions(packet.cif0, type_helper) | trim }}
+
+{%   elif packet.requires_cif_enable_functions %}
+{{ cif_enable_functions(packet.cif0, type_helper) | trim }}
+
+{%   endif %}
+{% endif %}
+{% if packet.cif1.enabled %}
+{{ basic.const_ref_getter(packet.cif1, type_helper) | trim }}
+
+{%   if packet.requires_cif_functions %}
+{{ cif_functions(packet.cif1, type_helper) | trim }}
+
+{%   elif packet.requires_cif_enable_functions %}
+{{ cif_enable_functions(packet.cif1, type_helper) | trim }}
+
+{%   endif %}
+{% endif %}
+{% if packet.cif2.enabled %}
+{{ basic.const_ref_getter(packet.cif2, type_helper) | trim }}
+
+{%   if packet.requires_cif_functions %}
+{{ cif_functions(packet.cif2, type_helper) | trim }}
+
+{%   elif packet.requires_cif_enable_functions %}
+{{ cif_enable_functions(packet.cif2, type_helper) | trim }}
+
+{%   endif %}
+{% endif %}
+{% endmacro %}
+
+{%- macro members(packet, type_helper) %}
+{% if packet.cif0.enabled %}
+{{ basic.member(packet.cif0, type_helper) | trim }}
+{%   if packet.requires_cif_functions %}
+{{ cif_members(packet.cif0, type_helper) | trim }}
+{%   endif %}
+{% endif %}
+{% if packet.cif1.enabled %}
+{{ basic.member(packet.cif1, type_helper) | trim }}
+{%   if packet.requires_cif_functions %}
+{{ cif_members(packet.cif1, type_helper) | trim }}
+{%   endif %}
+{% endif %}
+{% if packet.cif2.enabled %}
+{{ basic.member(packet.cif2, type_helper) | trim }}
+{%   if packet.requires_cif_functions %}
+{{ cif_members(packet.cif2, type_helper) | trim }}
+{%   endif %}
+{% endif %}
+{% endmacro %}
