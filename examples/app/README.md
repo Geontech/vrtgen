@@ -29,7 +29,7 @@ YAML. These packet specifications can be found one directory back at
 At this point, running `make` will succeed, but the code isn't quite ready to
 be executed. If the code were to be executed, there would be an exception thrown
 by the Controllee application because the control packet callback handler would
-not have been implemented yet. Examining the `ExampleInformationClassControllee.hpp`
+not have been implemented yet. Examining the `ExampleInfoControllee.hpp`
 file we can see why:
 
 ```
