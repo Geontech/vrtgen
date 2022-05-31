@@ -11,7 +11,7 @@ available in the next few months. Feedback is welcome.
 
 To build the C++ header library, CMake 3.17 or later must be installed.
 
-Generated C++ code requires C++20 support.
+Generated C++ code requires g++ >= 10 for C++20 support, including concepts.
 The only dependency is the C++ header library.
 
 ## Installation

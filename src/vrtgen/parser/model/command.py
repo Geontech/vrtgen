@@ -128,10 +128,14 @@ class ControlIdentifier(Field):
     def __post_init__(self):
         super().__post_init__()
         self.type_ = type(self).__name__
+        self.bits = 32
 
     def _parse_mapping(self, mapping):
         try:
             self.format = parse_identifier_format(mapping)
+            if self.format == IdentifierFormat.UUID:
+                self.bits = 64
+
         except:
             raise ValueError('invalid identifier format: ' + mapping)
         self.enabled = True
