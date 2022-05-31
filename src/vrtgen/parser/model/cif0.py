@@ -88,6 +88,7 @@ class PayloadFormat(PackedStruct):
     def __post_init__(self):
         super().__post_init__()
         self.type_ = type(self).__name__
+        self.bits = 32
 
 @dataclass
 class Geolocation(PackedStruct):
