@@ -297,7 +297,7 @@ private:
             message_buffer message;
 {%     if cmd_socket == 'tcp' %}
             auto recv_length = _cmd_socket.read_some(message.data(), message.size());
-{%     elif cmd_sock == 'udp' %}
+{%     elif cmd_socket == 'udp' %}
             cmd_endpoint_type endpoint;
             auto recv_length = _cmd_socket.receive_from(message.data(), m_message.size(), endpoint);
 {%     endif %}
