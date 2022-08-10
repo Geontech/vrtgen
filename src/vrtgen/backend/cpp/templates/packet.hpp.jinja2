@@ -131,7 +131,8 @@ struct {{packet.helper}};
 {% endfor %}
 
 } // end namespace packing
-{% for packet in packets if packet.enums or packet.structs %}
+
+{% for packet in packets if packet.enums or packet.structs or packet.cif7.enabled %}
 
 namespace {{ packet.name | to_snake }} {
 {%   if packet.enums %}

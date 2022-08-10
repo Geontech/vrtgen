@@ -17,7 +17,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
 
-{%- macro unpack_cif_field(field, type_helper) %}
+{%- macro unpack_cif_field(field, cif7, type_helper) %}
 {% if field.type_.reserved_bits != 0 %}
 buffer.next<int{{ field.type_.reserved_bits }}_t>(); // {{ field.name }} reserved bits
 {% endif %}
@@ -26,9 +26,27 @@ packet._{{ field.name }} = buffer.next<int{{ field.type_.bits }}_t>();
 {% else %}
 packet._{{ field.name }} = buffer.next<{{ type_helper.value_type(field) }}>();
 {% endif %}
+{% if cif7.enabled %}
+{%   for attribute_field in cif7.attributes.fields if attribute_field.enabled %}
+if ({{ cif7.name }}->{{ attribute_field.getter }}()) {
+{%      if attribute_field.type_.is_packed_struct %}
+    packet._{{ field.name }}_attributes.{{ attribute_field.getter }}(buffer.next<{{ type_helper.value_type(attribute_field) }}>());
+{%      else %}
+{%         if field.type_.reserved_bits != 0 %}
+    buffer.next<int{{ field.type_.reserved_bits }}_t>(); // {{ attribute_field.name }} reserved bits
+{%         endif %}
+{%         if field.type_.is_fixed_point %}
+    packet._{{field.name }}_attributes.{{ attribute_field.setter }}(buffer.next<int{{ field.type_.bits }}_t>());
+{%         else %}
+    packet._{{ field.name }}_attributes.{{ attribute_field.setter }}(buffer.next<{{ type_helper.value_type(field) }}>());
+{%         endif %}
+{%     endif %}
+}
+{%   endfor %}
+{% endif %}
 {% endmacro %}
 
-{%- macro unpack_cif(packet, cif, type_helper) %}
+{%- macro unpack_cif(packet, cif, cif7, type_helper) %}
 {% if packet.requires_cif_functions %}
 {%   for field in cif.fields if field.enabled %}
 {%     if field.indicator_only %}
@@ -37,10 +55,10 @@ packet.{{ field.setter }}({{ cif.name }}->{{ field.getter }}());
 if (!{{ cif.name }}->{{ field.getter }}()) {
     packet.reset_{{ field.name }}();
 } else {
-    {{ unpack_cif_field(field, type_helper) | indent(8) | trim }}
+    {{ unpack_cif_field(field, cif7, type_helper) | indent(4) | trim }}
 }
 {%     else %}
-{{ unpack_cif_field(field, type_helper) | indent(4) | trim }}
+{{ unpack_cif_field(field, cif7, type_helper) | trim }}
 {%     endif %}
 {%   endfor %}
 {% elif packet.requires_cif_enable_functions %}
@@ -127,16 +145,22 @@ void {{ packet.helper }}::unpack({{ packet.name }}& packet, const void* ptr, std
         {{ packet.cif2.name }} = std::make_unique<{{ type_helper.value_type(packet.cif2) }}>(buffer.next<{{ type_helper.value_type(packet.cif2) }}>());
     }
 {%   endif %}
-    {{ unpack_cif(packet, packet.cif0, type_helper) | indent(4) | trim }}
+{%   if packet.cif7.enabled %}
+    std::unique_ptr<{{ type_helper.value_type(packet.cif7) }}> {{ packet.cif7.name }}{ nullptr };
+    if ({{ packet.cif0.name }}->cif7_enable()) {
+        {{ packet.cif7.name }} = std::make_unique<{{ type_helper.value_type(packet.cif7) }}>(buffer.next<{{ type_helper.value_type(packet.cif7) }}>());
+    }
+{%   endif %}
+    {{ unpack_cif(packet, packet.cif0, packet.cif7, type_helper) | indent(4) | trim }}
 {% endif %}
 {% if packet.cif1.enabled %}
     if (cif_1) {
-        {{ unpack_cif(packet, packet.cif1, type_helper) | indent(8) | trim }}
+        {{ unpack_cif(packet, packet.cif1, packet.cif7, type_helper) | indent(8) | trim }}
     }
 {% endif %}
 {% if packet.cif2.enabled %}
     if (cif_2) {
-        {{ unpack_cif(packet, packet.cif2, type_helper) | indent(8) | trim }}
+        {{ unpack_cif(packet, packet.cif2, packet.cif7, type_helper) | indent(8) | trim }}
     }
 {% endif %}
 {% if packet.warnings_enabled %}

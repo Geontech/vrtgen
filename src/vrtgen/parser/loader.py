@@ -18,7 +18,7 @@
 import yaml
 
 from vrtgen.parser.model import data, context, command
-from vrtgen.parser.model import prologue, cif0, cif1, cif2
+from vrtgen.parser.model import prologue, cif0, cif1, cif2, cif7
 from vrtgen.parser.model import information
 
 def data_packet_constructor(loader, node) -> data.DataPacket:
@@ -135,6 +135,12 @@ def cif2_constructor(loader, node) -> cif2.CIF2:
         cif_2.validate_and_parse_mapping(**loader.construct_mapping(node))
     return cif_2
 
+def cif7_constructor(loader, node) -> cif7.CIF7:
+    cif_7 = cif7.CIF7(enabled=True, required=True)
+    if not isinstance(node, yaml.ScalarNode):
+        cif_7.validate_and_parse_mapping(**loader.construct_mapping(node))
+    return cif_7
+
 def sector_step_scan_constructor(loader, node) -> cif1.SectorStepScan:
     sector_step_scan = cif1.SectorStepScan(enabled=True, required=True)
     sector_step_scan.validate_and_parse_mapping(**loader.construct_mapping(node))
@@ -214,6 +220,8 @@ def get_loader():
     loader.add_constructor('!DiscreteIO64Optional', discrete_io_64_optional_constructor)
     # CIF2 constructors
     loader.add_constructor('!CIF2', cif2_constructor)
+    # CIF7 constructors
+    loader.add_constructor('!CIF7', cif7_constructor)
     # Command constructors
     loader.add_constructor('!ControlAcknowledgeMode', cam_constructor)
     # Trailer constructor

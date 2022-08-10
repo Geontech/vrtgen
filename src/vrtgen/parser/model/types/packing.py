@@ -90,6 +90,10 @@ class PackedStruct(Field):
     def dynamic_size(self):
         return self._dynamic_size
 
+    @property
+    def is_packed_struct(self):
+        return True
+
 @dataclass
 class TemplateArrayStruct(PackedStruct):
     """
@@ -98,6 +102,7 @@ class TemplateArrayStruct(PackedStruct):
 
     def __post_init__(self):
         super().__post_init__()
+        self.template_name = "T"
         self.template_type = str()
         self._dynamic_size = True
         self.total_size_field = None

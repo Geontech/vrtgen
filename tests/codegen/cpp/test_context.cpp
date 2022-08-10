@@ -5190,6 +5190,446 @@ TEST_CASE("Context Packet Context Association Lists")
     } // end SECTION("Context Association Lists")
 } // end TEST_CASE("Context Packet Context Association Lists")
 
+
+TEST_CASE("Context Packet CIF7 Packet")
+{
+    using packet_type = TestContext6;
+    using helper = packet_type::helper;
+
+    // Sizes for all required fields
+    size_t PACKED_SIZE = 4 + // header
+                         4 + // stream_id
+                         4 + // cif 0
+                         4; // cif 7
+
+    packet_type packet_in;
+
+    // Stream ID is required field. Set value to check
+    const uint32_t STREAM_ID = 0x12345678;
+    packet_in.stream_id(STREAM_ID);
+    CHECK(packet_in.stream_id() == STREAM_ID);
+
+    uint8_t PROBABILITY_PERCENT = 0xAF;
+    uint8_t PROBABILITY_FUNC = 0x01;
+    uint8_t BELIEF_PERCENT = 0xFF;
+
+    // Check bytes required
+    CHECK(helper::bytes_required(packet_in) == PACKED_SIZE);
+    bytes PROB_BE   = bytes { 0, 0, PROBABILITY_FUNC, PROBABILITY_PERCENT };
+    bytes BELIEF_BE = bytes { 0, 0, 0, BELIEF_PERCENT };
+
+    vrtgen::packing::Probability probability;
+    vrtgen::packing::Belief belief;
+    size_t PROBABILITY_BYTES = 4;
+    size_t BELIEF_BYTES = 4;
+    probability.probability_percent(PROBABILITY_PERCENT);
+    probability.probability_function(PROBABILITY_FUNC);
+    belief.belief_percent(BELIEF_PERCENT);
+
+    SECTION("CIF0") {
+        SECTION("Reference Level - common type test") {
+            const size_t REF_LEVEL_BYTES = 4;
+            PACKED_SIZE += REF_LEVEL_BYTES;
+
+            // Add bytes to PACKED_SIZE count
+            float REF_LEVEL = 1.0; // represents 0x0000 0080
+            float REF_LEVEL_MEAN = 3.0; // represents 0x0000 0180
+            float REF_LEVEL_MIN = 1.0;
+            float REF_LEVEL_MAX = 4.0; // represents 0x0000 0000
+            bytes REF_LEVEL_BE        = bytes { 0, 0, 0, 0x80 };
+            bytes REF_LEVEL_MEAN_BE   = bytes { 0, 0, 0x01, 0x80 };
+            bytes REF_LEVEL_MAX_BE    = bytes { 0, 0, 0x02, 0 };
+            bytes REF_LEVEL_MIN_BE    = bytes { 0, 0, 0, 0x80 };
+
+            CHECK_FALSE(packet_in.has_reference_level());
+            packet_in.reference_level(REF_LEVEL);
+            CHECK(packet_in.reference_level());
+            CHECK(packet_in.reference_level() == REF_LEVEL);
+
+            test_context6::structs::CIF7Attributes<float> attributes;
+            attributes.mean_value(REF_LEVEL_MEAN);
+            PACKED_SIZE += REF_LEVEL_BYTES;
+            attributes.max_value(REF_LEVEL_MAX);
+            PACKED_SIZE += REF_LEVEL_BYTES;
+            attributes.min_value(REF_LEVEL_MIN);
+            PACKED_SIZE += REF_LEVEL_BYTES;
+            
+            attributes.probability(probability);
+            attributes.belief(belief);
+            packet_in.reference_level_attributes(attributes);
+            PACKED_SIZE += PROBABILITY_BYTES;
+            PACKED_SIZE += BELIEF_BYTES;
+            CHECK(packet_in.reference_level_attributes().probability().probability_percent() == int(PROBABILITY_PERCENT));
+            CHECK(packet_in.reference_level_attributes().belief().belief_percent() == int(BELIEF_PERCENT));
+            CHECK(packet_in.reference_level_attributes().mean_value() == REF_LEVEL_MEAN);
+            CHECK(packet_in.reference_level_attributes().max_value() == REF_LEVEL_MAX);
+            CHECK(packet_in.reference_level_attributes().min_value() == REF_LEVEL_MIN);
+
+            // Check bytes required
+            CHECK(helper::bytes_required(packet_in) == PACKED_SIZE);
+
+            // Get buffer from pack
+            auto data = helper::pack(packet_in);
+            CHECK(data.size() == PACKED_SIZE);
+            auto* check_ptr = data.data();
+
+            // Examine and check packed header
+            const size_t HEADER_BYTES = 4;
+            const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
+            const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
+            const bytes HEADER_BE{ PACKET_TYPE , 0, 0, PACKET_SIZE };
+            const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
+            check_ptr += HEADER_BYTES;
+            //CHECK(packed_header == HEADER_BE);
+
+            // Examine and check packed Stream ID. Value shall be in big-endian format.
+            const size_t STREAM_ID_BYTES = 4;
+            const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
+            const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
+            check_ptr += STREAM_ID_BYTES;
+            CHECK(packed_stream_id == STREAM_ID_BE);
+
+            // Examine and check packed CIF0
+            const size_t CIF0_BYTES = 4;
+            const uint8_t REF_LEVEL_ENABLE = 0x1; // CIF 0 bit 24
+            const bytes CIF0_BE{ REF_LEVEL_ENABLE, 0, 0, 0x1 << 7 };
+            const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
+            check_ptr += CIF0_BYTES;
+            CHECK(packed_cif0 == CIF0_BE);
+
+            // Examine and check packed CIF0
+            const size_t CIF7_BYTES = 4;
+            const uint8_t MEAN_ENABLE = 1 << 6; // CIF 7 bit 30
+            const uint8_t MIN_ENABLE = 1 << 2; // CIF 7 bit 26
+            const uint8_t MAX_ENABLE = 1 << 3; // CIF 7 bit 27
+            const uint8_t BELIEF_ENABLE = 1 << 3; // CIF 7 bit 19
+            const uint8_t PROBABILITY_ENABLE = 1 << 4; // CIF 7 bit 20
+            const bytes CIF7_BE{ MEAN_ENABLE | MIN_ENABLE | MAX_ENABLE, BELIEF_ENABLE | PROBABILITY_ENABLE, 0 , 0 };
+            const decltype(data) packed_cif7(check_ptr, check_ptr + CIF7_BYTES);
+            check_ptr += CIF7_BYTES;
+            CHECK(packed_cif7 == CIF7_BE);
+
+            // // Examine and check packed Reference Level. Value shall be in big-endian format.
+            const decltype(data) packed_reference_level(check_ptr, check_ptr + REF_LEVEL_BYTES);
+            check_ptr += REF_LEVEL_BYTES;
+            CHECK(packed_reference_level == REF_LEVEL_BE);
+            const decltype(data) packed_ref_mean(check_ptr, check_ptr + REF_LEVEL_BYTES);
+            check_ptr += REF_LEVEL_BYTES;
+            CHECK(packed_ref_mean == REF_LEVEL_MEAN_BE);
+            const decltype(data) packed_ref_max(check_ptr, check_ptr + REF_LEVEL_BYTES);
+            check_ptr += REF_LEVEL_BYTES;
+            CHECK(packed_ref_max == REF_LEVEL_MAX_BE);
+            const decltype(data) packed_ref_min(check_ptr, check_ptr + REF_LEVEL_BYTES);
+            check_ptr += REF_LEVEL_BYTES;
+            CHECK(packed_ref_min == REF_LEVEL_MIN_BE);
+            const decltype(data) packed_ref_probability(check_ptr, check_ptr + REF_LEVEL_BYTES);
+            check_ptr += REF_LEVEL_BYTES;
+            CHECK(packed_ref_probability == PROB_BE);
+            const decltype(data) packed_ref_belief(check_ptr, check_ptr + REF_LEVEL_BYTES);
+            check_ptr += REF_LEVEL_BYTES;
+            CHECK(packed_ref_belief == BELIEF_BE);
+
+            // Check match
+            CHECK_FALSE(helper::match(data.data(), data.size()));
+
+            // Unpack verifed packed data
+            packet_type packet_out;
+            helper::unpack(packet_out, data.data(), data.size());
+
+            // Examine and check unpacked packet header
+            const auto& header = packet_out.header();
+            CHECK(header.packet_type() == vrtgen::packing::PacketType::CONTEXT);
+            CHECK_FALSE(header.class_id_enable());
+            CHECK_FALSE(header.not_v49d0());
+            CHECK(header.tsm() == vrtgen::packing::TSM::FINE);
+            CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
+            CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
+            CHECK(header.packet_size() == PACKET_SIZE);
+
+            // Examine and check unpacked Stream ID
+            CHECK(packet_out.stream_id() == STREAM_ID);
+
+            // Examine and check unpacked Reference Level
+            CHECK(packet_out.has_reference_level());
+            CHECK(packet_out.reference_level() == REF_LEVEL);
+        }
+
+        SECTION("Gain - class type test") {
+        // Add bytes to PACKED_SIZE count
+        const size_t GAIN_BYTES = 4;
+        PACKED_SIZE += GAIN_BYTES;
+
+        float GAIN_STAGE_2 = 0;
+        float GAIN_STAGE_1 = 1.0; // represents 0x0000 0080
+        bytes GAIN_BE = bytes { 0, 0, 0, 0x80 };
+        bytes GAIN_MEAN_BE = bytes { 0, 0, 0, 0x80 };
+        bytes GAIN_MAX_BE = bytes { 0, 0, 0, 0x80 };
+        bytes GAIN_MIN_BE = bytes { 0, 0, 0, 0x80 };
+
+        vrtgen::packing::Gain gain;
+        gain.stage_1(GAIN_STAGE_1);
+        gain.stage_2(GAIN_STAGE_2);
+        CHECK_FALSE(packet_in.has_gain());
+        packet_in.gain(gain);
+        CHECK(packet_in.has_gain());
+        CHECK(packet_in.gain().stage_1() == GAIN_STAGE_1);
+        CHECK(packet_in.gain().stage_2() == GAIN_STAGE_2);
+
+        test_context6::structs::CIF7Attributes<vrtgen::packing::Gain> attributes;
+        attributes.mean_value(gain);
+        PACKED_SIZE += GAIN_BYTES;
+        attributes.max_value(gain);
+        PACKED_SIZE += GAIN_BYTES;
+        attributes.min_value(gain);
+        PACKED_SIZE += GAIN_BYTES;
+        
+        attributes.probability(probability);
+        attributes.belief(belief);
+        packet_in.gain_attributes(attributes);
+        PACKED_SIZE += PROBABILITY_BYTES;
+        PACKED_SIZE += BELIEF_BYTES;
+        CHECK(packet_in.gain_attributes().probability().probability_percent() == int(PROBABILITY_PERCENT));
+        CHECK(packet_in.gain_attributes().belief().belief_percent() == int(BELIEF_PERCENT));
+        CHECK(packet_in.gain_attributes().mean_value().stage_1() == GAIN_STAGE_1);
+        CHECK(packet_in.gain_attributes().max_value().stage_1() == GAIN_STAGE_1);
+        CHECK(packet_in.gain_attributes().min_value().stage_1() == GAIN_STAGE_1);
+        CHECK(packet_in.gain_attributes().mean_value().stage_2() == GAIN_STAGE_2);
+        CHECK(packet_in.gain_attributes().max_value().stage_2() == GAIN_STAGE_2);
+        CHECK(packet_in.gain_attributes().min_value().stage_2() == GAIN_STAGE_2);
+
+        // Check bytes required
+        CHECK(helper::bytes_required(packet_in) == PACKED_SIZE);
+
+        // Get buffer from pack
+        auto data = helper::pack(packet_in);
+        CHECK(data.size() == PACKED_SIZE);
+        auto* check_ptr = data.data();
+
+        // Examine and check packed header
+        const size_t HEADER_BYTES = 4;
+        const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
+        const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
+        const bytes HEADER_BE{ PACKET_TYPE , 0, 0, PACKET_SIZE };
+        const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
+        check_ptr += HEADER_BYTES;
+        //CHECK(packed_header == HEADER_BE);
+
+        // Examine and check packed Stream ID. Value shall be in big-endian format.
+        const size_t STREAM_ID_BYTES = 4;
+        const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
+        const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
+        check_ptr += STREAM_ID_BYTES;
+        CHECK(packed_stream_id == STREAM_ID_BE);
+
+        // Examine and check packed CIF0
+        const size_t CIF0_BYTES = 4;
+        const uint8_t GAIN_ENABLE = 0x80; // CIF 0 bit 23
+        const bytes CIF0_BE{ 0, GAIN_ENABLE, 0, 0x1 << 7 };
+        const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
+        check_ptr += CIF0_BYTES;
+        CHECK(packed_cif0 == CIF0_BE);
+
+        // Examine and check packed CIF0
+        const size_t CIF7_BYTES = 4;
+        const uint8_t MEAN_ENABLE = 1 << 6; // CIF 7 bit 30
+        const uint8_t MIN_ENABLE = 1 << 2; // CIF 7 bit 26
+        const uint8_t MAX_ENABLE = 1 << 3; // CIF 7 bit 27
+        const uint8_t BELIEF_ENABLE = 1 << 3; // CIF 7 bit 19
+        const uint8_t PROBABILITY_ENABLE = 1 << 4; // CIF 7 bit 20
+        const bytes CIF7_BE{ MEAN_ENABLE | MIN_ENABLE | MAX_ENABLE, BELIEF_ENABLE | PROBABILITY_ENABLE, 0 , 0 };
+        const decltype(data) packed_cif7(check_ptr, check_ptr + CIF7_BYTES);
+        check_ptr += CIF7_BYTES;
+        CHECK(packed_cif7 == CIF7_BE);
+
+        // // Examine and check packed Reference Level. Value shall be in big-endian format.
+        const decltype(data) packed_reference_level(check_ptr, check_ptr + GAIN_BYTES);
+        check_ptr += GAIN_BYTES;
+        CHECK(packed_reference_level == GAIN_BE);
+        const decltype(data) packed_ref_mean(check_ptr, check_ptr + GAIN_BYTES);
+        check_ptr += GAIN_BYTES;
+        CHECK(packed_ref_mean == GAIN_MEAN_BE);
+        const decltype(data) packed_ref_max(check_ptr, check_ptr + GAIN_BYTES);
+        check_ptr += GAIN_BYTES;
+        CHECK(packed_ref_max == GAIN_MAX_BE);
+        const decltype(data) packed_ref_min(check_ptr, check_ptr + GAIN_BYTES);
+        check_ptr += GAIN_BYTES;
+        CHECK(packed_ref_min == GAIN_MIN_BE);
+        const decltype(data) packed_ref_probability(check_ptr, check_ptr + GAIN_BYTES);
+        check_ptr += GAIN_BYTES;
+        CHECK(packed_ref_probability == PROB_BE);
+        const decltype(data) packed_ref_belief(check_ptr, check_ptr + GAIN_BYTES);
+        check_ptr += GAIN_BYTES;
+        CHECK(packed_ref_belief == BELIEF_BE);
+
+        // Check match
+        CHECK_FALSE(helper::match(data.data(), data.size()));
+
+        // Unpack verifed packed data
+        packet_type packet_out;
+        helper::unpack(packet_out, data.data(), data.size());
+
+        // Examine and check unpacked packet header
+        const auto& header = packet_out.header();
+        CHECK(header.packet_type() == vrtgen::packing::PacketType::CONTEXT);
+        CHECK_FALSE(header.class_id_enable());
+        CHECK_FALSE(header.not_v49d0());
+        CHECK(header.tsm() == vrtgen::packing::TSM::FINE);
+        CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
+        CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
+        CHECK(header.packet_size() == PACKET_SIZE);
+
+        // Examine and check unpacked Stream ID
+        CHECK(packet_out.stream_id() == STREAM_ID);
+
+        // Examine and check unpacked Gain
+        CHECK(packet_out.gain().stage_1() == GAIN_STAGE_1);
+        CHECK(packet_out.gain().stage_2() == GAIN_STAGE_2);
+    }
+    }
+
+    SECTION("CIF1") {
+        size_t CIF1_BYTES = 4;
+        PACKED_SIZE += CIF1_BYTES;
+
+        SECTION("Phase Offset") {
+            // Add bytes to PACKED_SIZE count
+            const size_t PHASE_OFFSET_BYTES = 4;
+            PACKED_SIZE += PHASE_OFFSET_BYTES;
+
+            // Set phase offset value to check
+            const double PHASE_OFFSET = 1.0; // represents 0x0000 0080
+            CHECK_FALSE(packet_in.has_phase_offset());
+            packet_in.phase_offset(PHASE_OFFSET);
+            CHECK(packet_in.has_phase_offset());
+            CHECK(packet_in.phase_offset() == PHASE_OFFSET);
+
+            // Add bytes to PACKED_SIZE count
+            double PHASE_OFFSET_MEAN = 3.0; // represents 0x0000 0180
+            double PHASE_OFFSET_MIN = 1.0;
+            double PHASE_OFFSET_MAX = 4.0; // represents 0x0000 0000
+            bytes PHASE_OFFSET_BE        = bytes { 0, 0, 0, 0x80 };
+            bytes PHASE_OFFSET_MEAN_BE   = bytes { 0, 0, 0x01, 0x80 };
+            bytes PHASE_OFFSET_MAX_BE    = bytes { 0, 0, 0x02, 0 };
+            bytes PHASE_OFFSET_MIN_BE    = bytes { 0, 0, 0, 0x80 };
+
+            test_context6::structs::CIF7Attributes<float> attributes;
+            attributes.mean_value(PHASE_OFFSET_MEAN);
+            PACKED_SIZE += PHASE_OFFSET_BYTES;
+            attributes.max_value(PHASE_OFFSET_MAX);
+            PACKED_SIZE += PHASE_OFFSET_BYTES;
+            attributes.min_value(PHASE_OFFSET_MIN);
+            PACKED_SIZE += PHASE_OFFSET_BYTES;
+            
+            attributes.probability(probability);
+            attributes.belief(belief);
+            packet_in.phase_offset_attributes(attributes);
+            PACKED_SIZE += PROBABILITY_BYTES;
+            PACKED_SIZE += BELIEF_BYTES;
+            CHECK(packet_in.phase_offset_attributes().probability().probability_percent() == int(PROBABILITY_PERCENT));
+            CHECK(packet_in.phase_offset_attributes().belief().belief_percent() == int(BELIEF_PERCENT));
+            CHECK(packet_in.phase_offset_attributes().mean_value() == PHASE_OFFSET_MEAN);
+            CHECK(packet_in.phase_offset_attributes().max_value() == PHASE_OFFSET_MAX);
+            CHECK(packet_in.phase_offset_attributes().min_value() == PHASE_OFFSET_MIN);
+
+            // Check bytes required
+            CHECK(helper::bytes_required(packet_in) == PACKED_SIZE);
+
+            // Get buffer from pack
+            auto data = helper::pack(packet_in);
+            CHECK(data.size() == PACKED_SIZE);
+            auto* check_ptr = data.data();
+
+            // Examine and check packed header
+            const size_t HEADER_BYTES = 4;
+            const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
+            const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
+            const bytes HEADER_BE{ PACKET_TYPE , 0, 0, PACKET_SIZE };
+            const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
+            check_ptr += HEADER_BYTES;
+            //CHECK(packed_header == HEADER_BE);
+
+            // Examine and check packed Stream ID. Value shall be in big-endian format.
+            const size_t STREAM_ID_BYTES = 4;
+            const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
+            const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
+            check_ptr += STREAM_ID_BYTES;
+            CHECK(packed_stream_id == STREAM_ID_BE);
+
+            // Examine and check packed CIF0
+            const size_t CIF0_BYTES = 4;
+            const bytes CIF0_BE{ 0, 0, 0, 0x1 << 7 | 0x1 << 1 };
+            const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
+            check_ptr += CIF0_BYTES;
+            CHECK(packed_cif0 == CIF0_BE);
+
+            // Examine and check packed CIF1
+            const size_t CIF1_BYTES = 4;
+            const uint8_t PHASE_OFFSET_ENABLE = 0x1 << 7; // CIF 1 bit 31
+            const bytes CIF1_BE{ PHASE_OFFSET_ENABLE, 0, 0, 0 };
+            const decltype(data) packed_cif1(check_ptr, check_ptr + CIF1_BYTES);
+            check_ptr += CIF1_BYTES;
+            CHECK(packed_cif1 == CIF1_BE);
+
+            // Examine and check packed CIF0
+            const size_t CIF7_BYTES = 4;
+            const uint8_t MEAN_ENABLE = 1 << 6; // CIF 7 bit 30
+            const uint8_t MIN_ENABLE = 1 << 2; // CIF 7 bit 26
+            const uint8_t MAX_ENABLE = 1 << 3; // CIF 7 bit 27
+            const uint8_t BELIEF_ENABLE = 1 << 3; // CIF 7 bit 19
+            const uint8_t PROBABILITY_ENABLE = 1 << 4; // CIF 7 bit 20
+            const bytes CIF7_BE{ MEAN_ENABLE | MIN_ENABLE | MAX_ENABLE, BELIEF_ENABLE | PROBABILITY_ENABLE, 0 , 0 };
+            const decltype(data) packed_cif7(check_ptr, check_ptr + CIF7_BYTES);
+            check_ptr += CIF7_BYTES;
+            CHECK(packed_cif7 == CIF7_BE);
+
+            // // Examine and check packed Reference Level. Value shall be in big-endian format.
+            const decltype(data) packed_reference_level(check_ptr, check_ptr + PHASE_OFFSET_BYTES);
+            check_ptr += PHASE_OFFSET_BYTES;
+            CHECK(packed_reference_level == PHASE_OFFSET_BE);
+            const decltype(data) packed_ref_mean(check_ptr, check_ptr + PHASE_OFFSET_BYTES);
+            check_ptr += PHASE_OFFSET_BYTES;
+            CHECK(packed_ref_mean == PHASE_OFFSET_MEAN_BE);
+            const decltype(data) packed_ref_max(check_ptr, check_ptr + PHASE_OFFSET_BYTES);
+            check_ptr += PHASE_OFFSET_BYTES;
+            CHECK(packed_ref_max == PHASE_OFFSET_MAX_BE);
+            const decltype(data) packed_ref_min(check_ptr, check_ptr + PHASE_OFFSET_BYTES);
+            check_ptr += PHASE_OFFSET_BYTES;
+            CHECK(packed_ref_min == PHASE_OFFSET_MIN_BE);
+            const decltype(data) packed_ref_probability(check_ptr, check_ptr + PHASE_OFFSET_BYTES);
+            check_ptr += PHASE_OFFSET_BYTES;
+            CHECK(packed_ref_probability == PROB_BE);
+            const decltype(data) packed_ref_belief(check_ptr, check_ptr + PHASE_OFFSET_BYTES);
+            check_ptr += PHASE_OFFSET_BYTES;
+            CHECK(packed_ref_belief == BELIEF_BE);
+
+            // Check match
+            CHECK_FALSE(helper::match(data.data(), data.size()));
+
+            // Unpack verifed packed data
+            packet_type packet_out;
+            helper::unpack(packet_out, data.data(), data.size());
+
+            // Examine and check unpacked packet header
+            const auto& header = packet_out.header();
+            CHECK(header.packet_type() == vrtgen::packing::PacketType::CONTEXT);
+            CHECK_FALSE(header.class_id_enable());
+            CHECK_FALSE(header.not_v49d0());
+            CHECK(header.tsm() == vrtgen::packing::TSM::FINE);
+            CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
+            CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
+            CHECK(header.packet_size() == PACKET_SIZE);
+
+            // Examine and check unpacked Stream ID
+            CHECK(packet_out.stream_id() == STREAM_ID);
+
+            // Examine and check unpacked Reference Level
+            CHECK(packet_out.phase_offset());
+            CHECK(packet_out.phase_offset() == PHASE_OFFSET);
+        }
+    }
+}
+
+
 // TEST_CASE("Context Packet Index List")
 // {
 //     // Sizes for all required fields

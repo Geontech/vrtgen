@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2022 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -1740,131 +1740,313 @@ private:
 class IndicatorField7 : public IndicatorField
 {
 public:
+    /**
+     * @brief Returns the Current Value Indicator flag
+     * @return true if Current Value is attached to each field
+     * 
+     * Current Value Indicator is 1 bit long at bit position 31
+     * See VITA 49.2 Table 9.12-2
+     */
     bool current_value() const noexcept
     {
         return m_packed_0.get(m_current_value_tag);
     }
 
+    /**
+     * @brief Sets the Current Value Indicator flag
+     * @param value true if Current Value is attached to each field
+     * 
+     * Current Value Indicator is 1 bit long at bit position 31
+     * See VITA 49.2 Table 9.12-2
+     */
     void current_value(bool value) noexcept
     {
         m_packed_0.set(value, m_current_value_tag);
     }
 
-    bool average_value() const noexcept
+    /**
+     * @brief Returns the Mean Value Indicator flag
+     * @return true if Mean Value is attached to each field
+     * 
+     * Mean Value Indicator is 1 bit long at bit position 30
+     * See VITA 49.2 Table 9.12-2
+     */
+    bool mean_value() const noexcept
     {
-        return m_packed_0.get(m_average_value_tag);
+        return m_packed_0.get(m_mean_value_tag);
     }
 
-    void average_value(bool value) noexcept
+    /**
+     * @brief Sets the Mean Value Indicator flag
+     * @param value true if Mean Value is attached to each field
+     * 
+     * Mean Value Indicator is 1 bit long at bit position 30
+     * See VITA 49.2 Table 9.12-2
+     */
+    void mean_value(bool value) noexcept
     {
-        m_packed_0.set(value, m_average_value_tag);
+        m_packed_0.set(value, m_mean_value_tag);
     }
 
+    /**
+     * @brief Returns the Median Value Indicator flag
+     * @return true if Median Value is attached to each field
+     * 
+     * Median Value Indicator is 1 bit long at bit position 29
+     * See VITA 49.2 Table 9.12-2
+     */
     bool median_value() const noexcept
     {
         return m_packed_0.get(m_median_value_tag);
     }
 
+    /**
+     * @brief Sets the Median Value Indicator flag
+     * @param value true if Median Value is attached to each field
+     * 
+     * Median Value Indicator is 1 bit long at bit position 29
+     * See VITA 49.2 Table 9.12-2
+     */
     void median_value(bool value) noexcept
     {
         m_packed_0.set(value, m_median_value_tag);
     }
 
+    /**
+     * @brief Returns the Standard Deviation Value Indicator flag
+     * @return true if Standard Deviation Value is attached to each field
+     * 
+     * Standard Deviation Value Indicator is 1 bit long at bit position 28
+     * See VITA 49.2 Table 9.12-2
+     */
     bool standard_deviation() const noexcept
     {
         return m_packed_0.get(m_standard_deviation_tag);
     }
 
+    /**
+     * @brief Sets the Standard Deviation Value Indicator flag
+     * @param value true if Standard Deviation Value is attached to each field
+     * 
+     * Standard Deviation Value Indicator is 1 bit long at bit position 28
+     * See VITA 49.2 Table 9.12-2
+     */
     void standard_deviation(bool value) noexcept
     {
         m_packed_0.set(value, m_standard_deviation_tag);
     }
 
+    /**
+     * @brief Returns the Maximum Value Indicator flag
+     * @return true if Maximum Value is attached to each field
+     * 
+     * Maximum Value Indicator is 1 bit long at bit position 27
+     * See VITA 49.2 Table 9.12-2
+     */
     bool max_value() const noexcept
     {
         return m_packed_0.get(m_max_value_tag);
     }
 
+    /**
+     * @brief Sets the Maximum Value Indicator flag
+     * @param value true if Maximum Value is attached to each field
+     * 
+     * Maximum Value Indicator is 1 bit long at bit position 27
+     * See VITA 49.2 Table 9.12-2
+     */
     void max_value(bool value) noexcept
     {
         m_packed_0.set(value, m_max_value_tag);
     }
 
+    /**
+     * @brief Returns the Minimum Value Indicator flag
+     * @return true if Minimum Value is attached to each field
+     * 
+     * Minimum Value Indicator is 1 bit long at bit position 26
+     * See VITA 49.2 Table 9.12-2
+     */
     bool min_value() const noexcept
     {
         return m_packed_0.get(m_min_value_tag);
     }
 
+    /**
+     * @brief Sets the Minimum Value Indicator flag
+     * @param value true if Minimum Value is attached to each field
+     * 
+     * Minimum Value Indicator is 1 bit long at bit position 26
+     * See VITA 49.2 Table 9.12-2
+     */
     void min_value(bool value) noexcept
     {
         m_packed_0.set(value, m_min_value_tag);
     }
 
+    /**
+     * @brief Returns the Precision Value Indicator flag
+     * @return true if Precision Value is attached to each field
+     * 
+     * Precision Value Indicator is 1 bit long at bit position 25
+     * See VITA 49.2 Table 9.12-2
+     */
     bool precision() const noexcept
     {
         return m_packed_0.get(m_precision_tag);
     }
 
+    /**
+     * @brief Sets the Precision Value Indicator flag
+     * @param value true if Precision Value is attached to each field
+     * 
+     * Precision Value Indicator is 1 bit long at bit position 25
+     * See VITA 49.2 Table 9.12-2
+     */
     void precision(bool value) noexcept
     {
         m_packed_0.set(value, m_precision_tag);
     }
 
+    /**
+     * @brief Returns the Accuracy Indicator flag
+     * @return true if Accuracy is attached to each field
+     * 
+     * Accuracy Indicator is 1 bit long at bit position 24
+     * See VITA 49.2 Table 9.12-2
+     */
     bool accuracy() const noexcept
     {
         return m_packed_0.get(m_accuracy_tag);
     }
 
+    /**
+     * @brief Sets the Accuracy Indicator flag
+     * @param value true if Accuracy is attached to each field
+     * 
+     * Accuracy Indicator is 1 bit long at bit position 24
+     * See VITA 49.2 Table 9.12-2
+     */
     void accuracy(bool value) noexcept
     {
         m_packed_0.set(value, m_accuracy_tag);
     }
 
+    /**
+     * @brief Returns the First Derivative Indicator flag
+     * @return true if First Derivative is attached to each field
+     * 
+     * First Derivative Indicator is 1 bit long at bit position 23
+     * See VITA 49.2 Table 9.12-2
+     */
     bool first_derivative() const noexcept
     {
         return m_packed_0.get(m_first_derivative_tag);
     }
 
+    /**
+     * @brief Sets the First Derivative Indicator flag
+     * @param value true if First Derivative is attached to each field
+     * 
+     * First Derivative Indicator is 1 bit long at bit position 23
+     * See VITA 49.2 Table 9.12-2
+     */
     void first_derivative(bool value) noexcept
     {
         m_packed_0.set(value, m_first_derivative_tag);
     }
 
+    /**
+     * @brief Returns the Second Derivative Indicator flag
+     * @return true if First Derivative is attached to each field
+     * 
+     * First Derivative Indicator is 1 bit long at bit position 22
+     * See VITA 49.2 Table 9.12-2
+     */
     bool second_derivative() const noexcept
     {
         return m_packed_0.get(m_second_derivative_tag);
     }
 
+    /**
+     * @brief Sets the Second Derivative Indicator flag
+     * @param value true if Second Derivative is attached to each field
+     * 
+     * Second Derivative Indicator is 1 bit long at bit position 22
+     * See VITA 49.2 Table 9.12-2
+     */
     void second_derivative(bool value) noexcept
     {
         m_packed_0.set(value, m_second_derivative_tag);
     }
 
+    /**
+     * @brief Returns the Third Derivative Indicator flag
+     * @return true if Third Derivative is attached to each field
+     * 
+     * Third Derivative Indicator is 1 bit long at bit position 21
+     * See VITA 49.2 Table 9.12-2
+     */
     bool third_derivative() const noexcept
     {
         return m_packed_0.get(m_third_derivative_tag);
     }
 
+    /**
+     * @brief Sets the Third Derivative Indicator flag
+     * @param value true if Third Derivative is attached to each field
+     * 
+     * Third Derivative Indicator is 1 bit long at bit position 21
+     * See VITA 49.2 Table 9.12-2
+     */
     void third_derivative(bool value) noexcept
     {
         m_packed_0.set(value, m_third_derivative_tag);
     }
 
+    /**
+     * @brief Returns the Probability Indicator flag
+     * @return true if Probability is attached to each field
+     * 
+     * Probability Indicator is 1 bit long at bit position 20
+     * See VITA 49.2 Table 9.12-2
+     */
     bool probability() const noexcept
     {
         return m_packed_0.get(m_probability_tag);
     }
 
+    /**
+     * @brief Sets the Probability Indicator flag
+     * @param value true if Probability is attached to each field
+     * 
+     * Probability Indicator is 1 bit long at bit position 20
+     * See VITA 49.2 Table 9.12-2
+     */
     void probability(bool value) noexcept
     {
         m_packed_0.set(value, m_probability_tag);
     }
 
+    /**
+     * @brief Returns the Belief Indicator flag
+     * @return true if Belief is attached to each field
+     * 
+     * Belief Indicator is 1 bit long at bit position 19
+     * See VITA 49.2 Table 9.12-2
+     */
     bool belief() const noexcept
     {
         return m_packed_0.get(m_belief_tag);
     }
 
+    /**
+     * @brief Sets the Belief Indicator flag
+     * @param value true if Belief is attached to each field
+     * 
+     * Belief Indicator is 1 bit long at bit position 19
+     * See VITA 49.2 Table 9.12-2
+     */
     void belief(bool value) noexcept
     {
         m_packed_0.set(value, m_belief_tag);
@@ -1873,7 +2055,7 @@ public:
 private:
     /*
      * current_value 0/31
-     * average_value 0/30
+     * mean_value 0/30
      * median_value 0/29
      * standard_deviation 0/28
      * max_value 0/27
@@ -1887,7 +2069,7 @@ private:
      * belief 0/19
      */
     vrtgen::packed_tag<bool,31,1> m_current_value_tag;
-    vrtgen::packed_tag<bool,30,1> m_average_value_tag;
+    vrtgen::packed_tag<bool,30,1> m_mean_value_tag;
     vrtgen::packed_tag<bool,29,1> m_median_value_tag;
     vrtgen::packed_tag<bool,28,1> m_standard_deviation_tag;
     vrtgen::packed_tag<bool,27,1> m_max_value_tag;

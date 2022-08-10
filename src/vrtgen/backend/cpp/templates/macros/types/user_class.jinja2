@@ -24,11 +24,29 @@
  * {{ line | trim }}
 {% endfor %}
  */
+ {% if class.is_template %}
+template < typename {{ class.template_name }} >
+ {% endif %}
 class {{ class.type_ }}
 {
 public:
 {% for field in fields if field.enabled and not field.is_packed_type %}
-{%     if not type_helper.is_scalar(field) %}
+{%     if class.is_template and not (field.type_.is_packed_struct) %}
+    {{ class.template_name }}& {{ field.getter }}()
+    {
+        return m_{{ field.name }};
+    }
+
+    const {{ class.template_name }}& {{ field.getter }}() const
+    {
+        return m_{{ field.name }};
+    }
+
+    void {{ field.setter }}(const {{ class.template_name }}& value)
+    {
+        m_{{ field.name }} = value;
+    }
+{%     elif not type_helper.is_scalar(field) %}
     {{ type_helper.value_type(field) }}& {{ field.getter }}()
     {
         return m_{{ field.name }};
@@ -178,7 +196,13 @@ private:
 {% endfor %}
 {% for field in fields if field.enabled %}
 {%     set tag = field.packed_tag %}
-{%     if tag.packed_int is not none %}
+{%     if class.is_template %}
+{%         if field.type_.is_packed_struct %}
+    {{ type_helper.member_type(field) }} m_{{ field.name }};
+{%         else %}
+    {{ class.template_name }} m_{{field.name}};
+{%         endif %}
+{%     elif tag.packed_int is not none %}
 {%         set packed_int = class.packed_fields[tag.packed_int] %}
     using {{ field.name }}_tag = vrtgen::packed_tag<{{ type_helper.value_type(field) }},{{ tag.position % packed_int.bits }},{{ tag.bits }}{{ ',detail::'+field.converter if field.converter }}>;
 {%     else %}

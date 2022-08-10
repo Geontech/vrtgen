@@ -24,6 +24,7 @@ from vrtgen.parser.model.command import AcknowledgePacket
 from vrtgen.parser.loader import get_loader
 from .type_helpers import TypeHelper, format_enum
 from .jinja import *
+import copy
 
 def name_to_identifier(name):
     """
@@ -172,6 +173,13 @@ class CppPacket:
             return None
 
     @property
+    def cif7(self):
+        try:
+            return self.config.cif_7
+        except:
+            return None
+
+    @property
     def trailer(self):
         try:
             return self.config.trailer
@@ -236,7 +244,7 @@ class CppPacket:
 
     @property
     def structs(self):
-        retval = []
+        return_value = []
         if self.cif1 and self.cif1.enabled and (self.is_context or self.is_control or self.is_query):
             if self.cif1.sector_step_scan.enabled:
                 sector_step_scan = self.cif1.sector_step_scan.type_
@@ -247,14 +255,16 @@ class CppPacket:
                     if field.enabled:
                         record.__dict__[field.name].enabled = True
                         record.__dict__[field.name].required = True
-                retval.append(record)
+                return_value.append(record)
             if self.cif1.discrete_io_32.enabled and len(self.cif1.discrete_io_32.type_.subfields) > 0:
                 self.cif1.discrete_io_32.type_.packet_name = name_to_snake(self.name)
-                retval.append(self.cif1.discrete_io_32.type_)
+                return_value.append(self.cif1.discrete_io_32.type_)
             if self.cif1.discrete_io_64.enabled and len(self.cif1.discrete_io_64.type_.subfields) > 0:
                 self.cif1.discrete_io_64.type_.packet_name = name_to_snake(self.name)
-                retval.append(self.cif1.discrete_io_64.type_)
-        return retval
+                return_value.append(self.cif1.discrete_io_64.type_)
+        if self.cif7 and self.cif7.enabled:
+            return_value.append(self.cif7.attributes)
+        return return_value
 
     @property
     def enums(self):

@@ -73,6 +73,14 @@ class SignedIntegerType(IntegerType):
         self.signed = True
 
 @dataclass
+class Unsigned8(IntegerType):
+    name : str = 'unsigned_8_t'
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.bits = 8
+
+@dataclass
 class Unsigned16(IntegerType):
     name : str = 'unsigned_16_t'
 

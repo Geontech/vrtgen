@@ -20,6 +20,7 @@ import inspect
 from vrtgen.parser.model.types import *
 from vrtgen.parser.model.command import ControlIdentifier, WarningErrorFields
 from vrtgen.parser.model.cif1 import DiscreteIO
+from vrtgen.parser.model.cif7 import CIF7, CIF7Attributes
 from vrtgen.parser.model.aor import ArrayOfRecords
 
 """
@@ -129,12 +130,19 @@ class TypeHelper:
                 return 'uint{}_t'.format(field.bits)
         elif isinstance(field, ArrayOfRecords):
             return PACKING_NAMESPACE + field.type_ + '<{}::structs::{}Record>'.format(field.packet_name, field.type_)
+        elif isinstance(field, CIF7Attributes):
+            return '{}::structs::{}'.format(field.packet_name, field.type_)
+        elif isinstance(field, CIF7):
+            return PACKING_NAMESPACE + field.type_
         elif isinstance(field, TemplateArrayStruct):
             return PACKING_NAMESPACE + field.type_ + '<{}>'.format(field.template_type)
         elif isinstance(field, Field):
             return PACKING_NAMESPACE + field.type_
         else:
             raise TypeError(field)
+
+    def debug(self, var):
+        import pdb; pdb.set_trace()
 
     def member_type(self, field):
         if isinstance(field, CIFEnableType):

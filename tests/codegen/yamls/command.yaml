@@ -31,7 +31,7 @@ SampleControl: !Control
     fractional: picoseconds
   cif_0: !CIF0
     bandwidth: optional
-    rf_frequency: optional
+    rf_ref_frequency: optional
     sample_rate: required
     gain: required
   cif_1: !CIF1
@@ -65,7 +65,7 @@ SampleControlQ: !Control
     fractional: picoseconds
   cif_0: !CIF0
     bandwidth: optional
-    rf_frequency: optional
+    rf_ref_frequency: optional
     sample_rate: required
     gain: required
 
