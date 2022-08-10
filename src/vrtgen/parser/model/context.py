@@ -6,6 +6,7 @@ from vrtgen.parser.model.prologue import ClassIdentifier, Timestamp
 from vrtgen.parser.model.cif0 import CIF0
 from vrtgen.parser.model.cif1 import CIF1
 from vrtgen.parser.model.cif2 import CIF2
+from vrtgen.parser.model.cif7 import CIF7
 from vrtgen.parser.value import parse_tsm
 
 @dataclass
@@ -40,6 +41,7 @@ class ContextPacket(Packet):
     cif_0 : CIF0 = field(default_factory=lambda: CIF0(enabled=True, required=True))
     cif_1 : CIF1 = field(default_factory=CIF1)
     cif_2 : CIF2 = field(default_factory=CIF2)
+    cif_7 : CIF7 = field(default_factory=CIF7)
 
     def validate_and_parse_mapping(self, **mapping):
         self._validate(mapping)

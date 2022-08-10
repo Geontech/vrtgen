@@ -17,7 +17,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
 
-{%- macro define_cif_bytes_required(cif, type_helper) %}
+{%- macro define_cif_bytes_required(cif, cif7, type_helper) %}
 {% for field in cif.fields if field.enabled and not field.indicator_only %}
 {%   if field.is_optional %}
 if (packet.has_{{ field.name }}()) {
@@ -29,18 +29,43 @@ if (packet.has_{{ field.name }}()) {
 {%     else %}
     bytes += packet.{{ field.getter }}().size();
 {%     endif %}
+{%      if cif7.enabled %}
+{{ define_cif7_attribute_size(cif7.attributes.fields, field, type_helper) | trim }}
+{%      endif %}
 }
 {%   else %}
-{% if field.type_.reserved_bits != 0 %}
+{%      if field.type_.reserved_bits != 0 %}
 bytes += sizeof(int{{ field.type_.reserved_bits }}_t); // {{ field.name }} reserved bits
-{% endif %}
-{%     if type_helper.is_scalar(field) %}
+{%      endif %}
+{%      if type_helper.is_scalar(field) %}
 bytes += sizeof({{ type_helper.member_type(field) }}); // {{ field.name }}
-{%     else %}
+{%      else %}
 bytes += packet.{{ field.getter }}().size();
-{%     endif %}
+{%      endif %}
+{%      if cif7.enabled %}
+{{ define_cif7_attribute_size(cif7.attributes.fields, field, type_helper) | trim }}
+{%      endif %}
 {%   endif %}
 {% endfor %}
+{%- endmacro %}
+
+{%- macro define_cif7_attribute_size(attribute_fields, field, type_helper)%}
+{%     for attribute_field in attribute_fields if attribute_field.enabled %}
+{%        if attribute_field.type_.is_packed_struct %}
+bytes += packet.{{ field.getter }}_attributes().{{ attribute_field.getter }}().size();  // {{ attribute_field.name }}
+{%        else %}
+{%           if field.type_.reserved_bits != 0 %}
+bytes += sizeof(int{{ field.type_.reserved_bits }}_t); // {{ attribute_field.name }} reserved bits
+{%           endif %}
+{%           if attribute_field.type_.is_packed_struct %}
+bytes += packet.{{ attribute_field.getter }}().size();  // {{ attribute_field.name }}
+{%           elif type_helper.is_scalar(field) %}
+bytes += sizeof({{ type_helper.member_type(field) }}); // {{ attribute_field.name }}
+{%           else %}
+bytes += packet.{{ field.getter }}().size();  // {{ attribute_field.name }}
+{%           endif %}
+{%        endif %}
+{%     endfor%}
 {%- endmacro %}
 
 {%- macro define_bytes_required(packet, type_helper) %}
@@ -84,7 +109,7 @@ std::size_t {{ packet.helper }}::bytes_required(const {{ packet.name }}& packet)
 {% if packet.cif0.enabled %}
     bytes += packet.{{ packet.cif0.getter }}().size();
 {%   if packet.requires_cif_functions %}
-    {{ define_cif_bytes_required(packet.cif0, type_helper) | indent(4) | trim }}
+    {{ define_cif_bytes_required(packet.cif0, packet.cif7, type_helper) | indent(4) | trim }}
 {%   endif %}
 {% endif %}
 {% if packet.cif1.enabled  %}
@@ -96,7 +121,7 @@ std::size_t {{ packet.helper }}::bytes_required(const {{ packet.name }}& packet)
     bytes += packet.{{ packet.cif1.getter }}().size();
 {%   endif %}
 {%   if packet.requires_cif_functions %}
-    {{ define_cif_bytes_required(packet.cif1, type_helper) | indent(4) | trim }}
+    {{ define_cif_bytes_required(packet.cif1, packet.cif7, type_helper) | indent(4) | trim }}
 {%   endif %}
 {% endif %}
 {% if packet.cif2.enabled  %}
@@ -108,7 +133,13 @@ std::size_t {{ packet.helper }}::bytes_required(const {{ packet.name }}& packet)
     bytes += packet.{{ packet.cif2.getter }}().size();
 {%   endif %}
 {%   if packet.requires_cif_functions %}
-    {{ define_cif_bytes_required(packet.cif2, type_helper) | indent(4) | trim }}
+    {{ define_cif_bytes_required(packet.cif2, packet.cif7, type_helper) | indent(4) | trim }}
+{%   endif %}
+{% endif %}
+{% if packet.cif7.enabled  %}
+    bytes += packet.{{ packet.cif7.getter }}().size();
+{%   if packet.requires_cif_functions %}
+    {{ define_cif_bytes_required(packet.cif7, packet.cif7, type_helper) | indent(4) | trim }}
 {%   endif %}
 {% endif %}
 {% if packet.wif0.enabled and packet.warnings_enabled %}

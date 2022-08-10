@@ -6,6 +6,7 @@ from vrtgen.parser.model.prologue import ClassIdentifier, Timestamp
 from vrtgen.parser.model.cif0 import CIF0
 from vrtgen.parser.model.cif1 import CIF1
 from vrtgen.parser.model.cif2 import CIF2
+from vrtgen.parser.model.cif7 import CIF7
 from vrtgen.parser.value import parse_enable, parse_identifier_format, parse_action_mode, parse_timing_control
 
 @dataclass
@@ -156,6 +157,7 @@ class CommandPacket(Packet):
     cif_0 : CIF0 = field(default_factory=CIF0)
     cif_1 : CIF1 = field(default_factory=CIF1)
     cif_2 : CIF1 = field(default_factory=CIF2)
+    cif_7 : CIF7 = field(default_factory=CIF7)
 
     def __post_init__(self):
         super().__post_init__()

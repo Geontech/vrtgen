@@ -55,6 +55,21 @@ TestContext5: !Context
 #         - three
 #       anint: !!int 8
 
+TestContext6: !Context
+  cif_0: !CIF0
+    reference_level: optional
+    gain: optional
+  cif_1: !CIF1
+    phase_offset: optional
+    polarization: optional
+  cif_7: !CIF7
+    mean_value: required
+    max_value: required
+    min_value: required
+    probability: required
+    belief: required
+     
+
 # TestContextIndexList: !Context
 #   cif_1: !CIF1
 #     index_list: !IndexList

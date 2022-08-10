@@ -17,7 +17,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
 
-{%- macro pack_cif_field(field, type_helper) %}
+{%- macro pack_cif_field(field, cif7, type_helper) %}
 {% if field.type_.reserved_bits != 0 %}
 buffer.insert(static_cast<int{{ field.type_.reserved_bits }}_t>(0)); // {{ field.name }} reserved bits
 {% endif %}
@@ -26,19 +26,47 @@ auto* {{ field.name }} = buffer.insert(packet.{{ field.getter }}());
 {% else %}
 buffer.insert(packet._{{ field.name }}{{ '.value()' if field.is_optional }});
 {% endif %}
+{% if cif7.enabled %}
+{%    for attribute_field in cif7.attributes.fields if attribute_field.enabled %}
+{%    if attribute_field.type_.is_packed_struct %}
+buffer.insert(packet.{{ field.name }}_attributes().{{ attribute_field.name }}());
+{%    else %}
+{%       if field.type_.reserved_bits != 0 %}
+buffer.insert(static_cast<int{{ field.type_.reserved_bits }}_t>(0)); // {{ field.name }}_attributes reserved bits
+{%       endif %}
+{%       if type_helper.requires_get_set(field)  %}
+{%          if field.is_optional %}
+if (!{{ attribute_field.name }}.has_value()) {
+    {{ attribute_field.name }} = decltype({{ attribute_field.name }})::value_type{};
+}
+{%          endif %}
+    {{ attribute_field.name }}{{ '.value()' if field.is_optional }}.set(packet.{{ field.name }}_attributes().{{ attribute_field.name }}());
+{%       elif field.is_fixed_point %}
+auto {{ attribute_field.name }} = vrtgen::swap::to_be(vrtgen::fixed::to_int{{ type_helper.fixed_template(field) }}(packet.{{ field.name }}_attributes().{{ attribute_field.name }}()));
+{%       elif field.type_.is_fixed_point %}
+auto {{ attribute_field.name }} = vrtgen::swap::to_be(vrtgen::fixed::to_int{{ type_helper.fixed_template(field.type_) }}(packet.{{ field.name }}_attributes().{{ attribute_field.name }}()));
+{%       elif field.is_integer_type or field.type_.is_integer_type %}
+auto {{ attribute_field.name }} = vrtgen::swap::to_be(packet.{{ field.name }}_attributes().{{ attribute_field.name }}());
+{%       else %}
+auto {{ attribute_field.name }} = packet.{{ field.name }}_attributes().{{ attribute_field.name }}();
+{%       endif %}
+buffer.insert({{ attribute_field.name }});
+{%    endif %}
+{%    endfor %}
+{% endif %}
 {% endmacro %}
 
-{%- macro pack_cif(cif, type_helper) %}
+{%- macro pack_cif(cif, cif7, type_helper) %}
 {% for field in cif.fields if field.enabled %}
 {%   if field.indicator_only %}
 {{ cif.name }}->{{ field.setter }}(packet.{{ field.getter }}());
 {%   elif field.is_optional %}
 if (packet.has_{{ field.name }}()) {
-    {{ pack_cif_field(field, type_helper) | indent(4) | trim }}
+    {{ pack_cif_field(field, cif7, type_helper) | indent(4) | trim }}
     {{ cif.name }}->{{ field.setter }}(true);
 }
 {%   else %}
-{{ pack_cif_field(field, type_helper) | trim }}
+{{ pack_cif_field(field, cif7, type_helper) | trim }}
 {{ cif.name }}->{{ field.setter }}(true);
 {%     if field.type_.is_array_of_records %}
 {%       for subfield in field.type_.subfield_cif.fields if subfield.enabled %}
@@ -132,15 +160,22 @@ std::vector<uint8_t> {{ packet.helper }}::pack(const {{ packet.name }}& packet)
         {{ packet.cif0.name }}->cif2_enable(true);
     }
 {%   endif %}
+{%   if packet.cif7.enabled %}
+    auto* {{ packet.cif7.name }} = buffer.insert({{ type_helper.value_type(packet.cif7) }}{});
+    {{ packet.cif0.name }}->cif7_enable(true);
+{%      for field in packet.cif7.attributes.fields if field.enabled %}
+    {{ packet.cif7.name }}->{{ field.setter }}(true);
+{%      endfor %}
+{%   endif %}
 {%   if packet.requires_cif_functions %}
-    {{ pack_cif(packet.cif0, type_helper) | indent(4) | trim }}
+    {{ pack_cif(packet.cif0, packet.cif7, type_helper) | indent(4) | trim }}
 {%   endif %}
 {% endif %}
 {% if packet.cif1.enabled and packet.requires_cif_functions %}
-    {{ pack_cif(packet.cif1, type_helper) | indent(4) | trim }}
+    {{ pack_cif(packet.cif1, packet.cif7, type_helper) | indent(4) | trim }}
 {% endif %}
 {% if packet.cif2.enabled and packet.requires_cif_functions %}
-    {{ pack_cif(packet.cif2, type_helper) | indent(4) | trim }}
+    {{ pack_cif(packet.cif2, packet.cif7, type_helper) | indent(4) | trim }}
 {% endif %}
 {% if packet.warnings_enabled %}
     {{ type_helper.value_type(packet.wif0) }}* {{ packet.wif0.name }}{ nullptr };

@@ -23,6 +23,7 @@
 #include <vrtgen/packing/cif0.hpp>
 #include <vrtgen/packing/cif1.hpp>
 #include <vrtgen/packing/cif2.hpp>
+#include <vrtgen/packing/cif7.hpp>
 #include <vrtgen/packing/command.hpp>
 #include <vrtgen/packing/enums.hpp>
 #include <vrtgen/packing/header.hpp>
