@@ -68,6 +68,9 @@ TestContext6: !Context
     min_value: required
     probability: required
     belief: required
+
+TestContext7: !Context
+  tsm: coarse
      
 
 # TestContextIndexList: !Context
