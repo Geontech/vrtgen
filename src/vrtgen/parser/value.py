@@ -50,7 +50,7 @@ def parse_tsm(value):
     Valid values are 'fine' and 'coarse'. Case is ignored.
     """
     try:
-        return _TSF_VALUES[value.casefold()]
+        return _TSM_VALUES[value.casefold()]
     except KeyError:
         raise ValueError('invalid TSM value: ' + value)
 

@@ -47,6 +47,11 @@ class ContextPacket(Packet):
         self._validate(mapping)
         self._parse_mapping(mapping)
 
+    def _validate(self, mapping):
+        for field in mapping:
+            if not field in [f.name for f in (self.fields + self.header.fields)]:
+                raise ValueError('invalid field provided: ' + field)
+
     def _parse_mapping(self, mapping):
         for key,val in mapping.items():
             if key == 'tsm':
