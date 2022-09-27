@@ -623,6 +623,30 @@ public:
     }
 
     /**
+     * @brief Returns the GPS ASCII enable flag
+     * @return true if packet contains GPS ASCII field, otherwise false
+     * 
+     * GPS ASCII is 1 bit long at bit position 9
+     * See VITA 49.2 Table 9.1-1
+     */
+    bool gps_ascii() const noexcept
+    {
+        return m_packed_0.get(m_gps_ascii_tag);
+    }
+
+    /**
+     * @brief Sets the GPS ASCII enable flag
+     * @param value GPS ASCII enable flag value to set
+     * 
+     * GPS ASCII is 1 bit long at bit position 9
+     * See VITA 49.2 Table 9.1-1
+     */
+    void gps_ascii(bool value) noexcept
+    {
+        m_packed_0.set(value, m_gps_ascii_tag);
+    }
+
+    /**
      * @brief Returns the Context Assocations List enable flag
      * @return true if packet contains Context Assocations List field, otherwise false
      * 

@@ -4542,7 +4542,6 @@ TEST_CASE("Context Packet CIF0 Optional")
             CHECK(packet_out.ephemeris_ref_id() == EPHEM_REF_ID);
         } // end SECTION("Rule 9.4.4-1")
     } // end SECTION("Ephemeris Ref ID")
-
 } // end TEST_CASE("Context Packet CIF0 Optional")
 
 TEST_CASE("Context Packet CIF1 Optional")

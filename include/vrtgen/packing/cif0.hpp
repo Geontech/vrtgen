@@ -1485,6 +1485,154 @@ private:
 }; // end class Ephemeris
 
 /**
+ * @class GPS_ASCII
+ * @brief GPS ASCII Field (9.4.7)
+ */
+class GPS_ASCII
+{
+public:
+
+    /**
+     * @brief Returns the Manufacturer OUI subfield value
+     * @return Manufacturer OUI subfield value
+     * 
+     * Manufacturer OUI subfield is 24 bits long at bit position 23 in word 1
+     * See VITA 49.2 Figure 9.4.7-1
+     */
+    uint32_t manufacturer_oui() const noexcept
+    {
+        return m_manufacturer_oui.get();
+    }
+
+    /**
+     * @brief Sets the Manufacturer OUI subfield value
+     * @param value Manufacturer OUI subfield value to set
+     * 
+     * Manufacturer OUI subfield is 24 bits long at bit position 23 in word 1
+     * See VITA 49.2 Figure 9.4.7-1
+     */
+    void manufacturer_oui(uint32_t value) noexcept
+    {
+        m_manufacturer_oui.set(value);
+    }
+
+    /**
+     * @brief Returns the Number of Words subfield value
+     * @return Number of Words subfield value
+     * 
+     * Number of Words subfield is 32 bits long at bit position 31 in word 2
+     * See VITA 49.2 Figure 9.4.7-1
+     */
+    uint32_t number_of_words() const noexcept
+    {
+        return vrtgen::swap::from_be(m_number_of_words);
+    }
+
+    /**
+     * @brief Returns the ASCII Sentences subfield value
+     * @return ASCII Sentences subfield value
+     * 
+     * ASCII Sentences subfield is a vector of 8 bits long values packed into 32 bit words 
+     * starting at word 3 and going to word N+2
+     * See VITA 49.2 Figure 9.4.7-1
+     */
+    std::vector<uint8_t>& ascii_sentences() noexcept
+    {
+        return m_ascii_sentences;
+    }
+
+    /**
+     * @brief Returns the ASCII Sentences subfield value
+     * @return ASCII Sentences subfield value
+     * 
+     * ASCII Sentences subfield is a vector of 8 bits long values packed into 32 bit words 
+     * starting at word 3 and going to word N+2
+     * See VITA 49.2 Figure 9.4.7-1
+     */
+    const std::vector<uint8_t>& ascii_sentences() const noexcept
+    {
+        return m_ascii_sentences;
+    }
+
+    /**
+     * @brief Sets the ASCII Sentences subfield value
+     * @param value ASCII Sentences subfield value to set
+     * 
+     * ASCII Sentences subfield is a vector of 8 bits long values packed into 32 bit words 
+     * starting at word 3 and going to word N+2
+     * See VITA 49.2 Figure 9.4.7-1
+     */
+    void ascii_sentences(const std::vector<uint8_t>& value) noexcept
+    {
+        m_ascii_sentences = value;
+        m_ascii_sentences.resize(m_ascii_sentences.size() + (m_ascii_sentences.size() % 4));
+        number_of_words(m_ascii_sentences.size()/4);
+    }
+
+    /**
+     * @brief Returns the number of GPS_ASCII bytes
+     * @return Number of GPS_ASCII bytes
+     */
+    std::size_t size() const noexcept
+    {
+        return  sizeof(m_reserved) +
+                m_manufacturer_oui.size() +
+                sizeof(m_number_of_words) +
+                m_ascii_sentences.size();
+    }
+
+    /**
+     * @brief Pack GPS_ASCII as bytes into the buffer
+     * @param buffer_ptr Pointer to buffer location to add GPS_ASCII bytes
+     */
+    void pack_into(uint8_t* buffer_ptr) const
+    {
+        std::memcpy(buffer_ptr, &m_reserved, sizeof(m_reserved));
+        buffer_ptr += sizeof(m_reserved);
+        m_manufacturer_oui.pack_into(buffer_ptr);
+        buffer_ptr += m_manufacturer_oui.size();
+        std::memcpy(buffer_ptr, &m_number_of_words, sizeof(m_number_of_words));
+        buffer_ptr += sizeof(m_number_of_words);
+        std::copy(m_ascii_sentences.data(), m_ascii_sentences.data() + m_ascii_sentences.size(), buffer_ptr);
+    }
+
+    /**
+     * @brief Unpack buffer bytes into GPS_ASCII
+     * @param buffer_ptr Pointer to beginning of GPS_ASCII bytes in the buffer
+     */
+    void unpack_from(const uint8_t* buffer_ptr)
+    {
+        auto* ptr = buffer_ptr;
+        std::memcpy(&m_reserved, ptr, sizeof(m_reserved));
+        ptr += sizeof(m_reserved);
+        m_manufacturer_oui.unpack_from(ptr);
+        ptr += m_manufacturer_oui.size();
+        std::memcpy(&m_number_of_words, ptr, sizeof(m_number_of_words));
+        ptr += sizeof(m_number_of_words);
+        m_ascii_sentences.resize(number_of_words()*4);
+        std::copy(ptr, ptr + number_of_words()*4, m_ascii_sentences.data());
+    }
+
+private:
+    /**
+     * @brief Sets the Number of Words subfield value
+     * @param value Number of Words subfield value to set
+     * 
+     * Number of Words subfield is 32 bits long at bit position 31 in word 2
+     * See VITA 49.2 Figure 9.4.7-1
+     */
+    void number_of_words(uint32_t value) noexcept
+    {
+        m_number_of_words = vrtgen::swap::to_be(value);
+    }
+
+    uint8_t m_reserved{ 0 };
+    vrtgen::OUI m_manufacturer_oui{ 0 };
+    uint32_t m_number_of_words{ 0 };
+    std::vector<uint8_t> m_ascii_sentences;
+};
+
+/**
  * @class PayloadFormat
  * @brief Signal Data Packet Payload Format Field (9.13.3)
  */

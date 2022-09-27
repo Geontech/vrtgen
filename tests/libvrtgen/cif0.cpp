@@ -432,6 +432,24 @@ TEST_CASE("CIF0", "[cif0]")
         CHECK(unpack_cif0.ephemeris_ref_id() == true);
     }
 
+    SECTION("GPS ASCII")
+    {
+        // Verify zero on construction
+        CHECK(cif0.gps_ascii() == false);
+        // Setter
+        cif0.gps_ascii(true);
+        // Getter check set value
+        CHECK(cif0.gps_ascii() == true);
+        // Pack
+        cif0.pack_into(packed_bytes.data());
+        // Verify packed bits
+        CHECK(packed_bytes[2] == 0x02);
+        // Unpack
+        unpack_cif0.unpack_from(packed_bytes.data());
+        // Verify unpacked value
+        CHECK(unpack_cif0.gps_ascii() == true);
+    }
+
     SECTION("Context Association Lists")
     {
         // Verify zero on construction
@@ -520,6 +538,101 @@ TEST_CASE("CIF0", "[cif0]")
         unpack_cif0.unpack_from(packed_bytes.data());
         // Verify unpacked value
         CHECK(unpack_cif0.cif1_enable() == true);
+    }
+}
+
+TEST_CASE("GPS ASCII") {
+    GPS_ASCII gps_ascii;
+    GPS_ASCII unpack_gps_ascii;
+    bytes packed_bytes{ 
+        0xFF, 0xFF, 0xFF, 0xFF, // OUI
+        0xFF, 0xFF, 0xFF, 0xFF, // Number of words
+        0xFF, 0xFF, 0xFF, 0xFF, // Number of words
+    };
+
+    SECTION("Rule 9.4.7-1") {
+        CHECK(true);
+    }
+
+    SECTION("Rule 9.4.7-2") {
+        // Verify Size
+        CHECK(gps_ascii.size() == 8); // oui and num of words
+        // Setters
+        uint32_t OUI = 0x123456;
+        gps_ascii.manufacturer_oui(OUI);
+        // Getters check set value
+        CHECK(gps_ascii.manufacturer_oui() == OUI);
+        // Pack
+        gps_ascii.pack_into(packed_bytes.data());
+        // Verify packed bits
+        CHECK(packed_bytes == bytes{ 
+                0x00, 0x12, 0x34, 0x56, // OUI
+                0x00, 0x00, 0x00, 0x00, // Number of words
+                0xFF, 0xFF, 0xFF, 0xFF, // Number of words
+        });
+        // Unpack
+        unpack_gps_ascii.unpack_from(packed_bytes.data());
+        // Verify unpacked values
+        CHECK(unpack_gps_ascii.size() == 8); // oui and num of words
+        CHECK(unpack_gps_ascii.manufacturer_oui() == OUI);
+        CHECK(unpack_gps_ascii.number_of_words() == 0);
+    }
+
+    SECTION("Rule 9.4.7-3") {
+        // Verify Size and Number of Words
+        CHECK(gps_ascii.size() == 8);
+        CHECK(gps_ascii.number_of_words() == 0);
+        // Setters
+        std::vector<uint8_t> ascii_sentences { 0xDE, 0xAD, 0xBE, 0xEF};
+        gps_ascii.ascii_sentences(ascii_sentences);
+        // Getters check set value
+        CHECK(gps_ascii.number_of_words() == 1);
+        // Pack
+        gps_ascii.pack_into(packed_bytes.data());
+        // Verify packed bits
+        CHECK(packed_bytes == bytes{ 
+                0x00, 0x00, 0x00, 0x00, // OUI
+                0x00, 0x00, 0x00, 0x01, // Number of words
+                0xDE, 0xAD, 0xBE, 0xEF  // ACII WORD
+        });
+        // Unpack
+        unpack_gps_ascii.unpack_from(packed_bytes.data());
+        // Verify unpacked values
+        CHECK(unpack_gps_ascii.size() == 12);
+        CHECK(unpack_gps_ascii.number_of_words() == 1);
+        CHECK(unpack_gps_ascii.ascii_sentences() == ascii_sentences);
+    }
+
+    SECTION("Rule 9.4.7-4") {
+        /*
+         * Developer's note: Rule does not apply to tool
+         */
+        CHECK(true);
+    }
+
+    SECTION("Rule 9.4.7-5"){
+        // Verify Size and Number of Words
+        CHECK(gps_ascii.size() == 8);
+        CHECK(gps_ascii.number_of_words() == 0);
+        // Setters
+        std::vector<uint8_t> ascii_sentences { 0xBE, 0xEF};
+        gps_ascii.ascii_sentences(ascii_sentences);
+        // Getters check set value
+        CHECK(gps_ascii.number_of_words() == 1);
+        // Pack
+        gps_ascii.pack_into(packed_bytes.data());
+        // Verify packed bits
+        CHECK(packed_bytes == bytes{ 
+                0x00, 0x00, 0x00, 0x00, // OUI
+                0x00, 0x00, 0x00, 0x01, // Number of words
+                0xBE, 0xEF, 0x00, 0x00  // ACII WORD
+        });
+        // Unpack
+        unpack_gps_ascii.unpack_from(packed_bytes.data());
+        // Verify unpacked values
+        CHECK(unpack_gps_ascii.size() == 12);
+        CHECK(unpack_gps_ascii.number_of_words() == 1);
+        CHECK(unpack_gps_ascii.ascii_sentences() == bytes { 0xBE, 0xEF, 0x00, 0x00});
     }
 }
 

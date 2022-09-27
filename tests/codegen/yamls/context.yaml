@@ -14,6 +14,7 @@ TestContext3: !Context
 
 TestContext4: !Context
   cif_0: !CIF0
+    gps_ascii: optional
     reference_point_id: optional
     bandwidth: optional
     if_ref_frequency: optional
