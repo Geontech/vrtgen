@@ -219,7 +219,7 @@ class CIF0(CIF):
     relative_ephemeris : CIFEnableType = field(default_factory=lambda: CIFEnableType('relative_ephemeris', type_=Ephemeris(), packed_tag=PackedTag(11,1,0,0)))
     ephemeris_ref_id : CIFEnableType = field(default_factory=lambda: CIFEnableType('ephemeris_ref_id', type_=Unsigned32(), packed_tag=PackedTag(10,1,0,0)))
     # not currently supported
-    # gps_ascii : CIFEnableType = field(default_factory=lambda: CIFEnableType('gps_ascii', type_=GPS_ASCII(), packed_tag=PackedTag(9,1,0,0)))
+    gps_ascii : CIFEnableType = field(default_factory=lambda: CIFEnableType('gps_ascii', type_=GPS_ASCII(), packed_tag=PackedTag(9,1,0,0)))
     context_association_lists : CIFEnableType = field(default_factory=lambda: CIFEnableType('context_association_lists', type_=ContextAssociationLists(), packed_tag=PackedTag(8,1,0,0)))
     cif7_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif7_enable', indicator_only=True, packed_tag=PackedTag(7,1,0,0)))
     cif3_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif3_enable', indicator_only=True, packed_tag=PackedTag(3,1,0,0)))
