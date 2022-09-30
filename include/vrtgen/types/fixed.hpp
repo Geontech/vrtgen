@@ -36,7 +36,7 @@ namespace vrtgen::fixed {
 template <std::size_t N, std::size_t R>
 inline constexpr auto to_int(std::floating_point auto value) noexcept
 {
-    constexpr auto scale = static_cast<decltype(value)>(1 << R);
+    constexpr auto scale = static_cast<decltype(value)>(static_cast<uint64_t>(1) << R);
     if constexpr (N > 32) {
         return static_cast<int64_t>(std::round(value * scale));
     } else if constexpr(N > 16) {
@@ -59,11 +59,11 @@ inline constexpr auto to_int(std::floating_point auto value) noexcept
 template <std::size_t N, std::size_t R>
 inline constexpr auto to_fp(std::integral auto value) noexcept
 {
-    constexpr auto scale = (1 << R);
+    constexpr auto scale = (static_cast<uint64_t>(1) << R);
     if constexpr (N >= 32) {
-        return static_cast<double>(value) / scale;
+        return static_cast<long double>(value) / scale;
     } else {
-        return static_cast<float>(value) / scale;
+        return static_cast<double>(value) / scale;
     }
 }
 
