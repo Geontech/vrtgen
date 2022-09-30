@@ -5245,7 +5245,7 @@ TEST_CASE("Context Packet CIF7 Packet")
             CHECK(packet_in.reference_level());
             CHECK(packet_in.reference_level() == REF_LEVEL);
 
-            test_context6::structs::CIF7Attributes<float> attributes;
+            test_context6::structs::CIF7Attributes<double> attributes;
             attributes.mean_value(REF_LEVEL_MEAN);
             PACKED_SIZE += REF_LEVEL_BYTES;
             attributes.max_value(REF_LEVEL_MAX);
@@ -5511,7 +5511,7 @@ TEST_CASE("Context Packet CIF7 Packet")
             bytes PHASE_OFFSET_MAX_BE    = bytes { 0, 0, 0x02, 0 };
             bytes PHASE_OFFSET_MIN_BE    = bytes { 0, 0, 0, 0x80 };
 
-            test_context6::structs::CIF7Attributes<float> attributes;
+            test_context6::structs::CIF7Attributes<double> attributes;
             attributes.mean_value(PHASE_OFFSET_MEAN);
             PACKED_SIZE += PHASE_OFFSET_BYTES;
             attributes.max_value(PHASE_OFFSET_MAX);

@@ -20,7 +20,6 @@
 #include <cmath>
 #include <limits>
 #include <utility>
-
 #include "catch.hpp"
 #include "bytes.hpp"
 #include "vrtgen/types.hpp"
@@ -319,7 +318,7 @@ TEST_CASE("Q16.16 fixed-point conversion", "[fixed]")
 TEST_CASE("Q44.20 fixed-point conversion", "[fixed]")
 {
     using int_type = int64_t;
-    using float_type = double;
+    using float_type = long double;
     constexpr std::size_t BITS = 64;
     constexpr std::size_t RADIX = 20;
 
@@ -351,7 +350,13 @@ TEST_CASE("Q44.20 fixed-point conversion", "[fixed]")
         CHECK(vrtgen::fixed::to_int<BITS,RADIX>(float_val) == int_val);
         CHECK(vrtgen::fixed::to_fp<BITS,RADIX>(int_val) == float_val);
     }
-    // TODO: Largest positive value
+    SECTION("Largest positive value")
+    {
+        auto int_val = static_cast<int_type>(0x7FFFFFFFFFFFFFFF);
+        auto float_val = static_cast<float_type>(8796093022208.0) - (1.0 / 1048576.0);
+        CHECK(vrtgen::fixed::to_int<BITS,RADIX>(float_val) == int_val);
+        CHECK(vrtgen::fixed::to_fp<BITS,RADIX>(int_val) == float_val);
+    }
     SECTION("Largest positive fraction")
     {
         auto int_val = static_cast<int_type>(0x00000000000FFFFF);

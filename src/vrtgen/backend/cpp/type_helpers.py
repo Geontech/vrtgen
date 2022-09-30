@@ -56,8 +56,8 @@ def float_type(field):
     Returns the C++ floating point type for a given bit width.
     """
     if field.bits >= 32:
-        return 'double'
-    return 'float'
+        return 'long double'
+    return 'double'
 
 def name_to_identifier(name):
     """
