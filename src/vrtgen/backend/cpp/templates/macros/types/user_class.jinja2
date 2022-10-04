@@ -87,11 +87,7 @@ public:
 
 {%     endif %}
 {% endfor %}
-{% if class.is_array_struct %}
     size_t size() const
-{% else %}
-    size_t size() const
-{% endif %}
     {
         size_t retval = 0;
 {% for field in fields if field.enabled and field.packed_tag.packed_int is none %}
@@ -200,7 +196,7 @@ private:
 {%         if field.type_.is_packed_struct %}
     {{ type_helper.member_type(field) }} m_{{ field.name }};
 {%         else %}
-    {{ class.template_name }} m_{{field.name}};
+    T m_{{field.name}};
 {%         endif %}
 {%     elif tag.packed_int is not none %}
 {%         set packed_int = class.packed_fields[tag.packed_int] %}

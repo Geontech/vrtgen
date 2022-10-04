@@ -46,32 +46,33 @@ class CIF7Attributes(TemplateArrayStruct):
     """
     name : str = 'cif_7_attributes'
     current_value : CIFEnableType = field(default_factory=lambda: CIFEnableType('current_value', indicator_only=True, packed_tag=PackedTag(31,1,0,0)))
-    mean_value : CIFEnableType = field(default_factory=lambda: CIFEnableType('mean_value', indicator_only=True, packed_tag=PackedTag(30,1,0,0)))
-    median_value : CIFEnableType = field(default_factory=lambda: CIFEnableType('median_value', indicator_only=True, packed_tag=PackedTag(29,1,0,0)))
-    standard_deviation : CIFEnableType = field(default_factory=lambda: CIFEnableType('standard_deviation', indicator_only=True, packed_tag=PackedTag(28,1,0,0)))
-    max_value : CIFEnableType = field(default_factory=lambda: CIFEnableType('max_value', indicator_only=True, packed_tag=PackedTag(27,1,0,0)))
-    min_value : CIFEnableType = field(default_factory=lambda: CIFEnableType('min_value', indicator_only=True, packed_tag=PackedTag(26,1,0,0)))
-    precision : CIFEnableType = field(default_factory=lambda: CIFEnableType('precision', indicator_only=True, packed_tag=PackedTag(25,1,0,0)))
-    accuracy : CIFEnableType = field(default_factory=lambda: CIFEnableType('accuracy', indicator_only=True, packed_tag=PackedTag(24,1,0,0)))
-    first_derivative : CIFEnableType = field(default_factory=lambda: CIFEnableType('first_derivative', indicator_only=True, packed_tag=PackedTag(23,1,0,0)))
-    second_derivative : CIFEnableType = field(default_factory=lambda: CIFEnableType('second_derivative', indicator_only=True, packed_tag=PackedTag(22,1,0,0)))
-    third_derivative : CIFEnableType = field(default_factory=lambda: CIFEnableType('third_derivative', indicator_only=True, packed_tag=PackedTag(21,1,0,0)))
+    mean_value : CIFEnableType = field(default_factory=lambda: CIFEnableType('mean_value', packed_tag=PackedTag(30,1,0,0)))
+    median_value : CIFEnableType = field(default_factory=lambda: CIFEnableType('median_value', packed_tag=PackedTag(29,1,0,0)))
+    standard_deviation : CIFEnableType = field(default_factory=lambda: CIFEnableType('standard_deviation', packed_tag=PackedTag(28,1,0,0)))
+    max_value : CIFEnableType = field(default_factory=lambda: CIFEnableType('max_value', packed_tag=PackedTag(27,1,0,0)))
+    min_value : CIFEnableType = field(default_factory=lambda: CIFEnableType('min_value', packed_tag=PackedTag(26,1,0,0)))
+    precision : CIFEnableType = field(default_factory=lambda: CIFEnableType('precision', packed_tag=PackedTag(25,1,0,0)))
+    accuracy : CIFEnableType = field(default_factory=lambda: CIFEnableType('accuracy', packed_tag=PackedTag(24,1,0,0)))
+    first_derivative : CIFEnableType = field(default_factory=lambda: CIFEnableType('first_derivative', packed_tag=PackedTag(23,1,0,0)))
+    second_derivative : CIFEnableType = field(default_factory=lambda: CIFEnableType('second_derivative', packed_tag=PackedTag(22,1,0,0)))
+    third_derivative : CIFEnableType = field(default_factory=lambda: CIFEnableType('third_derivative', packed_tag=PackedTag(21,1,0,0)))
     probability : CIFEnableType = field(default_factory=lambda: CIFEnableType('probability', type_=Probability(reserved_bits=16), packed_tag=PackedTag(20,1,0,0)))
     belief : CIFEnableType = field(default_factory=lambda: CIFEnableType('belief', type_=Belief(reserved_bits=24), packed_tag=PackedTag(19,1,0,0)))
     packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
 
     def __post_init__(self):
         super().__post_init__()
-        self.template_name = "attribute_type"
+
+    def __post_init__(self):
+        super().__post_init__()
 
     def _parse_mapping(self, mapping):
         for key,val in mapping.items():
             mode = parse_enable(val)
-            if mode != Mode.REQUIRED:
-                print('{} is a required field, ignoring: {}'.format(key, val))
-            else:
-                self.__dict__[key].enabled = True
-                self.__dict__[key].required = True
+            if (mode == Mode.OPTIONAL):
+                raise TypeError('invalid mode "optional" for {}'.format(key))
+            self.__dict__[key].enabled = True
+            self.__dict__[key].required = True
 
 @dataclass
 class CIF7(CIF):
@@ -83,7 +84,6 @@ class CIF7(CIF):
 
     def __post_init__(self):
         super().__post_init__()
-        self.template_name = "attribute_type"
 
     @property
     def fields(self):
@@ -94,6 +94,10 @@ class CIF7(CIF):
             if not field in [f.name for f in self.attributes.fields]:
                 raise ValueError('invalid field provided: ' + field)
 
+    @property
+    def current_value_enabled(self):
+        return self.attributes.current_value.enabled
+
     def _parse_mapping(self, mapping):
         for key,val in mapping.items():
             if key == 'current_value':
@@ -101,7 +105,6 @@ class CIF7(CIF):
             mode = parse_enable(val)
             if mode != Mode.REQUIRED:
                 print('{} is a required field, ignoring: {}'.format(key, val))
-            else:
-                self.attributes.__dict__[key].enabled = True
-                self.attributes.__dict__[key].required = True
-
+           
+            self.attributes.__dict__[key].enabled = True
+            self.attributes.__dict__[key].required = True

@@ -263,6 +263,7 @@ class CppPacket:
                 self.cif1.discrete_io_64.type_.packet_name = name_to_snake(self.name)
                 return_value.append(self.cif1.discrete_io_64.type_)
         if self.cif7 and self.cif7.enabled:
+            self.cif7.attributes.packet_name = name_to_snake(self.name)
             return_value.append(self.cif7.attributes)
         return return_value
 

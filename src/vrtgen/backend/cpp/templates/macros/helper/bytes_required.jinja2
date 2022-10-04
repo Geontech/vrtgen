@@ -20,7 +20,34 @@
 {%- macro define_cif_bytes_required(cif, cif7, type_helper) %}
 {% for field in cif.fields if field.enabled and not field.indicator_only %}
 {%   if field.is_optional %}
+{%     if cif7.enabled %}
+if (packet.has_{{ field.name }}() || packet.has_{{ field.name }}_attributes()) {
+{%     else %}
 if (packet.has_{{ field.name }}()) {
+{%     endif %}
+{% if cif7.enabled %}
+{%      if cif7.current_value_enabled %}
+{{ define_field_bytes_required(field, cif7, type_helper ) | trim }}
+{%      endif %}
+{{ define_cif7_attribute_size(cif7.attributes.fields, field, type_helper) | trim }}
+{% else %}
+{{ define_field_bytes_required(field, cif7, type_helper ) | trim }}
+{% endif %}
+}
+{%   else %}
+{% if cif7.enabled %}
+{%      if cif7.current_value_enabled %}
+{{ define_field_bytes_required(field, cif7, type_helper ) | trim }}
+{%      endif %}
+{{ define_cif7_attribute_size(cif7.attributes.fields, field, type_helper) | trim }}
+{% else %}
+{{ define_field_bytes_required(field, cif7, type_helper ) | trim }}
+{% endif %}
+{%   endif %}
+{% endfor %}
+{%- endmacro %}
+
+{%- macro define_field_bytes_required(field, cif7, type_helper ) %}
 {%     if field.type_.reserved_bits != 0 %}
     bytes += sizeof(int{{ field.type_.reserved_bits }}_t); // {{ field.name }} reserved bits
 {%     endif %}
@@ -29,40 +56,20 @@ if (packet.has_{{ field.name }}()) {
 {%     else %}
     bytes += packet.{{ field.getter }}().size();
 {%     endif %}
-{%      if cif7.enabled %}
-{{ define_cif7_attribute_size(cif7.attributes.fields, field, type_helper) | trim }}
-{%      endif %}
-}
-{%   else %}
-{%      if field.type_.reserved_bits != 0 %}
-bytes += sizeof(int{{ field.type_.reserved_bits }}_t); // {{ field.name }} reserved bits
-{%      endif %}
-{%      if type_helper.is_scalar(field) %}
-bytes += sizeof({{ type_helper.member_type(field) }}); // {{ field.name }}
-{%      else %}
-bytes += packet.{{ field.getter }}().size();
-{%      endif %}
-{%      if cif7.enabled %}
-{{ define_cif7_attribute_size(cif7.attributes.fields, field, type_helper) | trim }}
-{%      endif %}
-{%   endif %}
-{% endfor %}
 {%- endmacro %}
 
 {%- macro define_cif7_attribute_size(attribute_fields, field, type_helper)%}
-{%     for attribute_field in attribute_fields if attribute_field.enabled %}
+{%     for attribute_field in attribute_fields if attribute_field.enabled and not attribute_field.indicator_only %}
 {%        if attribute_field.type_.is_packed_struct %}
 bytes += packet.{{ field.getter }}_attributes().{{ attribute_field.getter }}().size();  // {{ attribute_field.name }}
 {%        else %}
 {%           if field.type_.reserved_bits != 0 %}
 bytes += sizeof(int{{ field.type_.reserved_bits }}_t); // {{ attribute_field.name }} reserved bits
 {%           endif %}
-{%           if attribute_field.type_.is_packed_struct %}
-bytes += packet.{{ attribute_field.getter }}().size();  // {{ attribute_field.name }}
-{%           elif type_helper.is_scalar(field) %}
+{%           if type_helper.is_scalar(field) %}
 bytes += sizeof({{ type_helper.member_type(field) }}); // {{ attribute_field.name }}
 {%           else %}
-bytes += packet.{{ field.getter }}().size();  // {{ attribute_field.name }}
+bytes += sizeof(int{{ field.type_.bits }}_t);  // {{ attribute_field.name }}
 {%           endif %}
 {%        endif %}
 {%     endfor%}

@@ -18,6 +18,17 @@
 #*/
 
 {%- macro unpack_cif_field(field, cif7, type_helper) %}
+{% if cif7.enabled %}
+{%    if cif7.current_value_enabled %}
+{{ unpack_field(field, type_helper) }}
+{%    endif %}
+{{ unpack_cif7_field(field, cif7.attributes.fields, cif7.name, type_helper) }}
+{% else %}
+{{ unpack_field(field, type_helper) }}
+{% endif %}
+{% endmacro %}
+
+{%- macro unpack_field(field, type_helper) %}
 {% if field.type_.reserved_bits != 0 %}
 buffer.next<int{{ field.type_.reserved_bits }}_t>(); // {{ field.name }} reserved bits
 {% endif %}
@@ -26,25 +37,31 @@ packet._{{ field.name }} = buffer.next<int{{ field.type_.bits }}_t>();
 {% else %}
 packet._{{ field.name }} = buffer.next<{{ type_helper.value_type(field) }}>();
 {% endif %}
-{% if cif7.enabled %}
-{%   for attribute_field in cif7.attributes.fields if attribute_field.enabled %}
-if ({{ cif7.name }}->{{ attribute_field.getter }}()) {
-{%      if attribute_field.type_.is_packed_struct %}
-    packet._{{ field.name }}_attributes.{{ attribute_field.getter }}(buffer.next<{{ type_helper.value_type(attribute_field) }}>());
+{%- endmacro %}
+
+{%- macro unpack_cif7_field(field, attribute_fields, cif7_name, type_helper) %}
+{%   for attribute_field in attribute_fields if attribute_field.enabled and not attribute_field.indicator_only %}
+if ({{ cif7_name }}->{{ attribute_field.getter }}()) {
+{% if field.is_optional %}
+{% set access_operator = '->' %}
+{% else %}
+{% set access_operator = '.' %}
+{% endif %}
+{%      if attribute_field.type_.is_probability_type or attribute_field.type_.is_belief_type %}
+    packet._{{ field.name }}_attributes{{ access_operator }}{{ attribute_field.getter }}(buffer.next<{{ type_helper.value_type(attribute_field) }}>());
 {%      else %}
 {%         if field.type_.reserved_bits != 0 %}
     buffer.next<int{{ field.type_.reserved_bits }}_t>(); // {{ attribute_field.name }} reserved bits
 {%         endif %}
 {%         if field.type_.is_fixed_point %}
-    packet._{{field.name }}_attributes.{{ attribute_field.setter }}(buffer.next<int{{ field.type_.bits }}_t>());
+    packet._{{field.name }}_attributes{{ access_operator }}{{ attribute_field.setter }}(vrtgen::fixed::to_fp{{ type_helper.fixed_template(field) }}(vrtgen::swap::to_be(buffer.next<int{{ field.type_.bits }}_t>())));
 {%         else %}
-    packet._{{ field.name }}_attributes.{{ attribute_field.setter }}(buffer.next<{{ type_helper.value_type(field) }}>());
+    packet._{{ field.name }}_attributes{{ access_operator }}{{ attribute_field.setter }}(buffer.next<{{ type_helper.value_type(field) }}>());
 {%         endif %}
 {%     endif %}
 }
 {%   endfor %}
-{% endif %}
-{% endmacro %}
+{%- endmacro %}
 
 {%- macro unpack_cif(packet, cif, cif7, type_helper) %}
 {% if packet.requires_cif_functions %}

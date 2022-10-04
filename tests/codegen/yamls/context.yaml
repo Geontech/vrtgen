@@ -58,12 +58,12 @@ TestContext5: !Context
 
 TestContext6: !Context
   cif_0: !CIF0
-    reference_level: optional
+    reference_level: required
     gain: optional
   cif_1: !CIF1
     phase_offset: optional
-    polarization: optional
   cif_7: !CIF7
+    current_value: required
     mean_value: required
     max_value: required
     min_value: required
@@ -71,6 +71,19 @@ TestContext6: !Context
     belief: required
 
 TestContext7: !Context
+  cif_0: !CIF0
+    reference_level: required
+    gain: optional
+  cif_1: !CIF1
+    phase_offset: optional
+  cif_7: !CIF7
+    mean_value: required
+    max_value: required
+    min_value: required
+    probability: required
+    belief: required
+
+TestContext8: !Context
   tsm: coarse
      
 

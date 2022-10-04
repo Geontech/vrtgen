@@ -30,19 +30,9 @@ bool has_{{ cif.name }}_fields() const noexcept
 
 {% endif %}
 {% for field in cif.fields if field.enabled %}
-{{ basic.optional_functions(field, type_helper, cif) | trim }}
+{{ basic.optional_functions(field, type_helper, cif, cif7) | trim }}
 
-{{ basic.getters_and_setters(field, type_helper, cif) | trim }}
-{% if cif7.enabled and not field.indicator_only %}
-{{ packet_name | to_snake }}{{ type_helper.value_type(cif7.attributes) }}<{{ type_helper.value_type(field) }}> {{ field.name }}_attributes() const {
-    return _{{ field.name }}_attributes;
-}
-
-void {{ field.name }}_attributes(const {{ packet_name | to_snake }}{{ type_helper.value_type(cif7.attributes) }}<{{ type_helper.value_type(field) }}>& value)
-{
-    _{{ field.name }}_attributes = value;
-}
-{% endif %}
+{{ basic.getters_and_setters(field, type_helper, cif, cif7) | trim }}
 {% endfor %}
 {% endmacro %}
 
@@ -78,11 +68,31 @@ void {{ field.name }}_enabled(bool value) noexcept
 {% endfor %}
 {% endmacro %}
 
+{%- macro cif7_struct(cif, cif7, type_helper) %}
+{% for field in cif.fields if field.enabled and not field.indicator_only %}
+class {{ field.name }}_attributes {
+private:
+{%   for cif7_field in cif7.fields if cif7_field.enabled %}
+{%      if cif7_field.type_.is_probability_type or cif7_field.type_.is_belief_type %}
+    {{ type_helper.member_type(cif7_field) }} {{ cif7_field.name }};
+{%      else %}
+    {{ type_helper.member_type(field) }} {{ cif7_field.name }};
+{%      endif %}
+{%   endfor %}
+};
+
+{% endfor %}
+{% endmacro %}
+
 {%- macro cif_members(cif, cif7, packet_name, type_helper) %}
 {% for field in cif.fields if field.enabled %}
 {{ basic.member(field, type_helper) | trim }}
 {%   if cif7.enabled and not field.indicator_only %}
-{{ packet_name | to_snake }}{{ type_helper.member_type(cif7.attributes) }}<{{ type_helper.value_type(field) }}> _{{ field.name }}_attributes;
+{%      if field.is_optional %}
+std::optional<{{ type_helper.member_type(cif7.attributes) }}<{{ type_helper.value_type(field) }}> > _{{ field.name }}_attributes;
+{%      else %}
+{{ type_helper.member_type(cif7.attributes) }}<{{ type_helper.value_type(field) }}> _{{ field.name }}_attributes;
+{%      endif %}
 {%   endif %}
 {% endfor %}
 {% endmacro %}
