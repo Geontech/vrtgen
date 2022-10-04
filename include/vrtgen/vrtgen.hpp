@@ -24,7 +24,7 @@
 #include <vrtgen/packing.hpp>
 #include <vrtgen/socket.hpp>
 #include <vrtgen/types.hpp>
-#include <vrtgen/utils.hpp>
+#include <vrtgen/utility.hpp>
 #include <vrtgen/version.hpp>
 
 #endif // _VRTGEN_VRTGEN_HPP

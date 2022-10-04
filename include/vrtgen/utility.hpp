@@ -24,6 +24,8 @@
 #include <stdexcept>
 #include <array>
 #include <future>
+#include <sstream>
+#include <utility>
 #include <vrtgen/socket.hpp>
 
 namespace vrtgen {
@@ -39,6 +41,21 @@ inline void validate(Ta actual, Te expected, const std::string& msg)
 inline void validate(bool cond, const std::string& msg)
 {
     validate(cond, true, msg);
+}
+
+template <typename T>
+inline bool in_range(const T value, const std::pair<T,T>& min_max)
+{
+    auto min = min_max.first;
+    auto max = min_max.second;
+    if (value < min || value > max) {
+        std::ostringstream err_msg;
+        err_msg << "Attempting to set value " << value
+                << " outside of valid range "
+                << "[" << min << ", " << max << "]";
+        throw std::invalid_argument(err_msg.str());
+    }
+    return true;
 }
 
 template <class SockT, class CtrlT, class ...AckT> requires (std::same_as<SockT, socket::udp::v4>)

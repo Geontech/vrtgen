@@ -22,203 +22,190 @@
 
 #include <inttypes.h>
 #include <cstring>
+#include <concepts>
+
+#include "fixed.hpp"
 #include "swap.hpp"
 
 namespace vrtgen {
-    namespace detail {
-        template <unsigned bytes, unsigned pos>
-        struct bit_traits
-        {
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-            // Big-endian, bit position is pass-through.
-            static constexpr unsigned offset = pos;
-#else
-            // Little-endian, keep the  bit offset (lower 3 bits) but swap the
-            // byte offset (upper bits).
-            static constexpr unsigned offset = ((8*(bytes-1-(pos/8)))+(pos&0x7));
-#endif
-            static constexpr unsigned mask = 1 << bit_traits::offset;
-        };
+namespace detail {
 
-        template <unsigned pos, unsigned bits>
-        struct field_traits
-        {
-            static constexpr unsigned shift = pos - bits + 1;
-            static constexpr unsigned mask = ((1 << bits) - 1) << shift;
-        };
+template <std::size_t P, std::size_t B>
+constexpr bool valid_position = P < B;
 
-        template <typename T, unsigned bits>
-        struct field_packing_base
-        {
-            static inline T load(unsigned value)
-            {
-                return static_cast<T>(value);
-            }
+/**
+ * @class field_traits
+ * @brief Bitwise traits related to a packed subfield
+ * @tparam T Value of packed integer
+ * @tparam P Bit position
+ * @tparam B Number of bits
+ */
+template <typename T, std::size_t pos, std::size_t bits>
+struct field_traits
+{
+    static constexpr T shift{ pos - bits + 1 };
+    static constexpr T mask{ ((static_cast<T>(1) << bits) - 1) << shift };
+}; // end struct field_traits
 
-            static inline unsigned store(T value)
-            {
-                return static_cast<unsigned>(value) & field_packing_base::mask;
-            }
+} // end namespace detail
 
-            static constexpr unsigned mask = (1 << bits) - 1;
-        };
 
-        template <typename T, unsigned bits>
-        struct field_packing : public field_packing_base<T,bits>
-        {
-        };
+template <std::unsigned_integral T>
+struct packed
+{
+public:
+    using value_type = T;
 
-        template <unsigned bits>
-        struct field_packing<bool,bits> : public field_packing_base<bool,bits>
-        {
-            static inline unsigned store(bool value)
-            {
-                // A little sleight-of-hand: value must be 0 or 1, so taking
-                // the negative integer value will set all bits to be the same
-                return (-value & field_packing::mask);
-            }
-        };
-
-        template <unsigned bits>
-        struct field_packing<signed,bits> : public field_packing_base<signed,bits>
-        {
-            static inline signed load(unsigned value)
-            {
-                // Extract sign bit in MSB and expand its value to all sign
-                // bits in the output type.
-                bool sign_bit = value & (1<<(bits-1));
-                return (-sign_bit & ~field_packing::mask) | value;
-            }
-        };
-
-        template <typename T, unsigned bits, typename Converter=void>
-        struct field_converter;
-
-        template <typename T, unsigned bits>
-        struct field_converter<T,bits,void> : public field_packing<T,bits>
-        {
-        };
-
-        template <typename T, unsigned bits, typename Converter>
-        struct field_converter : public field_packing<T,bits>
-        {
-            static inline T store(unsigned value)
-            {
-                return field_packing<T,bits>::store(Converter::store(value));
-            }
-
-            static inline unsigned load(T value)
-            {
-                return Converter::load(field_packing<T,bits>::load(value));
-            }
-        };
-    } // namespace detail
-
-    template <typename Value, unsigned Position, unsigned Bits, typename Converter=void>
-    struct packed_tag
+    template <std::size_t Pos, std::size_t Bits=1, typename Tout=bool>
+    requires (detail::valid_position<Pos, packed::BITS>)
+    inline Tout get() const
     {
-        using value_type = Value;
-        static constexpr unsigned pos = Position;
-        static constexpr unsigned bits = Bits;
-        using converter_type = Converter;
-    };
+        using traits = detail::field_traits<T,Pos,Bits>;
+        // Fetch the stored bits in host order, then extract the field  bits
+        return static_cast<Tout>((vrtgen::swap::from_be(m_value) & traits::mask) >> traits::shift);
+    }
 
-    template <typename IntT>
-    struct packed
+    template <std::size_t Pos, std::size_t Bits=1, typename Tin>
+    requires (detail::valid_position<Pos, packed::BITS>)
+    inline void set(Tin value)
     {
-    public:
-        using value_type = IntT;
+        using traits = detail::field_traits<T,Pos,Bits>;
+        // Fetch the current value in host order, then mask off the field bits
+        value_type old_value = vrtgen::swap::from_be(m_value) & ~traits::mask;
+        value_type field_value = static_cast<value_type>(value) << traits::shift;
+        // Combine the new value with the existing bits, then store back in network order
+        m_value = vrtgen::swap::to_be(static_cast<value_type>(old_value | field_value));
+    }
 
-        template <typename T, unsigned pos>
-        inline T get(packed_tag<T,pos,1>) const
-        {
-            static_assert(pos < packed::BITS, "bit position exceeds size of packed value");
-            typedef detail::bit_traits<sizeof(value_type),pos> traits;
-            return static_cast<T>((m_value >> traits::offset) & 1);
-        }
+    /**
+     * @brief Checks if any of the packed bits are set to true
+     * @return true if any of the bits are set to true, otherwise false
+     */
+    bool any() const noexcept
+    {
+        return !none();
+    }
 
-        template <typename Tin, typename T, unsigned pos>
-        inline void set(Tin value, packed_tag<T,pos,1>)
-        {
-            static_assert(pos < packed::BITS, "bit position exceeds size of packed value");
-            typedef detail::bit_traits<sizeof(value_type),pos> traits;
-            m_value = (m_value & ~traits::mask) | (bool(value) << traits::offset);
-        }
+    /**
+     * @brief Checks if none of the packed bits are set to true
+     * @return true if none of the bits are set to true, otherwise false
+     */
+    bool none() const noexcept
+    {
+        return m_value == 0;
+    }
 
-        template <typename T, unsigned pos, unsigned bits, typename Converter>
-        inline T get(packed_tag<T,pos,bits,Converter>) const
-        {
-            static_assert(pos < packed::BITS, "bit position exceeds size of packed value");
-            typedef detail::field_traits<pos,bits> traits;
-            typedef detail::field_converter<T,bits,Converter> converter;
-            // Fetch the stored bits in host order, then extract the field  bits
-            value_type value = (vrtgen::swap::from_be(m_value) & traits::mask) >> traits::shift;
-            return converter::load(value);
-        }
+    /**
+     * @brief Returns the number of packed bytes
+     * @return Number of packed bytes
+     */
+    constexpr std::size_t size() const noexcept
+    {
+        return sizeof(value_type);
+    }
 
-        template <typename Tin, typename T, unsigned pos, unsigned bits, typename Converter>
-        inline void set(Tin value, packed_tag<T,pos,bits,Converter>)
-        {
-            static_assert(pos < packed::BITS, "bit position exceeds size of packed value");
-            typedef detail::field_traits<pos,bits> traits;
-            typedef detail::field_converter<T,bits,Converter> converter;
-            // Fetch the current value in host order, then mask off the field bits
-            value_type old_value = vrtgen::swap::from_be(m_value) & ~traits::mask;
-            value_type field_value = converter::store(value) << traits::shift;
-            // Combine the new value with the existing bits, then store back
-            // in network order
-            m_value = vrtgen::swap::to_be(static_cast<value_type>(old_value | field_value));
-        }
+    /**
+     * @brief Pack packed value as bytes into the buffer
+     * @param buffer_ptr Pointer to buffer location to add packed value bytes
+     */
+    inline void pack_into(uint8_t* buffer_ptr) const
+    {
+        std::memcpy(buffer_ptr, &m_value, sizeof(value_type));
+    }
 
-        /**
-         * @brief Checks if any of the packed bits are set to true
-         * @return true if any of the bits are set to true, otherwise false
-         */
-        bool any() const noexcept
-        {
-            return m_value != 0;
-        }
+    /**
+     * @brief Unpack buffer bytes into packed value
+     * @param buffer_ptr Pointer to beginning of packed value bytes in the buffer
+     */
+    inline void unpack_from(const uint8_t* buffer_ptr)
+    {
+        std::memcpy(&m_value, buffer_ptr, sizeof(value_type));
+    }
 
-        /**
-         * @brief Checks if none of the packed bits are set to true
-         * @return true if none of the bits are set to true, otherwise false
-         */
-        bool none() const noexcept
-        {
-            return m_value == 0;
-        }
+private:
+    static constexpr std::size_t BITS = sizeof(value_type) * 8;
 
-         /**
-         * @brief Returns the number of packed bytes
-         * @return Number of packed bytes
-         */
-        constexpr std::size_t size() const noexcept
-        {
-            return sizeof(value_type);
-        }
+    value_type m_value{ 0 };
 
-        // constexpr value_type value() const noexcept
-        // {
-        //     return m_value;
-        // }
+}; // end class packed
 
-        inline void pack_into(uint8_t* buffer_ptr) const
-        {
-            std::memcpy(buffer_ptr, &m_value, sizeof(value_type));
-        }
+/**
+ * @class Packed32_Fixed16R
+ * @brief Common 32-bit field Structure with 2 16-bit fixed-point subfields
+ * @tparam R Radix point of subfields
+ */
+template <std::size_t R> 
+class Packed32_Fixed16R
+{
+public:
+    /**
+     * @brief Returns the number of field bytes
+     * @return Number of field bytes
+     */
+    constexpr size_t size() const noexcept
+    {
+        return m_packed.size();
+    }
 
-        inline void unpack_from(const uint8_t* buffer_ptr)
-        {
-            std::memcpy(&m_value, buffer_ptr, sizeof(value_type));
-        }
+    /**
+     * @brief Pack field as bytes into the buffer
+     * @param buffer_ptr Pointer to buffer location to add field bytes
+     */
+    inline void pack_into(uint8_t* buffer_ptr) const
+    {
+        m_packed.pack_into(buffer_ptr);
+    }
 
-    private:
-        static constexpr unsigned BITS = sizeof(value_type) * 8;
+    /**
+     * @brief Unpack buffer bytes into field
+     * @param buffer_ptr Pointer to beginning of field bytes in the buffer
+     */
+    inline void unpack_from(const uint8_t* buffer_ptr)
+    {
+        m_packed.unpack_from(buffer_ptr);
+    }
 
-        value_type m_value{ 0 };
+protected:
+    /**
+     * @brief Returns the subfield value at bit position 31
+     * @return Subfield value at bit position 31
+     */
+    double subfield_31() const noexcept
+    {
+        return vrtgen::fixed::to_fp<16,R>(m_packed.get<31,16,int16_t>());
+    }
 
-    }; // end class packed
+    /**
+     * @brief Sets the subfield value at bit position 31
+     * @param value Subfield value to set
+     */
+    void subfield_31(double value) noexcept
+    {
+        m_packed.set<31,16>(vrtgen::fixed::to_int<16,R>(value));
+    }
 
-} // namespace vrtgen
+    /**
+     * @brief Returns the subfield value at bit position 15
+     * @return Subfield value at bit position 15
+     */
+    double subfield_15() const noexcept
+    {
+        return vrtgen::fixed::to_fp<16,R>(m_packed.get<15,16,int16_t>());
+    }
+
+    /**
+     * @brief Sets the subfield value at bit position 15
+     * @param value Subfield value to set
+     */
+    void subfield_15(double value) noexcept
+    {
+        m_packed.set<15,16,uint16_t>(vrtgen::fixed::to_int<16,R>(value));
+    }
+
+    vrtgen::packed<uint32_t> m_packed;
+
+}; // end class Packed32_Fixed16R
+
+} // end namespace vrtgen
 
 #endif // _VRTGEN_TYPES_PACKED_HPP

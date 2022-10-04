@@ -65,18 +65,6 @@ class IntegerType(Field):
         return True
 
 @dataclass
-class NonZeroIntegerType(IntegerType):
-    """
-    Base class for non-zero size fields, in which the binary representation is
-    one less than the actual value.
-    """
-    converter : str = 'size_converter'
-
-    @property
-    def is_nonzero_integer_type(self):
-        return True
-
-@dataclass
 class SignedIntegerType(IntegerType):
     name : str = 'signed_int_t'
 

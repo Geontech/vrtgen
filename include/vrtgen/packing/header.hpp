@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2022 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -46,7 +46,7 @@ public:
      */
     PacketType packet_type() const noexcept
     {
-        return m_packed_0.get(m_packet_type_tag);
+        return m_packed_0.get<31,4,PacketType>();
     }
 
     /**
@@ -58,7 +58,7 @@ public:
      */
     void packet_type(PacketType value) noexcept
     {
-        m_packed_0.set(value, m_packet_type_tag);
+        m_packed_0.set<31,4>(value);
     }
 
     /**
@@ -70,7 +70,7 @@ public:
      */
     bool class_id_enable() const noexcept
     {
-        return m_packed_0.get(m_class_id_enable_tag);
+        return m_packed_0.get<27>();
     }
 
     /**
@@ -82,7 +82,7 @@ public:
      */
     void class_id_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_class_id_enable_tag);
+        m_packed_0.set<27>(value);
     }
 
     /**
@@ -94,7 +94,7 @@ public:
      */
     TSI tsi() const noexcept
     {
-        return m_packed_0.get(m_tsi_tag);
+        return m_packed_0.get<23,2,TSI>();
     }
 
     /**
@@ -106,7 +106,7 @@ public:
      */
     void tsi(TSI value) noexcept
     {
-        m_packed_0.set(value, m_tsi_tag);
+        m_packed_0.set<23,2>(value);
     }
 
     /**
@@ -118,7 +118,7 @@ public:
      */
     TSF tsf() const noexcept
     {
-        return m_packed_0.get(m_tsf_tag);
+        return m_packed_0.get<21,2,TSF>();
     }
 
     /**
@@ -130,7 +130,7 @@ public:
      */
     void tsf(TSF value) noexcept
     {
-        m_packed_0.set(value, m_tsf_tag);
+        m_packed_0.set<21,2>(value);
     }
 
     /**
@@ -142,7 +142,7 @@ public:
      */
     uint8_t packet_count() const noexcept
     {
-        return m_packed_0.get(m_packet_count_tag);
+        return m_packed_0.get<19,4,uint8_t>();
     }
 
     /**
@@ -154,7 +154,7 @@ public:
      */
     void packet_count(uint8_t value) noexcept
     {
-        m_packed_0.set(value, m_packet_count_tag);
+        m_packed_0.set<19,4>(value);
     }
 
     /**
@@ -166,7 +166,7 @@ public:
      */
     uint16_t packet_size() const noexcept
     {
-        return m_packed_0.get(m_packet_size_tag);
+        return m_packed_0.get<15,16,uint16_t>();
     }
 
     /**
@@ -178,7 +178,7 @@ public:
      */
     void packet_size(uint16_t value) noexcept
     {
-        m_packed_0.set(value, m_packet_size_tag);
+        m_packed_0.set<15,16>(value);
     }
 
     /**
@@ -194,7 +194,7 @@ public:
      * @brief Pack Header as bytes into the buffer
      * @param buffer_ptr Pointer to buffer location to add Header bytes
      */
-    void pack_into(uint8_t* buffer_ptr) const
+    inline void pack_into(uint8_t* buffer_ptr) const
     {
         m_packed_0.pack_into(buffer_ptr);
     }
@@ -203,29 +203,13 @@ public:
      * @brief Unpack buffer bytes into Header
      * @param buffer_ptr Pointer to beginning of Header bytes in the buffer
      */
-    void unpack_from(const uint8_t* buffer_ptr)
+    inline void unpack_from(const uint8_t* buffer_ptr)
     {
         m_packed_0.unpack_from(buffer_ptr);
     }
 
 protected:
     vrtgen::packed<uint32_t> m_packed_0; //!< Packed Header bits structure
-
-private:
-    /**
-     * packet_type 0/31
-     * class_id_enable 0/31
-     * TSI 0/31
-     * TSF 0/31
-     * packet_count 0/31
-     * packet_size 0/31
-     */
-    vrtgen::packed_tag<PacketType,31,4> m_packet_type_tag;
-    vrtgen::packed_tag<bool,27,1> m_class_id_enable_tag;
-    vrtgen::packed_tag<TSI,23,2> m_tsi_tag;
-    vrtgen::packed_tag<TSF,21,2> m_tsf_tag;
-    vrtgen::packed_tag<uint8_t,19,4> m_packet_count_tag;
-    vrtgen::packed_tag<uint16_t,15,16> m_packet_size_tag;
 
 }; // end class Header
 
@@ -245,7 +229,7 @@ public:
      */
     bool trailer_included() const noexcept
     {
-        return m_packed_0.get(m_trailer_included_tag);
+        return m_packed_0.get<26>();
     }
 
     /**
@@ -257,7 +241,7 @@ public:
      */
     void trailer_included(bool value) noexcept
     {
-        m_packed_0.set(value, m_trailer_included_tag);
+        m_packed_0.set<26>(value);
     }
 
     /**
@@ -269,7 +253,7 @@ public:
      */
     bool not_v49d0() const noexcept
     {
-        return m_packed_0.get(m_not_v49d0_tag);
+        return m_packed_0.get<25>();
     }
 
     /**
@@ -281,7 +265,7 @@ public:
      */
     void not_v49d0(bool value) noexcept
     {
-        m_packed_0.set(value, m_not_v49d0_tag);
+        m_packed_0.set<25>(value);
     }
 
     /**
@@ -293,7 +277,7 @@ public:
      */
     bool spectrum_or_time() const noexcept
     {
-        return m_packed_0.get(m_spectrum_or_time_tag);
+        return m_packed_0.get<24>();
     }
 
     /**
@@ -305,18 +289,8 @@ public:
      */
     void spectrum_or_time(bool value) noexcept
     {
-        m_packed_0.set(value, m_spectrum_or_time_tag);
+        m_packed_0.set<24>(value);
     }
-
-private:
-    /**
-     * trailer_included 0/26
-     * not_v49d0 0/25
-     * spectrum_or_time 0/24
-     */
-    vrtgen::packed_tag<bool,26,1> m_trailer_included_tag;
-    vrtgen::packed_tag<bool,25,1> m_not_v49d0_tag;
-    vrtgen::packed_tag<bool,24,1> m_spectrum_or_time_tag;
 
 }; // end class DataHeader
 
@@ -336,7 +310,7 @@ public:
      */
     bool not_v49d0() const noexcept
     {
-        return m_packed_0.get(m_not_v49d0_tag);
+        return m_packed_0.get<25>();
     }
 
     /**
@@ -348,7 +322,7 @@ public:
      */
     void not_v49d0(bool value) noexcept
     {
-        m_packed_0.set(value, m_not_v49d0_tag);
+        m_packed_0.set<25>(value);
     }
 
     /**
@@ -360,7 +334,7 @@ public:
      */
     TSM tsm() const noexcept
     {
-        return TSM{ m_packed_0.get(m_tsm_tag) };
+        return TSM{ m_packed_0.get<24>() };
     }
 
     /**
@@ -372,16 +346,8 @@ public:
      */
     void tsm(TSM value) noexcept
     {
-        m_packed_0.set(static_cast<bool>(value), m_tsm_tag);
+        m_packed_0.set<24>(static_cast<bool>(value));
     }
-
-private:
-    /**
-     * not_v49d0 0/25
-     * tsm 0/24
-     */
-    vrtgen::packed_tag<bool,25,1> m_not_v49d0_tag;
-    vrtgen::packed_tag<bool,24,1> m_tsm_tag;
 
 }; // end class ContextHeader
 
@@ -401,7 +367,7 @@ public:
      */
     bool acknowledge_packet() const noexcept
     {
-        return m_packed_0.get(m_acknowledge_packet_tag);
+        return m_packed_0.get<26>();
     }
 
     /**
@@ -413,7 +379,7 @@ public:
      */
     void acknowledge_packet(bool value) noexcept
     {
-        m_packed_0.set(value, m_acknowledge_packet_tag);
+        m_packed_0.set<26>(value);
     }
 
     /**
@@ -425,7 +391,7 @@ public:
      */
     bool cancellation_packet() const noexcept
     {
-        return m_packed_0.get(m_cancellation_packet_tag);
+        return m_packed_0.get<24>();
     }
 
      /**
@@ -437,16 +403,8 @@ public:
      */
     void cancellation_packet(bool value) noexcept
     {
-        m_packed_0.set(value, m_cancellation_packet_tag);
+        m_packed_0.set<24>(value);
     }
-
-private:
-    /**
-     * acknowledge_packet 0/26
-     * cancellation_packet 0/24
-     */
-    vrtgen::packed_tag<bool,26,1> m_acknowledge_packet_tag;
-    vrtgen::packed_tag<bool,24,1> m_cancellation_packet_tag;
 
 }; // end class CommandHeader
 

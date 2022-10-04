@@ -489,36 +489,6 @@ TEST_CASE("From Big Endian", "[swap]")
 }
 
 /*
- * OUI Test
- */
-TEST_CASE("OUI", "[oui]")
-{
-    using namespace vrtgen;
-    OUI oui;
-    OUI unpack_oui;
-    bytes packed_bytes{ 0xFF, 0xFF, 0xFF };
-
-    // Verify zero on construction
-    oui.pack_into(packed_bytes.data());
-    CHECK(packed_bytes == bytes{ 0, 0, 0 });
-    CHECK(oui.get() == 0);
-    // Setter
-    oui.set(0xABCDEF);
-    // Getter check set value
-    CHECK(oui.get() == 0xABCDEF);
-    // Verify to_string
-    CHECK(oui.to_string() == "AB-CD-EF");
-    // Pack
-    oui.pack_into(packed_bytes.data());
-    // Verify packed bits
-    CHECK(packed_bytes == bytes{ 0xAB, 0xCD, 0xEF });
-    // Unpack
-    unpack_oui.unpack_from(packed_bytes.data());
-    // Verify unpacked value
-    CHECK(unpack_oui.get() == 0xABCDEF);
-}
-
-/*
  * UUID Test
  */
 TEST_CASE("UUID", "[uuid]")

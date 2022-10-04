@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2022 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -47,14 +47,6 @@ public:
         m_value(to_binstring(value))
     {
     }
-
-    // /**
-    //  * @brief Value type constructor
-    //  */
-    // explicit UUID(const value_type& value) :
-    //     m_value(value.to_string())
-    // {
-    // }
 
     /**
      * @brief Returns the string representation of the UUID

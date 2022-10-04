@@ -21,9 +21,7 @@
 #define _VRTGEN_TYPES_HPP
 
 #include "types/fixed.hpp"
-#include "types/oui.hpp"
 #include "types/packed.hpp"
-#include "types/size.hpp"
 #include "types/swap.hpp"
 #include "types/uuid.hpp"
 

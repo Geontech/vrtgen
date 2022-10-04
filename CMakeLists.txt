@@ -41,13 +41,11 @@ set(header_files
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/udp.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/fixed.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/oui.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/packed.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/size.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/swap.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/uuid.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/utils.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/utility.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/version.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/vrtgen.hpp
 )
@@ -79,13 +77,12 @@ target_include_directories(testutils PUBLIC tests/cpp/include)
 
 # libvrtgen testing
 add_executable(test_libvrtgen
+    tests/libvrtgen/cif0.cpp
+    tests/libvrtgen/cif1.cpp
+    tests/libvrtgen/command.cpp
     tests/libvrtgen/header.cpp
     tests/libvrtgen/prologue.cpp
-    tests/libvrtgen/command.cpp
-    tests/libvrtgen/cif0.cpp
-#     tests/libvrtgen/socket.cpp
     tests/libvrtgen/types.cpp
-#     tests/libvrtgen/utils.cpp
 )
 target_link_libraries(test_libvrtgen vrtgen)
 target_link_libraries(test_libvrtgen Catch2)

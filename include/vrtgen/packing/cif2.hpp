@@ -25,7 +25,7 @@ namespace vrtgen::packing {
 
 /**
  * @class CIF2
- * @brief Context/Command Indicator Field Word 2
+ * @brief Context/Command Indicator Field Word 2 (VITA 49.2-2017 Section 9.1)
  */
 class CIF2 : public IndicatorField2 {};
 

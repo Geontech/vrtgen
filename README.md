@@ -13,6 +13,7 @@ To build the C++ header library, CMake 3.17 or later must be installed.
 
 Generated C++ code requires g++ >= 10 for C++20 support, including concepts.
 The only dependency is the C++ header library.
+See the testing section
 
 ## Installation
 
@@ -72,4 +73,20 @@ To get general help or to check which backends are available:
 
 ```sh
 vrtpktgen --help
+```
+
+## Testing
+
+The codebase has been tested on the following operating systems and C++ compilers
+
+|          | CentOS 7 | rockylinux 8 | Ubuntu 18.04 | Ubuntu 20.04 |
+| -------- | -------- | ------------ | ------------ | ------------ |
+| g++ 11.2 | :heavy_check_mark: | :heavy_check_mark  | :heavy_check_mark: | :heavy_check_mark  |
+| g++ 10.2 | :heavy_check_mark: | :heavy_check_mark  | :heavy_check_mark: | :heavy_check_mark  |
+
+To execute the tests:
+
+```sh
+cd build
+make check
 ```
