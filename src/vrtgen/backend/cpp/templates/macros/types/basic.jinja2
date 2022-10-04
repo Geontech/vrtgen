@@ -31,7 +31,7 @@ std::optional<{{ type_helper.member_type(field) }}> _{{ field.name }};
 {%   endif %}
 {% endmacro %}
 
-{%- macro optional_functions(field, type_helper, cif) %}
+{%- macro optional_functions(field, type_helper, cif, cif7) %}
 {% if not field.is_optional %}
 /**
  * @brief Check if {{ field.name }} contains a value
@@ -63,57 +63,126 @@ void reset_{{ field.name }}() noexcept
 {% endif %}
 }
 {% endif %}
+{% if cif7 is defined and cif7 is not none %}
+{%   if cif7.enabled and not field.indicator_only %}
+{%      if not field.is_optional %}
+/**
+ * @brief Check if {{ field.name }}_attributes contains a value
+ * @return true, {{ field.name }}_attributes is a required field
+ */
+constexpr bool has_{{ field.name }}_attributes() const noexcept
+{
+    return true; // required
+}
+{%      else %}
+/**
+ * @brief Check if optional {{ field.name }}_attributes contains a value
+ * @return true if {{ field.name }}_attributes contains a value, otherwise false
+ */
+constexpr bool has_{{ field.name }}_attributes() const noexcept
+{
+    return _{{ field.name }}_attributes.has_value();
+}
+
+/**
+ * @brief If {{ field.name }}_attributes contains a value, destroy it
+ */
+void reset_{{ field.name }}_attributes() noexcept
+{
+{% if cif is not none %}
+    _{{ field.name }}_attributes.reset();
+{% else %}
+    return _{{ field.name }}_attributes.reset();
+{% endif %}
+}
+{%      endif %}
+{%   endif %}
+{% endif %}
 {% endmacro %}
 
-{%- macro ref_getter(field, type_helper) %}
+{%- macro ref_getter(field, type_helper, cif7, packet_namespace) %}
+{% set field_name = field.name %}
+{% set field_getter = field.getter %}
+{% set field_type = type_helper.member_type(field) %}
+{% if cif7 is defined and cif7 is not none %}
+{%   if cif7.enabled and not field.indicator_only %}
+{% set field_name = field.name + "_attributes" %}
+{% set field_getter = field.getter + "_attributes" %}
+{% set field_type = type_helper.member_type(cif7.attributes) + "<" + type_helper.value_type(field.type_) + ">" %}
+{%   endif %}
+{% endif %}
 /**
  * @brief Returns a reference to {{ field.name }}
  * @return A reference to {{ field.name }}
 {% if field.is_optional %}
- * @exception std::bad_optional_access if {{ field.name }} does not contain a value
+ * @exception std::bad_optional_access if {{ field_name }} does not contain a value
 {% endif %}
  */
-constexpr {{ type_helper.member_type(field) }}& {{ field.getter }}(){{ ' noexcept' if not field.is_optional }}
+constexpr {{ field_type }}& {{ field_getter }}(){{ ' noexcept' if not field.is_optional }}
 {
-    return _{{ field.name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
+    return _{{ field_name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
 }
 {% endmacro %}
 
-{%- macro const_ref_getter(field, type_helper) %}
+{%- macro const_ref_getter(field, type_helper, cif7, packet_namespace) %}
+{% set field_name = field.name %}
+{% set field_getter = field.getter %}
+{% set field_type = type_helper.member_type(field) %}
+{% if cif7 is defined and cif7 is not none %}
+{%   if cif7.enabled and not field.indicator_only %}
+{% set field_name = field.name + "_attributes" %}
+{% set field_getter = field.getter + "_attributes" %}
+{% set field_type = type_helper.member_type(cif7.attributes) + "<" + type_helper.value_type(field.type_) + ">" %}
+{% endif %}
+{% endif %}
 /**
- * @brief Returns a const reference to {{ field.name }}
- * @return A const reference to {{ field.name }}
+ * @brief Returns a const reference to {{ field_name }}
+ * @return A const reference to {{ field_name }}
 {% if field.is_optional %}
- * @exception std::bad_optional_access if {{ field.name }} does not contain a value
+ * @exception std::bad_optional_access if {{ field_name }} does not contain a value
 {% endif %}
  */
-constexpr const {{ type_helper.member_type(field) }}& {{ field.getter }}() const{{ ' noexcept' if not field.is_optional }}
+constexpr const {{ field_type }}& {{ field_getter }}() const{{ ' noexcept' if not field.is_optional }}
 {
-    return _{{ field.name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
+    return _{{ field_name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
 }
 {% endmacro %}
 
-{%- macro value_getter(field, type_helper) %}
+{%- macro value_getter(field, type_helper, cif7, packet_namespace) %}
+{% set field_name = field.name %}
+{% set field_getter = field.getter %}
+{% set field_type = type_helper.value_type(field) %}
+{% if cif7 is defined and cif7 is not none %}
+{%   if cif7.enabled and not field.indicator_only %}
+{% set field_name = field.name + "_attributes" %}
+{% set field_getter = field.getter + "_attributes" %}
+{% set field_type = type_helper.member_type(cif7.attributes) + "<" + type_helper.value_type(field.type_) + ">" %}
+{%   endif %}
+{% endif %}
 /**
- * @brief Returns the value of {{ field.name }}
- * @return {{ field.name }}'s value
+ * @brief Returns the value of {{ field_name }}
+ * @return {{ field_name }}'s value
 {% if field.is_optional %}
- * @exception std::bad_optional_access if {{ field.name }} does not contain a value
+ * @exception std::bad_optional_access if {{ field_name }} does not contain a value
 {% endif %}
  */
-{{ type_helper.value_type(field) }} {{ field.getter }}() const{{ ' noexcept' if not field.is_optional }}
+{{ field_type }} {{ field_getter }}() const{{ ' noexcept' if not field.is_optional }}
 {
-{% if field.is_fixed_point or field.type_.is_fixed_point %}
-    return vrtgen::fixed::to_fp{{ type_helper.fixed_template(field) }}(vrtgen::swap::from_be(_{{ field.name }}{{ '.value()' if field.is_optional }}));
+{% if cif7 is defined and cif7 is not none %}
+{%   if cif7.enabled and not field.indicator_only %}
+    return _{{ field_name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
+{%   endif %}
+{% elif field.is_fixed_point or field.type_.is_fixed_point %}
+    return vrtgen::fixed::to_fp{{ type_helper.fixed_template(field) }}(vrtgen::swap::from_be(_{{ field_name }}{{ '.value()' if field.is_optional }}));
 {% elif field.is_integer_type or field.type_.is_integer_type %}
-    return vrtgen::swap::from_be(_{{ field.name }}{{ '.value()' if field.is_optional }});
+    return vrtgen::swap::from_be(_{{ field_name }}{{ '.value()' if field.is_optional }});
 {% else %}
-    return _{{ field.name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
+    return _{{ field_name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
 {% endif %}
 }
 {% endmacro %}
 
-{%- macro getters(field, type_helper) %}
+{%- macro getters(field, type_helper, cif7, packet_namespace) %}
 {% if not type_helper.is_scalar(field) %}
 {{ ref_getter(field, type_helper) | trim }}
 
@@ -121,9 +190,20 @@ constexpr const {{ type_helper.member_type(field) }}& {{ field.getter }}() const
 {% else %}
 {{ value_getter(field, type_helper) | trim }}
 {% endif %}
+{% if cif7 is defined and cif7 is not none %}
+{%   if cif7.enabled and not field.indicator_only %}
+{% if not type_helper.is_scalar(field) %}
+{{ ref_getter(field, type_helper, cif7, packet_namespace) | trim }}
+
+{{ const_ref_getter(field, type_helper, cif7, packet_namespace) | trim }}
+{% else %}
+{{ value_getter(field, type_helper, cif7, packet_namespace) | trim }}
+{% endif %}
+{%   endif %}
+{% endif %}
 {% endmacro %}
 
-{%- macro setters(field, type_helper, cif) %}
+{%- macro setters(field, type_helper, cif, cif7, packet_namespace) %}
 /**
  * @brief Set the value of {{ field.name }}
  * @param value Value to assign to {{ field.name }}
@@ -151,10 +231,26 @@ void {{ field.setter }}({{ type_helper.value_type(field) }} value)
     _{{ field.name }} = value;
 {% endif %}
 }
+{% if cif7 is defined and cif7 is not none %}
+{%   if cif7.enabled and not field.indicator_only %}
+/**
+ * @brief Set the value of {{ field.name }}
+ * @param value Value to assign to {{ field.name }}
+ */
+{% if not type_helper.is_scalar(field) %}
+void {{ field.setter }}_attributes(const {{ packet_namespace }}{{ type_helper.value_type(cif7.attributes) }}<{{ type_helper.value_type(field) }}>& value)
+{% else %}
+void {{ field.setter }}_attributes({{ packet_namespace }}{{ type_helper.value_type(cif7.attributes) }}<{{ type_helper.value_type(field) }}> value)
+{% endif %}
+{
+    _{{ field.name }}_attributes = value;
+}
+{%   endif %}
+{% endif %}
 {% endmacro %}
 
-{%- macro getters_and_setters(field, type_helper, cif) %}
-{{ getters(field, type_helper) | trim }}
+{%- macro getters_and_setters(field, type_helper, cif, cif7, packet_namespace) %}
+{{ getters(field, type_helper, cif7, packet_namespace ) | trim }}
 
-{{ setters(field, type_helper, cif) | trim }}
+{{ setters(field, type_helper, cif, cif7, packet_namespace) | trim }}
 {% endmacro %}

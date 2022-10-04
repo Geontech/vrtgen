@@ -18,52 +18,71 @@
 #*/
 
 {%- macro pack_cif_field(field, cif7, type_helper) %}
-{% if field.type_.reserved_bits != 0 %}
-buffer.insert(static_cast<int{{ field.type_.reserved_bits }}_t>(0)); // {{ field.name }} reserved bits
-{% endif %}
-{% if field.type_.is_array_of_records %}
-auto* {{ field.name }} = buffer.insert(packet.{{ field.getter }}());
-{% else %}
-buffer.insert(packet._{{ field.name }}{{ '.value()' if field.is_optional }});
-{% endif %}
 {% if cif7.enabled %}
-{%    for attribute_field in cif7.attributes.fields if attribute_field.enabled %}
-{%    if attribute_field.type_.is_packed_struct %}
-buffer.insert(packet.{{ field.name }}_attributes().{{ attribute_field.name }}());
+{%    if cif7.current_value_enabled %}
+{{ pack_field(field) }}
+{%    endif %}
+{{ pack_cif7_field(field, cif7.attributes.fields, type_helper) }}
+{% else %}
+{{ pack_field(field) }}
+{% endif %}
+{% endmacro %}
+
+{%- macro pack_field(field) %}
+{%    if field.type_.reserved_bits != 0 %}
+buffer.insert(static_cast<int{{ field.type_.reserved_bits }}_t>(0)); // {{ field.name }} reserved bits
+{%    endif %}
+{%    if field.type_.is_array_of_records %}
+auto* {{ field.name }} = buffer.insert(packet.{{ field.getter }}());
 {%    else %}
-{%       if field.type_.reserved_bits != 0 %}
+buffer.insert(packet._{{ field.name }}{{ '.value()' if field.is_optional }});
+{%    endif %}
+{%- endmacro %}
+
+{%- macro pack_cif7_field(field, attribute_fields, type_helper) %}
+{%    for attribute_field in attribute_fields if attribute_field.enabled and not attribute_field.indicator_only %}
+{%       if attribute_field.type_.is_packed_struct %}
+buffer.insert(packet.{{ field.name }}_attributes().{{ attribute_field.name }}());
+{%       else %}
+{%          if field.type_.reserved_bits != 0 %}
 buffer.insert(static_cast<int{{ field.type_.reserved_bits }}_t>(0)); // {{ field.name }}_attributes reserved bits
-{%       endif %}
-{%       if type_helper.requires_get_set(field)  %}
-{%          if field.is_optional %}
+{%          endif %}
+{%          if type_helper.requires_get_set(field)  %}
+{%             if field.is_optional %}
 if (!{{ attribute_field.name }}.has_value()) {
     {{ attribute_field.name }} = decltype({{ attribute_field.name }})::value_type{};
 }
+{%             endif %}
+{{ attribute_field.name }}{{ '.value()' if field.is_optional }}.set(packet.{{ field.name }}_attributes().{{ attribute_field.name }}());
+{%          elif field.is_fixed_point %}
+auto {{ field.name }}_{{ attribute_field.name }} = vrtgen::swap::to_be(vrtgen::fixed::to_int{{ type_helper.fixed_template(field) }}(packet.{{ field.name }}_attributes().{{ attribute_field.name }}()));
+{%          elif field.type_.is_fixed_point %}
+auto {{ field.name }}_{{ attribute_field.name }} = vrtgen::swap::to_be(vrtgen::fixed::to_int{{ type_helper.fixed_template(field.type_) }}(packet.{{ field.name }}_attributes().{{ attribute_field.name }}()));
+{%          elif field.is_integer_type or field.type_.is_integer_type %}
+auto {{ field.name }}_{{ attribute_field.name }} = vrtgen::swap::to_be(packet.{{ field.name }}_attributes().{{ attribute_field.name }}());
+{%          else %}
+auto {{ field.name }}_{{ attribute_field.name }} = packet.{{ field.name }}_attributes().{{ attribute_field.name }}();
 {%          endif %}
-    {{ attribute_field.name }}{{ '.value()' if field.is_optional }}.set(packet.{{ field.name }}_attributes().{{ attribute_field.name }}());
-{%       elif field.is_fixed_point %}
-auto {{ attribute_field.name }} = vrtgen::swap::to_be(vrtgen::fixed::to_int{{ type_helper.fixed_template(field) }}(packet.{{ field.name }}_attributes().{{ attribute_field.name }}()));
-{%       elif field.type_.is_fixed_point %}
-auto {{ attribute_field.name }} = vrtgen::swap::to_be(vrtgen::fixed::to_int{{ type_helper.fixed_template(field.type_) }}(packet.{{ field.name }}_attributes().{{ attribute_field.name }}()));
-{%       elif field.is_integer_type or field.type_.is_integer_type %}
-auto {{ attribute_field.name }} = vrtgen::swap::to_be(packet.{{ field.name }}_attributes().{{ attribute_field.name }}());
-{%       else %}
-auto {{ attribute_field.name }} = packet.{{ field.name }}_attributes().{{ attribute_field.name }}();
+buffer.insert({{ field.name }}_{{ attribute_field.name }});
 {%       endif %}
-buffer.insert({{ attribute_field.name }});
-{%    endif %}
 {%    endfor %}
-{% endif %}
-{% endmacro %}
+{%- endmacro %}
 
 {%- macro pack_cif(cif, cif7, type_helper) %}
 {% for field in cif.fields if field.enabled %}
 {%   if field.indicator_only %}
 {{ cif.name }}->{{ field.setter }}(packet.{{ field.getter }}());
 {%   elif field.is_optional %}
+{%     if cif7.enabled %}
+if (packet.has_{{ field.name }}() || packet.has_{{ field.name }}_attributes()) {
+{%     else %}
 if (packet.has_{{ field.name }}()) {
+{%     endif %}
     {{ pack_cif_field(field, cif7, type_helper) | indent(4) | trim }}
     {{ cif.name }}->{{ field.setter }}(true);
+{%      if cif7.current_value_enabled %}
+    {{ cif7.name }}->current_value(true);
+{%      endif %}
 }
 {%   else %}
 {{ pack_cif_field(field, cif7, type_helper) | trim }}
