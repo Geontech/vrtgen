@@ -17,7 +17,8 @@ ExampleControl: !Control
     gain: optional
     sample_rate: optional
   cif_1: !CIF1
-    discrete_io_32: !DiscreteIO32Optional
+    discrete_io_32: !DiscreteIO32
+      mode: optional
       stream_enable: enable_indicator
   cif_2: !CIF2
     cited_sid: optional

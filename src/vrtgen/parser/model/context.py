@@ -23,29 +23,24 @@ class ContextHeader(Header):
         self.packet_type.value = PacketType.CONTEXT
 
 @dataclass
-class ExtensionContextHeader(ContextHeader):
-    """
-    VRT Packet Header with Extension Context Packet-Specific Indicator Bits (5.1.1.1)
-    """
-    def __post_init__(self):
-        super().__post_init__()
-        self.type_ = type(self).__name__
-        self.packet_type.value = PacketType.EXTENSION_CONTEXT
-
-@dataclass
 class ContextPacket(Packet):
     header : ContextHeader = field(default_factory=lambda: ContextHeader(enabled=True, required=True))
-    stream_id : StreamIdentifier = field(default_factory=lambda: StreamIdentifier(enabled=True, required=True))
-    class_id  : ClassIdentifier = field(default_factory=ClassIdentifier)
-    timestamp : Timestamp = field(default_factory=Timestamp)
+    # stream_id : StreamIdentifier = field(default_factory=lambda: StreamIdentifier(enabled=True, required=True))
+    # class_id  : ClassIdentifier = field(default_factory=ClassIdentifier)
+    # timestamp : Timestamp = field(default_factory=Timestamp)
     cif_0 : CIF0 = field(default_factory=lambda: CIF0(enabled=True, required=True))
     cif_1 : CIF1 = field(default_factory=CIF1)
     cif_2 : CIF2 = field(default_factory=CIF2)
     cif_7 : CIF7 = field(default_factory=CIF7)
 
-    def validate_and_parse_mapping(self, **mapping):
-        self._validate(mapping)
-        self._parse_mapping(mapping)
+    def __post_init__(self):
+        super().__post_init__()
+        self.stream_id.enabled = True
+        self.stream_id.required = True
+
+    # def validate_and_parse_mapping(self, **mapping):
+    #     self._validate(mapping)
+    #     self._parse_mapping(mapping)
 
     def _validate(self, mapping):
         for field in mapping:
@@ -67,7 +62,7 @@ class ExtensionContextPacket(Packet):
     """
     Extension Context Packet
     """
-    header : ExtensionContextHeader = field(default_factory=lambda: ExtensionContextHeader(enabled=True, required=True))
-    stream_id : StreamIdentifier = field(default_factory=lambda: StreamIdentifier(enabled=True, required=True))
-    class_id  : ClassIdentifier = field(default_factory=ClassIdentifier)
-    timestamp : Timestamp = field(default_factory=Timestamp)
+    
+    def __post_init__(self):
+        super().__post_init__()
+        self.header.packet_type = PacketType.EXTENSION_CONTEXT

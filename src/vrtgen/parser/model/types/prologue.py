@@ -31,6 +31,9 @@ class StreamIdentifier(IntegerType):
         self.type_ = type(self).__name__
         self.bits = 32
 
+    def _validate(self, mapping):
+        return True
+
 @dataclass
 class IntegerTimestamp(IntegerType):
     """
@@ -66,5 +69,8 @@ class OUI(IntegerType):
         self.bits = 24
     
     def __str__(self):
-        octets = ((self >> n) & 0xFF for n in (16, 8, 0))
-        return '-'.join('{:02X}'.format(x) for x in octets)
+        if self.value:
+            octets = ((self.value >> n) & 0xFF for n in (16, 8, 0))
+            return '-'.join('{:02X}'.format(x) for x in octets)
+        else:
+            return ''

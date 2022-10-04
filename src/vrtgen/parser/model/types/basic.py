@@ -52,6 +52,18 @@ class IntegerType(Field):
     def is_integer_type(self):
         return True
 
+    def parse_mapping(self, **mapping):
+        for key,val in mapping.items():
+            if key == "bits":
+                self.bits = int(val)
+            if key == "value":
+                self.value = val
+
+
+    @property
+    def is_integer_type(self):
+        return True
+
 @dataclass
 class NonZeroIntegerType(IntegerType):
     """

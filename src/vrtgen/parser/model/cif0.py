@@ -221,10 +221,10 @@ class CIF0(CIF):
     # not currently supported
     gps_ascii : CIFEnableType = field(default_factory=lambda: CIFEnableType('gps_ascii', type_=GPS_ASCII(), packed_tag=PackedTag(9,1,0,0)))
     context_association_lists : CIFEnableType = field(default_factory=lambda: CIFEnableType('context_association_lists', type_=ContextAssociationLists(), packed_tag=PackedTag(8,1,0,0)))
-    cif7_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif7_enable', indicator_only=True, packed_tag=PackedTag(7,1,0,0)))
-    cif3_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif3_enable', indicator_only=True, packed_tag=PackedTag(3,1,0,0)))
-    cif2_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif2_enable', indicator_only=True, packed_tag=PackedTag(2,1,0,0)))
-    cif1_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif1_enable', indicator_only=True, packed_tag=PackedTag(1,1,0,0)))
+    # cif7_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif7_enable', indicator_only=True, packed_tag=PackedTag(7,1,0,0)))
+    # cif3_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif3_enable', indicator_only=True, packed_tag=PackedTag(3,1,0,0)))
+    # cif2_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif2_enable', indicator_only=True, packed_tag=PackedTag(2,1,0,0)))
+    # cif1_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif1_enable', indicator_only=True, packed_tag=PackedTag(1,1,0,0)))
 
     @property
     def all_optional_fields(self):

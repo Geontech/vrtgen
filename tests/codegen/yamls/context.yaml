@@ -47,7 +47,8 @@ TestContext5: !Context
     phase_offset: optional
     polarization: optional
 #     discrete_io_32: optional
-#     discrete_io_64: !DiscreteIO64Optional
+#     discrete_io_64: !DiscreteIO64
+#       mode: optional
 #       switchfield: bool
 #       stream_enable: enable_indicator
 #       test_enum: !!seq

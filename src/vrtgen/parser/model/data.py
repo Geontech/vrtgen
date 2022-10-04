@@ -48,7 +48,7 @@ class Trailer(PackedStruct):
     # TODO user_defined
     # Associated Context Packet Count
     associated_context_packets_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('associated_context_packet_count_enable', is_enable=True, packed_tag=PackedTag(7,1,0,0)))
-    associated_context_packets : IntegerType = field(default_factory=lambda: IntegerType('associated_context_packet_count', bits=7, packed_tag=PackedTag(6,7,0,0)))
+    associated_context_packet_count : IntegerType = field(default_factory=lambda: IntegerType('associated_context_packet_count', bits=7, packed_tag=PackedTag(6,7,0,0)))
 
     def __post_init__(self):
         super().__post_init__()
@@ -87,9 +87,9 @@ class DataPacket(Packet):
     header : DataHeader = field(default_factory=lambda: DataHeader(enabled=True, required=True))
     trailer : Trailer = field(default_factory=Trailer)
 
-    def validate_and_parse_mapping(self, **mapping):
-        self._validate(mapping)
-        self._parse_mapping(mapping)
+    # def validate_and_parse_mapping(self, **mapping):
+    #     self._validate(mapping)
+    #     self._parse_mapping(mapping)
 
     def _update_header(self):
         if self.stream_id.enabled:

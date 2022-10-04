@@ -281,11 +281,6 @@ class CppPacket:
                         retval.append(format_enum(field.type_))
         return retval
 
-    @property
-    def is_variable_length(self):
-        return ((self.cif0 and self.cif0.enabled and self.cif0.has_optional) or
-               (self.cif1 and self.cif1.enabled and self.cif1.has_optional))
-
 class CppGenerator(Generator):
     """
     Generates C++ packet classes.

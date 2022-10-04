@@ -11,7 +11,7 @@ class Probability(PackedStruct):
     """
     name                 : str = 'probability'
     probability_function : Unsigned8 = field(default_factory=lambda: Unsigned8('probability_function', enabled=True, required=True, packed_tag=PackedTag(15,8,0,0)))
-    probability_percent          : Unsigned8 = field(default_factory=lambda: Unsigned8('probability_percent', enabled=True, required=True, packed_tag=PackedTag(7,8,0,0)))
+    probability_percent  : Unsigned8 = field(default_factory=lambda: Unsigned8('probability_percent', enabled=True, required=True, packed_tag=PackedTag(7,8,0,0)))
 
     def __post_init__(self):
         super().__post_init__()
@@ -83,6 +83,19 @@ class CIF7(CIF):
         super().__post_init__()
 
     @property
+    def has_enabled_fields(self):
+        for field in self.attributes.fields:
+            if isinstance(field, PackedType):
+                continue
+            if field.enabled:
+                return True
+        return False
+
+    @property
+    def all_optional_fields(self):
+        return False
+
+    @property
     def fields(self):
         return [self.attributes]
 
@@ -102,6 +115,7 @@ class CIF7(CIF):
             mode = parse_enable(val)
             if mode != Mode.REQUIRED:
                 print('{} is a required field, ignoring: {}'.format(key, val))
-           
+            
             self.attributes.__dict__[key].enabled = True
             self.attributes.__dict__[key].required = True
+
