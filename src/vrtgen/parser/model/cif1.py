@@ -158,6 +158,13 @@ class SectorStepScanCIF(CIF):
     time_4 : CIFEnableType = field(default_factory=lambda: CIFEnableType('time_4', type_=FractionalTimestamp('Time4', bits=32), packed_tag=PackedTag(20,1,0,0)))
     packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
 
+    def _validate(self, mapping):
+        for key, val in mapping.items():
+            if not key in [f.name for f in self.fields]:
+                raise ValueError('invalid field provided: {}'.format(key))
+            elif key == 'sector_number' or key == 'f1_start_frequency':
+                raise ValueError('invalid field provided: {} already required by default'.format(key))
+
 @dataclass
 class SectorStepScanRecord(Record):
     """
@@ -188,6 +195,7 @@ class SectorStepScan(ArrayOfRecords):
 
     def __post_init__(self):
         super().__post_init__()
+        # Association needed for jinja generation
         self.records.linked_size = self.num_records
 
     def _parse_mapping(self, mapping):

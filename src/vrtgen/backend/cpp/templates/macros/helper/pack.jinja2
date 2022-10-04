@@ -89,7 +89,7 @@ if (packet.has_{{ field.name }}()) {
 {{ cif.name }}->{{ field.setter }}(true);
 {%     if field.type_.is_array_of_records %}
 {%       for subfield in field.type_.subfield_cif.fields if subfield.enabled %}
-{{ field.name }}.{{ field.type_.subfield_cif.getter }}().{{ subfield.setter }}(true);
+{{ field.name }}->{{ field.type_.subfield_cif.getter }}().{{ subfield.setter }}(true);
 {%       endfor %}
 {%     endif %}
 {%   endif %}
@@ -166,11 +166,16 @@ std::vector<uint8_t> {{ packet.helper }}::pack(const {{ packet.name }}& packet)
 {% if packet.cif0.enabled %}
     auto* {{ packet.cif0.name }} = buffer.insert({{ type_helper.value_type(packet.cif0) }}{});
 {%   if packet.cif1.enabled %}
+{%       if packet.cif1.all_optional_fields %}
     {{ type_helper.value_type(packet.cif1) }}* {{ packet.cif1.name }}{ nullptr };
     if (packet.has_{{ packet.cif1.name }}_fields()) {
         {{ packet.cif1.name }} = buffer.insert({{ type_helper.value_type(packet.cif1) }}{});
         {{ packet.cif0.name }}->cif1_enable(true);
     }
+{%       else %}
+    {{ type_helper.value_type(packet.cif1) }}* {{ packet.cif1.name }} = buffer.insert({{ type_helper.value_type(packet.cif1) }}{});
+    {{ packet.cif0.name }}->cif1_enable(true);
+{%       endif %}
 {%   endif %}
 {%   if packet.cif2.enabled %}
     {{ type_helper.value_type(packet.cif2) }}* {{ packet.cif2.name }}{ nullptr };

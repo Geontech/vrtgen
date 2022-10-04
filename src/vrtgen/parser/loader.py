@@ -143,12 +143,14 @@ def cif7_constructor(loader, node) -> cif7.CIF7:
 
 def sector_step_scan_constructor(loader, node) -> cif1.SectorStepScan:
     sector_step_scan = cif1.SectorStepScan(enabled=True, required=True)
-    sector_step_scan.validate_and_parse_mapping(**loader.construct_mapping(node))
+    if not isinstance(node, yaml.ScalarNode):
+        sector_step_scan.validate_and_parse_mapping(**loader.construct_mapping(node))
     return sector_step_scan
 
 def sector_step_scan_cif_constructor(loader, node) -> cif1.SectorStepScanCIF:
     sector_step_scan_cif = cif1.SectorStepScanCIF(enabled=True, required=True)
-    sector_step_scan_cif.validate_and_parse_mapping(**loader.construct_mapping(node))
+    if not isinstance(node, yaml.ScalarNode):
+        sector_step_scan_cif.validate_and_parse_mapping(**loader.construct_mapping(node))
     return sector_step_scan_cif
 
 def index_list_constructor(loader, node) -> cif1.IndexList:

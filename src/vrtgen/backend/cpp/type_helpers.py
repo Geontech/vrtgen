@@ -96,7 +96,9 @@ def format_enum(enum):
 class TypeHelper:
     def value_type(self, field):
         if isinstance(field, CIFEnableType):
-            if field.type_:
+            if field.template_type:
+                return 'T'
+            elif field.type_:
                 return self.value_type(field.type_)
             else:
                 return 'bool'
@@ -146,7 +148,9 @@ class TypeHelper:
 
     def member_type(self, field):
         if isinstance(field, CIFEnableType):
-            if field.type_:
+            if field.template_type:
+                return 'T'
+            elif field.type_:
                 return self.member_type(field.type_)
         elif isinstance(field, FixedPointType):
             return int_type(field)
