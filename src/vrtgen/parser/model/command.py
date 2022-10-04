@@ -38,9 +38,9 @@ class ControlAcknowledgeMode(PackedStruct):
     Control/Acknowledge Mode Field (8.2.1).
     """
     name : str = 'cam'
-    controllee_enable : BooleanType = field(default_factory=lambda: BooleanType('controllee_enable', packed_tag=PackedTag(31,1,0,0)))
+    controllee_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('controllee_enable', is_enable=True, packed_tag=PackedTag(31,1,0,0)))
     controllee_format : EnumType = field(default_factory=lambda: EnumType('controllee_format', type_=IdentifierFormat, packed_tag=PackedTag(30,1,0,0)))
-    controller_enable : BooleanType = field(default_factory=lambda: BooleanType('controller_enable', packed_tag=PackedTag(29,1,0,0)))
+    controller_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('controller_enable', is_enable=True, packed_tag=PackedTag(29,1,0,0)))
     controller_format : EnumType = field(default_factory=lambda: EnumType('controller_format', type_=IdentifierFormat, packed_tag=PackedTag(28,1,0,0)))
     permit_partial : BooleanType = field(default_factory=lambda: BooleanType('permit_partial', packed_tag=PackedTag(27,1,0,0)))
     permit_warnings : BooleanType = field(default_factory=lambda: BooleanType('permit_warnings', packed_tag=PackedTag(26,1,0,0)))
@@ -57,8 +57,17 @@ class ControlAcknowledgeMode(PackedStruct):
 
     def _validate(self, mapping):
         for field in mapping:
+            error = False
+            error_msg = 'invalid trailer field provided: ' + field  
             if not field in [f.name for f in self.fields]:
-                raise ValueError('invalid CAM field provided: ' + field)
+                error = True
+            else:
+                for cls_field in self.fields:
+                    if cls_field.name == field and isinstance(cls_field, EnableIndicatorType) and cls_field.is_enable:
+                            error = True
+                            break
+            if error:
+                raise ValueError(error_msg)
 
     def _parse_mapping(self, mapping):
         for key,val in mapping.items():
@@ -75,24 +84,25 @@ class ControlAcknowledgeMode(PackedStruct):
                     self.__dict__[key].value = val
                 else:
                     raise TypeError('invalid option {} for {}'.format(val,key))
-                continue
             elif key == 'controllee_format' or key == 'controller_format':
                 self.__dict__[key].value = parse_identifier_format(val)
+                self.__dict__[key].enabled = True
+                self.__dict__[key].required = True
             elif key == 'action_mode':
-                try:
-                    self.__dict__[key].value = parse_action_mode(val)
-                except ValueError:
+                if val == 'required' or val == 'optional':
                     mode = parse_enable(val)
                     self.__dict__[key].enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
                     self.__dict__[key].required = True if (mode == Mode.REQUIRED) else False
                     if mode == Mode.REQUIRED:
                         self.__dict__[key].value = True
+                else:
+                    self.__dict__[key].value = parse_action_mode(val)
+                    self.__dict__[key].enabled = True
+                    self.__dict__[key].required = True
             elif key == 'timing_control':
                 self.__dict__[key].value = parse_timing_control(val)
-            else:
-                raise TypeError('invalid type {} for {}'.format(key,val))
-            self.__dict__[key].enabled = True
-            self.__dict__[key].required = True
+                self.__dict__[key].enabled = True
+                self.__dict__[key].required = True
 
     def validate_and_parse_mapping(self, **mapping):
         self._validate(mapping)

@@ -250,8 +250,10 @@ class DiscreteIO(PackedStruct):
     subfields : List[Field] = field(default_factory=list)
 
     def _validate(self, mapping):
-        for _,val in mapping.items():
-            if val == 'bool':
+        for key,val in mapping.items():
+            if key == "mode":
+                continue
+            elif val == 'bool':
                 continue
             elif val == 'enable_indicator':
                 continue
@@ -266,7 +268,11 @@ class DiscreteIO(PackedStruct):
         packed_tag_pos = 0
         packed_tag_word = 0
         for key,val in mapping.items():
-            if val == 'bool':
+            if key == "mode":
+                mode = parse_enable(val)
+                self.enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
+                self.required = True if (mode == Mode.REQUIRED) else False
+            elif val == 'bool':
                 self.subfields.append(BooleanType(key, enabled=True, required=True, packed_tag=PackedTag(packed_tag_pos,1,packed_tag_word,packed_tag_word)))
                 packed_tag_pos += 1
             elif val == 'enable_indicator':
@@ -290,6 +296,7 @@ class DiscreteIO(PackedStruct):
                 pos = packed_tag_pos + bits - 1
                 self.subfields.append(EnumType(key, enabled=True, required=True, user_defined=True, type_=discrete_io_enum, packed_tag=PackedTag(pos,bits,packed_tag_word,packed_tag_word)))
                 packed_tag_pos += bits
+                
             if packed_tag_pos > self.bits:
                 raise ValueError('too many subfield bits for discrete io field')
             packed_tag_word = packed_tag_pos // 32
@@ -366,6 +373,15 @@ class CIF1(CIF):
     version_build_code : CIFEnableType = field(default_factory=lambda: CIFEnableType('version_build_code', type_=Identifier32(), packed_tag=PackedTag(2,1,0,0)))
     buffer_size : CIFEnableType = field(default_factory=lambda: CIFEnableType('buffer_size', type_=FixedPoint64r20(), packed_tag=PackedTag(1,1,0,0)))
     packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
+
+    def _validate(self, mapping):
+        for key, val in mapping.items():
+            if not key in [f.name for f in self.fields]:
+                raise ValueError('invalid field provided: ' + key)
+            elif key == 'sector_step_scan' and not isinstance(val, SectorStepScan):
+                raise ValueError('Sector Step Scan not of the correct type')
+            elif key == 'index_list' and not isinstance(val, IndexList):
+                raise ValueError('Index list not of the correct type')
 
     def _parse_mapping(self, mapping):
         for key,val in mapping.items():

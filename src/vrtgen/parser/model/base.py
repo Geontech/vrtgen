@@ -33,15 +33,10 @@ class CIF(PackedStruct):
         self.bits = 32
 
     @property
-    def has_optional(self):
-        for field in self.fields:
-            if field.optional:
-                return True
-        return False
-
-    @property
     def has_enabled_fields(self):
         for field in self.fields:
+            if isinstance(field, PackedType):
+                continue
             if field.indicator_only:
                 continue
             if field.enabled:
@@ -88,6 +83,11 @@ class Packet:
     @property
     def fields(self):
         return [self.__dict__[key] for key,_ in asdict(self).items() if is_field_type(self.__dict__[key])]
+
+    def validate_and_parse_mapping(self, **mapping):
+        self._validate(mapping)
+        self._parse_mapping(mapping)
+        self._update_header()
 
     def _validate(self, mapping):
         for field in mapping:
