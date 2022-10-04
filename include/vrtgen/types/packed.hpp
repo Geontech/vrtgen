@@ -112,7 +112,7 @@ namespace vrtgen {
                 return Converter::load(field_packing<T,bits>::load(value));
             }
         };
-    }
+    } // namespace detail
 
     template <typename Value, unsigned Position, unsigned Bits, typename Converter=void>
     struct packed_tag
@@ -219,6 +219,6 @@ namespace vrtgen {
 
     }; // end class packed
 
-}
+} // namespace vrtgen
 
 #endif // _VRTGEN_TYPES_PACKED_HPP

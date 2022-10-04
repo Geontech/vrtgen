@@ -74,7 +74,7 @@ public:
         m_pos += sizeof(T);
     }
 
-    template <typename T> requires (!std::integral<T>)
+    template <typename T> requires (std::is_class_v<T>)
     T* insert(const T& value)
     {
         auto* ptr = m_begin + m_pos;
@@ -86,6 +86,48 @@ public:
         m_pos += value.size();
         return reinterpret_cast<T*>(ptr);
     }
+
+
+    template <typename T>
+    vrtgen::packing::IndexList<T>* insert(const vrtgen::packing::IndexList<T>& value)
+    {
+        auto* ptr = m_begin + m_pos;
+        value.pack_into(ptr);
+        auto* value_ptr = reinterpret_cast<vrtgen::packing::IndexList<T>*>(ptr);
+        // Set the total size of the field
+        value_ptr->total_size(std::ceil(value.size() / sizeof(uint32_t)));
+        // Set the appropriate entry size
+        if (std::is_same<T, uint8_t>::value) {
+            value_ptr->entry_size(vrtgen::packing::EntrySize::EIGHT_BIT);
+        } else if (std::is_same<T, uint16_t>::value) {
+            value_ptr->entry_size(vrtgen::packing::EntrySize::SIXTEEN_BIT);
+        } else if (std::is_same<T, uint32_t>::value) {
+            value_ptr->entry_size(vrtgen::packing::EntrySize::THIRTY_TWO_BIT);
+        }
+        // Set number of entries
+        value_ptr->num_entries(value.entries().size());
+        m_pos += value.size();
+        return value_ptr;
+    }
+
+    template <typename T>
+    vrtgen::packing::SectorStepScan<T>* insert(const vrtgen::packing::SectorStepScan<T>& value)
+    {
+        auto* ptr = m_begin + m_pos;
+        value.pack_into(ptr);
+        auto* value_ptr = reinterpret_cast<vrtgen::packing::SectorStepScan<T>*>(m_begin + m_pos);
+        // Set the total size of the field
+        auto array_size = std::ceil(value.size() / sizeof(uint32_t));
+        value_ptr->array_size(array_size);
+        // Set the number of words per record
+        auto sizeof_record = value.records().empty() ? 0 : value.records().front().size();
+        value_ptr->num_words_record(std::ceil(sizeof_record / sizeof(uint32_t)));
+        // Set number of records
+        value_ptr->num_records(value.records().size());
+        m_pos += value.size();
+        return value_ptr;
+    }
+
 
     void update_packet_size()
     {

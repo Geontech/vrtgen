@@ -5739,6 +5739,135 @@ TEST_CASE("Context Packet CIF7 Packet")
         // Unpack verifed packed data
         packet_type packet_out;
         helper::unpack(packet_out, data.data(), data.size());
+        
+        // Examine and check unpacked packet header
+        const auto& header = packet_out.header();
+        CHECK(header.packet_type() == vrtgen::packing::PacketType::CONTEXT);
+        CHECK_FALSE(header.class_id_enable());
+        CHECK_FALSE(header.not_v49d0());
+        CHECK(header.tsm() == vrtgen::packing::TSM::FINE);
+        CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
+        CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
+        CHECK(header.packet_size() == PACKET_SIZE);
+
+        // Examine and check unpacked Stream ID
+        CHECK(packet_out.stream_id() == STREAM_ID);
+        CHECK(packet_out.reference_level() == 0);
+        CHECK_FALSE(packet_out.has_gain());
+    }
+}
+
+TEST_CASE("Context Packet Index List")
+{
+    // Sizes for all required fields
+    size_t PACKED_SIZE = 4 + // header
+                         4 + // stream_id
+                         4 + // cif 0
+                         4;  // cif 1
+
+    SECTION("Index List 32-bit Entry Size") {
+        using packet_type = TestContextIndexList;
+        using packet_helper = packet_type::helper;
+        
+        // Add required bytes to PACKED_SIZE count
+        size_t INDEX_LIST_HEADER_BYTES = 8;
+        PACKED_SIZE += INDEX_LIST_HEADER_BYTES;
+
+        /*
+         * Rule 9.3.2-1: The form of the Index List field shall follow that
+         * shown in Figure 9.3.2-1.
+         * 
+         * | Word |31|30|29|28|27|26|25|24|23|22|21|20|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00|
+         * | 1    |                           Total size of field in words (31..0)                                |
+         * | 2    |Entry Size |   Reserved (27..20)   |                   # of entries (19..0)                    |
+         * | 3..N |                   Index Entries (32-bit OR 16-bit packed or 8-bit packed)                     |
+         */
+        packet_type packet_in;
+
+        // Stream ID is required field. Set value to check
+        const uint32_t STREAM_ID = 0x12345678;
+        packet_in.stream_id(STREAM_ID);
+        CHECK(packet_in.stream_id() == STREAM_ID);
+
+        // Add index list entries to check
+        vrtgen::packing::IndexList<uint32_t> index_list;
+        const uint32_t NUM_ENTRIES = 10;
+        for (uint32_t i=1; i<=NUM_ENTRIES; ++i) {
+            index_list.entries().push_back(i);
+        }
+        packet_in.index_list(index_list);
+        const uint32_t ENTRY_WORDS = NUM_ENTRIES;
+        PACKED_SIZE += ENTRY_WORDS * 4;
+
+        // Check bytes required
+        CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
+
+        // Get buffer from pack
+        auto data = packet_helper::pack(packet_in);
+        CHECK(data.size() == PACKED_SIZE);
+        auto* check_ptr = data.data();
+
+        // Examine and check packed header
+        const size_t HEADER_BYTES = 4;
+        const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
+        const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
+        const bytes HEADER_BE{ PACKET_TYPE , 0, 0, PACKET_SIZE };
+        const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
+        check_ptr += HEADER_BYTES;
+        CHECK(packed_header == HEADER_BE);
+
+        // Examine and check packed Stream ID. Value shall be in big-endian format.
+        const size_t STREAM_ID_BYTES = 4;
+        const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
+        const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
+        check_ptr += STREAM_ID_BYTES;
+        CHECK(packed_stream_id == STREAM_ID_BE);
+
+        // Examine and check packed CIF0
+        const size_t CIF0_BYTES = 4;
+        const uint8_t CIF1_ENABLE = 0x1 << 1; // CIF 0 bit 1
+        const bytes CIF0_BE{ 0, 0, 0, CIF1_ENABLE };
+        const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
+        check_ptr += CIF0_BYTES;
+        CHECK(packed_cif0 == CIF0_BE);
+
+        // Examine and check packed CIF1
+        const size_t CIF1_BYTES = 4;
+        const uint8_t INDEX_LIST_ENABLE = 0x1 << 7; // CIF 1 bit 7
+        const bytes CIF1_BE{ 0, 0, 0, INDEX_LIST_ENABLE };
+        const decltype(data) packed_cif1(check_ptr, check_ptr + CIF1_BYTES);
+        check_ptr += CIF1_BYTES;
+        CHECK(packed_cif1 == CIF1_BE);
+
+        // Examine and check packed Index List header fields. Values shall be in big-endian format.
+        const bytes INDEX_LIST_HEADER_BE{ 0, 0, 0, 12, 0x40, 0, 0, 0xA };
+        const decltype(data) packed_index_list_header(check_ptr, check_ptr + INDEX_LIST_HEADER_BYTES);
+        check_ptr += INDEX_LIST_HEADER_BYTES;
+        CHECK(packed_index_list_header == INDEX_LIST_HEADER_BE);
+
+        // Examine and check packed Index List entry fields.
+        const bytes INDEX_LIST_ENTRIES_BE{ 
+            1, 0, 0, 0,
+            2, 0, 0, 0,
+            3, 0, 0, 0,
+            4, 0, 0, 0,
+            5, 0, 0, 0,
+            6, 0, 0, 0,
+            7, 0, 0, 0,
+            8, 0, 0, 0,
+            9, 0, 0, 0,
+            10, 0, 0, 0
+        };
+        const decltype(data) packed_index_list_entries(check_ptr, check_ptr + ENTRY_WORDS * 4);
+        check_ptr += ENTRY_WORDS * 4;
+        CHECK(packed_index_list_entries == INDEX_LIST_ENTRIES_BE);
+
+        // Check match
+        CHECK_FALSE(packet_helper::match(data.data(), data.size()));
+
+        // Unpack verifed packed data
+        packet_type packet_out;
+        packet_helper::unpack(packet_out, data.data(), data.size());
 
         // Examine and check unpacked packet header
         const auto& header = packet_out.header();
@@ -5753,7 +5882,181 @@ TEST_CASE("Context Packet CIF7 Packet")
         // Examine and check unpacked Stream ID
         CHECK(packet_out.stream_id() == STREAM_ID);
 
-        CHECK(packet_out.reference_level() == 0);
-        CHECK_FALSE(packet_out.has_gain());
+        // Examine and check unpacked Index List
+        CHECK(packet_out.index_list().total_size() == 12);
+        CHECK(packet_out.index_list().entry_size() == vrtgen::packing::EntrySize::THIRTY_TWO_BIT);
+        CHECK(packet_out.index_list().num_entries() == NUM_ENTRIES);
+        auto& entries = packet_out.index_list().entries();
+        CHECK(entries.size() == NUM_ENTRIES);
+        for (uint32_t i=0; i<NUM_ENTRIES; ++i) {
+            CHECK(entries[i] == (i+1));
+        }
+    } // end SECTION("Index List 32-bit Entry Size")
+} // end TEST_CASE("Context Packet IndexList")
+
+TEST_CASE("Context Packet Sector Step/Scan")
+{
+    // Sizes for all required fields
+    size_t PACKED_SIZE = 4 + // header
+                         4 + // stream_id
+                         4 + // cif 0
+                         4;  // cif 1
+
+    using packet_type = TestContextSectorStepScan;
+    using packet_helper = packet_type::helper;
+    using record_type = test_context_sector_step_scan::structs::SectorStepScanRecord;
+    
+    // Add required bytes to PACKED_SIZE count
+    size_t SECTOR_STEP_SCAN_HEADER_BYTES = 12;
+    PACKED_SIZE += SECTOR_STEP_SCAN_HEADER_BYTES;
+
+    /*
+     * Rule 9.6.2.1-1: The internal structure of the Sector/Step-Scan field
+     * shall be as shown in Figure 9.6.2.1-1 where each Record in the field are
+     * identical.
+     * 
+     * | Word |31|30|29|28|27|26|25|24|23|22|21|20|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00|
+     * | 1    |                                      SizeofArray (31..0)                                      |
+     * | 2    |  HeaderSize (31..24)  |    NumWords/Record (23..12)       |        NumRecords (11..0)         |
+     * | 3    |                    Bitmapped Control/Context Indicator subfield (31..0)                       |
+     * | 4..N |              Records #1-N with set of subfields as described by above subfield                |
+     */
+    packet_type packet_in;
+
+    // Stream ID is required field. Set value to check
+    const uint32_t STREAM_ID = 0x12345678;
+    packet_in.stream_id(STREAM_ID);
+    CHECK(packet_in.stream_id() == STREAM_ID);
+
+    // Add sector step scan records to check
+    vrtgen::packing::SectorStepScan<record_type> sector_step_scan;
+    std::vector<record_type> RECORDS;
+    const uint32_t NUM_RECORDS = 3;
+    for (uint32_t i=0; i<NUM_RECORDS; ++i) {
+        record_type record;
+        record.sector_number(i+1);
+        record.f1_start_frequency((i+1)*2);
+        record.f2_stop_frequency((i+1)*4);
+        RECORDS.push_back(record);
     }
-}
+    sector_step_scan.records(RECORDS);
+    packet_in.sector_step_scan(sector_step_scan);
+    const uint32_t NUM_WORDS_PER_RECORD = ceil(RECORDS.front().size() / 4);
+    PACKED_SIZE += (NUM_WORDS_PER_RECORD * NUM_RECORDS * 4);
+
+    uint32_t i = 0;
+    for (auto record : sector_step_scan.records()) {
+        CHECK(record.sector_number() == i + 1);
+        CHECK(record.f1_start_frequency() == double((i+1)*2));
+        CHECK(record.f2_stop_frequency() == double((i+1)*4));
+        i++;
+    }
+
+    // Check bytes required
+    CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
+
+    // Get buffer from pack
+    auto data = packet_helper::pack(packet_in);
+    CHECK(data.size() == PACKED_SIZE);
+    auto* check_ptr = data.data();
+
+    // Examine and check packed header
+    const size_t HEADER_BYTES = 4;
+    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
+    const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
+    const bytes HEADER_BE{ PACKET_TYPE , 0, 0, PACKET_SIZE };
+    const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
+    check_ptr += HEADER_BYTES;
+    CHECK(packed_header == HEADER_BE);
+
+    // Examine and check packed Stream ID. Value shall be in big-endian format.
+    const size_t STREAM_ID_BYTES = 4;
+    const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
+    const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
+    check_ptr += STREAM_ID_BYTES;
+    CHECK(packed_stream_id == STREAM_ID_BE);
+
+    // Examine and check packed CIF0
+    const size_t CIF0_BYTES = 4;
+    const uint8_t CIF1_ENABLE = 0x1 << 1; // CIF 0 bit 1
+    const bytes CIF0_BE{ 0, 0, 0, CIF1_ENABLE };
+    const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
+    check_ptr += CIF0_BYTES;
+    CHECK(packed_cif0 == CIF0_BE);
+
+    // Examine and check packed CIF1
+    const size_t CIF1_BYTES = 4;
+    const uint8_t SECTOR_STEP_SCAN_ENABLE = 0x1 << 1; // CIF 1 bit 9
+    const bytes CIF1_BE{ 0, 0, SECTOR_STEP_SCAN_ENABLE, 0 };
+    const decltype(data) packed_cif1(check_ptr, check_ptr + CIF1_BYTES);
+    check_ptr += CIF1_BYTES;
+    CHECK(packed_cif1 == CIF1_BE);
+
+    // Examine and check packed Sector Step/Scan header fields. Values shall be in big-endian format.
+    const bytes SECTOR_STEP_SCAN_HEADER_BE{ 
+        0, 0, 0, 0x12, // array size (18 words)
+        0, 0, 0x50, 3, // header size / num words per record (5) / num records (3)
+        (0x1<<7|0x1<<6|0x1<<5), 0, 0, 0 // subfield cif
+    };
+    const decltype(data) packed_sector_step_scan_header(check_ptr, check_ptr + SECTOR_STEP_SCAN_HEADER_BYTES);
+    check_ptr += SECTOR_STEP_SCAN_HEADER_BYTES;
+    CHECK(packed_sector_step_scan_header == SECTOR_STEP_SCAN_HEADER_BE);
+
+    // Examine and check packed Sector Step/Scan record fields.
+    const bytes SECTOR_STEP_SCAN_RECORDS_BE{
+        // record 1
+        0, 0, 0, 1, // sector number
+        0, 0, 0, 0, // f1 start frequency
+        0, 0x20, 0, 0,
+        0, 0, 0, 0, // f2 stop frequency
+        0, 0x40, 0, 0,
+        // record 2
+        0, 0, 0, 2, // sector number
+        0, 0, 0, 0, // f1 start frequency
+        0, 0x40, 0, 0,
+        0, 0, 0, 0, // f2 stop frequency
+        0, 0x80, 0, 0,
+        // record 3
+        0, 0, 0, 3, // sector number
+        0, 0, 0, 0, // f1 start frequency
+        0, 0x60, 0, 0,
+        0, 0, 0, 0, // f2 stop frequency
+        0, 0xC0, 0, 0
+    };
+    const decltype(data) packed_sector_step_scan_records(check_ptr, check_ptr + NUM_WORDS_PER_RECORD * NUM_RECORDS * 4);
+    check_ptr += NUM_WORDS_PER_RECORD * NUM_RECORDS * 4;
+    CHECK(packed_sector_step_scan_records == SECTOR_STEP_SCAN_RECORDS_BE);
+
+    // Check match
+    CHECK_FALSE(packet_helper::match(data.data(), data.size()));
+
+    // Unpack verifed packed data
+    packet_type packet_out;
+    packet_helper::unpack(packet_out, data.data(), data.size());
+
+    // Examine and check unpacked packet header
+    const auto& header = packet_out.header();
+    CHECK(header.packet_type() == vrtgen::packing::PacketType::CONTEXT);
+    CHECK_FALSE(header.class_id_enable());
+    CHECK_FALSE(header.not_v49d0());
+    CHECK(header.tsm() == vrtgen::packing::TSM::FINE);
+    CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
+    CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
+    CHECK(header.packet_size() == PACKET_SIZE);
+
+    // Examine and check unpacked Stream ID
+    CHECK(packet_out.stream_id() == STREAM_ID);
+
+    // Examine and check unpacked Sector/Step Scan
+    CHECK(packet_out.sector_step_scan().array_size() == 18); // 3 header words + 5*3 record words
+    CHECK(packet_out.sector_step_scan().header_size() == 0);
+    CHECK(packet_out.sector_step_scan().num_words_record() == NUM_WORDS_PER_RECORD);
+    CHECK(packet_out.sector_step_scan().num_records() == NUM_RECORDS);
+    auto& records = packet_out.sector_step_scan().records();
+    CHECK(records.size() == NUM_RECORDS);
+    for (uint32_t i=0; i<NUM_RECORDS && records.size(); ++i) {
+        CHECK(records[i].sector_number() == RECORDS[i].sector_number());
+        CHECK(records[i].f1_start_frequency() == RECORDS[i].f1_start_frequency());
+        CHECK(records[i].f2_stop_frequency() == RECORDS[i].f2_stop_frequency());
+    }
+} // end TEST_CASE("Context Packet Sector Step/Scan")

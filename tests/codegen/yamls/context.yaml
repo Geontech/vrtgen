@@ -87,16 +87,16 @@ TestContext8: !Context
   tsm: coarse
      
 
-# TestContextIndexList: !Context
-#   cif_1: !CIF1
-#     index_list: !IndexList
-#       entry_size: 32
+TestContextIndexList: !Context
+  cif_1: !CIF1
+    index_list: !IndexList
+      entry_size: 32
 
-# TestContextSectorStepScan: !Context
-#   cif_1: !CIF1
-#     sector_step_scan: !SectorStepScan
-#       subfield_cif: !SectorStepScanCIF
-#         f2_stop_frequency: required
+TestContextSectorStepScan: !Context
+  cif_1: !CIF1
+    sector_step_scan: !SectorStepScan
+      subfield_cif: !SectorStepScanCIF
+        f2_stop_frequency: required
 
 # TestContextPacket: !Context
 #   class_id: !ClassID

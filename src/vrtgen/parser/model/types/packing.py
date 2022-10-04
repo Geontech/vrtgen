@@ -35,6 +35,7 @@ class Field:
     enabled      : bool = False
     required     : bool = False
     user_defined : bool = False
+    template_type: bool = False
     reserved_bits: int = 0
     packed_tag   : PackedTag = None
     packet_name  : str = ''

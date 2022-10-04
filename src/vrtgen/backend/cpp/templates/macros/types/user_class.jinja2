@@ -16,6 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
+{% import "macros/types/basic.jinja2" as basic %}
 
 {%- macro define_class(class, type_helper) %}
 {% set fields = (class.fields | sort_packed_tags) %}
@@ -31,71 +32,17 @@ class {{ class.type_ }}
 {
 public:
 {% for field in fields if field.enabled and not field.is_packed_type %}
-{%     if class.is_template and not (field.type_.is_packed_struct) %}
-    {{ class.template_name }}& {{ field.getter }}()
-    {
-        return m_{{ field.name }};
-    }
-
-    const {{ class.template_name }}& {{ field.getter }}() const
-    {
-        return m_{{ field.name }};
-    }
-
-    void {{ field.setter }}(const {{ class.template_name }}& value)
-    {
-        m_{{ field.name }} = value;
-    }
-{%     elif not type_helper.is_scalar(field) %}
-    {{ type_helper.value_type(field) }}& {{ field.getter }}()
-    {
-        return m_{{ field.name }};
-    }
-
-    const {{ type_helper.value_type(field) }}& {{ field.getter }}() const
-    {
-        return m_{{ field.name }};
-    }
-
-    void {{ field.setter }}(const {{ type_helper.value_type(field) }}& value)
-    {
-        m_{{ field.name }} = value;
-    }
-
-{%     else %}
-    {{ type_helper.value_type(field) }} {{ field.getter }}() const
-    {
-{% if field.packed_tag.packed_int is not none %}
-        return m_packed_{{ field.packed_tag.packed_int }}.get({{ field.name }}_tag());
-{% elif field.is_fixed_point %}
-        return m_{{ field.name }};
-{% elif field.is_integer_type %}
-        return vrtgen::from_be(m_{{ field.name }});
-{% endif %}
-    }
-
-    void {{ field.setter }}(const {{ type_helper.value_type(field) }} value)
-    {
-{% if field.packed_tag.packed_int is not none %}
-        m_packed_{{ field.packed_tag.packed_int }}.set(value, {{ field.name }}_tag());
-{% elif field.is_fixed_point %}
-        m_{{ field.name }} = value;
-{% elif field.is_integer_type %}
-        m_{{ field.name }} = vrtgen::to_be(value);
-{% endif %}
-    }
-
-{%     endif %}
+    {{ basic.getters_and_setters(field, type_helper) | indent(4) | trim }}
 {% endfor %}
     size_t size() const
     {
         size_t retval = 0;
 {% for field in fields if field.enabled and field.packed_tag.packed_int is none %}
 {%   if type_helper.is_scalar(field) %}
-        retval += sizeof({{ type_helper.value_type(field) }}); // {{ field.name }}
+        retval += sizeof({{ type_helper.member_type(field) }}); // {{ field.name }}
 {%   else %}
 {%     if field.is_list %}
-        for (const auto{{ '&' if not type_helper.is_scalar(field.type_) }} elem : m_{{ field.name }}) {
+        for (const auto{{ '&' if not type_helper.is_scalar(field.type_) }} elem : _{{ field.name }}) {
 {%       if not type_helper.is_scalar(field.type_) %}
             retval += elem.size();
 {%       else %}
@@ -103,7 +50,7 @@ public:
 {%       endif %}
         }
 {%     else %}
-        retval += m_{{ field.name }}.size();
+        retval += _{{ field.name }}.size();
 {%     endif %}
 {%   endif %}
 {% endfor %}
@@ -114,7 +61,7 @@ public:
     {
 {% for field in fields if field.enabled and field.packed_tag.packed_int is none %}
 {%   if field.is_list %}
-        for (const auto{{ '&' if not type_helper.is_scalar(field.type_) }} elem : m_{{ field.name }}) {
+        for (const auto{{ '&' if not type_helper.is_scalar(field.type_) }} elem : _{{ field.name }}) {
 {%     if type_helper.is_scalar(field.type_) %}
             static_assert(std::is_trivially_copyable_v<decltype(elem)>);
             std::memcpy(buffer_ptr, &elem, sizeof(elem));
@@ -124,21 +71,15 @@ public:
             buffer_ptr += elem.size();
 {%     endif %}
         }
-{%   elif field.is_fixed_point %}
-        auto {{ field.name}}_value = vrtgen::to_be(vrtgen::fixed_to_int{{ type_helper.fixed_template(field) }}(m_{{ field.name }}));
-        std::memcpy(buffer_ptr, &{{ field.name}}_value, sizeof({{ field.name}}_value));
-{%     if not loop.last %}
-        buffer_ptr += sizeof({{ field.name}}_value);
-{%     endif %}
 {%   elif type_helper.is_scalar(field) %}
-        std::memcpy(buffer_ptr, &m_{{ field.name }}, sizeof(m_{{ field.name }}));
+        std::memcpy(buffer_ptr, &_{{ field.name }}, sizeof(_{{ field.name }}));
 {%     if not loop.last %}
-        buffer_ptr += sizeof(m_{{ field.name }});
+        buffer_ptr += sizeof(_{{ field.name }});
 {%     endif %}
 {%   else %}
-        m_{{ field.name }}.pack_into(buffer_ptr);
+        _{{ field.name }}.pack_into(buffer_ptr);
 {%     if not loop.last %}
-        buffer_ptr += m_{{ field.name }}.size();
+        buffer_ptr += _{{ field.name }}.size();
 {%     endif %}
 {%   endif %}
 {% endfor %}
@@ -149,32 +90,25 @@ public:
         auto* ptr = data;
 {% for field in fields if field.enabled and field.packed_tag.packed_int is none %}
 {%   if field.is_list %}
-        m_{{ field.name}}.resize({{ field.linked_size.getter }}());
-        for (size_t i=0; i<m_{{ field.name }}.size(); ++i) {
+        _{{ field.name}}.resize({{ field.linked_size.getter }}());
+        for (size_t i=0; i<_{{ field.name }}.size(); ++i) {
 {%     if type_helper.is_scalar(field.type_) %}
-            std::memcpy(m_{{ field.name }}.data() + i, ptr, sizeof(m_{{ field.name }}[i]));
-            ptr += sizeof(m_{{ field.name }}[i]);
+            std::memcpy(_{{ field.name }}.data() + i, ptr, sizeof(_{{ field.name }}[i]));
+            ptr += sizeof(_{{ field.name }}[i]);
 {%     else %}
-            m_{{ field.name}}[i].unpack_from(ptr);
-            ptr += m_{{ field.name }}[i].size();
+            _{{ field.name}}[i].unpack_from(ptr);
+            ptr += _{{ field.name }}[i].size();
 {%     endif %}
         }
-{%   elif field.is_fixed_point %}
-        int{{ field.bits }}_t {{ field.name}}_value{ 0 };
-        std::memcpy(&{{ field.name}}_value, ptr, sizeof({{ field.name}}_value));
-        m_{{ field.name }} = vrtgen::fixed_to_fp{{ type_helper.fixed_template(field) }}(vrtgen::from_be({{ field.name}}_value));
-{%     if not loop.last %}
-        ptr += sizeof({{ field.name }}_value);
-{%     endif %}
 {%  elif type_helper.is_scalar(field) %}
-        std::memcpy(&m_{{ field.name }}, ptr, sizeof(m_{{ field.name }}));
+        std::memcpy(&_{{ field.name }}, ptr, sizeof(_{{ field.name }}));
 {%     if not loop.last %}
-        ptr += sizeof(m_{{ field.name }});
+        ptr += sizeof(_{{ field.name }});
 {%     endif %}
 {%   else %}
-        m_{{ field.name }}.unpack_from(ptr);
+        _{{ field.name }}.unpack_from(ptr);
 {%     if not loop.last %}
-        ptr += m_{{ field.name }}.size();
+        ptr += _{{ field.name }}.size();
 {%     endif %}
 {%   endif %}
 {% endfor %}
@@ -194,19 +128,15 @@ private:
 {%     set tag = field.packed_tag %}
 {%     if class.is_template %}
 {%         if field.type_.is_packed_struct %}
-    {{ type_helper.member_type(field) }} m_{{ field.name }};
+    {{ type_helper.member_type(field) }} _{{ field.name }};
 {%         else %}
-    T m_{{field.name}};
+    T _{{field.name}};
 {%         endif %}
-{%     elif tag.packed_int is not none %}
+{%     elif tag.packed_int is none %}
+    {{ basic.member(field, type_helper) | indent(4) | trim }}
+{%     else %}
 {%         set packed_int = class.packed_fields[tag.packed_int] %}
     using {{ field.name }}_tag = vrtgen::packed_tag<{{ type_helper.value_type(field) }},{{ tag.position % packed_int.bits }},{{ tag.bits }}{{ ',detail::'+field.converter if field.converter }}>;
-{%     else %}
-{%         if field.value %}
-    {{ type_helper.member_type(field) }} m_{{ field.name }}{ {{ field.value }}{{ 'u' if not field.signed }} };
-{%         else %}
-    {{ type_helper.member_type(field) }} m_{{ field.name }};
-{%         endif %}
 {%     endif %}
 {% endfor %}
 
