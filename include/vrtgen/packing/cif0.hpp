@@ -27,7 +27,7 @@ namespace vrtgen::packing {
 
 /**
  * @class CIF0
- * @brief Context/Command Indicator Field 0 (9.1)
+ * @brief Context/Command Indicator Field 0 (VITA 49.2-2017 Section 9.1)
  */
 class CIF0 : public IndicatorField0
 {
@@ -37,7 +37,7 @@ public:
      * @return true if packet contains Command/Context Indicator Field 7 word, otherwise false
      * 
      * Command/Context Indicator Field 7 Enable is 1 bit long at bit position 7
-     * See VITA 49.2 Table 9.1-1
+     * See VITA 49.2-2017 Table 9.1-1
      */
     bool cif7_enable() const noexcept
     {
@@ -49,7 +49,7 @@ public:
      * @param value Command/Context Indicator Field 7 enable flag value to set
      * 
      * Command/Context Indicator Field 7 Enable is 1 bit long at bit position 7
-     * See VITA 49.2 Table 9.1-1
+     * See VITA 49.2-2017 Table 9.1-1
      */
     void cif7_enable(bool value) noexcept
     {
@@ -61,7 +61,7 @@ public:
      * @return true if packet contains Command/Context Indicator Field 3 word, otherwise false
      * 
      * Command/Context Indicator Field 3 Enable is 1 bit long at bit position 3
-     * See VITA 49.2 Table 9.1-1
+     * See VITA 49.2-2017 Table 9.1-1
      */
     bool cif3_enable() const noexcept
     {
@@ -73,7 +73,7 @@ public:
      * @param value Command/Context Indicator Field 3 enable flag value to set
      * 
      * Command/Context Indicator Field 3 Enable is 1 bit long at bit position 3
-     * See VITA 49.2 Table 9.1-1
+     * See VITA 49.2-2017 Table 9.1-1
      */
     void cif3_enable(bool value) noexcept
     {
@@ -85,7 +85,7 @@ public:
      * @return true if packet contains Command/Context Indicator Field 2 word, otherwise false
      * 
      * Command/Context Indicator Field 2 Enable is 1 bit long at bit position 2
-     * See VITA 49.2 Table 9.1-1
+     * See VITA 49.2-2017 Table 9.1-1
      */
     bool cif2_enable() const noexcept
     {
@@ -97,7 +97,7 @@ public:
      * @param value Command/Context Indicator Field 2 enable flag value to set
      * 
      * Command/Context Indicator Field 2 Enable is 1 bit long at bit position 2
-     * See VITA 49.2 Table 9.1-1
+     * See VITA 49.2-2017 Table 9.1-1
      */
     void cif2_enable(bool value) noexcept
     {
@@ -109,7 +109,7 @@ public:
      * @return true if packet contains Command/Context Indicator Field 1 word, otherwise false
      * 
      * Command/Context Indicator Field 1 Enable is 1 bit long at bit position 1
-     * See VITA 49.2 Table 9.1-1
+     * See VITA 49.2-2017 Table 9.1-1
      */
     bool cif1_enable() const noexcept
     {
@@ -121,7 +121,7 @@ public:
      * @param value Command/Context Indicator Field 1 enable flag value to set
      * 
      * Command/Context Indicator Field 1 Enable is 1 bit long at bit position 1
-     * See VITA 49.2 Table 9.1-1
+     * See VITA 49.2-2017 Table 9.1-1
      */
     void cif1_enable(bool value) noexcept
     {
@@ -132,9 +132,9 @@ public:
 
 /**
  * @class Gain
- * @brief Gain/Attenuation field (9.5.3)
+ * @brief Gain/Attenuation field (VITA 49.2-2017 Section 9.5.3)
  */
-class Gain
+class Gain : public Packed32_Fixed16R<7>
 {
 public:
     /**
@@ -143,11 +143,11 @@ public:
      * 
      * Stage 2 Gain subfield is 16 bits long at bit position 31 expressed in
      * two's-complement format with a radix point to the right of bit 7
-     * See VITA 49.2 Figure 9.5.3-1
+     * See VITA 49.2-2017 Figure 9.5.3-1
      */
-    float stage_2() const noexcept
+    double stage_2() const noexcept
     {
-        return vrtgen::fixed::to_fp<16,7>(vrtgen::swap::from_be(m_stage_2));
+        return subfield_31();
     }
 
     /**
@@ -156,24 +156,24 @@ public:
      * 
      * Stage 2 Gain subfield is 16 bits long at bit position 31 expressed in
      * two's-complement format with a radix point to the right of bit 7
-     * See VITA 49.2 Figure 9.5.3-1
+     * See VITA 49.2-2017 Figure 9.5.3-1
      */
-    void stage_2(float value) noexcept
+    void stage_2(double value) noexcept
     {
-        m_stage_2 = vrtgen::swap::to_be(vrtgen::fixed::to_int<16,7>(value));
+        subfield_31(value);
     }
 
     /**
-     * @brief Returns the Stage 2 Gain subfield value
-     * @return Stage 2 Gain subfield value
+     * @brief Returns the Stage 1 Gain subfield value
+     * @return Stage 1 Gain subfield value
      * 
      * Stage 1 Gain subfield is 16 bits long at bit position 15 expressed in
      * two's-complement format with a radix point to the right of bit 7
-     * See VITA 49.2 Figure 9.5.3-1
+     * See VITA 49.2-2017 Figure 9.5.3-1
      */
-    float stage_1() const noexcept
+    double stage_1() const noexcept
     {
-        return vrtgen::fixed::to_fp<16,7>(vrtgen::swap::from_be(m_stage_1));
+        return subfield_15();
     }
 
     /**
@@ -182,55 +182,18 @@ public:
      * 
      * Stage 1 Gain subfield is 16 bits long at bit position 15 expressed in
      * two's-complement format with a radix point to the right of bit 7
-     * See VITA 49.2 Figure 9.5.3-1
+     * See VITA 49.2-2017 Figure 9.5.3-1
      */
-    void stage_1(float value) noexcept
+    void stage_1(double value) noexcept
     {
-        m_stage_1 = vrtgen::swap::to_be(vrtgen::fixed::to_int<16,7>(value));
+        subfield_15(value);
     }
-
-    /**
-     * @brief Returns the number of Gain bytes
-     * @return Number of Gain bytes
-     */
-    constexpr std::size_t size() const noexcept
-    {
-        return sizeof(m_stage_2) +
-               sizeof(m_stage_1);
-    }
-
-    /**
-     * @brief Pack Gain as bytes into the buffer
-     * @param buffer_ptr Pointer to buffer location to add Gain bytes
-     */
-    void pack_into(uint8_t* buffer_ptr) const
-    {
-        std::memcpy(buffer_ptr, &m_stage_2, sizeof(m_stage_2));
-        buffer_ptr += sizeof(m_stage_2);
-        std::memcpy(buffer_ptr, &m_stage_1, sizeof(m_stage_1));
-    }
-
-    /**
-     * @brief Unpack buffer bytes into Gain
-     * @param buffer_ptr Pointer to beginning of Gain bytes in the buffer
-     */
-    void unpack_from(const uint8_t* buffer_ptr)
-    {
-        auto* ptr = buffer_ptr;
-        std::memcpy(&m_stage_2, ptr, sizeof(m_stage_2));
-        ptr += sizeof(m_stage_2);
-        std::memcpy(&m_stage_1, ptr, sizeof(m_stage_1));
-    }
-
-private:
-    int16_t m_stage_2{ 0 }; //!< stage_2 gain subfield 0/31 
-    int16_t m_stage_1{ 0 }; //!< stage_1 gain subfield 0/15 
 
 }; // end class Gain
 
 /**
  * @class DeviceIdentifier
- * @brief Device Identifier Field (9.10.1)
+ * @brief Device Identifier Field (VITA 49.2-2017 Section 9.10.1)
  */
 class DeviceIdentifier
 {
@@ -240,11 +203,11 @@ public:
      * @return Manufacturer OUI subfield value
      * 
      * Manufacturer OUI subfield is 24 bits long at bit position 23 in word 1
-     * See VITA 49.2 Figure 9.10.1-1
+     * See VITA 49.2-2017 Figure 9.10.1-1
      */
     uint32_t manufacturer_oui() const noexcept
     {
-        return m_manufacturer_oui.get();
+        return m_packed.get<55,24,uint32_t>();
     }
 
     /**
@@ -252,11 +215,11 @@ public:
      * @param value Manufacturer OUI subfield value to set
      * 
      * Manufacturer OUI subfield is 24 bits long at bit position 23 in word 1
-     * See VITA 49.2 Figure 9.10.1-1
+     * See VITA 49.2-2017 Figure 9.10.1-1
      */
     void manufacturer_oui(uint32_t value) noexcept
     {
-        m_manufacturer_oui.set(value);
+        m_packed.set<55,24>(value);
     }
 
     /**
@@ -264,11 +227,11 @@ public:
      * @return Device Code subfield value
      * 
      * Device Code subfield is 16 bits long at bit position 15 in word 2
-     * See VITA 49.2 Figure 9.10.1-1
+     * See VITA 49.2-2017 Figure 9.10.1-1
      */
     uint16_t device_code() const noexcept
     {
-        return vrtgen::swap::from_be(m_device_code);
+        return m_packed.get<15,16,uint16_t>();
     }
 
     /**
@@ -276,11 +239,11 @@ public:
      * @param value Device Code subfield value to set
      * 
      * Device Code subfield is 16 bits long at bit position 15 in word 2
-     * See VITA 49.2 Figure 9.10.1-1
+     * See VITA 49.2-2017 Figure 9.10.1-1
      */
     void device_code(uint16_t value) noexcept
     {
-        m_device_code = vrtgen::swap::to_be(value);
+        m_packed.set<15,16>(value);
     }
 
     /**
@@ -289,56 +252,35 @@ public:
      */
     constexpr std::size_t size() const noexcept
     {
-        return sizeof(m_reserved_0) +
-               m_manufacturer_oui.size() +
-               sizeof(m_reserved_1) +
-               sizeof(m_device_code);
+        return m_packed.size();
     }
 
     /**
      * @brief Pack DeviceIdentifier as bytes into the buffer
      * @param buffer_ptr Pointer to buffer location to add DeviceIdentifier bytes
      */
-    void pack_into(uint8_t* buffer_ptr) const
+    inline void pack_into(uint8_t* buffer_ptr) const
     {
-        std::memcpy(buffer_ptr, &m_reserved_0, sizeof(m_reserved_0));
-        buffer_ptr += sizeof(m_reserved_0);
-        m_manufacturer_oui.pack_into(buffer_ptr);
-        buffer_ptr += m_manufacturer_oui.size();
-        std::memcpy(buffer_ptr, &m_reserved_1, sizeof(m_reserved_1));
-        buffer_ptr += sizeof(m_reserved_1);
-        std::memcpy(buffer_ptr, &m_device_code, sizeof(m_device_code));
+        m_packed.pack_into(buffer_ptr);
     }
 
     /**
      * @brief Unpack buffer bytes into DeviceIdentifier
      * @param buffer_ptr Pointer to beginning of DeviceIdentifier bytes in the buffer
      */
-    void unpack_from(const uint8_t* buffer_ptr)
+    inline void unpack_from(const uint8_t* buffer_ptr)
     {
-        auto* ptr = buffer_ptr;
-        ptr += sizeof(m_reserved_0);
-        m_manufacturer_oui.unpack_from(ptr);
-        ptr += m_manufacturer_oui.size();
-        ptr += sizeof(m_reserved_1);
-        std::memcpy(&m_device_code, ptr, sizeof(m_device_code));
+        m_packed.unpack_from(buffer_ptr);
     }
 
 private:
-    /*
-     * manufacturer_oui 0/23 
-     * device_code 1/15 
-     */
-    uint8_t m_reserved_0{ 0 };
-    vrtgen::OUI m_manufacturer_oui;
-    uint16_t m_reserved_1{ 0 };
-    uint16_t m_device_code{ 0 };
+    vrtgen::packed<uint64_t> m_packed;
 
 }; // end class DeviceIdentifier
 
 /**
  * @class StateEventIndicators
- * @brief State and Event Indicator Field (9.10.8)
+ * @brief State and Event Indicator Field (VITA 49.2-2017 Section 9.10.8)
  */
 class StateEventIndicators
 {
@@ -348,11 +290,11 @@ public:
      * @return true if Calibrated Time Indicator is enabled, otherwise false
      * 
      * Calibrated Time Enable is 1 bit long at bit position 31
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     bool calibrated_time_enable() const noexcept
     {
-        return m_packed_0.get(m_calibrated_time_enable_tag);
+        return m_packed.get<31>();
     }
 
     /**
@@ -360,11 +302,11 @@ public:
      * @param value Calibrated Time Enable flag value to set
      * 
      * Calibrated Time Enable is 1 bit long at bit position 31
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     void calibrated_time_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_calibrated_time_enable_tag);
+        m_packed.set<31>(value);
     }
 
     /**
@@ -372,11 +314,11 @@ public:
      * @return true if Valid Data Indicator is enabled, otherwise false
      * 
      * Valid Data Enable is 1 bit long at bit position 30
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     bool valid_data_enable() const noexcept
     {
-        return m_packed_0.get(m_valid_data_enable_tag);
+        return m_packed.get<30>();
     }
 
     /**
@@ -384,11 +326,11 @@ public:
      * @param value Valid Data Enable flag value to set
      * 
      * Valid Data Enable is 1 bit long at bit position 30
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     void valid_data_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_valid_data_enable_tag);
+        m_packed.set<30>(value);
     }
 
     /**
@@ -396,11 +338,11 @@ public:
      * @return true if Reference Lock Indicator is enabled, otherwise false
      * 
      * Reference Lock Enable is 1 bit long at bit position 29
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     bool reference_lock_enable() const noexcept
     {
-        return m_packed_0.get(m_reference_lock_enable_tag);
+        return m_packed.get<29>();
     }
 
     /**
@@ -408,11 +350,11 @@ public:
      * @param value Reference Lock Enable flag value to set
      * 
      * Reference Lock Enable is 1 bit long at bit position 29
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     void reference_lock_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_reference_lock_enable_tag);
+        m_packed.set<29>(value);
     }
 
     /**
@@ -420,11 +362,11 @@ public:
      * @return true if AGC/MGC Indicator is enabled, otherwise false
      * 
      * AGC/MGC Enable is 1 bit long at bit position 28
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     bool agc_mgc_enable() const noexcept
     {
-        return m_packed_0.get(m_agc_mgc_enable_tag);
+        return m_packed.get<28>();
     }
 
     /**
@@ -432,11 +374,11 @@ public:
      * @param value AGC/MGC Enable flag value to set
      * 
      * AGC/MGC Enable is 1 bit long at bit position 28
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     void agc_mgc_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_agc_mgc_enable_tag);
+        m_packed.set<28>(value);
     }
 
     /**
@@ -444,11 +386,11 @@ public:
      * @return true if Detected Signal Indicator is enabled, otherwise false
      * 
      * Detected Signal Enable is 1 bit long at bit position 27
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     bool detected_signal_enable() const noexcept
     {
-        return m_packed_0.get(m_detected_signal_enable_tag);
+        return m_packed.get<27>();
     }
 
     /**
@@ -456,11 +398,11 @@ public:
      * @param value Detected Signal Enable flag value to set
      * 
      * Detected Signal Enable is 1 bit long at bit position 27
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     void detected_signal_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_detected_signal_enable_tag);
+        m_packed.set<27>(value);
     }
 
     /**
@@ -468,11 +410,11 @@ public:
      * @return true if Spectral Inversion Indicator is enabled, otherwise false
      * 
      * Spectral Inversion Enable is 1 bit long at bit position 26
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     bool spectral_inversion_enable() const noexcept
     {
-        return m_packed_0.get(m_spectral_inversion_enable_tag);
+        return m_packed.get<26>();
     }
 
     /**
@@ -480,11 +422,11 @@ public:
      * @param value Spectral Inversion Enable flag value to set
      * 
      * Spectral Inversion Enable is 1 bit long at bit position 26
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     void spectral_inversion_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_spectral_inversion_enable_tag);
+        m_packed.set<26>(value);
     }
 
     /**
@@ -492,11 +434,11 @@ public:
      * @return true if Over-Range Indicator is enabled, otherwise false
      * 
      * Over-Range Enable is 1 bit long at bit position 25
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     bool over_range_enable() const noexcept
     {
-        return m_packed_0.get(m_over_range_enable_tag);
+        return m_packed.get<25>();
     }
 
     /**
@@ -504,11 +446,11 @@ public:
      * @param value Over-Range Enable flag value to set
      * 
      * Over-Range Enable is 1 bit long at bit position 25
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     void over_range_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_over_range_enable_tag);
+        m_packed.set<25>(value);
     }
 
     /**
@@ -516,11 +458,11 @@ public:
      * @return true if Sample Loss Indicator is enabled, otherwise false
      * 
      * Sample Loss Enable is 1 bit long at bit position 24
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     bool sample_loss_enable() const noexcept
     {
-        return m_packed_0.get(m_sample_loss_enable_tag);
+        return m_packed.get<24>();
     }
 
     /**
@@ -528,11 +470,11 @@ public:
      * @param value Sample Loss Enable flag value to set
      * 
      * Sample Loss Enable is 1 bit long at bit position 24
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     void sample_loss_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_sample_loss_enable_tag);
+        m_packed.set<24>(value);
     }
 
     /**
@@ -540,11 +482,11 @@ public:
      * @return Calibrated Time Indicator
      * 
      * Calibrated Time Indicator is 1 bit long at bit position 19
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     bool calibrated_time() const noexcept
     {
-        return m_packed_0.get(m_calibrated_time_tag);
+        return m_packed.get<19>();
     }
 
     /**
@@ -552,11 +494,11 @@ public:
      * @param value Calibrated Time Indicator flag value to set
      * 
      * Calibrated Time Indicator is 1 bit long at bit position 19
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     void calibrated_time(bool value) noexcept
     {
-        m_packed_0.set(value, m_calibrated_time_tag);
+        m_packed.set<19>(value);
     }
 
     /**
@@ -564,11 +506,11 @@ public:
      * @return Valid Data Indicator
      * 
      * Valid Data Indicator is 1 bit long at bit position 18
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     bool valid_data() const noexcept
     {
-        return m_packed_0.get(m_valid_data_tag);
+        return m_packed.get<18>();
     }
 
     /**
@@ -576,11 +518,11 @@ public:
      * @param value Valid Data Indicator flag value to set
      * 
      * Valid Data Indicator is 1 bit long at bit position 18
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     void valid_data(bool value) noexcept
     {
-        m_packed_0.set(value, m_valid_data_tag);
+        m_packed.set<18>(value);
     }
 
     /**
@@ -588,11 +530,11 @@ public:
      * @return Reference Lock Indicator
      * 
      * Reference Lock Indicator is 1 bit long at bit position 17
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     bool reference_lock() const noexcept
     {
-        return m_packed_0.get(m_reference_lock_tag);
+        return m_packed.get<17>();
     }
 
     /**
@@ -600,11 +542,11 @@ public:
      * @param value Reference Lock Indicator flag value to set
      * 
      * Reference Lock Indicator is 1 bit long at bit position 17
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     void reference_lock(bool value) noexcept
     {
-        m_packed_0.set(value, m_reference_lock_tag);
+        m_packed.set<17>(value);
     }
 
     /**
@@ -612,11 +554,11 @@ public:
      * @return AGC/MGC Indicator
      * 
      * AGC/MGC Indicator is 1 bit long at bit position 16
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     bool agc_mgc() const noexcept
     {
-        return m_packed_0.get(m_agc_mgc_tag);
+        return m_packed.get<16>();
     }
 
     /**
@@ -624,11 +566,11 @@ public:
      * @param value AGC/MGC Indicator flag value to set
      * 
      * AGC/MGC Indicator is 1 bit long at bit position 16
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     void agc_mgc(bool value) noexcept
     {
-        m_packed_0.set(value, m_agc_mgc_tag);
+        m_packed.set<16>(value);
     }
 
     /**
@@ -636,11 +578,11 @@ public:
      * @return Detected Signal Indicator
      * 
      * Detected Signal Indicator is 1 bit long at bit position 15
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     bool detected_signal() const noexcept
     {
-        return m_packed_0.get(m_detected_signal_tag);
+        return m_packed.get<15>();
     }
 
     /**
@@ -648,11 +590,11 @@ public:
      * @param value Detected Signal Indicator flag value to set
      * 
      * Detected Signal Indicator is 1 bit long at bit position 15
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     void detected_signal(bool value) noexcept
     {
-        m_packed_0.set(value, m_detected_signal_tag);
+        m_packed.set<15>(value);
     }
 
     /**
@@ -660,11 +602,11 @@ public:
      * @return Spectral Inversion Indicator
      * 
      * Spectral Inversion Indicator is 1 bit long at bit position 14
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     bool spectral_inversion() const noexcept
     {
-        return m_packed_0.get(m_spectral_inversion_tag);
+        return m_packed.get<14>();
     }
 
     /**
@@ -672,11 +614,11 @@ public:
      * @param value Spectral Inversion Indicator flag value to set
      * 
      * Spectral Inversion Indicator is 1 bit long at bit position 14
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     void spectral_inversion(bool value) noexcept
     {
-        m_packed_0.set(value, m_spectral_inversion_tag);
+        m_packed.set<14>(value);
     }
 
     /**
@@ -684,11 +626,11 @@ public:
      * @return Over-Range Indicator
      * 
      * Over-Range Indicator is 1 bit long at bit position 13
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     bool over_range() const noexcept
     {
-        return m_packed_0.get(m_over_range_tag);
+        return m_packed.get<13>();
     }
 
     /**
@@ -696,11 +638,11 @@ public:
      * @param value Over-Range Indicator flag value to set
      * 
      * Over-Range Indicator is 1 bit long at bit position 13
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     void over_range(bool value) noexcept
     {
-        m_packed_0.set(value, m_over_range_tag);
+        m_packed.set<13>(value);
     }
 
     /**
@@ -708,11 +650,11 @@ public:
      * @return Sample Loss Indicator
      * 
      * Sample Loss Indicator is 1 bit long at bit position 12
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     bool sample_loss() const noexcept
     {
-        return m_packed_0.get(m_sample_loss_tag);
+        return m_packed.get<12>();
     }
 
     /**
@@ -720,11 +662,11 @@ public:
      * @param value Sample Loss Indicator flag value to set
      * 
      * Sample Loss Indicator is 1 bit long at bit position 12
-     * See VITA 49.2 Table 9.10.8-1
+     * See VITA 49.2-2017 Table 9.10.8-1
      */
     void sample_loss(bool value) noexcept
     {
-        m_packed_0.set(value, m_sample_loss_tag);
+        m_packed.set<12>(value);
     }
 
     /**
@@ -733,7 +675,7 @@ public:
      */
     constexpr std::size_t size() const noexcept
     {
-        return m_packed_0.size();
+        return m_packed.size();
     }
 
     /**
@@ -742,7 +684,7 @@ public:
      */
     void pack_into(uint8_t* buffer_ptr) const
     {
-        m_packed_0.pack_into(buffer_ptr);
+        m_packed.pack_into(buffer_ptr);
     }
 
     /**
@@ -751,47 +693,11 @@ public:
      */
     void unpack_from(const uint8_t* buffer_ptr)
     {
-        m_packed_0.unpack_from(buffer_ptr);
+        m_packed.unpack_from(buffer_ptr);
     }
 
 private:
-    /**
-     * calibrated_time_enable 0/31
-     * valid_data_enable 0/30
-     * reference_lock_enable 0/29
-     * agc_mgc_enable 0/28
-     * detected_signal_enable 0/27
-     * spectral_inversion_enable 0/26
-     * over_range_enable 0/25
-     * sample_loss_enable 0/24
-     * calibrated_time 0/19
-     * valid_data 0/18
-     * reference_lock 0/17
-     * agc_mgc 0/16
-     * detected_signal 0/15
-     * spectral_inversion 0/14
-     * over_range 0/13
-     * sample_loss 0/12
-     * associated_context_packets_count_enable 0/7
-     * associated_context_packets_count 0/6
-     */
-    vrtgen::packed_tag<bool,31,1> m_calibrated_time_enable_tag;
-    vrtgen::packed_tag<bool,30,1> m_valid_data_enable_tag;
-    vrtgen::packed_tag<bool,29,1> m_reference_lock_enable_tag;
-    vrtgen::packed_tag<bool,28,1> m_agc_mgc_enable_tag;
-    vrtgen::packed_tag<bool,27,1> m_detected_signal_enable_tag;
-    vrtgen::packed_tag<bool,26,1> m_spectral_inversion_enable_tag;
-    vrtgen::packed_tag<bool,25,1> m_over_range_enable_tag;
-    vrtgen::packed_tag<bool,24,1> m_sample_loss_enable_tag;
-    vrtgen::packed_tag<bool,19,1> m_calibrated_time_tag;
-    vrtgen::packed_tag<bool,18,1> m_valid_data_tag;
-    vrtgen::packed_tag<bool,17,1> m_reference_lock_tag;
-    vrtgen::packed_tag<bool,16,1> m_agc_mgc_tag;
-    vrtgen::packed_tag<bool,15,1> m_detected_signal_tag;
-    vrtgen::packed_tag<bool,14,1> m_spectral_inversion_tag;
-    vrtgen::packed_tag<bool,13,1> m_over_range_tag;
-    vrtgen::packed_tag<bool,12,1> m_sample_loss_tag;
-    vrtgen::packed<uint32_t> m_packed_0;
+    vrtgen::packed<uint32_t> m_packed;
 
 }; // end class StateEventIndicators
 
@@ -807,11 +713,11 @@ public:
      * @return TimeStamp-Integer code subfield value
      * 
      * TimeStamp-Integer code subfield is 2 bits long at bit position 27 in word 1
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     TSI tsi() const noexcept
     {
-        return m_packed_0.get(m_tsi_tag);
+        return m_packed.get<27,2,TSI>();
     }
 
     /**
@@ -819,11 +725,11 @@ public:
      * @param value TimeStamp-Integer code subfield value to set
      * 
      * TimeStamp-Integer code subfield is 2 bits long at bit position 27 in word 1
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     void tsi(TSI value) noexcept
     {
-        m_packed_0.set(value, m_tsi_tag);
+        m_packed.set<27,2>(value);
     }
 
     /**
@@ -831,11 +737,11 @@ public:
      * @return TimeStamp-Fractional code subfield value
      * 
      * TimeStamp-Fractional code subfield is 2 bits long at bit position 25 in word 1
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     TSF tsf() const noexcept
     {
-        return m_packed_0.get(m_tsf_tag);
+        return m_packed.get<25,2,TSF>();
     }
 
     /**
@@ -843,11 +749,11 @@ public:
      * @param value TimeStamp-Fractional code subfield value to set
      * 
      * TimeStamp-Fractional code subfield is 2 bits long at bit position 25 in word 1
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     void tsf(TSF value) noexcept
     {
-        m_packed_0.set(value, m_tsf_tag);
+        m_packed.set<25,2>(value);
     }
 
     /**
@@ -855,11 +761,11 @@ public:
      * @return Manufacturer OUI subfield value
      * 
      * Manufacturer OUI subfield is 24 bits long at bit position 23 in word 1
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     uint32_t manufacturer_oui() const noexcept
     {
-        return m_manufacturer_oui.get();
+        return m_packed.get<23,24,uint32_t>();
     }
 
     /**
@@ -867,11 +773,11 @@ public:
      * @param value Manufacturer OUI subfield value to set
      * 
      * Manufacturer OUI subfield is 24 bits long at bit position 23 in word 1
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     void manufacturer_oui(uint32_t value) noexcept
     {
-        m_manufacturer_oui.set(value);
+        m_packed.set<23,24>(value);
     }
 
     /**
@@ -879,7 +785,7 @@ public:
      * @return Integer Timestamp subfield value
      * 
      * Integer Timestamp subfield is 32 bits long at bit position 31 in word 2
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     uint32_t integer_timestamp() const noexcept
     {
@@ -891,7 +797,7 @@ public:
      * @param value Integer Timestamp subfield value to set
      * 
      * Integer Timestamp subfield is 32 bits long at bit position 31 in word 2
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     void integer_timestamp(uint32_t value) noexcept
     {
@@ -903,7 +809,7 @@ public:
      * @return Fractional Timestamp subfield value
      * 
      * Fractional Timestamp subfield is 64 bits long at bit position 31 in word 3
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     uint64_t fractional_timestamp() const noexcept
     {
@@ -915,7 +821,7 @@ public:
      * @param value Fractional Timestamp subfield value to set
      * 
      * Fractional Timestamp subfield is 64 bits long at bit position 31 in word 3
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     void fractional_timestamp(uint64_t value) noexcept
     {
@@ -928,7 +834,7 @@ public:
      * 
      * Latitude subfield is 32 bits long at bit position 31 in word 5 expressed
      * in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     double latitude() const noexcept
     {
@@ -941,7 +847,7 @@ public:
      * 
      * Latitude subfield is 32 bits long at bit position 31 in word 5 expressed
      * in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     void latitude(double value) noexcept
     {
@@ -954,7 +860,7 @@ public:
      * 
      * Longitude subfield is 32 bits long at bit position 31 in word 5 expressed
      * in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     double longitude() const noexcept
     {
@@ -967,7 +873,7 @@ public:
      * 
      * Longitude subfield is 32 bits long at bit position 31 in word 5 expressed
      * in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     void longitude(double value) noexcept
     {
@@ -980,7 +886,7 @@ public:
      * 
      * Altitude subfield is 32 bits long at bit position 31 in word 7 expressed
      * in two's-complement format with a radix point to the right of bit 5
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     double altitude() const noexcept
     {
@@ -993,7 +899,7 @@ public:
      * 
      * Altitude subfield is 32 bits long at bit position 31 in word 7 expressed
      * in two's-complement format with a radix point to the right of bit 5
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     void altitude(double value) noexcept
     {
@@ -1006,7 +912,7 @@ public:
      * 
      * Speed Over Ground subfield is 32 bits long at bit position 31 in word 8
      * expressed in two's-complement format with a radix point to the right of bit 16
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     double speed_over_ground() const noexcept
     {
@@ -1019,7 +925,7 @@ public:
      * 
      * Speed Over Ground subfield is 32 bits long at bit position 31 in word 8
      * expressed in two's-complement format with a radix point to the right of bit 16
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     void speed_over_ground(double value) noexcept
     {
@@ -1032,7 +938,7 @@ public:
      * 
      * Heading Angle subfield is 32 bits long at bit position 31 in word 9 expressed
      * in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     double heading_angle() const noexcept
     {
@@ -1045,7 +951,7 @@ public:
      * 
      * Heading Angle subfield is 32 bits long at bit position 31 in word 9 expressed
      * in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     void heading_angle(double value) noexcept
     {
@@ -1058,7 +964,7 @@ public:
      * 
      * Track Angle subfield is 32 bits long at bit position 31 in word 10 expressed
      * in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     double track_angle() const noexcept
     {
@@ -1071,7 +977,7 @@ public:
      * 
      * Track Angle subfield is 32 bits long at bit position 31 in word 10 expressed
      * in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     void track_angle(double value) noexcept
     {
@@ -1084,7 +990,7 @@ public:
      * 
      * Magnetic Variation subfield is 32 bits long at bit position 31 in word 11
      * expressed in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     double magnetic_variation() const noexcept
     {
@@ -1097,7 +1003,7 @@ public:
      * 
      * Magnetic Variation subfield is 32 bits long at bit position 31 in word 11
      * expressed in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     void magnetic_variation(double value) noexcept
     {
@@ -1110,8 +1016,7 @@ public:
      */
     constexpr std::size_t size() const noexcept
     {
-        return m_packed_0.size() +
-               m_manufacturer_oui.size() +
+        return m_packed.size() +
                sizeof(m_integer_timestamp) +
                sizeof(m_fractional_timestamp) +
                sizeof(m_latitude) +
@@ -1129,10 +1034,8 @@ public:
      */
     void pack_into(uint8_t* buffer_ptr) const
     {
-        m_packed_0.pack_into(buffer_ptr);
-        buffer_ptr += m_packed_0.size();
-        m_manufacturer_oui.pack_into(buffer_ptr);
-        buffer_ptr += m_manufacturer_oui.size();
+        m_packed.pack_into(buffer_ptr);
+        buffer_ptr += m_packed.size();
         std::memcpy(buffer_ptr, &m_integer_timestamp, sizeof(m_integer_timestamp));
         buffer_ptr += sizeof(m_integer_timestamp);
         std::memcpy(buffer_ptr, &m_fractional_timestamp, sizeof(m_fractional_timestamp));
@@ -1159,10 +1062,8 @@ public:
     void unpack_from(const uint8_t* buffer_ptr)
     {
         auto* ptr = buffer_ptr;
-        m_packed_0.unpack_from(ptr);
-        ptr += m_packed_0.size();
-        m_manufacturer_oui.unpack_from(ptr);
-        ptr += m_manufacturer_oui.size();
+        m_packed.unpack_from(ptr);
+        ptr += m_packed.size();
         std::memcpy(&m_integer_timestamp, ptr, sizeof(m_integer_timestamp));
         ptr += sizeof(m_integer_timestamp);
         std::memcpy(&m_fractional_timestamp, ptr, sizeof(m_fractional_timestamp));
@@ -1183,16 +1084,9 @@ public:
     }
 
 private:
-    /**
-     * TSI 0/27
-     * TSF 0/25
-     */
-    vrtgen::packed_tag<TSI,3,2> m_tsi_tag;
-    vrtgen::packed_tag<TSF,1,2> m_tsf_tag;
-    vrtgen::packed<uint8_t> m_packed_0;
-    vrtgen::OUI m_manufacturer_oui{ 0 };
-    uint32_t m_integer_timestamp{ vrtgen::swap::to_be(static_cast<uint32_t>(0xFFFFFFFF)) };
-    uint64_t m_fractional_timestamp{ vrtgen::swap::to_be(static_cast<uint64_t>(0xFFFFFFFFFFFFFFFF)) };
+    vrtgen::packed<uint32_t> m_packed;
+    uint32_t m_integer_timestamp{ static_cast<uint32_t>(0xFFFFFFFF) };
+    uint64_t m_fractional_timestamp{ static_cast<uint64_t>(0xFFFFFFFFFFFFFFFF) };
     int32_t m_latitude{ vrtgen::swap::to_be(static_cast<int32_t>(0x7FFFFFFF)) };
     int32_t m_longitude{ vrtgen::swap::to_be(static_cast<int32_t>(0x7FFFFFFF)) };
     int32_t m_altitude{ vrtgen::swap::to_be(static_cast<int32_t>(0x7FFFFFFF)) };
@@ -1215,11 +1109,11 @@ public:
      * @return TimeStamp-Integer code subfield value
      * 
      * TimeStamp-Integer code subfield is 2 bits long at bit position 27 in word 1
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     TSI tsi() const noexcept
     {
-        return m_packed_0.get(m_tsi_tag);
+        return m_packed.get<27,2,TSI>();
     }
 
     /**
@@ -1227,11 +1121,11 @@ public:
      * @param value TimeStamp-Integer code subfield value to set
      * 
      * TimeStamp-Integer code subfield is 2 bits long at bit position 27 in word 1
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     void tsi(TSI value) noexcept
     {
-        m_packed_0.set(value, m_tsi_tag);
+        m_packed.set<27,2>(value);
     }
 
     /**
@@ -1239,11 +1133,11 @@ public:
      * @return TimeStamp-Fractional code subfield value
      * 
      * TimeStamp-Fractional code subfield is 2 bits long at bit position 25 in word 1
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     TSF tsf() const noexcept
     {
-        return m_packed_0.get(m_tsf_tag);
+        return m_packed.get<25,2,TSF>();
     }
 
     /**
@@ -1251,11 +1145,11 @@ public:
      * @param value TimeStamp-Fractional code subfield value to set
      * 
      * TimeStamp-Fractional code subfield is 2 bits long at bit position 25 in word 1
-     * See VITA 49.2 Figure 9.4.5-1
+     * See VITA 49.2-2017 Figure 9.4.5-1
      */
     void tsf(TSF value) noexcept
     {
-        m_packed_0.set(value, m_tsf_tag);
+        m_packed.set<25,2>(value);
     }
 
     /**
@@ -1263,16 +1157,16 @@ public:
      * @return Manufacturer OUI subfield value
      * 
      * Manufacturer OUI subfield is 24 bits long at bit position 23 in word 1
-     * See VITA 49.2 Figure 9.10.1-1
+     * See VITA 49.2-2017 Figure 9.10.1-1
      */
     uint32_t manufacturer_oui() const noexcept
     {
-        return m_manufacturer_oui.get();
+        return m_packed.get<23,24,uint32_t>();
     }
 
     void manufacturer_oui(uint32_t value) noexcept
     {
-        m_manufacturer_oui.set(value);
+        m_packed.set<23,24>(value);
     }
 
     uint32_t integer_timestamp() const noexcept
@@ -1387,8 +1281,7 @@ public:
 
     constexpr std::size_t size() const noexcept
     {
-        return m_packed_0.size() +
-               m_manufacturer_oui.size() +
+        return m_packed.size() +
                sizeof(m_integer_timestamp) +
                sizeof(m_fractional_timestamp) +
                sizeof(m_position_x) +
@@ -1404,10 +1297,8 @@ public:
 
     void pack_into(uint8_t* buffer_ptr) const
     {
-        m_packed_0.pack_into(buffer_ptr);
-        buffer_ptr += m_packed_0.size();
-        m_manufacturer_oui.pack_into(buffer_ptr);
-        buffer_ptr += m_manufacturer_oui.size();
+        m_packed.pack_into(buffer_ptr);
+        buffer_ptr += m_packed.size();
         std::memcpy(buffer_ptr, &m_integer_timestamp, sizeof(m_integer_timestamp));
         buffer_ptr += sizeof(m_integer_timestamp);
         std::memcpy(buffer_ptr, &m_fractional_timestamp, sizeof(m_fractional_timestamp));
@@ -1434,10 +1325,8 @@ public:
     void unpack_from(const uint8_t* buffer_ptr)
     {
         auto* ptr = buffer_ptr;
-        m_packed_0.unpack_from(ptr);
-        ptr += m_packed_0.size();
-        m_manufacturer_oui.unpack_from(ptr);
-        ptr += m_manufacturer_oui.size();
+        m_packed.unpack_from(ptr);
+        ptr += m_packed.size();
         std::memcpy(&m_integer_timestamp, ptr, sizeof(m_integer_timestamp));
         ptr += sizeof(m_integer_timestamp);
         std::memcpy(&m_fractional_timestamp, ptr, sizeof(m_fractional_timestamp));
@@ -1462,14 +1351,7 @@ public:
     }
 
 private:
-    /**
-     * TSI 0/27
-     * TSF 0/25
-     */
-    vrtgen::packed_tag<TSI,3,2> m_tsi_tag;
-    vrtgen::packed_tag<TSF,1,2> m_tsf_tag;
-    vrtgen::packed<uint8_t> m_packed_0;
-    vrtgen::OUI m_manufacturer_oui{ 0 };
+    vrtgen::packed<uint32_t> m_packed;
     uint32_t m_integer_timestamp{ vrtgen::swap::to_be(static_cast<uint32_t>(0xFFFFFFFF)) };
     uint64_t m_fractional_timestamp{ vrtgen::swap::to_be(static_cast<uint64_t>(0xFFFFFFFFFFFFFFFF)) };
     int32_t m_position_x{ vrtgen::swap::to_be(static_cast<int32_t>(0x7FFFFFFF)) };
@@ -1501,7 +1383,7 @@ public:
      */
     uint32_t manufacturer_oui() const noexcept
     {
-        return m_manufacturer_oui.get();
+        return m_packed.get<55,24,uint32_t>();
     }
 
     /**
@@ -1513,7 +1395,7 @@ public:
      */
     void manufacturer_oui(uint32_t value) noexcept
     {
-        m_manufacturer_oui.set(value);
+        m_packed.set<55,24>(value);
     }
 
     /**
@@ -1525,7 +1407,7 @@ public:
      */
     uint32_t number_of_words() const noexcept
     {
-        return vrtgen::swap::from_be(m_number_of_words);
+        return m_packed.get<31,32,uint32_t>();
     }
 
     /**
@@ -1575,10 +1457,8 @@ public:
      */
     std::size_t size() const noexcept
     {
-        return  sizeof(m_reserved) +
-                m_manufacturer_oui.size() +
-                sizeof(m_number_of_words) +
-                m_ascii_sentences.size();
+        return m_packed.size() +
+               m_ascii_sentences.size();
     }
 
     /**
@@ -1587,12 +1467,8 @@ public:
      */
     void pack_into(uint8_t* buffer_ptr) const
     {
-        std::memcpy(buffer_ptr, &m_reserved, sizeof(m_reserved));
-        buffer_ptr += sizeof(m_reserved);
-        m_manufacturer_oui.pack_into(buffer_ptr);
-        buffer_ptr += m_manufacturer_oui.size();
-        std::memcpy(buffer_ptr, &m_number_of_words, sizeof(m_number_of_words));
-        buffer_ptr += sizeof(m_number_of_words);
+        m_packed.pack_into(buffer_ptr);
+        buffer_ptr += m_packed.size();
         std::copy(m_ascii_sentences.data(), m_ascii_sentences.data() + m_ascii_sentences.size(), buffer_ptr);
     }
 
@@ -1602,13 +1478,9 @@ public:
      */
     void unpack_from(const uint8_t* buffer_ptr)
     {
-        auto* ptr = buffer_ptr;
-        std::memcpy(&m_reserved, ptr, sizeof(m_reserved));
-        ptr += sizeof(m_reserved);
-        m_manufacturer_oui.unpack_from(ptr);
-        ptr += m_manufacturer_oui.size();
-        std::memcpy(&m_number_of_words, ptr, sizeof(m_number_of_words));
-        ptr += sizeof(m_number_of_words);
+        auto ptr = buffer_ptr;
+        m_packed.unpack_from(ptr);
+        ptr += m_packed.size();
         m_ascii_sentences.resize(number_of_words()*4);
         std::copy(ptr, ptr + number_of_words()*4, m_ascii_sentences.data());
     }
@@ -1623,14 +1495,13 @@ private:
      */
     void number_of_words(uint32_t value) noexcept
     {
-        m_number_of_words = vrtgen::swap::to_be(value);
+        m_packed.set<31,32>(value);
     }
 
-    uint8_t m_reserved{ 0 };
-    vrtgen::OUI m_manufacturer_oui{ 0 };
-    uint32_t m_number_of_words{ 0 };
+    vrtgen::packed<uint64_t> m_packed;
     std::vector<uint8_t> m_ascii_sentences;
-};
+
+}; // end class GPS_ASCII
 
 /**
  * @class PayloadFormat
@@ -1641,112 +1512,112 @@ class PayloadFormat
 public:
     PackingMethod packing_method() const noexcept
     {
-        return m_packed_0.get(m_packing_method_tag);
+        return PackingMethod{ m_packed.get<63>() };
     }
 
     void packing_method(PackingMethod value) noexcept
     {
-        m_packed_0.set(value, m_packing_method_tag);
+        m_packed.set<63>(static_cast<bool>(value));
     }
 
     DataSampleType real_complex_type() const noexcept
     {
-        return m_packed_0.get(m_real_complex_type_tag);
+        return m_packed.get<62,2,DataSampleType>();
     }
 
     void real_complex_type(DataSampleType value) noexcept
     {
-        m_packed_0.set(value, m_real_complex_type_tag);
+        m_packed.set<62,2>(value);
     }
 
     DataItemFormat data_item_format() const noexcept
     {
-        return m_packed_0.get(m_data_item_format_tag);
+        return m_packed.get<60,5,DataItemFormat>();
     }
 
     void data_item_format(DataItemFormat value) noexcept
     {
-        m_packed_0.set(value, m_data_item_format_tag);
+        m_packed.set<60,5>(value);
     }
 
     bool repeat_indicator() const noexcept
     {
-        return m_packed_0.get(m_repeat_indicator_tag);
+        return m_packed.get<55>();
     }
 
     void repeat_indicator(bool value) noexcept
     {
-        m_packed_0.set(value, m_repeat_indicator_tag);
+        m_packed.set<55>(value);
     }
 
     uint8_t event_tag_size() const noexcept
     {
-        return m_packed_0.get(m_event_tag_size_tag);
+        return m_packed.get<54,3,uint8_t>();
     }
 
     void event_tag_size(uint8_t value) noexcept
     {
-        m_packed_0.set(value, m_event_tag_size_tag);
+        m_packed.set<54,3>(value);
     }
 
     uint8_t channel_tag_size() const noexcept
     {
-        return m_packed_0.get(m_channel_tag_size_tag);
+        return m_packed.get<51,4,uint8_t>();
     }
 
     void channel_tag_size(uint8_t value) noexcept
     {
-        m_packed_0.set(value, m_channel_tag_size_tag);
+        m_packed.set<51,4>(value);
     }
 
     uint8_t data_item_fraction_size() const noexcept
     {
-        return m_packed_0.get(m_data_item_fraction_size_tag);
+        return m_packed.get<47,4,uint8_t>();
     }
 
     void data_item_fraction_size(uint8_t value) noexcept
     {
-        m_packed_0.set(value, m_data_item_fraction_size_tag);
+        m_packed.set<47,4>(value);
     }
 
     uint8_t item_packing_field_size() const noexcept
     {
-        return m_packed_0.get(m_item_packing_field_size_tag) + 1;
+        return m_packed.get<43,6,uint8_t>() + 1;
     }
 
     void item_packing_field_size(uint8_t value) noexcept
     {
-        m_packed_0.set(value - 1, m_item_packing_field_size_tag);
+        m_packed.set<43,6,uint8_t>(value - 1);
     }
 
     uint8_t data_item_size() const noexcept
     {
-        return m_packed_0.get(m_data_item_size_tag) + 1;
+        return m_packed.get<37,6,uint8_t>() + 1;
     }
 
     void data_item_size(uint8_t value) noexcept
     {
-        m_packed_0.set(value - 1, m_data_item_size_tag);
+        m_packed.set<37,6,uint8_t>(value - 1);
     }
 
     uint16_t repeat_count() const noexcept
     {
-        return vrtgen::swap::from_be(m_repeat_count + 1);
+        return m_packed.get<31,16,uint16_t>() + 1;
     }
 
     void repeat_count(uint16_t value) noexcept
     {
-        m_repeat_count = vrtgen::swap::to_be(value - 1);
+        m_packed.set<31,16,uint16_t>(value - 1);
     }
 
     uint16_t vector_size() const noexcept
     {
-        return vrtgen::swap::from_be(m_vector_size + 1);
+        return m_packed.get<15,16,uint16_t>() + 1;
     }
 
     void vector_size(uint16_t value) noexcept
     {
-        m_vector_size = vrtgen::swap::to_be(value - 1);
+        m_packed.set<15,16,uint16_t>(value - 1);
     }
 
     /**
@@ -1755,9 +1626,7 @@ public:
      */
     constexpr std::size_t size() const noexcept
     {
-        return m_packed_0.size() +
-               sizeof(m_repeat_count) +
-               sizeof(m_vector_size);
+        return m_packed.size();
     }
 
     /**
@@ -1766,11 +1635,7 @@ public:
      */
     void pack_into(uint8_t* buffer_ptr) const
     {
-        m_packed_0.pack_into(buffer_ptr);
-        buffer_ptr += m_packed_0.size();
-        std::memcpy(buffer_ptr, &m_repeat_count, sizeof(m_repeat_count));
-        buffer_ptr += sizeof(m_repeat_count);
-        std::memcpy(buffer_ptr, &m_vector_size, sizeof(m_vector_size));
+        m_packed.pack_into(buffer_ptr);
     }
 
     /**
@@ -1779,38 +1644,11 @@ public:
      */
     void unpack_from(const uint8_t* buffer_ptr)
     {
-        auto* ptr = buffer_ptr;
-        m_packed_0.unpack_from(ptr);
-        ptr += m_packed_0.size();
-        std::memcpy(&m_repeat_count, ptr, sizeof(m_repeat_count));
-        ptr += sizeof(m_repeat_count);
-        std::memcpy(&m_vector_size, ptr, sizeof(m_vector_size));
+        m_packed.unpack_from(buffer_ptr);
     }
 
 private:
-    /**
-     * packing_method 0/31
-     * real_complex_type 0/30
-     * data_item_format 0/28
-     * repeat_indicator 0/23
-     * event_tag_size 0/22
-     * channel_tag_size 0/19
-     * data_item_fraction_size 0/15
-     * item_packing_field_size 0/11
-     * data_item_size 0/5
-     */
-    vrtgen::packed_tag<PackingMethod,31,1> m_packing_method_tag;
-    vrtgen::packed_tag<DataSampleType,30,2> m_real_complex_type_tag;
-    vrtgen::packed_tag<DataItemFormat,28,5> m_data_item_format_tag;
-    vrtgen::packed_tag<bool,23,1> m_repeat_indicator_tag;
-    vrtgen::packed_tag<uint8_t,22,3> m_event_tag_size_tag;
-    vrtgen::packed_tag<uint8_t,19,4> m_channel_tag_size_tag;
-    vrtgen::packed_tag<uint8_t,15,4> m_data_item_fraction_size_tag;
-    vrtgen::packed_tag<uint8_t,11,6> m_item_packing_field_size_tag;
-    vrtgen::packed_tag<uint8_t,5,6> m_data_item_size_tag;
-    vrtgen::packed<uint32_t> m_packed_0;
-    uint16_t m_repeat_count{ 0 };
-    uint16_t m_vector_size{ 0 };
+    vrtgen::packed<uint64_t> m_packed;
 
 }; // end class PayloadFormat
 
@@ -1823,52 +1661,52 @@ class ContextAssociationLists
 public:
     uint16_t source_list_size() const noexcept
     {
-        return m_packed_0.get(m_source_list_size_tag);
+        return m_packed.get<56,9,uint16_t>();
     }
 
     void source_list_size(uint16_t value) noexcept
     {
-        m_packed_0.set(value, m_source_list_size_tag);
+        m_packed.set<56,9>(value);
     }
 
     uint16_t system_list_size() const noexcept
     {
-        return m_packed_0.get(m_system_list_size_tag);
+        return m_packed.get<40,9,uint16_t>();
     }
 
     void system_list_size(uint16_t value) noexcept
     {
-        m_packed_0.set(value, m_system_list_size_tag);
+        m_packed.set<40,9>(value);
     }
 
     uint16_t vector_component_list_size() const noexcept
     {
-        return m_packed_1.get(m_vector_component_list_size_tag);
+        return m_packed.get<31,16,uint16_t>();
     }
 
     void vector_component_list_size(uint16_t value) noexcept
     {
-        m_packed_1.set(value, m_vector_component_list_size_tag);
+        m_packed.set<31,16>(value);
     }
 
     bool async_channel_tag_list_enable() const noexcept
     {
-        return m_packed_1.get(m_async_channel_tag_list_enable_tag);
+        return m_packed.get<15>();
     }
 
     void async_channel_tag_list_enable(bool value) noexcept
     {
-        m_packed_1.set(value, m_async_channel_tag_list_enable_tag);
+        m_packed.set<15>(value);
     }
 
     uint16_t async_channel_list_size() const noexcept
     {
-        return m_packed_1.get(m_async_channel_list_size_tag);
+        return m_packed.get<14,15,uint16_t>();
     }
 
     void async_channel_list_size(uint16_t value) noexcept
     {
-        m_packed_1.set(value, m_async_channel_list_size_tag);
+        m_packed.set<14,15>(value);
     }
 
     std::vector<uint32_t>& source_list() noexcept
@@ -1953,8 +1791,7 @@ public:
     std::size_t size() const noexcept
     {
         std::size_t retval = 0;
-        retval += m_packed_0.size();
-        retval += m_packed_1.size();
+        retval += m_packed.size();
         if (!m_source_list.empty()) {
             retval += m_source_list.size() * sizeof(uint32_t);
         }
@@ -1983,10 +1820,8 @@ public:
         system_list_size(m_system_list.size());
         vector_component_list_size(m_vector_component_list.size());
         async_channel_list_size(m_async_channel_list.size());
-        m_packed_0.pack_into(buffer_ptr);
-        buffer_ptr += m_packed_0.size();
-        m_packed_1.pack_into(buffer_ptr);
-        buffer_ptr += m_packed_1.size();
+        m_packed.pack_into(buffer_ptr);
+        buffer_ptr += m_packed.size();
         for (const auto elem : m_source_list) {
             std::memcpy(buffer_ptr, &elem, sizeof(elem));
             buffer_ptr += sizeof(elem);
@@ -2016,10 +1851,8 @@ public:
     void unpack_from(const uint8_t* buffer_ptr)
     {
         auto* ptr = buffer_ptr;
-        m_packed_0.unpack_from(ptr);
-        ptr += m_packed_0.size();
-        m_packed_1.unpack_from(ptr);
-        ptr += m_packed_1.size();
+        m_packed.unpack_from(ptr);
+        ptr += m_packed.size();
         m_source_list.resize(source_list_size());
         for (std::size_t i=0; i<m_source_list.size(); ++i) {
             std::memcpy(m_source_list.data() + i, ptr, sizeof(uint32_t));
@@ -2048,22 +1881,7 @@ public:
     }
 
 private:
-    /**
-     * source_list_size 0/24
-     * system_list_size 0/8
-     */
-    vrtgen::packed_tag<uint16_t,24,9> m_source_list_size_tag;
-    vrtgen::packed_tag<uint16_t,8,9> m_system_list_size_tag;
-    vrtgen::packed<uint32_t> m_packed_0;
-    /**
-     * vector_component_list_size 1/31
-     * async_channel_tag_list_enable 1/15
-     * async_channel_list_size 1/14
-     */
-    vrtgen::packed_tag<uint16_t,31,16> m_vector_component_list_size_tag;
-    vrtgen::packed_tag<bool,15,1> m_async_channel_tag_list_enable_tag;
-    vrtgen::packed_tag<uint16_t,14,15> m_async_channel_list_size_tag;
-    vrtgen::packed<uint32_t> m_packed_1;
+    vrtgen::packed<uint64_t> m_packed;
     std::vector<uint32_t> m_source_list;
     std::vector<uint32_t> m_system_list;
     std::vector<uint32_t> m_vector_component_list;

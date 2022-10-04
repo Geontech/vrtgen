@@ -21,8 +21,6 @@
 
 #include <vrtgen/types.hpp>
 #include "indicator_fields.hpp"
-#include "enums.hpp"
-#include <sstream>
 
 namespace vrtgen::packing {
 
@@ -48,7 +46,7 @@ public:
      */
     int belief_percent() const noexcept
     {
-        return m_packed_0.get(m_belief_percent_tag);
+        return m_packed.get<7,8,uint8_t>();
     }
 
     /**
@@ -60,7 +58,7 @@ public:
      */
     void belief_percent(int value) noexcept
     {
-        m_packed_0.set(value, m_belief_percent_tag);
+        m_packed.set<7,8>(value);
     }
 
     /**
@@ -69,7 +67,7 @@ public:
      */
     constexpr std::size_t size() const noexcept
     {
-        return m_packed_0.size();
+        return m_packed.size();
     }
 
     /**
@@ -78,8 +76,7 @@ public:
      */
     void pack_into(uint8_t* buffer_ptr) const
     {
-        m_packed_0.pack_into(buffer_ptr);
-        buffer_ptr += m_packed_0.size();
+        m_packed.pack_into(buffer_ptr);
     }
 
     /**
@@ -88,13 +85,13 @@ public:
      */
     void unpack_from(const uint8_t* buffer_ptr)
     {
-        m_packed_0.unpack_from(buffer_ptr);
-        buffer_ptr += m_packed_0.size();
+        m_packed.unpack_from(buffer_ptr);
     }
+
 private:
-    vrtgen::packed_tag<uint8_t,7,8> m_belief_percent_tag; //!< belief percent subfield 0/7
-    vrtgen::packed<uint32_t> m_packed_0;
-};
+    vrtgen::packed<uint32_t> m_packed;
+
+}; // end class Belief
 
 /**
  * @class Probability
@@ -104,57 +101,57 @@ class Probability
 {
 public:
     /**
-     * @brief Returns the Probability Percent subfield value
-     * @return Probability Percent subfield value
-     * 
-     * Probability Percent subfield is 16 bits long at bit position 15
-     * with a value of 1-255 representing a X/255 percentage
-     * See VITA 49.2 Figure 9.12-9
-     */
-    uint8_t probability_percent() const noexcept
-    {
-        return m_packed_0.get(m_probability_percent_tag);
-    }
-
-    /**
-     * @brief Sets the Probability Percent subfield value
-     * @param value Probability Percent subfield value
-     * 
-     * Probability Percent subfield is 16 bits long at bit position 15
-     * with a value of 1-255 representing a X/255 percentage
-     * See VITA 49.2 Figure 9.12-9
-     */
-    void probability_percent(uint8_t value) noexcept
-    {
-        m_packed_0.set(value, m_probability_percent_tag);
-    }
-
-    /**
      * @brief Returns the Probability Function subfield value
      * @return Probability Function subfield value
      * 
-     * Probability Function subfield is 16 bits long at bit position 15
+     * Probability Function subfield is 8 bits long at bit position 15
      * with a value of 0 meaning Uniform Distribution, 1 meaning Normal
      * Distribution, and 2-255 are user defined
      * See VITA 49.2 Rule 9.12-9 and 9.12-10
      */
     uint8_t probability_function() const noexcept
     {
-        return m_packed_0.get(m_probability_function_tag);
+        return m_packed.get<15,8,uint8_t>();
     }
 
     /**
      * @brief Sets the Probability Function subfield value
      * @return Probability Function subfield value
      * 
-     * Probability Function subfield is 16 bits long at bit position 15
+     * Probability Function subfield is 8 bits long at bit position 15
      * with a value of 0 meaning Uniform Distribution, 1 meaning Normal
      * Distribution, and 2-255 are user defined
      * See VITA 49.2 Rule 9.12-9 and 9.12-10
      */
     void probability_function(uint8_t value) noexcept
     {
-        m_packed_0.set(value, m_probability_function_tag);
+        m_packed.set<15,8>(value);
+    }
+
+    /**
+     * @brief Returns the Probability Percent subfield value
+     * @return Probability Percent subfield value
+     * 
+     * Probability Percent subfield is 8 bits long at bit position 7
+     * with a value of 1-255 representing a X/255 percentage
+     * See VITA 49.2 Figure 9.12-9
+     */
+    uint8_t probability_percent() const noexcept
+    {
+        return m_packed.get<7,8,uint8_t>();
+    }
+
+    /**
+     * @brief Sets the Probability Percent subfield value
+     * @param value Probability Percent subfield value
+     * 
+     * Probability Percent subfield is 8 bits long at bit position 7
+     * with a value of 1-255 representing a X/255 percentage
+     * See VITA 49.2 Figure 9.12-9
+     */
+    void probability_percent(uint8_t value) noexcept
+    {
+        m_packed.set<7,8>(value);
     }
 
     /**
@@ -163,7 +160,7 @@ public:
      */
     constexpr std::size_t size() const noexcept
     {
-        return m_packed_0.size();
+        return m_packed.size();
     }
 
     /**
@@ -172,8 +169,7 @@ public:
      */
     void pack_into(uint8_t* buffer_ptr) const
     {
-        m_packed_0.pack_into(buffer_ptr);
-        buffer_ptr += m_packed_0.size();
+        m_packed.pack_into(buffer_ptr);
     }
 
     /**
@@ -182,14 +178,12 @@ public:
      */
     void unpack_from(const uint8_t* buffer_ptr)
     {
-        m_packed_0.unpack_from(buffer_ptr);
-        buffer_ptr += m_packed_0.size();
+        m_packed.unpack_from(buffer_ptr);
     }
 
 private:
-    vrtgen::packed_tag<uint8_t,7,8> m_probability_percent_tag;   //!< percent probability subfield 0/7
-    vrtgen::packed_tag<uint8_t,15,8> m_probability_function_tag; //!< probability function subfield 0/15
-    vrtgen::packed<uint32_t> m_packed_0;
+    vrtgen::packed<uint32_t> m_packed;
+
 }; // end class Probability
 
 

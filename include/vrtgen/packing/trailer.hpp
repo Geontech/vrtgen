@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2022 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -42,7 +42,7 @@ public:
      */
     bool calibrated_time_enable() const noexcept
     {
-        return m_packed_0.get(m_calibrated_time_enable_tag);
+        return m_packed.get<31>();
     }
 
     /**
@@ -54,7 +54,7 @@ public:
      */
     void calibrated_time_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_calibrated_time_enable_tag);
+        m_packed.set<31>(value);
     }
 
     /**
@@ -66,7 +66,7 @@ public:
      */
     bool valid_data_enable() const noexcept
     {
-        return m_packed_0.get(m_valid_data_enable_tag);
+        return m_packed.get<30>();
     }
 
     /**
@@ -78,7 +78,7 @@ public:
      */
     void valid_data_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_valid_data_enable_tag);
+        m_packed.set<30>(value);
     }
 
     /**
@@ -90,7 +90,7 @@ public:
      */
     bool reference_lock_enable() const noexcept
     {
-        return m_packed_0.get(m_reference_lock_enable_tag);
+        return m_packed.get<29>();
     }
 
     /**
@@ -102,7 +102,7 @@ public:
      */
     void reference_lock_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_reference_lock_enable_tag);
+        m_packed.set<29>(value);
     }
 
     /**
@@ -114,7 +114,7 @@ public:
      */
     bool agc_mgc_enable() const noexcept
     {
-        return m_packed_0.get(m_agc_mgc_enable_tag);
+        return m_packed.get<28>();
     }
 
     /**
@@ -126,7 +126,7 @@ public:
      */
     void agc_mgc_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_agc_mgc_enable_tag);
+        m_packed.set<28>(value);
     }
 
     /**
@@ -138,7 +138,7 @@ public:
      */
     bool detected_signal_enable() const noexcept
     {
-        return m_packed_0.get(m_detected_signal_enable_tag);
+        return m_packed.get<27>();
     }
 
     /**
@@ -150,7 +150,7 @@ public:
      */
     void detected_signal_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_detected_signal_enable_tag);
+        m_packed.set<27>(value);
     }
 
     /**
@@ -162,7 +162,7 @@ public:
      */
     bool spectral_inversion_enable() const noexcept
     {
-        return m_packed_0.get(m_spectral_inversion_enable_tag);
+        return m_packed.get<26>();
     }
 
     /**
@@ -174,7 +174,7 @@ public:
      */
     void spectral_inversion_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_spectral_inversion_enable_tag);
+        m_packed.set<26>(value);
     }
 
     /**
@@ -186,7 +186,7 @@ public:
      */
     bool over_range_enable() const noexcept
     {
-        return m_packed_0.get(m_over_range_enable_tag);
+        return m_packed.get<25>();
     }
 
     /**
@@ -198,7 +198,7 @@ public:
      */
     void over_range_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_over_range_enable_tag);
+        m_packed.set<25>(value);
     }
 
     /**
@@ -210,7 +210,7 @@ public:
      */
     bool sample_loss_enable() const noexcept
     {
-        return m_packed_0.get(m_sample_loss_enable_tag);
+        return m_packed.get<24>();
     }
 
     /**
@@ -222,7 +222,7 @@ public:
      */
     void sample_loss_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_sample_loss_enable_tag);
+        m_packed.set<24>(value);
     }
 
     /**
@@ -234,7 +234,7 @@ public:
      */
     bool calibrated_time() const noexcept
     {
-        return m_packed_0.get(m_calibrated_time_tag);
+        return m_packed.get<19>();
     }
 
     /**
@@ -246,7 +246,7 @@ public:
      */
     void calibrated_time(bool value) noexcept
     {
-        m_packed_0.set(value, m_calibrated_time_tag);
+        m_packed.set<19>(value);
     }
 
     /**
@@ -258,7 +258,7 @@ public:
      */
     bool valid_data() const noexcept
     {
-        return m_packed_0.get(m_valid_data_tag);
+        return m_packed.get<18>();
     }
 
     /**
@@ -270,7 +270,7 @@ public:
      */
     void valid_data(bool value) noexcept
     {
-        m_packed_0.set(value, m_valid_data_tag);
+        m_packed.set<18>(value);
     }
 
     /**
@@ -282,7 +282,7 @@ public:
      */
     bool reference_lock() const noexcept
     {
-        return m_packed_0.get(m_reference_lock_tag);
+        return m_packed.get<17>();
     }
 
     /**
@@ -294,7 +294,7 @@ public:
      */
     void reference_lock(bool value) noexcept
     {
-        m_packed_0.set(value, m_reference_lock_tag);
+        m_packed.set<17>(value);
     }
 
     /**
@@ -306,7 +306,7 @@ public:
      */
     bool agc_mgc() const noexcept
     {
-        return m_packed_0.get(m_agc_mgc_tag);
+        return m_packed.get<16>();
     }
 
     /**
@@ -318,7 +318,7 @@ public:
      */
     void agc_mgc(bool value) noexcept
     {
-        m_packed_0.set(value, m_agc_mgc_tag);
+        m_packed.set<16>(value);
     }
 
     /**
@@ -330,7 +330,7 @@ public:
      */
     bool detected_signal() const noexcept
     {
-        return m_packed_0.get(m_detected_signal_tag);
+        return m_packed.get<15>();
     }
 
     /**
@@ -342,7 +342,7 @@ public:
      */
     void detected_signal(bool value) noexcept
     {
-        m_packed_0.set(value, m_detected_signal_tag);
+        m_packed.set<15>(value);
     }
 
     /**
@@ -354,7 +354,7 @@ public:
      */
     bool spectral_inversion() const noexcept
     {
-        return m_packed_0.get(m_spectral_inversion_tag);
+        return m_packed.get<14>();
     }
 
     /**
@@ -366,7 +366,7 @@ public:
      */
     void spectral_inversion(bool value) noexcept
     {
-        m_packed_0.set(value, m_spectral_inversion_tag);
+        m_packed.set<14>(value);
     }
 
     /**
@@ -378,7 +378,7 @@ public:
      */
     bool over_range() const noexcept
     {
-        return m_packed_0.get(m_over_range_tag);
+        return m_packed.get<13>();
     }
 
     /**
@@ -390,7 +390,7 @@ public:
      */
     void over_range(bool value) noexcept
     {
-        m_packed_0.set(value, m_over_range_tag);
+        m_packed.set<13>(value);
     }
 
     /**
@@ -402,7 +402,7 @@ public:
      */
     bool sample_loss() const noexcept
     {
-        return m_packed_0.get(m_sample_loss_tag);
+        return m_packed.get<12>();
     }
 
     /**
@@ -414,7 +414,7 @@ public:
      */
     void sample_loss(bool value) noexcept
     {
-        m_packed_0.set(value, m_sample_loss_tag);
+        m_packed.set<12>(value);
     }
 
     /**
@@ -426,7 +426,7 @@ public:
      */
     bool associated_context_packets_count_enable() const noexcept
     {
-        return m_packed_0.get(m_associated_context_packets_count_enable_tag);
+        return m_packed.get<7>();
     }
 
     /**
@@ -438,7 +438,7 @@ public:
      */
     void associated_context_packets_count_enable(bool value) noexcept
     {
-        m_packed_0.set(value, m_associated_context_packets_count_enable_tag);
+        m_packed.set<7>(value);
     }
 
     /**
@@ -450,7 +450,7 @@ public:
      */
     uint8_t associated_context_packets_count() const noexcept
     {
-        return m_packed_0.get(m_associated_context_packets_count_tag);
+        return m_packed.get<6,7,uint8_t>();
     }
 
     /**
@@ -462,7 +462,7 @@ public:
      */
     void associated_context_packets_count(uint8_t value) noexcept
     {
-        m_packed_0.set(value, m_associated_context_packets_count_tag);
+        m_packed.set<6,7>(value);
     }
 
     /**
@@ -471,7 +471,7 @@ public:
      */
     constexpr std::size_t size() const noexcept
     {
-        return m_packed_0.size();
+        return m_packed.size();
     }
 
     /**
@@ -480,7 +480,7 @@ public:
      */
     void pack_into(uint8_t* buffer_ptr) const
     {
-        m_packed_0.pack_into(buffer_ptr);
+        m_packed.pack_into(buffer_ptr);
     }
 
     /**
@@ -489,49 +489,11 @@ public:
      */
     void unpack_from(const uint8_t* buffer_ptr)
     {
-        m_packed_0.unpack_from(buffer_ptr);
+        m_packed.unpack_from(buffer_ptr);
     }
 
 private:
-    /**
-     * calibrated_time_enable 0/31
-     * valid_data_enable 0/30
-     * reference_lock_enable 0/29
-     * agc_mgc_enable 0/28
-     * detected_signal_enable 0/27
-     * spectral_inversion_enable 0/26
-     * over_range_enable 0/25
-     * sample_loss_enable 0/24
-     * calibrated_time 0/19
-     * valid_data 0/18
-     * reference_lock 0/17
-     * agc_mgc 0/16
-     * detected_signal 0/15
-     * spectral_inversion 0/14
-     * over_range 0/13
-     * sample_loss 0/12
-     * associated_context_packets_count_enable 0/7
-     * associated_context_packets_count 0/6
-     */
-    vrtgen::packed_tag<bool,31,1> m_calibrated_time_enable_tag;
-    vrtgen::packed_tag<bool,30,1> m_valid_data_enable_tag;
-    vrtgen::packed_tag<bool,29,1> m_reference_lock_enable_tag;
-    vrtgen::packed_tag<bool,28,1> m_agc_mgc_enable_tag;
-    vrtgen::packed_tag<bool,27,1> m_detected_signal_enable_tag;
-    vrtgen::packed_tag<bool,26,1> m_spectral_inversion_enable_tag;
-    vrtgen::packed_tag<bool,25,1> m_over_range_enable_tag;
-    vrtgen::packed_tag<bool,24,1> m_sample_loss_enable_tag;
-    vrtgen::packed_tag<bool,19,1> m_calibrated_time_tag;
-    vrtgen::packed_tag<bool,18,1> m_valid_data_tag;
-    vrtgen::packed_tag<bool,17,1> m_reference_lock_tag;
-    vrtgen::packed_tag<bool,16,1> m_agc_mgc_tag;
-    vrtgen::packed_tag<bool,15,1> m_detected_signal_tag;
-    vrtgen::packed_tag<bool,14,1> m_spectral_inversion_tag;
-    vrtgen::packed_tag<bool,13,1> m_over_range_tag;
-    vrtgen::packed_tag<bool,12,1> m_sample_loss_tag;
-    vrtgen::packed_tag<bool,7,1> m_associated_context_packets_count_enable_tag;
-    vrtgen::packed_tag<uint8_t,6,7> m_associated_context_packets_count_tag;
-    vrtgen::packed<uint32_t> m_packed_0;
+    vrtgen::packed<uint32_t> m_packed;
 
 }; // end class Trailer
 

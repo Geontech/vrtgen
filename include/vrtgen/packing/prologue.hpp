@@ -19,8 +19,6 @@
 #ifndef _VRTGEN_PACKING_PROLOGUE_HPP
 #define _VRTGEN_PACKING_PROLOGUE_HPP
 
-#include <vrtgen/types/oui.hpp>
-
 namespace vrtgen::packing {
 
 /**
@@ -39,7 +37,7 @@ public:
      */
     uint8_t pad_bits() const noexcept
     {
-        return m_packed_0.get(m_pad_bits_tag);
+        return m_packed.get<63,5,uint8_t>();
     }
 
     /**
@@ -51,7 +49,7 @@ public:
      */
     void pad_bits(uint8_t value) noexcept
     {
-        m_packed_0.set(value, m_pad_bits_tag);
+        m_packed.set<63,5>(value);
     }
 
     /**
@@ -63,7 +61,7 @@ public:
      */
     uint32_t oui() const noexcept
     {
-        return m_oui.get();
+        return m_packed.get<55,24,uint32_t>();
     }
 
     /**
@@ -75,7 +73,7 @@ public:
      */
     void oui(uint32_t value) noexcept
     {
-        m_oui.set(value);
+        m_packed.set<55,24>(value);
     }
 
     /**
@@ -87,7 +85,7 @@ public:
      */
     uint16_t information_code() const noexcept
     {
-        return m_packed_1.get(m_information_code_tag);
+        return m_packed.get<31,16,uint16_t>();
     }
 
     /**
@@ -99,7 +97,7 @@ public:
      */
     void information_code(uint16_t value) noexcept
     {
-        m_packed_1.set(value, m_information_code_tag);
+        m_packed.set<31,16>(value);
     }
 
     /**
@@ -111,7 +109,7 @@ public:
      */
     uint16_t packet_code() const noexcept
     {
-        return m_packed_1.get(m_packet_code_tag);
+        return m_packed.get<15,16,uint16_t>();
     }
 
     /**
@@ -123,7 +121,7 @@ public:
      */
     void packet_code(uint16_t value) noexcept
     {
-        m_packed_1.set(value, m_packet_code_tag);
+        m_packed.set<15,16>(value);
     }
 
     /**
@@ -132,52 +130,29 @@ public:
      */
     constexpr size_t size() const noexcept
     {
-        return m_packed_0.size() +
-               m_oui.size() +
-               m_packed_1.size();
+        return m_packed.size();
     }
 
     /**
      * @brief Pack ClassIdentifier as bytes into the buffer
      * @param buffer_ptr Pointer to buffer location to add ClassIdentifier bytes
      */
-    void pack_into(uint8_t* buffer_ptr) const
+    inline void pack_into(uint8_t* buffer_ptr) const
     {
-        m_packed_0.pack_into(buffer_ptr);
-        buffer_ptr += m_packed_0.size();
-        m_oui.pack_into(buffer_ptr);
-        buffer_ptr += m_oui.size();
-        m_packed_1.pack_into(buffer_ptr);
+        m_packed.pack_into(buffer_ptr);
     }
 
     /**
      * @brief Unpack buffer bytes into ClassIdentifier
      * @param buffer_ptr Pointer to beginning of ClassIdentifier bytes in the buffer
      */
-    void unpack_from(const uint8_t* buffer_ptr)
+    inline void unpack_from(const uint8_t* buffer_ptr)
     {
-        auto* ptr = buffer_ptr;
-        m_packed_0.unpack_from(ptr);
-        ptr += m_packed_0.size();
-        m_oui.unpack_from(ptr);
-        ptr += m_oui.size();
-        m_packed_1.unpack_from(ptr);
+        m_packed.unpack_from(buffer_ptr);
     }
 
 private:
-    /**
-     * pad_bits 0/31 
-     */
-    vrtgen::packed_tag<uint8_t,7,5> m_pad_bits_tag;
-    vrtgen::packed<uint8_t> m_packed_0;
-    vrtgen::OUI m_oui;
-    /**
-     * information_code 1/31
-     * packet_code 1/15
-     */
-    vrtgen::packed_tag<uint16_t,31,16> m_information_code_tag;
-    vrtgen::packed_tag<uint16_t,15,16> m_packet_code_tag;
-    vrtgen::packed<uint32_t> m_packed_1;
+    vrtgen::packed<uint64_t> m_packed;
 
 }; // end class ClassIdentifier
 

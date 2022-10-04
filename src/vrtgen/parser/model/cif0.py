@@ -79,11 +79,11 @@ class PayloadFormat(PackedStruct):
     event_tag_size : IntegerType = IntegerType('event_tag_size', bits=3, packed_tag=PackedTag(22,3,0,0))
     channel_tag_size : IntegerType = IntegerType('channel_tag_size', bits=4, packed_tag=PackedTag(19,4,0,0))
     data_item_fraction_size : IntegerType = IntegerType('data_item_fraction_size', bits=4, packed_tag=PackedTag(15,4,0,0))
-    item_packing_field_size : NonZeroIntegerType = NonZeroIntegerType('item_packing_field_size', bits=6, packed_tag=PackedTag(11,6,0,0))
-    data_item_size : NonZeroIntegerType = NonZeroIntegerType('data_item_size', bits=6, packed_tag=PackedTag(5,6,0,0))
+    item_packing_field_size : IntegerType = IntegerType('item_packing_field_size', bits=6, packed_tag=PackedTag(11,6,0,0))
+    data_item_size : IntegerType = IntegerType('data_item_size', bits=6, packed_tag=PackedTag(5,6,0,0))
     packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
-    repeat_count : NonZeroIntegerType = NonZeroIntegerType('repeat_count', bits=16, packed_tag=PackedTag(31,16,1))
-    vector_size : NonZeroIntegerType = NonZeroIntegerType('vector_size', bits=16, packed_tag=PackedTag(15,16,1))
+    repeat_count : IntegerType = IntegerType('repeat_count', bits=16, packed_tag=PackedTag(31,16,1))
+    vector_size : IntegerType = IntegerType('vector_size', bits=16, packed_tag=PackedTag(15,16,1))
 
     def __post_init__(self):
         super().__post_init__()
