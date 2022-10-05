@@ -265,6 +265,10 @@ class CppPacket:
         if self.cif7 and self.cif7.enabled:
             self.cif7.attributes.packet_name = name_to_snake(self.name)
             return_value.append(self.cif7.attributes)
+        if self.trailer and self.trailer.state_event_indicators.is_user_defined: 
+            self.trailer.packet_name = name_to_snake(self.name)
+            self.trailer.state_event_indicators.packet_name = name_to_snake(self.name)
+            return_value.append(self.trailer.state_event_indicators)
         return return_value
 
     @property
@@ -279,6 +283,10 @@ class CppPacket:
                 for field in self.cif1.discrete_io_64.type_.fields:
                     if isinstance(field, EnumType):
                         retval.append(format_enum(field.type_))
+        if len(self.trailer.state_event_indicators.enums) > 0:
+            for enum in self.trailer.state_event_indicators.enums:
+                enum.packet_name = name_to_snake(self.name)
+                retval.append(format_enum(enum.type_))
         return retval
 
 class CppGenerator(Generator):

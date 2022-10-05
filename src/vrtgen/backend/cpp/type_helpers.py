@@ -19,6 +19,7 @@ import enum
 import inspect
 from vrtgen.parser.model.types import *
 from vrtgen.parser.model.command import ControlIdentifier, WarningErrorFields
+from vrtgen.parser.model.data import Trailer
 from vrtgen.parser.model.cif1 import DiscreteIO
 from vrtgen.parser.model.cif7 import CIF7, CIF7Attributes
 from vrtgen.parser.model.aor import ArrayOfRecords
@@ -48,8 +49,8 @@ def enum_type(field, namespace=PACKING_NAMESPACE):
         return namespace + field.type_.__name__
     return namespace + type(field.type_).__name__
 
-def enum_value(field):
-    return enum_type(field) + '::' + field.value.name
+def enum_value(field, namespace=PACKING_NAMESPACE):
+    return enum_type(field, namespace) + '::' + field.value.name
 
 def float_type(field):
     """
@@ -98,7 +99,12 @@ class TypeHelper:
         if isinstance(field, CIFEnableType):
             if field.template_type:
                 return 'T'
-            elif field.type_:
+            elif field.type_ and field.type_ != type(None).__name__:
+                return self.value_type(field.type_)
+            else:
+                return 'bool'
+        elif isinstance(field, EnableIndicatorType):
+            if field.type_ and field.type_ != type(None).__name__:
                 return self.value_type(field.type_)
             else:
                 return 'bool'
@@ -117,7 +123,9 @@ class TypeHelper:
         elif isinstance(field, IntegerType):
             return int_type(field)
         elif isinstance(field, EnumType):
-            if field.user_defined:
+            if field.user_defined and field.packet_name:
+                return enum_type(field, namespace=field.packet_name+'::enums::')
+            elif field.user_defined:
                 return enum_type(field, namespace='enums::')
             else:
                 return enum_type(field)
@@ -156,6 +164,8 @@ class TypeHelper:
             return int_type(field)
         elif isinstance(field, ControlIdentifier) and (field.format == IdentifierFormat.UUID):
             return VRTGEN_NAMESPACE + 'UUID'
+        elif isinstance(field, Trailer) and field.state_event_indicators.is_user_defined:
+            return '{}::structs::{}'.format(field.packet_name, field.type_)
         else:
             return self.value_type(field)
 
@@ -170,10 +180,18 @@ class TypeHelper:
     def literal_value(self, field):
         if isinstance(field, CIFEnableType):
             return self.literal_value(field.type_)
+        elif isinstance(field, EnableIndicatorType):
+            if field.type_ and field.type_ != type(None).__name__:
+                return self.literal_value(field.type_)
+            else:
+                return str(field.value).lower()
         elif isinstance(field, BooleanType):
             return str(field.value).lower()
         elif isinstance(field, EnumType):
-            return enum_value(field)
+            if field.user_defined and field.packet_name:
+                return enum_value(field, namespace=field.packet_name+"::enums::")
+            else:
+                return enum_value(field)
         elif isinstance(field, IntegerType):
             if field.value:
                 return '0x{}'.format(str(hex(field.value)[2:]).upper())

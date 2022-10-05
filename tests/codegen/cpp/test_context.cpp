@@ -5239,12 +5239,6 @@ TEST_CASE("Context Packet CIF7 Packet")
     size_t GAIN_BYTES = 0;
     float GAIN_STAGE_1 = 0; // represents 0x0000 0080
     float GAIN_STAGE_2 = 0;
-    float GAIN_STAGE_1_MEAN = 0; // represents 0x0000 0080
-    float GAIN_STAGE_2_MEAN = 0;
-    float GAIN_STAGE_1_MAX = 0; // represents 0x0000 0080
-    float GAIN_STAGE_2_MAX = 0;
-    float GAIN_STAGE_1_MIN = 0; // represents 0x0000 0080
-    float GAIN_STAGE_2_MIN = 0;
     bytes GAIN_BE; // = bytes { 0, 0, 0, 0x80 };
     bytes GAIN_MEAN_BE; // = bytes { 0, 0, 0, 0x80 };
     bytes GAIN_MAX_BE; // = bytes { 0, 0, 0, 0x80 };
@@ -5265,7 +5259,7 @@ TEST_CASE("Context Packet CIF7 Packet")
     bytes CIF0_BE;
     bytes CIF1_BE;
     size_t CIF1_BYTES = 0;
-    bool gain_set = false;
+    // bool gain_set = false;
     const uint8_t CIF7_ENABLE = 0x1 << 7;
 
     SECTION ("Rule 9.12-1 With Current Value") {
@@ -5342,7 +5336,7 @@ TEST_CASE("Context Packet CIF7 Packet")
         SECTION ("9.12-1 Gain") {
             packet_in.reference_level(REF_LEVEL);
             CHECK_FALSE(packet_in.has_gain());
-            const double PHASE_OFFSET = 1.0;
+            // const double PHASE_OFFSET = 1.0;
 
             GAIN_STAGE_2 = 0;
             GAIN_STAGE_1 = 1.0; // represents 0x0000 0080
@@ -5564,72 +5558,6 @@ TEST_CASE("Context Packet CIF7 Packet")
             CHECK_FALSE(packet_in.has_gain());
             CHECK_FALSE(packet_in.has_phase_offset());
         }
-        // SECTION ("9.12-1 Gain") {
-        //     CHECK_FALSE(packet_in.has_gain());
-        //     const double PHASE_OFFSET = 1.0;
-
-        //     GAIN_STAGE_2 = 0;
-        //     GAIN_STAGE_1 = 0; // represents 0x0000 0080
-        //     GAIN_STAGE_1_MEAN = 3; // represents 0x0000 0080
-        //     GAIN_STAGE_2_MEAN = 3;
-        //     GAIN_STAGE_1_MAX = 5; // represents 0x0000 0080
-        //     GAIN_STAGE_2_MAX = 5;
-        //     GAIN_STAGE_1_MIN = 1; // represents 0x0000 0080
-        //     GAIN_STAGE_2_MIN = 1;
-        //     GAIN_BE        = bytes { 0, 0, 0, 0 };
-        //     GAIN_MEAN_BE   = bytes { 0x01, 0x80, 0x01, 0x80 };
-        //     GAIN_MAX_BE    = bytes { 0x02, 0x80, 0x02, 0x80 };
-        //     GAIN_MIN_BE    = bytes { 0, 0x80, 0, 0x80 };
-        //     GAIN_PROB_BE   = bytes { 0, 0, PROBABILITY_FUNC, PROBABILITY_PERCENT };
-        //     GAIN_BELIEF_BE = bytes { 0, 0, 0, BELIEF_PERCENT };
-
-        //     vrtgen::packing::Gain gain, gain_mean, gain_max, gain_min;
-        //     gain.stage_1(GAIN_STAGE_1);
-        //     gain.stage_2(GAIN_STAGE_2);
-        //     gain_mean.stage_1(GAIN_STAGE_1_MEAN);
-        //     gain_mean.stage_2(GAIN_STAGE_2_MEAN);
-        //     gain_max.stage_1(GAIN_STAGE_1_MAX);
-        //     gain_max.stage_2(GAIN_STAGE_2_MAX);
-        //     gain_min.stage_1(GAIN_STAGE_1_MIN);
-        //     gain_min.stage_2(GAIN_STAGE_2_MIN);
-
-        //     // TODO When this is commented out everything fails 
-        //     // this is because the has_gain needs to be true in 
-        //     // order for the attributes to be packed or unpacked
-        //     // eventhough gain is never used in this context
-        //     bool debug = true;
-        //     if (!debug) {
-        //         packet_in.gain(gain);
-        //         CHECK(packet_in.has_gain());
-        //     }
-
-        //     const uint8_t GAIN_ENABLE = 0x1 << 7; // CIF 0 bit 23
-        //     CIF0_BE = bytes{ REF_LEVEL_ENABLE, GAIN_ENABLE, 0, CIF7_ENABLE };
-
-        //     GAIN_BYTES = 4;
-        //     CHECK_FALSE(packet_in.has_phase_offset());
-        //     test_context7::structs::CIF7Attributes<vrtgen::packing::Gain> gain_attributes;
-        //     gain_attributes.mean_value(gain_mean);
-        //     PACKED_SIZE += GAIN_BYTES;
-        //     gain_attributes.max_value(gain_max);
-        //     PACKED_SIZE += GAIN_BYTES;
-        //     gain_attributes.min_value(gain_min);
-        //     PACKED_SIZE += GAIN_BYTES;
-        //     gain_attributes.probability(probability);
-        //     gain_attributes.belief(belief);
-        //     packet_in.gain_attributes(gain_attributes);
-        //     PACKED_SIZE += PROBABILITY_BYTES;
-        //     PACKED_SIZE += BELIEF_BYTES;
-        //     CHECK(packet_in.gain_attributes().probability().probability_percent() == int(PROBABILITY_PERCENT));
-        //     CHECK(packet_in.gain_attributes().belief().belief_percent() == int(BELIEF_PERCENT));
-        //     CHECK(packet_in.gain_attributes().mean_value().stage_1() == GAIN_STAGE_1_MEAN);
-        //     CHECK(packet_in.gain_attributes().max_value().stage_1() == GAIN_STAGE_1_MAX);
-        //     CHECK(packet_in.gain_attributes().min_value().stage_1() == GAIN_STAGE_1_MIN);
-        //     CHECK(packet_in.gain_attributes().mean_value().stage_2() == GAIN_STAGE_2_MEAN);
-        //     CHECK(packet_in.gain_attributes().max_value().stage_2() == GAIN_STAGE_2_MAX);
-        //     CHECK(packet_in.gain_attributes().min_value().stage_2() == GAIN_STAGE_2_MIN);
-        // }
-        
 
         // Stream ID is required field. Set value to check
         const uint32_t STREAM_ID = 0x12345678;

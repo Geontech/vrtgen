@@ -275,7 +275,7 @@ std::vector<uint8_t> {{ packet.helper }}::pack(const {{ packet.name }}& packet)
     buffer.insert(packet.payload(), packet.payload_size());
 {%   if packet.trailer.enabled %}
     {{ type_helper.member_type(packet.trailer) }} trailer;
-{%     for field in packet.trailer.fields if field.enabled %}
+{%     for field in packet.trailer.fields if field.enabled and not field.is_enable %}
 {%       if field.is_optional %}
     if (packet.has_{{ field.name }}()) {
         trailer.{{ field.setter }}_enable(true);

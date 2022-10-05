@@ -28,12 +28,20 @@
  {% if class.is_template %}
 template < typename {{ class.template_name }} >
  {% endif %}
-class {{ class.type_ }}
+class {{ class.type_ }} {% if class.child_of %} : public vrtgen::packing::{{ class.child_of }} {% endif %}
 {
 public:
 {% for field in fields if field.enabled and not field.is_packed_type %}
+{% set packed = field.packed_tag.packed_int is not none and field.user_defined %}
+{% if class.child_of %}
+{%   if field.packed_tag.packed_int is not none and field.user_defined %}
+    {{ basic.getters_and_setters(field, type_helper, packed) | indent(4) | trim }}
+{%   endif %}
+{% else %}
     {{ basic.getters_and_setters(field, type_helper) | indent(4) | trim }}
+{% endif %}
 {% endfor %}
+{% if not class.child_of %}
     size_t size() const
     {
         size_t retval = 0;
@@ -113,6 +121,7 @@ public:
 {%   endif %}
 {% endfor %}
     }
+{% endif %}
 
 private:
 {% for field in fields if field.enabled and not field.is_packed_type %}
@@ -134,9 +143,6 @@ private:
 {%         endif %}
 {%     elif tag.packed_int is none %}
     {{ basic.member(field, type_helper) | indent(4) | trim }}
-{%     else %}
-{%         set packed_int = class.packed_fields[tag.packed_int] %}
-    using {{ field.name }}_tag = vrtgen::packed_tag<{{ type_helper.value_type(field) }},{{ tag.position % packed_int.bits }},{{ tag.bits }}{{ ',detail::'+field.converter if field.converter }}>;
 {%     endif %}
 {% endfor %}
 
