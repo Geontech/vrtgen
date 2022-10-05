@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from vrtgen.parser.model.types import *
-from vrtgen.parser.model.base import CIF
+from vrtgen.parser.model.base import CIF, StateEventIndicators
 from vrtgen.parser.value import parse_enable
 
 @dataclass
@@ -33,38 +33,6 @@ class DeviceIdentifier(PackedStruct):
         super().__post_init__()
         self.type_ = type(self).__name__
         self.bits = 64
-
-@dataclass
-class StateEventIndicators(PackedStruct):
-    """
-    State and Event Indicator Field [9.10.8].
-    """
-    name : str = 'state_event_indicators'
-    # Enables
-    calibrated_time_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('calibrated_time_enable', is_enable=True, packed_tag=PackedTag(31,1,0,0)))
-    valid_data_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('valid_data_enable', is_enable=True, packed_tag=PackedTag(30,1,0,0)))
-    reference_lock_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('reference_lock_enable', is_enable=True, packed_tag=PackedTag(29,1,0,0)))
-    agc_mgc_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('agc_mgc_enable', is_enable=True, packed_tag=PackedTag(28,1,0,0)))
-    detected_signal_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('detected_signal_enable', is_enable=True, packed_tag=PackedTag(27,1,0,0)))
-    spectral_inversion_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('spectral_inversion_enable', is_enable=True, packed_tag=PackedTag(26,1,0,0)))
-    over_range_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('over_range_enable', is_enable=True, packed_tag=PackedTag(25,1,0,0)))
-    sample_loss_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('sample_loss_enable', is_enable=True, packed_tag=PackedTag(24,1,0,0)))
-    # Indicators
-    calibrated_time : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('calibrated_time', packed_tag=PackedTag(19,1,0,0)))
-    valid_data : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('valid_data', packed_tag=PackedTag(18,1,0,0)))
-    reference_lock : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('reference_lock', packed_tag=PackedTag(17,1,0,0)))
-    agc_mgc : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('agc_mgc', packed_tag=PackedTag(16,1,0,0)))
-    detected_signal : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('detected_signal', packed_tag=PackedTag(15,1,0,0)))
-    spectral_inversion : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('spectral_inversion', packed_tag=PackedTag(14,1,0,0)))
-    over_range : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('over_range', packed_tag=PackedTag(13,1,0,0)))
-    sample_loss : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('sample_loss', packed_tag=PackedTag(12,1,0,0)))
-    # TODO user_defined
-    packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0)))
-
-    def __post_init__(self):
-        super().__post_init__()
-        self.type_ = type(self).__name__
-        self.bits = 32
 
 @dataclass
 class PayloadFormat(PackedStruct):

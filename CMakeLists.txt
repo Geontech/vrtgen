@@ -33,6 +33,7 @@ set(header_files
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/header.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/indicator_fields.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/prologue.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/state_event_indicators.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/trailer.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/socket_base.hpp
@@ -83,6 +84,7 @@ add_executable(test_libvrtgen
     tests/libvrtgen/header.cpp
     tests/libvrtgen/prologue.cpp
     tests/libvrtgen/types.cpp
+    tests/libvrtgen/trailer.cpp
 )
 target_link_libraries(test_libvrtgen vrtgen)
 target_link_libraries(test_libvrtgen Catch2)

@@ -32,7 +32,7 @@ bool has_{{ cif.name }}_fields() const noexcept
 {% for field in cif.fields if field.enabled %}
 {{ basic.optional_functions(field, type_helper, cif, cif7) | trim }}
 
-{{ basic.getters_and_setters(field, type_helper, cif, cif7) | trim }}
+{{ basic.getters_and_setters(field, type_helper, false, cif, cif7) | trim }}
 {% endfor %}
 {% endmacro %}
 

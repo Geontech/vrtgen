@@ -53,3 +53,11 @@ TestData10: !Data
   trailer: !Trailer
       valid_data: optional
       agc_mgc: required
+
+TestData11: !Data
+  trailer: !Trailer
+    sample_frame: required
+    user_defined_enable_indicator: enable_indicator
+    user_defined_enum: !!seq
+      - one
+      - two

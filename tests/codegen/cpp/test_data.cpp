@@ -20,6 +20,7 @@
 #include "catch.hpp"
 #include "data.hpp"
 #include <bytes.hpp>
+#include <vrtgen/packing/enums.hpp>
 
 TEST_CASE("Data Packet Stream ID")
 {
@@ -919,3 +920,41 @@ TEST_CASE("Data Packet All")
     CHECK(trailer.agc_mgc());
 
 } // end TEST_CASE("Data Packet Full Prologue")
+
+TEST_CASE("Data Packet Trailer User Defined")
+{
+    using packet_type = TestData11;
+    packet_type packet_in;
+
+    SECTION("Rule 5.1.6-4") {
+        test_data11::structs::UserDefinedTrailer trailer;
+        test_data11::structs::UserDefinedTrailer unpack_trailer;
+        bytes packed_bytes{ 
+            0xFF, 0xFF, 0xFF, 0xFF, // Trailer
+        };
+
+        trailer.sample_frame_enable(true);
+        trailer.user_defined_enable_indicator_enable(true);
+        trailer.user_defined_enum_enable(true);
+        trailer.sample_frame(vrtgen::packing::SSI(3));
+        trailer.user_defined_enable_indicator(true);
+        trailer.user_defined_enum(test_data11::enums::user_defined_enum(1));
+        CHECK(trailer.sample_frame_enable() == true);
+        CHECK(trailer.user_defined_enable_indicator_enable() == true);
+        CHECK(trailer.user_defined_enum_enable() == true);
+        CHECK(trailer.sample_frame() == vrtgen::packing::SSI(3));
+        CHECK(trailer.user_defined_enable_indicator() == true);
+        CHECK(trailer.user_defined_enum() == test_data11::enums::user_defined_enum(1));
+        trailer.pack_into(packed_bytes.data());
+        // enabled the first and the last to verify the range of the state and event indicators
+        CHECK(packed_bytes == bytes{ 0x00, 0xF0, 0x0F, 0x00 });
+
+        unpack_trailer.unpack_from(packed_bytes.data());
+        CHECK(unpack_trailer.sample_frame_enable() == true);
+        CHECK(unpack_trailer.user_defined_enable_indicator_enable() == true);
+        CHECK(unpack_trailer.user_defined_enum_enable() == true);
+        CHECK(unpack_trailer.sample_frame() == vrtgen::packing::SSI(3));
+        CHECK(unpack_trailer.user_defined_enable_indicator() == true);
+        CHECK(unpack_trailer.user_defined_enum() == test_data11::enums::user_defined_enum(1));
+    }
+}

@@ -28,6 +28,7 @@
 std::optional<{{ type_helper.member_type(field) }}> _{{ field.name }};
 {%   else %}
 {{ type_helper.member_type(field) }} _{{ field.name }}{{ literal_value(field, type_helper) | trim }};
+
 {%   endif %}
 {% endmacro %}
 
@@ -100,7 +101,7 @@ void reset_{{ field.name }}_attributes() noexcept
 {% endif %}
 {% endmacro %}
 
-{%- macro ref_getter(field, type_helper, cif7, packet_namespace) %}
+{%- macro ref_getter(field, type_helper, cif7) %}
 {% set field_name = field.name %}
 {% set field_getter = field.getter %}
 {% set field_type = type_helper.member_type(field) %}
@@ -124,7 +125,7 @@ constexpr {{ field_type }}& {{ field_getter }}(){{ ' noexcept' if not field.is_o
 }
 {% endmacro %}
 
-{%- macro const_ref_getter(field, type_helper, cif7, packet_namespace) %}
+{%- macro const_ref_getter(field, type_helper, cif7) %}
 {% set field_name = field.name %}
 {% set field_getter = field.getter %}
 {% set field_type = type_helper.member_type(field) %}
@@ -148,7 +149,7 @@ constexpr const {{ field_type }}& {{ field_getter }}() const{{ ' noexcept' if no
 }
 {% endmacro %}
 
-{%- macro value_getter(field, type_helper, cif7, packet_namespace) %}
+{%- macro value_getter(field, type_helper, cif7, packed) %}
 {% set field_name = field.name %}
 {% set field_getter = field.getter %}
 {% set field_type = type_helper.value_type(field) %}
@@ -176,34 +177,36 @@ constexpr const {{ field_type }}& {{ field_getter }}() const{{ ' noexcept' if no
     return vrtgen::fixed::to_fp{{ type_helper.fixed_template(field) }}(vrtgen::swap::from_be(_{{ field_name }}{{ '.value()' if field.is_optional }}));
 {% elif field.is_integer_type or field.type_.is_integer_type %}
     return vrtgen::swap::from_be(_{{ field_name }}{{ '.value()' if field.is_optional }});
+{% elif packed %}
+    return m_packed.get<{{ field.packed_tag.position }}, {{ field.packed_tag.bits }}, {{ type_helper.member_type(field) }}>();
 {% else %}
     return _{{ field_name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
 {% endif %}
 }
 {% endmacro %}
 
-{%- macro getters(field, type_helper, cif7, packet_namespace) %}
+{%- macro getters(field, type_helper, cif7, packed) %}
 {% if not type_helper.is_scalar(field) %}
 {{ ref_getter(field, type_helper) | trim }}
 
 {{ const_ref_getter(field, type_helper) | trim }}
 {% else %}
-{{ value_getter(field, type_helper) | trim }}
+{{ value_getter(field, type_helper, none, packed) | trim }}
 {% endif %}
 {% if cif7 is defined and cif7 is not none %}
 {%   if cif7.enabled and not field.indicator_only %}
-{% if not type_helper.is_scalar(field) %}
-{{ ref_getter(field, type_helper, cif7, packet_namespace) | trim }}
+{%     if not type_helper.is_scalar(field) %}
+{{ ref_getter(field, type_helper, cif7) | trim }}
 
-{{ const_ref_getter(field, type_helper, cif7, packet_namespace) | trim }}
-{% else %}
-{{ value_getter(field, type_helper, cif7, packet_namespace) | trim }}
-{% endif %}
+{{ const_ref_getter(field, type_helper, cif7) | trim }}
+{%     else %}
+{{ value_getter(field, type_helper, cif7, packed) | trim }}
+{%     endif %}
 {%   endif %}
 {% endif %}
 {% endmacro %}
 
-{%- macro setters(field, type_helper, cif, cif7, packet_namespace) %}
+{%- macro setters(field, type_helper, cif, cif7, packed) %}
 /**
  * @brief Set the value of {{ field.name }}
  * @param value Value to assign to {{ field.name }}
@@ -227,6 +230,8 @@ void {{ field.setter }}({{ type_helper.value_type(field) }} value)
     _{{ field.name }} = vrtgen::swap::to_be(vrtgen::fixed::to_int{{ type_helper.fixed_template(field.type_) }}(value));
 {% elif field.is_integer_type or field.type_.is_integer_type %}
     _{{ field.name }} = vrtgen::swap::to_be(value);
+{% elif packed %}
+    return m_packed.set<{{ field.packed_tag.position }}{{ ', field.packed_tag.bits' if field.packed_tag.bits > 1}}{{ ', type_helper.member_type(field)' if field.packed_tag.bits > 1}}>(value);
 {% else %}
     _{{ field.name }} = value;
 {% endif %}
@@ -238,9 +243,9 @@ void {{ field.setter }}({{ type_helper.value_type(field) }} value)
  * @param value Value to assign to {{ field.name }}
  */
 {% if not type_helper.is_scalar(field) %}
-void {{ field.setter }}_attributes(const {{ packet_namespace }}{{ type_helper.value_type(cif7.attributes) }}<{{ type_helper.value_type(field) }}>& value)
+void {{ field.setter }}_attributes(const {{ type_helper.value_type(cif7.attributes) }}<{{ type_helper.value_type(field) }}>& value)
 {% else %}
-void {{ field.setter }}_attributes({{ packet_namespace }}{{ type_helper.value_type(cif7.attributes) }}<{{ type_helper.value_type(field) }}> value)
+void {{ field.setter }}_attributes({{ type_helper.value_type(cif7.attributes) }}<{{ type_helper.value_type(field) }}> value)
 {% endif %}
 {
     _{{ field.name }}_attributes = value;
@@ -249,8 +254,8 @@ void {{ field.setter }}_attributes({{ packet_namespace }}{{ type_helper.value_ty
 {% endif %}
 {% endmacro %}
 
-{%- macro getters_and_setters(field, type_helper, cif, cif7, packet_namespace) %}
-{{ getters(field, type_helper, cif7, packet_namespace ) | trim }}
+{%- macro getters_and_setters(field, type_helper, packed, cif, cif7) %}
+{{ getters(field, type_helper, cif7, packed) | trim }}
 
-{{ setters(field, type_helper, cif, cif7, packet_namespace) | trim }}
+{{ setters(field, type_helper, cif, cif7, packed) | trim }}
 {% endmacro %}

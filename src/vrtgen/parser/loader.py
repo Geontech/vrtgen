@@ -221,7 +221,7 @@ def discrete_io_64_constructor(loader, node) -> cif1.DiscreteIO:
 def trailer_constructor(loader, node) -> data.Trailer:
     trailer = data.Trailer(enabled=True, required=True)
     if not isinstance(node, yaml.ScalarNode):
-        trailer.validate_and_parse_mapping(**loader.construct_mapping(node))
+        trailer.validate_and_parse_mapping(**loader.construct_mapping(node, deep=True))
     return trailer
 
 def information_class_contructor(loader, node) -> information.InformationClass:

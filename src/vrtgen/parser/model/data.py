@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from vrtgen.parser import value
 from vrtgen.parser.model.base import *
 from vrtgen.parser.model.types import *
-
+import math 
 @dataclass
 class DataHeader(Header):
     """
@@ -24,30 +24,10 @@ class Trailer(PackedStruct):
     Signal Data Packet trailer (5.1.6).
     """
     name : str = 'trailer'
-    # Enables
-    calibrated_time_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('calibrated_time_enable', is_enable=True, packed_tag=PackedTag(31,1,0,0)))
-    valid_data_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('valid_data_enable', is_enable=True, packed_tag=PackedTag(30,1,0,0)))
-    reference_lock_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('reference_lock_enable', is_enable=True, packed_tag=PackedTag(29,1,0,0)))
-    agc_mgc_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('agc_mgc_enable', is_enable=True, packed_tag=PackedTag(28,1,0,0)))
-    detected_signal_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('detected_signal_enable', is_enable=True, packed_tag=PackedTag(27,1,0,0)))
-    spectral_inversion_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('spectral_inversion_enable', is_enable=True, packed_tag=PackedTag(26,1,0,0)))
-    over_range_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('over_range_enable', is_enable=True, packed_tag=PackedTag(25,1,0,0)))
-    sample_loss_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('sample_loss_enable', is_enable=True, packed_tag=PackedTag(24,1,0,0)))
-    # TODO sample_frame_enable
-    # TODO user_defined_enable
-    # Indicators
-    calibrated_time : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('calibrated_time', packed_tag=PackedTag(19,1,0,0)))
-    valid_data : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('valid_data', packed_tag=PackedTag(18,1,0,0)))
-    reference_lock : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('reference_lock', packed_tag=PackedTag(17,1,0,0)))
-    agc_mgc : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('agc_mgc', packed_tag=PackedTag(16,1,0,0)))
-    detected_signal : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('detected_signal', packed_tag=PackedTag(15,1,0,0)))
-    spectral_inversion : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('spectral_inversion', packed_tag=PackedTag(14,1,0,0)))
-    over_range : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('over_range', packed_tag=PackedTag(13,1,0,0)))
-    sample_loss : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('sample_loss', packed_tag=PackedTag(12,1,0,0)))
-    # TODO sample_frame
-    # TODO user_defined
+    state_event_indicators : StateEventIndicators = field(default_factory=lambda: StateEventIndicators('state_event_indicators', packed_tag=PackedTag(19,12,0,0)))
+    # Can't be on at the same time as user_defined1 or user_defined2
+    sample_frame : EnumType = field(default_factory=lambda: EnumType('sample_frame', type_=SSI, packed_tag=PackedTag(11,2,0,0)))
     # Associated Context Packet Count
-    associated_context_packets_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('associated_context_packet_count_enable', is_enable=True, packed_tag=PackedTag(7,1,0,0)))
     associated_context_packet_count : IntegerType = field(default_factory=lambda: IntegerType('associated_context_packet_count', bits=7, packed_tag=PackedTag(6,7,0,0)))
 
     def __post_init__(self):
@@ -56,25 +36,62 @@ class Trailer(PackedStruct):
         self.bits = 32
 
     def _validate(self, mapping):
-        for field in mapping:
-            error = False
-            error_msg = 'invalid trailer field provided: ' + field  
-            if not field in [f.name for f in self.fields]:
-                error = True
+        for _,val in mapping.items():
+            if val == 'required' or val == 'optional':
+                continue
+            elif val == 'enable_indicator':
+                continue
+            elif isinstance(val, list):
+                continue
             else:
-                for cls_field in self.fields:
-                    if cls_field.name == field and isinstance(cls_field, EnableIndicatorType) and cls_field.is_enable:
-                            error = True
-                            break
-            if error:
-                raise ValueError(error_msg)
+                raise ValueError('invalid discrete_io type specified: ', val)
+
+    @property
+    def fields(self):
+        return [f for f in self.state_event_indicators.fields] + [self.__dict__[key] for key,_ in asdict(self).items() if  not isinstance(self.__dict__[key], StateEventIndicators) and is_field_type(self.__dict__[key])]
 
     def _parse_mapping(self, mapping):
+        packed_tag_pos = 8
+        greater_than_two = False
         try:
             for key,val in mapping.items():
-                mode = value.parse_enable(val)
-                self.__dict__[key].enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
-                self.__dict__[key].required = True if (mode == Mode.REQUIRED) else False
+                if not key in [f.name for f in self.fields]:
+                    self.state_event_indicators.type_ = 'UserDefinedTrailer'
+                    self.type_ = 'UserDefinedTrailer'
+                    if val == 'enable_indicator':
+                        self.state_event_indicators.subfields.append(EnableIndicatorType(key, bits=1, user_defined=True, enabled=True, required=True, packed_tag=PackedTag(packed_tag_pos,1,0,0)))
+                        self.state_event_indicators.subfields.append(EnableIndicatorType(key+'_enable', user_defined=True, bits=1, enabled=True, required=True, is_enable=True, packed_tag=PackedTag(packed_tag_pos+12,1,0,0)))
+                        packed_tag_pos += 1
+                    elif isinstance(val, list):
+                        bits = math.ceil(len(val)/2)
+                        enum_members = {}
+                        member_val = 0
+                        for item in val:
+                            enum_members[item] = member_val
+                            member_val += 1
+                        user_defined_enum = BinaryEnum(key, enum_members)
+                        user_defined_enum.bits = bits
+                        if bits > 4:
+                            raise ValueError("Enum can only be 4 bits maximum")
+                        elif bits > 2:
+                            greater_than_two = True
+                        pos = packed_tag_pos + bits - 1
+                        self.state_event_indicators.subfields.append(EnumType(key, enabled=True, required=True, user_defined=True, type_=user_defined_enum, packed_tag=PackedTag(pos,bits,0,0)))
+                        self.state_event_indicators.subfields.append(EnableIndicatorType(key+'_enable', bits=bits, enabled=True, required=True, user_defined=True, is_enable=True, packed_tag=PackedTag(pos+12,bits,0,0)))
+                        packed_tag_pos += bits
+                elif key in [f.name for f in self.state_event_indicators.fields]:
+                    mode = value.parse_enable(val)
+                    self.state_event_indicators.__dict__[key].enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
+                    self.state_event_indicators.__dict__[key].required = True if (mode == Mode.REQUIRED) else False
+                else:
+                    mode = value.parse_enable(val)
+                    self.__dict__[key].enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
+                    self.__dict__[key].required = True if (mode == Mode.REQUIRED) else False
+
+            if len(self.state_event_indicators.subfields) > 4 and self.sample_frame.enabled:
+                raise ValueError('Cannot have user_defined_higher and sample_frame')
+            if greater_than_two and self.sample_frame.enabled:
+                raise ValueError('Cannot have user_defined_higher and sample_frame')
         except:
             raise
 

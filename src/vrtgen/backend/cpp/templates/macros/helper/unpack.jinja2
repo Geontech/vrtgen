@@ -259,7 +259,7 @@ void {{ packet.helper }}::unpack({{ packet.name }}& packet, const void* ptr, std
     const auto* data = buffer.next(len); 
     packet.payload(data, len);
 {%   if packet.trailer.enabled %}
-    const auto trailer = buffer.next<{{ type_helper.value_type(packet.trailer) }}>();
+    const auto trailer = buffer.next<{{ type_helper.member_type(packet.trailer) }}>();
 {%     for field in packet.trailer.fields if field.enabled and not field.is_packed_type %}
 {%       if field.is_optional %}
     if (!trailer.{{ field.getter }}_enable()) {

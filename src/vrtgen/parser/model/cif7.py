@@ -110,8 +110,6 @@ class CIF7(CIF):
 
     def _parse_mapping(self, mapping):
         for key,val in mapping.items():
-            if key == 'current_value':
-                print("Current Value is not supported by vrtgen")
             mode = parse_enable(val)
             if mode != Mode.REQUIRED:
                 print('{} is a required field, ignoring: {}'.format(key, val))
