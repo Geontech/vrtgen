@@ -5,6 +5,9 @@ COPY . /root/vrtgen
 
 WORKDIR /root/vrtgen
 
+ENV CXX=g++-10
+ENV MAKEFLAGS="-j$(nproc)"
+
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections \
     && apt update \
     && apt install -y software-properties-common wget \
@@ -16,7 +19,6 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
     && apt update \
     # Install g++
     && apt install -y g++-10 \
-    && export CXX=g++-10 \
     # Install Python 3.8
     && apt install -y python3.8-full \
     && wget https://bootstrap.pypa.io/get-pip.py \
@@ -27,5 +29,4 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
     && python3.8 -m pip install pytest pylint \
     && python3.8 -m pip install . \
     && cmake -B build -DJUNIT_OUTPUT=yes . \
-    && export MAKEFLAGS="-j$(nproc)" \
     && make -C build

@@ -122,7 +122,7 @@ def stream_id_constructor(loader, node) -> prologue.StreamIdentifier:
                 val.packed_tag.field_word = 0
                 val.packed_tag.packed_int = 0
             fields.append((key,type(val),val))
-        fields.append(('packed_0', packing.PackedType, packing.PackedType('packed_0', bits=32, enabled=True, required=True, packed_tag=packing.PackedTag(0,32,0))))
+        fields.append(('m_packed', packing.PackedType, packing.PackedType('m_packed', bits=32, enabled=True, required=True, packed_tag=packing.PackedTag(0,32,0))))
         packed_stream_id_type = make_dataclass(
             cls_name='StreamIdentifier',
             fields=fields,
