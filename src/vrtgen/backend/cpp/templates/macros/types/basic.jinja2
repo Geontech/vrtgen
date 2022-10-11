@@ -19,7 +19,11 @@
 
 {%- macro literal_value(field, type_helper) %}
 {% if type_helper.literal_value(field) is not none %}
+{%    if field.is_integer_type and type_helper.literal_value(field) != '0' %}
+{ vrtgen::swap::to_be( {{ type_helper.literal_value(field) }} ) }
+{%    else %}
 { {{ type_helper.literal_value(field) }} }
+{%    endif %}
 {% endif %}
 {% endmacro %}
 
