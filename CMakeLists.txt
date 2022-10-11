@@ -126,6 +126,7 @@ add_executable(test_codegen
     tests/codegen/cpp/test_basic.cpp
     tests/codegen/cpp/test_data.cpp
     tests/codegen/cpp/test_context.cpp
+    tests/codegen/cpp/test_stream_id.cpp
     # tests/codegen/cpp/test_command.cpp
 #     tests/codegen/test_cif0.cpp
 #     tests/codegen/test_control_ids.cpp
@@ -136,6 +137,7 @@ add_executable(test_codegen
 add_codegen_file(test_codegen tests/codegen/yamls/basic.yaml)
 add_codegen_file(test_codegen tests/codegen/yamls/data.yaml)
 add_codegen_file(test_codegen tests/codegen/yamls/context.yaml)
+add_codegen_file(test_codegen tests/codegen/yamls/streamid.yaml)
 # add_codegen_file(test_codegen tests/codegen/yamls/command.yaml)
 # add_codegen_file(test_codegen tests/codegen/yamls/cif0.yaml)
 # add_codegen_file(test_codegen tests/codegen/yamls/control_ids.yaml)

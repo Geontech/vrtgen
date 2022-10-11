@@ -1,0 +1,8 @@
+TestStreamId1: !Data
+  stream_id: !StreamID
+
+TestStreamId2: !Context
+  stream_id: !StreamID
+
+TestStreamId3: !Control
+  stream_id: !StreamID
