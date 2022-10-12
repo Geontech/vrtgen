@@ -185,10 +185,6 @@ class CommandPacket(Packet):
         except:
             raise
 
-    def validate_and_parse_mapping(self, **mapping):
-        self._validate(mapping)
-        self._parse_mapping(mapping)
-
 @dataclass
 class ControlPacket(CommandPacket):
     """
