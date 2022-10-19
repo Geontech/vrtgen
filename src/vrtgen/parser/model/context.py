@@ -38,10 +38,6 @@ class ContextPacket(Packet):
         self.stream_id.enabled = True
         self.stream_id.required = True
 
-    # def validate_and_parse_mapping(self, **mapping):
-    #     self._validate(mapping)
-    #     self._parse_mapping(mapping)
-
     def _validate(self, mapping):
         for field in mapping:
             if not field in [f.name for f in (self.fields + self.header.fields)]:
@@ -51,11 +47,20 @@ class ContextPacket(Packet):
         for key,val in mapping.items():
             if key == 'tsm':
                 try:
+                    self.header.tsm.enabled = True
+                    self.header.tsm.required = True
                     self.header.tsm.value = parse_tsm(val)
                 except:
                     raise
             else:
                 self.__dict__[key] = val
+
+    def _update_header(self):
+        if self.cif_1.enabled or self.cif_2.enabled or self.cif_7.enabled:
+            self.header.not_v49d0.enabled = True
+            self.header.not_v49d0.required = True
+            self.header.not_v49d0.value = True
+        super()._update_header()
 
 @dataclass
 class ExtensionContextPacket(Packet):

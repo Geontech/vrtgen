@@ -189,6 +189,7 @@ class CIFEnableType(Field):
 class EnableIndicatorType(BooleanType):
     bits : int = 2
     is_enable : bool = False
+    is_enum : bool = False
 
 @dataclass
 class ListType(Field):

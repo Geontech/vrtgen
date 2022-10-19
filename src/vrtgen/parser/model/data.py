@@ -77,7 +77,7 @@ class Trailer(PackedStruct):
                             greater_than_two = True
                         pos = packed_tag_pos + bits - 1
                         self.state_event_indicators.subfields.append(EnumType(key, enabled=True, required=True, user_defined=True, type_=user_defined_enum, packed_tag=PackedTag(pos,bits,0,0)))
-                        self.state_event_indicators.subfields.append(EnableIndicatorType(key+'_enable', bits=bits, enabled=True, required=True, user_defined=True, is_enable=True, packed_tag=PackedTag(pos+12,bits,0,0)))
+                        self.state_event_indicators.subfields.append(EnableIndicatorType(key+'_enable', bits=bits, enabled=True, required=True, user_defined=True, is_enum=True, is_enable=True, packed_tag=PackedTag(pos+12,bits,0,0)))
                         packed_tag_pos += bits
                 elif key in [f.name for f in self.state_event_indicators.fields]:
                     mode = value.parse_enable(val)
