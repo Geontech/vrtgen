@@ -166,6 +166,8 @@ class TypeHelper:
             return VRTGEN_NAMESPACE + 'UUID'
         elif isinstance(field, Trailer) and field.state_event_indicators.is_user_defined:
             return '{}::structs::{}'.format(field.packet_name, field.type_)
+        elif field.type_ == 'StreamIdentifier' and field.user_defined:
+            return '{}::structs::{}'.format(field.packet_name, field.type_)
         else:
             return self.value_type(field)
 

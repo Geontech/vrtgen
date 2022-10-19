@@ -121,12 +121,17 @@ def stream_id_constructor(loader, node) -> prologue.StreamIdentifier:
             if val.packed_tag:
                 val.packed_tag.field_word = 0
                 val.packed_tag.packed_int = 0
+            else:
+                pos = val.bits - 1
+                val.packed_tag = packing.PackedTag(position=pos, bits=val.bits, field_word=0, packed_int=0)
+            val.is_extension_type =  True
+            val.user_defined = True
             fields.append((key,type(val),val))
         fields.append(('m_packed', packing.PackedType, packing.PackedType('m_packed', bits=32, enabled=True, required=True, packed_tag=packing.PackedTag(0,32,0))))
         packed_stream_id_type = make_dataclass(
             cls_name='StreamIdentifier',
             fields=fields,
-            bases=(packing.PackedStruct,basic.IntegerType,)
+            bases=(packing.PackedStruct,)
         )
         packed_stream_id_type.__doc__ = '''Custom Packed Stream Identifier'''
         stream_id = packed_stream_id_type(enabled=True, required=True, user_defined=True)

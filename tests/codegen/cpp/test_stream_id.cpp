@@ -21,6 +21,7 @@
 #include "streamid.hpp"
 #include <bytes.hpp>
 #include <vrtgen/packing/enums.hpp>
+#include "constants.hpp"
 
 TEST_CASE("Stream ID", "[stream_id]")
 {
@@ -218,4 +219,24 @@ TEST_CASE("Stream ID default value", "[stream_id][default_value]")
 {
     TestStreamIdData3 packet_in;
     CHECK(packet_in.stream_id() == 0xDEADBEEF);
+}
+
+TEST_CASE("Stream ID User Defined", "[stream_id][user_defined]")
+{
+    const bytes STREAM_ID_BE{ 0, 0, 0x03, 0xFF };
+    TestStreamIdData4 packet_in;
+    CHECK(packet_in.stream_id().thing1() == 0);
+    packet_in.stream_id().thing1(0x3FF);
+    CHECK(packet_in.stream_id().thing1() == 0x3FF);
+
+    auto data = TestStreamIdData4::helper::pack(packet_in);
+    auto* check_ptr = data.data();
+    check_ptr = data.data();
+    check_ptr += HEADER_BYTES;
+    const decltype(data) stream_id(check_ptr, check_ptr + 4);
+    CHECK(stream_id == STREAM_ID_BE);
+
+    TestStreamIdData4 packet_out;
+    TestStreamIdData4::helper::unpack(packet_out, data.data(), data.size());
+    CHECK(packet_out.stream_id().thing1() == 0x3FF);
 }

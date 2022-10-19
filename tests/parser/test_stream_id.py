@@ -50,7 +50,6 @@ stream_id: !StreamID
 """
     name,stream_id = parse_document(document)
     check_basics(name, stream_id)
-    assert not stream_id.value
     assert stream_id.thing1.name == 'thing1'
     assert stream_id.thing1.bits == 10
     assert stream_id.thing1.enabled

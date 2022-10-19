@@ -16,7 +16,7 @@ WithStreamIdControl: !Control
 TestStreamIdData3: !Data
   stream_id: !StreamID 0xDEADBEEF
 
-# TestStreamIdData4: !Data
-#   stream_id: !StreamID
-#     thing1: !IntegerType
-#       bits: 10
+TestStreamIdData4: !Data
+  stream_id: !StreamID
+    thing1: !IntegerType
+      bits: 10
