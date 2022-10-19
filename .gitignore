@@ -12,3 +12,6 @@ examples/app/test_controller
 examples/app/test_controllee
 **/venv/**
 .coverage
+**/docs/html/**
+**/docs/latex/**
+**/docs/man/**
