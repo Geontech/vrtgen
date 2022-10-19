@@ -21,6 +21,7 @@
 #include "data.hpp"
 #include <bytes.hpp>
 #include <vrtgen/packing/enums.hpp>
+#include "constants.hpp"
 
 TEST_CASE("Data Packet Stream ID")
 {
@@ -37,9 +38,9 @@ TEST_CASE("Data Packet Stream ID")
     packet_in.payload(PAYLOAD.data(), PAYLOAD.size());
 
     // Check bytes required
-    const size_t EXPECTED_SIZE = 4 + // header
-                                 4 + // stream_id
-                                 4;  // payload
+    const size_t EXPECTED_SIZE = HEADER_BYTES +
+                                 STREAM_ID_BYTES +
+                                 PAYLOAD.size();
     const size_t PACKED_SIZE = helper::bytes_required(packet_in);
     CHECK(PACKED_SIZE == EXPECTED_SIZE);
 
@@ -49,13 +50,8 @@ TEST_CASE("Data Packet Stream ID")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
-    const size_t HEADER_BYTES = 4;
-    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA_STREAM_ID) << 4;
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    const bytes HEADER_BE{ PACKET_TYPE, 0, 0, PACKET_SIZE };
-    const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
     check_ptr += HEADER_BYTES;
-    CHECK(packed_header == HEADER_BE);
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
     const size_t STREAM_ID_BYTES = 4;
@@ -109,9 +105,9 @@ TEST_CASE("Data Packet Class ID")
     packet_in.payload(PAYLOAD.data(), PAYLOAD.size());
 
     // Check bytes required
-    const size_t EXPECTED_SIZE = 4 + // header
-                                 8 + // class_id
-                                 4;  // payload
+    const size_t EXPECTED_SIZE = HEADER_BYTES +
+                                 CLASS_ID_BYTES +
+                                 PAYLOAD.size();
     const size_t PACKED_SIZE = helper::bytes_required(packet_in);
     CHECK(PACKED_SIZE == EXPECTED_SIZE);
 
@@ -121,14 +117,8 @@ TEST_CASE("Data Packet Class ID")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
-    const size_t HEADER_BYTES = 4;
-    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA) << 4;
-    const uint8_t CLASS_ID_ENABLE = 0x1 << 3; // C bit 27
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    const bytes HEADER_BE{ PACKET_TYPE | CLASS_ID_ENABLE, 0, 0, PACKET_SIZE };
-    const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
     check_ptr += HEADER_BYTES;
-    CHECK(packed_header == HEADER_BE);
 
     // Examine and check packed Class ID. Value shall be in big-endian format.
     const size_t CLASS_ID_BYTES = 8;
@@ -187,9 +177,9 @@ TEST_CASE("Data Packet Timestamp Integer")
     packet_in.payload(PAYLOAD.data(), PAYLOAD.size());
 
     // Check bytes required
-    const size_t EXPECTED_SIZE = 4 + // header
+    const size_t EXPECTED_SIZE = HEADER_BYTES +
                                  4 + // integer timestamp
-                                 4;  // payload
+                                 PAYLOAD.size();
     const size_t PACKED_SIZE = helper::bytes_required(packet_in);
     CHECK(PACKED_SIZE == EXPECTED_SIZE);
 
@@ -199,14 +189,8 @@ TEST_CASE("Data Packet Timestamp Integer")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
-    const size_t HEADER_BYTES = 4;
-    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA) << 4;
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    const uint8_t TSI_TSF = (static_cast<uint8_t>(vrtgen::packing::TSI::UTC) << 6) | (static_cast<uint8_t>(vrtgen::packing::TSF::NONE) << 4);
-    const bytes HEADER_BE{ PACKET_TYPE, TSI_TSF, 0, PACKET_SIZE };
-    const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
     check_ptr += HEADER_BYTES;
-    CHECK(packed_header == HEADER_BE);
 
     // Examine and check packed Fractional Timestamp. Value shall be in big-endian format.
     const size_t INTEGER_TS_BYTES = 4;
@@ -264,9 +248,9 @@ TEST_CASE("Data Packet Timestamp Fractional")
     packet_in.payload(PAYLOAD.data(), PAYLOAD.size());
 
     // Check bytes required
-    const size_t EXPECTED_SIZE = 4 + // header
+    const size_t EXPECTED_SIZE = HEADER_BYTES +
                                  8 + // fractional timestamp
-                                 4;  // payload
+                                 PAYLOAD.size();
     const size_t PACKED_SIZE = helper::bytes_required(packet_in);
     CHECK(PACKED_SIZE == EXPECTED_SIZE);
 
@@ -276,14 +260,8 @@ TEST_CASE("Data Packet Timestamp Fractional")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
-    const size_t HEADER_BYTES = 4;
-    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA) << 4;
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    const uint8_t TSI_TSF = (static_cast<uint8_t>(vrtgen::packing::TSI::NONE) << 6) | (static_cast<uint8_t>(vrtgen::packing::TSF::REAL_TIME) << 4);
-    const bytes HEADER_BE{ PACKET_TYPE , TSI_TSF, 0, PACKET_SIZE };
-    const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
     check_ptr += HEADER_BYTES;
-    CHECK(packed_header == HEADER_BE);
 
     // Examine and check packed Fractional Timestamp. Value shall be in big-endian format.
     const size_t FRACTIONAL_TS_BYTES = 8;
@@ -345,7 +323,7 @@ TEST_CASE("Data Packet Timestamp Full")
     // Check bytes required
     const size_t EXPECTED_SIZE = 4  + // header
                                  12 + // timestamp
-                                 4;   // payload
+                                 PAYLOAD.size();
     const size_t PACKED_SIZE = helper::bytes_required(packet_in);
     CHECK(PACKED_SIZE == EXPECTED_SIZE);
 
@@ -355,14 +333,8 @@ TEST_CASE("Data Packet Timestamp Full")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
-    const size_t HEADER_BYTES = 4;
-    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA) << 4;
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    const uint8_t TSI_TSF = (static_cast<uint8_t>(vrtgen::packing::TSI::UTC) << 6) | (static_cast<uint8_t>(vrtgen::packing::TSF::REAL_TIME) << 4);
-    const bytes HEADER_BE{ PACKET_TYPE , TSI_TSF, 0, PACKET_SIZE };
-    const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
     check_ptr += HEADER_BYTES;
-    CHECK(packed_header == HEADER_BE);
 
     // Examine and check packed Integer Timestamp. Value shall be in big-endian format.
     const size_t INTEGER_TS_BYTES = 4;
@@ -424,7 +396,7 @@ TEST_CASE("Data Packet Trailer")
     packet_in.payload(PAYLOAD.data(), PAYLOAD.size());
 
     // Check bytes required
-    const size_t EXPECTED_SIZE = 4 + // header
+    const size_t EXPECTED_SIZE = HEADER_BYTES +
                                  4 + // payload
                                  4;  // trailer
     const size_t PACKED_SIZE = helper::bytes_required(packet_in);
@@ -436,14 +408,8 @@ TEST_CASE("Data Packet Trailer")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
-    const size_t HEADER_BYTES = 4;
-    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA) << 4;
-    const uint8_t TRAILER_INCLUDED = 0x1 << 2; // T bit 26
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    const bytes HEADER_BE{ PACKET_TYPE | TRAILER_INCLUDED, 0, 0, PACKET_SIZE };
-    const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
     check_ptr += HEADER_BYTES;
-    CHECK(packed_header == HEADER_BE);
 
     // Examine and check packed payload
     const size_t PAYLOAD_BYTES = PAYLOAD.size();
@@ -506,7 +472,7 @@ TEST_CASE("Data Packet Trailer Fields")
     packet_in.payload(PAYLOAD.data(), PAYLOAD.size());
 
     // Check bytes required
-    const size_t EXPECTED_SIZE = 4 + // header
+    const size_t EXPECTED_SIZE = HEADER_BYTES +
                                  4 + // payload
                                  4;  // trailer
     const size_t PACKED_SIZE = helper::bytes_required(packet_in);
@@ -518,14 +484,8 @@ TEST_CASE("Data Packet Trailer Fields")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
-    const size_t HEADER_BYTES = 4;
-    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA) << 4;
-    const uint8_t TRAILER_INCLUDED = 0x1 << 2; // T bit 26
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    const bytes HEADER_BE{ PACKET_TYPE | TRAILER_INCLUDED, 0, 0, PACKET_SIZE };
-    const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
     check_ptr += HEADER_BYTES;
-    CHECK(packed_header == HEADER_BE);
 
     // Examine and check packed payload
     const size_t PAYLOAD_BYTES = PAYLOAD.size();
@@ -592,10 +552,10 @@ TEST_CASE("Data Packet Both Identifiers")
     packet_in.payload(PAYLOAD.data(), PAYLOAD.size());
 
     // Check bytes required
-    const size_t EXPECTED_SIZE = 4 + // header
-                                 4 + // stream_id
-                                 8 + // class_id
-                                 4;  // payload
+    const size_t EXPECTED_SIZE = HEADER_BYTES +
+                                 STREAM_ID_BYTES +
+                                 CLASS_ID_BYTES +
+                                 PAYLOAD.size();
     const size_t PACKED_SIZE = helper::bytes_required(packet_in);
     CHECK(PACKED_SIZE == EXPECTED_SIZE);
 
@@ -605,14 +565,8 @@ TEST_CASE("Data Packet Both Identifiers")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
-    const size_t HEADER_BYTES = 4;
-    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA_STREAM_ID) << 4;
-    const uint8_t CLASS_ID_ENABLE = 0x1 << 3; // C bit 27
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    const bytes HEADER_BE{ PACKET_TYPE | CLASS_ID_ENABLE, 0, 0, PACKET_SIZE };
-    const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
     check_ptr += HEADER_BYTES;
-    CHECK(packed_header == HEADER_BE);
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
     const size_t STREAM_ID_BYTES = 4;
@@ -691,7 +645,7 @@ TEST_CASE("Data Packet Full Prologue")
                                  4 +  // stream_id
                                  8 +  // class_id
                                  12 + // timestamp
-                                 4;   // payload
+                                 PAYLOAD.size();
     const size_t PACKED_SIZE = helper::bytes_required(packet_in);
     CHECK(PACKED_SIZE == EXPECTED_SIZE);
 
@@ -701,15 +655,8 @@ TEST_CASE("Data Packet Full Prologue")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
-    const size_t HEADER_BYTES = 4;
-    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA_STREAM_ID) << 4;
-    const uint8_t CLASS_ID_ENABLE = 0x1 << 3; // C bit 27
-    const uint8_t TSI_TSF = (static_cast<uint8_t>(vrtgen::packing::TSI::UTC) << 6) | (static_cast<uint8_t>(vrtgen::packing::TSF::REAL_TIME) << 4);
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    const bytes HEADER_BE{ PACKET_TYPE | CLASS_ID_ENABLE, TSI_TSF, 0, PACKET_SIZE };
-    const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
     check_ptr += HEADER_BYTES;
-    CHECK(packed_header == HEADER_BE);
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
     const size_t STREAM_ID_BYTES = 4;
@@ -821,16 +768,8 @@ TEST_CASE("Data Packet All")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
-    const size_t HEADER_BYTES = 4;
-    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA_STREAM_ID) << 4;
-    const uint8_t CLASS_ID_ENABLE = 0x1 << 3; // C bit 27
-    const uint8_t TRAILER_INCLUDED = 0x1 << 2; // T bit 26
-    const uint8_t TSI_TSF = (static_cast<uint8_t>(vrtgen::packing::TSI::UTC) << 6) | (static_cast<uint8_t>(vrtgen::packing::TSF::REAL_TIME) << 4);
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    const bytes HEADER_BE{ PACKET_TYPE | CLASS_ID_ENABLE | TRAILER_INCLUDED, TSI_TSF, 0, PACKET_SIZE };
-    const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
     check_ptr += HEADER_BYTES;
-    CHECK(packed_header == HEADER_BE);
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
     const size_t STREAM_ID_BYTES = 4;

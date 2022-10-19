@@ -686,7 +686,7 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
     SECTION("Rule 9.5.3-4")
     {
         // See Observations 9.5.3-3 and 9.5.3-4 for values
-        SECTION ("Gain Value 1")
+        SECTION("Gain Value 1")
         {
             // Setter
             gain.stage_1(1.0);
@@ -701,7 +701,7 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
             // Verify unpacked value
             CHECK(unpack_gain.stage_1() == 1.0);
         }
-        SECTION ("Gain Value 2")
+        SECTION("Gain Value 2")
         {
             // Setter
             gain.stage_1(-1.0);
@@ -716,7 +716,7 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
             // Verify unpacked value
             CHECK(unpack_gain.stage_1() == -1.0);
         }
-        SECTION ("Gain Value 3")
+        SECTION("Gain Value 3")
         {
             // Setter
             gain.stage_1(0.0078125);
@@ -731,7 +731,7 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
             // Verify unpacked value
             CHECK(unpack_gain.stage_1() == 0.0078125);
         }
-        SECTION ("Gain Value 4")
+        SECTION("Gain Value 4")
         {
             // Setter
             gain.stage_1(-0.0078125);
@@ -751,7 +751,7 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
     SECTION("Rule 9.5.3-5")
     {
         // See Observations 9.5.3-3, 9.5.3-4, 9.5.3-5 for values
-        SECTION ("Gain Value 1")
+        SECTION("Gain Value 1")
         {
             // Setters
             gain.stage_1(1.0);
@@ -769,7 +769,7 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
             CHECK(unpack_gain.stage_1() == 1.0);
             CHECK(unpack_gain.stage_2() == 1.0);
         }
-        SECTION ("Gain Value 2")
+        SECTION("Gain Value 2")
         {
             // Setters
             gain.stage_1(-1.0);
@@ -787,7 +787,7 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
             CHECK(unpack_gain.stage_1() == -1.0);
             CHECK(unpack_gain.stage_2() == -1.0);
         }
-        SECTION ("Gain Value 3")
+        SECTION("Gain Value 3")
         {
             // Setters
             gain.stage_1(0.0078125);
@@ -805,7 +805,7 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
             CHECK(unpack_gain.stage_1() == 0.0078125);
             CHECK(unpack_gain.stage_2() == 0.0078125);
         }
-        SECTION ("Gain Value 4")
+        SECTION("Gain Value 4")
         {
             // Setters
             gain.stage_1(-0.0078125);

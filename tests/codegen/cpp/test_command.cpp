@@ -31,13 +31,7 @@ TEST_CASE("Command Packet")
     packet_type packet_in;
 
     // Examine and check packed header
-    // const size_t HEADER_BYTES = 4;
-    // const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::COMMAND) << 4;
-    // const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    // const bytes HEADER_BE{ PACKET_TYPE, 0, 0, PACKET_SIZE };
-    // const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
     // check_ptr += HEADER_BYTES;
-    // CHECK(packed_header == HEADER_BE);
 
     // // Check match
     // CHECK(helper::match(data.data(), data.size()));
