@@ -33,7 +33,7 @@ class {{ class.type_ }} {% if class.child_of %} : public vrtgen::packing::{{ cla
 public:
 {% for field in fields if field.enabled and not field.is_packed_type %}
 {% set packed = field.packed_tag.packed_int is not none and field.user_defined %}
-{% if class.child_of %}
+{% if class.child_of or field.is_extension_type %}
 {%   if field.packed_tag.packed_int is not none and field.user_defined %}
     {{ basic.getters_and_setters(field, type_helper, packed) | indent(4) | trim }}
 {%   endif %}
@@ -80,9 +80,14 @@ public:
 {%     endif %}
         }
 {%   elif type_helper.is_scalar(field) %}
-        std::memcpy(buffer_ptr, &_{{ field.name }}, sizeof(_{{ field.name }}));
+{%      if not field.is_packed_type %}
+{%         set field_name = '_' + field.name %}
+{%      else %}
+{%         set field_name = field.name %}
+{%      endif %}
+        std::memcpy(buffer_ptr, &{{ field_name }}, sizeof({{ field_name }}));
 {%     if not loop.last %}
-        buffer_ptr += sizeof(_{{ field.name }});
+        buffer_ptr += sizeof({{ field_name }});
 {%     endif %}
 {%   else %}
         _{{ field.name }}.pack_into(buffer_ptr);
@@ -109,9 +114,14 @@ public:
 {%     endif %}
         }
 {%  elif type_helper.is_scalar(field) %}
-        std::memcpy(&_{{ field.name }}, ptr, sizeof(_{{ field.name }}));
+{%      if not field.is_packed_type %}
+{%         set field_name = '_' + field.name %}
+{%      else %}
+{%         set field_name = field.name %}
+{%      endif %}
+        std::memcpy(&{{ field_name }}, ptr, sizeof({{ field_name }}));
 {%     if not loop.last %}
-        ptr += sizeof(_{{ field.name }});
+        ptr += sizeof({{ field_name }});
 {%     endif %}
 {%   else %}
         _{{ field.name }}.unpack_from(ptr);

@@ -269,6 +269,9 @@ class CppPacket:
             self.trailer.packet_name = name_to_snake(self.name)
             self.trailer.state_event_indicators.packet_name = name_to_snake(self.name)
             return_value.append(self.trailer.state_event_indicators)
+        if self.stream_id and self.stream_id.user_defined:
+            self.stream_id.packet_name = name_to_snake(self.name)
+            return_value.append(self.stream_id)
         return return_value
 
     @property

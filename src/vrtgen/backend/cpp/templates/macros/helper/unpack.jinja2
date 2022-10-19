@@ -115,7 +115,7 @@ void {{ packet.helper }}::unpack({{ packet.name }}& packet, const void* ptr, std
 {% endfor %}
     packet._{{ packet.header.name }} = {{ packet.header.name }};
 {% if packet.stream_id.enabled %}
-    packet._{{ packet.stream_id.name }} = buffer.next<{{ type_helper.value_type(packet.stream_id) }}>();
+    packet._{{ packet.stream_id.name }} = buffer.next<{{ type_helper.member_type(packet.stream_id) }}>();
 {% endif %}
 {% if packet.class_id.enabled %}
     const auto {{ packet.class_id.name }} = buffer.next<{{ type_helper.value_type(packet.class_id) }}>();
