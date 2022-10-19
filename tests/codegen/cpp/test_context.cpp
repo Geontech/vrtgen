@@ -4602,7 +4602,8 @@ TEST_CASE("Context Packet CIF1 Optional")
                 const size_t HEADER_BYTES = 4;
                 const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
                 const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-                const bytes HEADER_BE{ PACKET_TYPE , 0, 0, PACKET_SIZE };
+                const uint8_t NOT_V49d0 = 0x1 << 1;
+                const bytes HEADER_BE{ PACKET_TYPE | NOT_V49d0 , 0, 0, PACKET_SIZE };
                 const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
                 check_ptr += HEADER_BYTES;
                 CHECK(packed_header == HEADER_BE);
@@ -4647,7 +4648,7 @@ TEST_CASE("Context Packet CIF1 Optional")
                 const auto& header = packet_out.header();
                 CHECK(header.packet_type() == vrtgen::packing::PacketType::CONTEXT);
                 CHECK_FALSE(header.class_id_enable());
-                CHECK_FALSE(header.not_v49d0());
+                CHECK(header.not_v49d0());
                 CHECK(header.tsm() == vrtgen::packing::TSM::FINE);
                 CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
                 CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
@@ -4688,7 +4689,8 @@ TEST_CASE("Context Packet CIF1 Optional")
                 const size_t HEADER_BYTES = 4;
                 const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
                 const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-                const bytes HEADER_BE{ PACKET_TYPE , 0, 0, PACKET_SIZE };
+                const uint8_t NOT_V49d0 = 0x1 << 1;
+                const bytes HEADER_BE{ PACKET_TYPE | NOT_V49d0 , 0, 0, PACKET_SIZE };
                 const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
                 check_ptr += HEADER_BYTES;
                 CHECK(packed_header == HEADER_BE);
@@ -4733,7 +4735,7 @@ TEST_CASE("Context Packet CIF1 Optional")
                 const auto& header = packet_out.header();
                 CHECK(header.packet_type() == vrtgen::packing::PacketType::CONTEXT);
                 CHECK_FALSE(header.class_id_enable());
-                CHECK_FALSE(header.not_v49d0());
+                CHECK(header.not_v49d0());
                 CHECK(header.tsm() == vrtgen::packing::TSM::FINE);
                 CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
                 CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
@@ -4774,7 +4776,8 @@ TEST_CASE("Context Packet CIF1 Optional")
                 const size_t HEADER_BYTES = 4;
                 const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
                 const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-                const bytes HEADER_BE{ PACKET_TYPE , 0, 0, PACKET_SIZE };
+                const uint8_t NOT_V49d0 = 0x1 << 1;
+                const bytes HEADER_BE{ PACKET_TYPE | NOT_V49d0 , 0, 0, PACKET_SIZE };
                 const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
                 check_ptr += HEADER_BYTES;
                 CHECK(packed_header == HEADER_BE);
@@ -4819,7 +4822,7 @@ TEST_CASE("Context Packet CIF1 Optional")
                 const auto& header = packet_out.header();
                 CHECK(header.packet_type() == vrtgen::packing::PacketType::CONTEXT);
                 CHECK_FALSE(header.class_id_enable());
-                CHECK_FALSE(header.not_v49d0());
+                CHECK(header.not_v49d0());
                 CHECK(header.tsm() == vrtgen::packing::TSM::FINE);
                 CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
                 CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
@@ -4860,7 +4863,8 @@ TEST_CASE("Context Packet CIF1 Optional")
                 const size_t HEADER_BYTES = 4;
                 const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
                 const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-                const bytes HEADER_BE{ PACKET_TYPE , 0, 0, PACKET_SIZE };
+                const uint8_t NOT_V49d0 = 0x1 << 1;
+                const bytes HEADER_BE{ PACKET_TYPE | NOT_V49d0 , 0, 0, PACKET_SIZE };
                 const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
                 check_ptr += HEADER_BYTES;
                 CHECK(packed_header == HEADER_BE);
@@ -4905,7 +4909,7 @@ TEST_CASE("Context Packet CIF1 Optional")
                 const auto& header = packet_out.header();
                 CHECK(header.packet_type() == vrtgen::packing::PacketType::CONTEXT);
                 CHECK_FALSE(header.class_id_enable());
-                CHECK_FALSE(header.not_v49d0());
+                CHECK(header.not_v49d0());
                 CHECK(header.tsm() == vrtgen::packing::TSM::FINE);
                 CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
                 CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
@@ -4946,7 +4950,8 @@ TEST_CASE("Context Packet CIF1 Optional")
                 const size_t HEADER_BYTES = 4;
                 const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
                 const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-                const bytes HEADER_BE{ PACKET_TYPE , 0, 0, PACKET_SIZE };
+                const uint8_t NOT_V49d0 = 0x1 << 1;
+                const bytes HEADER_BE{ PACKET_TYPE | NOT_V49d0 , 0, 0, PACKET_SIZE };
                 const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
                 check_ptr += HEADER_BYTES;
                 CHECK(packed_header == HEADER_BE);
@@ -4991,7 +4996,7 @@ TEST_CASE("Context Packet CIF1 Optional")
                 const auto& header = packet_out.header();
                 CHECK(header.packet_type() == vrtgen::packing::PacketType::CONTEXT);
                 CHECK_FALSE(header.class_id_enable());
-                CHECK_FALSE(header.not_v49d0());
+                CHECK(header.not_v49d0());
                 CHECK(header.tsm() == vrtgen::packing::TSM::FINE);
                 CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
                 CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
@@ -5530,7 +5535,7 @@ TEST_CASE("Context Packet CIF7 Packet")
         const auto& header = packet_out.header();
         CHECK(header.packet_type() == vrtgen::packing::PacketType::CONTEXT);
         CHECK_FALSE(header.class_id_enable());
-        CHECK_FALSE(header.not_v49d0());
+        CHECK(header.not_v49d0());
         CHECK(header.tsm() == vrtgen::packing::TSM::FINE);
         CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
         CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
@@ -5672,7 +5677,7 @@ TEST_CASE("Context Packet CIF7 Packet")
         const auto& header = packet_out.header();
         CHECK(header.packet_type() == vrtgen::packing::PacketType::CONTEXT);
         CHECK_FALSE(header.class_id_enable());
-        CHECK_FALSE(header.not_v49d0());
+        CHECK(header.not_v49d0());
         CHECK(header.tsm() == vrtgen::packing::TSM::FINE);
         CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
         CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
@@ -5739,7 +5744,8 @@ TEST_CASE("Context Packet Index List")
         const size_t HEADER_BYTES = 4;
         const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
         const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-        const bytes HEADER_BE{ PACKET_TYPE , 0, 0, PACKET_SIZE };
+        const uint8_t NOT_V49d0 = 0x1 << 1;
+        const bytes HEADER_BE{ PACKET_TYPE | NOT_V49d0 , 0, 0, PACKET_SIZE };
         const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
         check_ptr += HEADER_BYTES;
         CHECK(packed_header == HEADER_BE);
@@ -5801,7 +5807,7 @@ TEST_CASE("Context Packet Index List")
         const auto& header = packet_out.header();
         CHECK(header.packet_type() == vrtgen::packing::PacketType::CONTEXT);
         CHECK_FALSE(header.class_id_enable());
-        CHECK_FALSE(header.not_v49d0());
+        CHECK(header.not_v49d0());
         CHECK(header.tsm() == vrtgen::packing::TSM::FINE);
         CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
         CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
@@ -5892,7 +5898,8 @@ TEST_CASE("Context Packet Sector Step/Scan")
     const size_t HEADER_BYTES = 4;
     const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    const bytes HEADER_BE{ PACKET_TYPE , 0, 0, PACKET_SIZE };
+    const uint8_t NOT_V49d0 = 0x1 << 1;
+    const bytes HEADER_BE{ PACKET_TYPE | NOT_V49d0 , 0, 0, PACKET_SIZE };
     const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
     check_ptr += HEADER_BYTES;
     CHECK(packed_header == HEADER_BE);
@@ -5966,7 +5973,7 @@ TEST_CASE("Context Packet Sector Step/Scan")
     const auto& header = packet_out.header();
     CHECK(header.packet_type() == vrtgen::packing::PacketType::CONTEXT);
     CHECK_FALSE(header.class_id_enable());
-    CHECK_FALSE(header.not_v49d0());
+    CHECK(header.not_v49d0());
     CHECK(header.tsm() == vrtgen::packing::TSM::FINE);
     CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
     CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
