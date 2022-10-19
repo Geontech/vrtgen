@@ -1,0 +1,24 @@
+TestDataClassId1: !Data
+  class_id: !ClassID
+    oui: AA-BB-CC
+
+TestDataClassId2: !Data
+  class_id: !ClassID
+    packet_code: 0x1234
+
+TestContextClassId1: !Context
+  class_id: !ClassID
+    oui: AA-BB-CC
+
+TestContextClassId2: !Context
+  class_id: !ClassID
+    packet_code: 0x1234
+
+TestControlClassId1: !Control
+  stream_id: !StreamID 0xABCDEF
+  class_id: !ClassID
+    oui: AA-BB-CC
+
+TestControlClassId2: !Control
+  class_id: !ClassID
+    packet_code: 0x1234

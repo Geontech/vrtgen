@@ -25,7 +25,7 @@
 
 TEST_CASE("Stream ID", "[stream_id]")
 {
-    SECTION ("Rule 5.1.2-1") 
+    SECTION("Rule 5.1.2-1") 
     {
         // Stream ID is 32-bit and shall be carried in every packet in Packet Stream when used
 
@@ -74,7 +74,7 @@ TEST_CASE("Stream ID", "[stream_id]")
             CHECK(packet_out.stream_id() == STREAM_ID);
         }
 
-        SECTION ("Control Packet 32-bit Stream ID")
+        SECTION("Control Packet 32-bit Stream ID")
         {
             WithStreamIdControl packet_in;
             CHECK(packet_in.stream_id() == 0);
@@ -94,7 +94,7 @@ TEST_CASE("Stream ID", "[stream_id]")
         }
     }
 
-    SECTION ("Rule 5.1.2-2") 
+    SECTION("Rule 5.1.2-2") 
     {
         // Stream ID Consistently Omitted/Included - "Consistency" is up to the user to design the yaml correctly
         uint8_t* check_ptr;
@@ -141,7 +141,7 @@ TEST_CASE("Stream ID", "[stream_id]")
             CHECK(stream_id == STREAM_ID_BE);
         }
 
-        SECTION ("Control Packet default Stream ID")
+        SECTION("Control Packet default Stream ID")
         {
             WithStreamIdControl packet_in;
             data = WithStreamIdControl::helper::pack(packet_in);
@@ -190,7 +190,7 @@ TEST_CASE("Stream ID", "[stream_id]")
             CHECK(stream_id == STREAM_ID_BE);
         }
 
-        SECTION ("Control Packet default Stream ID")
+        SECTION("Control Packet default Stream ID")
         {
             WithStreamIdControl packet_in;
             packet_in.stream_id(STREAM_ID);
@@ -208,7 +208,7 @@ TEST_CASE("Stream ID", "[stream_id]")
         }
     }
 
-    SECTION ("Rule 5.1.2-3") 
+    SECTION("Rule 5.1.2-3") 
     {
         // This is user determined when a user chooses to pair Data and Context packets by using the same Stream ID
         CHECK(true);

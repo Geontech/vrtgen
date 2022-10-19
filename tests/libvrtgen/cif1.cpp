@@ -623,7 +623,7 @@ TEST_CASE("Polarization (9.4.8)", "[cif1][polarization]")
             // Verify unpacked value
             CHECK(unpack_polarization.ellipticity_angle() == 1.0);
         }
-        SECTION ("Angle Value 2")
+        SECTION("Angle Value 2")
         {
             // Setter
             polarization.ellipticity_angle(-1.0);

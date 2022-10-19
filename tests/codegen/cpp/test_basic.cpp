@@ -20,6 +20,7 @@
 #include "catch.hpp"
 #include "bytes.hpp"
 #include "basic.hpp"
+#include "constants.hpp"
 
 TEST_CASE("Basic Data Packet")
 {
@@ -41,13 +42,8 @@ TEST_CASE("Basic Data Packet")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
-    const size_t HEADER_BYTES = 4;
-    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA) << 4;
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    const bytes HEADER_BE{ PACKET_TYPE, 0, 0, PACKET_SIZE };
-    const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
     check_ptr += HEADER_BYTES;
-    CHECK(packed_header == HEADER_BE);
 
     // Examine and check packed payload
     const size_t PAYLOAD_BYTES = PAYLOAD.size();
@@ -102,13 +98,8 @@ TEST_CASE("Basic Context Packet")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
-    const size_t HEADER_BYTES = 4;
-    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    const bytes HEADER_BE{ PACKET_TYPE, 0, 0, PACKET_SIZE };
-    const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
     check_ptr += HEADER_BYTES;
-    CHECK(packed_header == HEADER_BE);
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
     const size_t STREAM_ID_BYTES = 4;
@@ -171,13 +162,8 @@ TEST_CASE("Basic Control Packet")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
-    const size_t HEADER_BYTES = 4;
-    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::COMMAND) << 4;
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    const bytes HEADER_BE{ PACKET_TYPE, 0, 0, PACKET_SIZE };
-    const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
     check_ptr += HEADER_BYTES;
-    CHECK(packed_header == HEADER_BE);
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
     const size_t STREAM_ID_BYTES = 4;
@@ -256,14 +242,8 @@ TEST_CASE("Basic Acknowledge Packet")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
-    const size_t HEADER_BYTES = 4;
-    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::COMMAND) << 4;
-    const uint8_t INDICATORS = 0x1 << 2; // acknowledge bit 26 set to true
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    const bytes HEADER_BE{ PACKET_TYPE | INDICATORS, 0, 0, PACKET_SIZE };
-    const decltype(data) packed_header(check_ptr, check_ptr + HEADER_BYTES);
     check_ptr += HEADER_BYTES;
-    CHECK(packed_header == HEADER_BE);
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
     const size_t STREAM_ID_BYTES = 4;
