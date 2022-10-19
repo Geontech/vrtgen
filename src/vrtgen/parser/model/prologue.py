@@ -48,18 +48,15 @@ class Timestamp(Field):
 
     def parse_mapping(self, **mapping):
         for key,val in mapping.items():
-            try:
-                if key == 'integer':
-                    self.tsi.value = value.parse_tsi(val)
-                    self.integer.enabled = True
-                    self.integer.required = True
-                    self.bits += self.integer.bits
-                elif key == 'fractional':
-                    self.tsf.value = value.parse_tsf(val)
-                    self.fractional.enabled = True
-                    self.fractional.required = True
-                    self.bits += self.fractional.bits
-                else:
-                    raise KeyError(val)
-            except:
-                raise
+            if key == 'integer':
+                self.tsi.value = value.parse_tsi(val)
+                self.integer.enabled = True
+                self.integer.required = True
+                self.bits += self.integer.bits
+            elif key == 'fractional':
+                self.tsf.value = value.parse_tsf(val)
+                self.fractional.enabled = True
+                self.fractional.required = True
+                self.bits += self.fractional.bits
+            else:
+                raise KeyError(val)
