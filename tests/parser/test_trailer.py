@@ -147,10 +147,11 @@ def test_trailer_user_and_sample_error_enum():
     with pytest.raises(ValueError):
         parse_document(document)
 
-def test_trailer_user_enum_too_big():
+def test_trailer_largest_user_defined():
     document = """
     trailer: !Trailer
         user_defined1: !!seq
+            - zero
             - one
             - two
             - three
@@ -160,8 +161,42 @@ def test_trailer_user_enum_too_big():
             - seven
             - eight
             - nine
+            - ten
+            - eleven
+            - twelve
+            - thirteen
+            - fourteen
+            - fifteen
     """
-    with pytest.raises(ValueError):
+    _, trailer = parse_document(document)
+    i = 0
+    for f in trailer.state_event_indicators.subfields[0].type_:
+        assert f.value == i
+        i += 1
+
+def test_trailer_user_enum_too_big():
+    document = """
+    trailer: !Trailer
+        user_defined1: !!seq
+            - zero
+            - one
+            - two
+            - three
+            - four
+            - five
+            - six
+            - seven
+            - eight
+            - nine
+            - ten
+            - eleven
+            - twelve
+            - thirteen
+            - fourteen
+            - fifteen
+            - sixteen
+    """
+    with pytest.raises(Exception):
         parse_document(document)
 
 def test_trailer_basic_user_defined():
@@ -173,9 +208,9 @@ def test_trailer_basic_user_defined():
     """.format(var)
     name,trailer = parse_document(document)
     assert name == 'trailer'
+    assert len(trailer.state_event_indicators.subfields) == 2
     assert trailer.state_event_indicators.valid_data.enabled
     assert trailer.state_event_indicators.valid_data.required
-    assert len(trailer.state_event_indicators.subfields) == 2
     assert trailer.state_event_indicators.subfields[0].name == var
     assert trailer.state_event_indicators.subfields[0].enabled
     assert trailer.state_event_indicators.subfields[0].required

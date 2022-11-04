@@ -127,6 +127,7 @@ add_executable(test_codegen
     tests/codegen/cpp/test_data.cpp
     tests/codegen/cpp/test_context.cpp
     tests/codegen/cpp/test_stream_id.cpp
+    tests/codegen/cpp/test_trailer.cpp
     tests/codegen/cpp/test_timestamp.cpp
     tests/codegen/cpp/test_header.cpp
     # tests/codegen/cpp/test_command.cpp
