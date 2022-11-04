@@ -25,7 +25,7 @@
 
 using namespace vrtgen::packing;
 
-TEST_CASE("ClassIdentifier", "[prologue]")
+TEST_CASE("ClassIdentifier", "[class_id]")
 {
     ClassIdentifier class_id;
     ClassIdentifier unpack_class_id;
@@ -37,25 +37,7 @@ TEST_CASE("ClassIdentifier", "[prologue]")
         CHECK(packed_bytes == bytes{ 0, 0, 0, 0, 0, 0, 0, 0 });
     }
 
-    SECTION("Pad Bit Count")
-    {
-        // Verify zero on construction
-        CHECK(class_id.pad_bits() == 0);
-        // Setter
-        class_id.pad_bits(0b10101);
-        // Getter check set value
-        CHECK(class_id.pad_bits() == 0b10101);
-        // Pack
-        class_id.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes[0] == 0xA8);
-        // Unpack
-        unpack_class_id.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_class_id.pad_bits() == 0b10101);
-    }
-
-    SECTION("OUI")
+    SECTION("Rule 5.1.3-1")
     {
         // Verify zero on construction
         CHECK(class_id.oui() == 0);
@@ -73,7 +55,7 @@ TEST_CASE("ClassIdentifier", "[prologue]")
         CHECK(unpack_class_id.oui() == 0xABCDEF);
     }
 
-    SECTION("Information Class Code")
+    SECTION("Rule 5.1.3-2")
     {
         // Verify zero on construction
         CHECK(class_id.information_code() == 0);
@@ -91,7 +73,7 @@ TEST_CASE("ClassIdentifier", "[prologue]")
         CHECK(unpack_class_id.information_code() == 0x123);
     }
 
-    SECTION("Packet Class Code")
+    SECTION("Rule 5.1.3-3")
     {
         // Verify zero on construction
         CHECK(class_id.packet_code() == 0);
@@ -107,5 +89,25 @@ TEST_CASE("ClassIdentifier", "[prologue]")
         unpack_class_id.unpack_from(packed_bytes.data());
         // Verify unpacked value
         CHECK(unpack_class_id.packet_code() == 0x123);
+    }
+
+    SECTION("Rule 5.1.3-4")
+    {
+        uint8_t pad_bit_count = 0b10101;
+        int number_bits = 5;
+        // Verify zero on construction
+        CHECK(class_id.pad_bits() == 0);
+        // Setter
+        class_id.pad_bits(pad_bit_count);
+        // Getter check set value
+        CHECK(class_id.pad_bits() == pad_bit_count);
+        // Pack
+        class_id.pack_into(packed_bytes.data());
+        // Verify packed bits
+        CHECK(packed_bytes[0] == pad_bit_count << (8-number_bits));
+        // Unpack
+        unpack_class_id.unpack_from(packed_bytes.data());
+        // Verify unpacked value
+        CHECK(unpack_class_id.pad_bits() == pad_bit_count);
     }
 }

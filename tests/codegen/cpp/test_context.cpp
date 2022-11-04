@@ -20,7 +20,6 @@
 #include "catch.hpp"
 #include "context.hpp"
 #include <bytes.hpp>
-#include <iostream>
 #include "constants.hpp"
 
 TEST_CASE("Context Packet Stream ID")
@@ -46,18 +45,17 @@ TEST_CASE("Context Packet Stream ID")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
+    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
     check_ptr += HEADER_BYTES;
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
-    const size_t STREAM_ID_BYTES = 4;
     const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
     check_ptr += STREAM_ID_BYTES;
     CHECK(packed_stream_id == STREAM_ID_BE);
 
     // Examine and check packed CIF0
-    const size_t CIF0_BYTES = 4;
     const bytes CIF0_BE{ 0, 0, 0, 0 };
     const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
     check_ptr += CIF0_BYTES;
@@ -109,25 +107,24 @@ TEST_CASE("Context Packet Class ID")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
+    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
+    const uint8_t CLASS_ID_ENABLE = 0x1 << 3; // C bit 27
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
     check_ptr += HEADER_BYTES;
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
-    const size_t STREAM_ID_BYTES = 4;
     const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
     check_ptr += STREAM_ID_BYTES;
     CHECK(packed_stream_id == STREAM_ID_BE);
 
     // Examine and check packed Class ID. Value shall be in big-endian format.
-    const size_t CLASS_ID_BYTES = 8;
     const bytes CLASS_ID_BE{ 0, 0xFF, 0xEE, 0xDD, 0, 0, 0x12, 0x34 };
     const decltype(data) packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
     check_ptr += CLASS_ID_BYTES;
     CHECK(packed_class_id == CLASS_ID_BE);
 
     // Examine and check packed CIF0
-    const size_t CIF0_BYTES = 4;
     const bytes CIF0_BE{ 0, 0, 0, 0 };
     const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
     check_ptr += CIF0_BYTES;
@@ -218,18 +215,17 @@ TEST_CASE("Context Packet CIF0 Optional")
         auto* check_ptr = data.data();
 
         // Examine and check packed header
+        const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
         const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
         check_ptr += HEADER_BYTES;
 
         // Examine and check packed Stream ID. Value shall be in big-endian format.
-        const size_t STREAM_ID_BYTES = 4;
         const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
         const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
         check_ptr += STREAM_ID_BYTES;
         CHECK(packed_stream_id == STREAM_ID_BE);
 
         // Examine and check packed CIF0
-        const size_t CIF0_BYTES = 4;
         const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
         check_ptr += CIF0_BYTES;
         CHECK(packed_cif0 == CIF0_BE);
@@ -266,7 +262,6 @@ TEST_CASE("Context Packet CIF0 Optional")
          * | 1    |                                  Reference Point Identifier                                   |
          */
         // Add bytes to PACKED_SIZE count
-        const size_t REF_POINT_ID_BYTES = 4;
         PACKED_SIZE += REF_POINT_ID_BYTES;
 
         SECTION("Rule 9.2-2") {
@@ -297,18 +292,17 @@ TEST_CASE("Context Packet CIF0 Optional")
             auto* check_ptr = data.data();
 
             // Examine and check packed header
+            const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
             const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
             check_ptr += HEADER_BYTES;
 
             // Examine and check packed Stream ID. Value shall be in big-endian format.
-            const size_t STREAM_ID_BYTES = 4;
             const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
             const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(packed_stream_id == STREAM_ID_BE);
 
             // Examine and check packed CIF0
-            const size_t CIF0_BYTES = 4;
             const uint8_t REF_POINT_ID_ENABLE = 0x1 << 6; // CIF 0 bit 30
             const bytes CIF0_BE{ REF_POINT_ID_ENABLE, 0, 0, 0 };
             const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -349,7 +343,6 @@ TEST_CASE("Context Packet CIF0 Optional")
 
     SECTION("Bandwidth") {
         // Add bytes to PACKED_SIZE count
-        const size_t BANDWIDTH_BYTES = 8;
         PACKED_SIZE += BANDWIDTH_BYTES;
 
         SECTION("Rule 9.5.1-2") {
@@ -412,18 +405,17 @@ TEST_CASE("Context Packet CIF0 Optional")
             auto* check_ptr = data.data();
 
             // Examine and check packed header
+            const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
             const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
             check_ptr += HEADER_BYTES;
 
             // Examine and check packed Stream ID. Value shall be in big-endian format.
-            const size_t STREAM_ID_BYTES = 4;
             const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
             const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(packed_stream_id == STREAM_ID_BE);
 
             // Examine and check packed CIF0
-            const size_t CIF0_BYTES = 4;
             const uint8_t BW_ENABLE = 0x1 << 5; // CIF 0 bit 29
             const bytes CIF0_BE{ BW_ENABLE, 0, 0, 0 };
             const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -463,7 +455,6 @@ TEST_CASE("Context Packet CIF0 Optional")
 
     SECTION("IF Reference Frequency") {
         // Add bytes to PACKED_SIZE count
-        const size_t IF_REF_FREQ_BYTES = 8;
         PACKED_SIZE += IF_REF_FREQ_BYTES;
 
         SECTION("Rule 9.5.5-3") {
@@ -534,18 +525,17 @@ TEST_CASE("Context Packet CIF0 Optional")
             auto* check_ptr = data.data();
 
             // Examine and check packed header
+            const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
             const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
             check_ptr += HEADER_BYTES;
 
             // Examine and check packed Stream ID. Value shall be in big-endian format.
-            const size_t STREAM_ID_BYTES = 4;
             const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
             const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(packed_stream_id == STREAM_ID_BE);
 
             // Examine and check packed CIF0
-            const size_t CIF0_BYTES = 4;
             const uint8_t IF_REF_FREQ_ENABLE = 0x1 << 4; // CIF 0 bit 28
             const bytes CIF0_BE{ IF_REF_FREQ_ENABLE, 0, 0, 0 };
             const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -585,7 +575,6 @@ TEST_CASE("Context Packet CIF0 Optional")
 
     SECTION("RF Reference Frequency") {
         // Add bytes to PACKED_SIZE count
-        const size_t RF_REF_FREQ_BYTES = 8;
         PACKED_SIZE += RF_REF_FREQ_BYTES;
 
         SECTION("Rule 9.5.10-2") {
@@ -656,18 +645,17 @@ TEST_CASE("Context Packet CIF0 Optional")
             auto* check_ptr = data.data();
 
             // Examine and check packed header
+            const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
             const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
             check_ptr += HEADER_BYTES;
 
             // Examine and check packed Stream ID. Value shall be in big-endian format.
-            const size_t STREAM_ID_BYTES = 4;
             const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
             const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(packed_stream_id == STREAM_ID_BE);
 
             // Examine and check packed CIF0
-            const size_t CIF0_BYTES = 4;
             const uint8_t RF_REF_FREQ_ENABLE = 0x1 << 3; // CIF 0 bit 27
             const bytes CIF0_BE{ RF_REF_FREQ_ENABLE, 0, 0, 0 };
             const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -707,7 +695,6 @@ TEST_CASE("Context Packet CIF0 Optional")
 
     SECTION("RF Reference Frequency Offset") {
         // Add bytes to PACKED_SIZE count
-        const size_t RF_REF_FREQ_OFFSET_BYTES = 8;
         PACKED_SIZE += RF_REF_FREQ_OFFSET_BYTES;
 
         SECTION("Rule 9.5.11-3") {
@@ -780,18 +767,17 @@ TEST_CASE("Context Packet CIF0 Optional")
             auto* check_ptr = data.data();
 
             // Examine and check packed header
+            const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
             const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
             check_ptr += HEADER_BYTES;
 
             // Examine and check packed Stream ID. Value shall be in big-endian format.
-            const size_t STREAM_ID_BYTES = 4;
             const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
             const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(packed_stream_id == STREAM_ID_BE);
 
             // Examine and check packed CIF0
-            const size_t CIF0_BYTES = 4;
             const uint8_t RF_REF_FREQ_OFFSET_ENABLE = 0x1 << 2; // CIF 0 bit 26
             const bytes CIF0_BE{ RF_REF_FREQ_OFFSET_ENABLE, 0, 0, 0 };
             const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -831,7 +817,7 @@ TEST_CASE("Context Packet CIF0 Optional")
 
     SECTION("IF Band Offset") {
         // Add bytes to PACKED_SIZE count
-        const size_t IF_BAND_OFFSET_BYTES = 8;
+        
         PACKED_SIZE += IF_BAND_OFFSET_BYTES;
 
         SECTION("Rule 9.5.4-2") {
@@ -902,18 +888,17 @@ TEST_CASE("Context Packet CIF0 Optional")
             auto* check_ptr = data.data();
 
             // Examine and check packed header
+            const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
             const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
             check_ptr += HEADER_BYTES;
 
             // Examine and check packed Stream ID. Value shall be in big-endian format.
-            const size_t STREAM_ID_BYTES = 4;
             const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
             const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(packed_stream_id == STREAM_ID_BE);
 
             // Examine and check packed CIF0
-            const size_t CIF0_BYTES = 4;
             const uint8_t IF_BAND_OFFSET_ENABLE = 0x1 << 1; // CIF 0 bit 25
             const bytes CIF0_BE{ IF_BAND_OFFSET_ENABLE, 0, 0, 0 };
             const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -953,7 +938,6 @@ TEST_CASE("Context Packet CIF0 Optional")
 
     SECTION("Reference Level") {
         // Add bytes to PACKED_SIZE count
-        const size_t REF_LEVEL_BYTES = 4;
         PACKED_SIZE += REF_LEVEL_BYTES;
 
         SECTION("Rule 9.5.9-2") {
@@ -1026,18 +1010,17 @@ TEST_CASE("Context Packet CIF0 Optional")
             auto* check_ptr = data.data();
 
             // Examine and check packed header
+            const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
             const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
             check_ptr += HEADER_BYTES;
 
             // Examine and check packed Stream ID. Value shall be in big-endian format.
-            const size_t STREAM_ID_BYTES = 4;
             const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
             const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(packed_stream_id == STREAM_ID_BE);
 
             // Examine and check packed CIF0
-            const size_t CIF0_BYTES = 4;
             const uint8_t REF_LEVEL_ENABLE = 0x1; // CIF 0 bit 24
             const bytes CIF0_BE{ REF_LEVEL_ENABLE, 0, 0, 0 };
             const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -1077,7 +1060,6 @@ TEST_CASE("Context Packet CIF0 Optional")
 
     SECTION("Gain") {
         // Add bytes to PACKED_SIZE count
-        const size_t GAIN_BYTES = 4;
         PACKED_SIZE += GAIN_BYTES;
 
         SECTION("Rule 9.5.3-3") {
@@ -1170,18 +1152,17 @@ TEST_CASE("Context Packet CIF0 Optional")
             auto* check_ptr = data.data();
 
             // Examine and check packed header
+            const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
             const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
             check_ptr += HEADER_BYTES;
 
             // Examine and check packed Stream ID. Value shall be in big-endian format.
-            const size_t STREAM_ID_BYTES = 4;
             const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
             const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(packed_stream_id == STREAM_ID_BE);
 
             // Examine and check packed CIF0
-            const size_t CIF0_BYTES = 4;
             const uint8_t GAIN_ENABLE = 0x1 << 7; // CIF 0 bit 23
             const bytes CIF0_BE{ 0, GAIN_ENABLE, 0, 0 };
             const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -1222,7 +1203,6 @@ TEST_CASE("Context Packet CIF0 Optional")
 
     SECTION("Over-Range Count") {
         // Add bytes to PACKED_SIZE count
-        const size_t OVER_RANGE_COUNT_BYTES = 4;
         PACKED_SIZE += OVER_RANGE_COUNT_BYTES;
 
         SECTION("Rule 9.10.6-3") {
@@ -1256,18 +1236,17 @@ TEST_CASE("Context Packet CIF0 Optional")
             auto* check_ptr = data.data();
 
             // Examine and check packed header
+            const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
             const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
             check_ptr += HEADER_BYTES;
 
             // Examine and check packed Stream ID. Value shall be in big-endian format.
-            const size_t STREAM_ID_BYTES = 4;
             const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
             const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(packed_stream_id == STREAM_ID_BE);
 
             // Examine and check packed CIF0
-            const size_t CIF0_BYTES = 4;
             const uint8_t OVER_RANGE_COUNT_ENABLE = 0x1 << 6; // CIF 0 bit 22
             const bytes CIF0_BE{ 0, OVER_RANGE_COUNT_ENABLE, 0, 0 };
             const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -1308,7 +1287,6 @@ TEST_CASE("Context Packet CIF0 Optional")
 
     SECTION("Sample Rate") {
         // Add bytes to PACKED_SIZE count
-        const size_t SAMPLE_RATE_BYTES = 8;
         PACKED_SIZE += SAMPLE_RATE_BYTES;
 
         SECTION("Rule 9.5.12-2") {
@@ -1368,18 +1346,17 @@ TEST_CASE("Context Packet CIF0 Optional")
             auto* check_ptr = data.data();
 
             // Examine and check packed header
+            const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
             const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
             check_ptr += HEADER_BYTES;
 
             // Examine and check packed Stream ID. Value shall be in big-endian format.
-            const size_t STREAM_ID_BYTES = 4;
             const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
             const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(packed_stream_id == STREAM_ID_BE);
 
             // Examine and check packed CIF0
-            const size_t CIF0_BYTES = 4;
             const uint8_t SAMPLE_RATE_ENABLE = 0x1 << 5; // CIF 0 bit 21
             const bytes CIF0_BE{ 0, SAMPLE_RATE_ENABLE, 0, 0 };
             const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -1419,7 +1396,6 @@ TEST_CASE("Context Packet CIF0 Optional")
 
     SECTION("Timestamp Adjustment") {
         // Add bytes to PACKED_SIZE count
-        const size_t TIMESTAMP_ADJ_BYTES = 8;
         PACKED_SIZE += TIMESTAMP_ADJ_BYTES;
 
         SECTION("Rule 9.7.3.1-2") {
@@ -1454,18 +1430,17 @@ TEST_CASE("Context Packet CIF0 Optional")
             auto* check_ptr = data.data();
 
             // Examine and check packed header
+            const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
             const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
             check_ptr += HEADER_BYTES;
 
             // Examine and check packed Stream ID. Value shall be in big-endian format.
-            const size_t STREAM_ID_BYTES = 4;
             const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
             const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(packed_stream_id == STREAM_ID_BE);
 
             // Examine and check packed CIF0
-            const size_t CIF0_BYTES = 4;
             const uint8_t TIMESTAMP_ADJ_ENABLE = 0x1 << 4; // CIF 0 bit 20
             const bytes CIF0_BE{ 0, TIMESTAMP_ADJ_ENABLE, 0, 0 };
             const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -1506,7 +1481,6 @@ TEST_CASE("Context Packet CIF0 Optional")
 
     SECTION("Timestamp Calibration Time") {
         // Add bytes to PACKED_SIZE count
-        const size_t TIMESTAMP_CAL_TIME_BYTES = 4;
         PACKED_SIZE += TIMESTAMP_CAL_TIME_BYTES;
 
         SECTION("Rule 9.7.3.3-2") {
@@ -1541,18 +1515,17 @@ TEST_CASE("Context Packet CIF0 Optional")
             auto* check_ptr = data.data();
 
             // Examine and check packed header
+            const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
             const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
             check_ptr += HEADER_BYTES;
 
             // Examine and check packed Stream ID. Value shall be in big-endian format.
-            const size_t STREAM_ID_BYTES = 4;
             const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
             const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(packed_stream_id == STREAM_ID_BE);
 
             // Examine and check packed CIF0
-            const size_t CIF0_BYTES = 4;
             const uint8_t TIMESTAMP_CAL_TIME_ENABLE = 0x1 << 3; // CIF 0 bit 19
             const bytes CIF0_BE{ 0, TIMESTAMP_CAL_TIME_ENABLE, 0, 0 };
             const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -1593,7 +1566,6 @@ TEST_CASE("Context Packet CIF0 Optional")
 
     SECTION("Temperature") {
         // Add bytes to PACKED_SIZE count
-        const size_t TEMP_BYTES = 4;
         PACKED_SIZE += TEMP_BYTES;
 
         SECTION("Rule 9.10.5-1") {
@@ -1665,18 +1637,17 @@ TEST_CASE("Context Packet CIF0 Optional")
             auto* check_ptr = data.data();
 
             // Examine and check packed header
+            const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
             const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
             check_ptr += HEADER_BYTES;
 
             // Examine and check packed Stream ID. Value shall be in big-endian format.
-            const size_t STREAM_ID_BYTES = 4;
             const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
             const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(packed_stream_id == STREAM_ID_BE);
 
             // Examine and check packed CIF0
-            const size_t CIF0_BYTES = 4;
             const uint8_t TEMP_ENABLE = 0x1 << 2; // CIF 0 bit 18
             const bytes CIF0_BE{ 0, TEMP_ENABLE, 0, 0 };
             const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -1716,7 +1687,6 @@ TEST_CASE("Context Packet CIF0 Optional")
 
     SECTION("Device Identifier") {
         // Add bytes to PACKED_SIZE count
-        const size_t DEVICE_ID_BYTES = 8;
         PACKED_SIZE += DEVICE_ID_BYTES;
 
         /*
@@ -1764,18 +1734,17 @@ TEST_CASE("Context Packet CIF0 Optional")
         auto* check_ptr = data.data();
 
         // Examine and check packed header
+        const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
         const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
         check_ptr += HEADER_BYTES;
 
         // Examine and check packed Stream ID. Value shall be in big-endian format.
-        const size_t STREAM_ID_BYTES = 4;
         const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
         const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
         check_ptr += STREAM_ID_BYTES;
         CHECK(packed_stream_id == STREAM_ID_BE);
 
         // Examine and check packed CIF0
-        const size_t CIF0_BYTES = 4;
         const uint8_t DEVICE_ID_ENABLE = 0x1 << 1; // CIF 0 bit 17
         const bytes CIF0_BE{ 0, DEVICE_ID_ENABLE, 0, 0 };
         const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -1816,7 +1785,7 @@ TEST_CASE("Context Packet CIF0 Optional")
 
     SECTION("State and Event Indicators") {
         // Add bytes to PACKED_SIZE count
-        const size_t STATE_EVENT_INDICATOR_BYTES = 4;
+        
         PACKED_SIZE += STATE_EVENT_INDICATOR_BYTES;
 
         /*
@@ -1874,18 +1843,17 @@ TEST_CASE("Context Packet CIF0 Optional")
         auto* check_ptr = data.data();
 
         // Examine and check packed header
+        const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
         const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
         check_ptr += HEADER_BYTES;
 
         // Examine and check packed Stream ID. Value shall be in big-endian format.
-        const size_t STREAM_ID_BYTES = 4;
         const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
         const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
         check_ptr += STREAM_ID_BYTES;
         CHECK(packed_stream_id == STREAM_ID_BE);
 
         // Examine and check packed CIF0
-        const size_t CIF0_BYTES = 4;
         const uint8_t STATE_EVENT_INDICATOR_ENABLE = 0x1; // CIF 0 bit 16
         const bytes CIF0_BE{ 0, STATE_EVENT_INDICATOR_ENABLE, 0, 0 };
         const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -1930,7 +1898,6 @@ TEST_CASE("Context Packet CIF0 Optional")
 
     SECTION("Data Packet Payload Format") {
         // Add bytes to PACKED_SIZE count
-        const size_t PAYLOAD_FORMAT_BYTES = 8;
         PACKED_SIZE += PAYLOAD_FORMAT_BYTES;
 
         /*
@@ -1975,18 +1942,17 @@ TEST_CASE("Context Packet CIF0 Optional")
         auto* check_ptr = data.data();
 
         // Examine and check packed header
+        const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
         const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
         check_ptr += HEADER_BYTES;
 
         // Examine and check packed Stream ID. Value shall be in big-endian format.
-        const size_t STREAM_ID_BYTES = 4;
         const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
         const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
         check_ptr += STREAM_ID_BYTES;
         CHECK(packed_stream_id == STREAM_ID_BE);
 
         // Examine and check packed CIF0
-        const size_t CIF0_BYTES = 4;
         const uint8_t PAYLOAD_FORMAT_ENABLE = 0x1 << 7; // CIF 0 bit 15
         const bytes CIF0_BE{ 0, 0, PAYLOAD_FORMAT_ENABLE, 0 };
         const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -3299,18 +3265,17 @@ TEST_CASE("Context Packet CIF0 Optional")
         auto* check_ptr = data.data();
 
         // Examine and check packed header
+        const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
         const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
         check_ptr += HEADER_BYTES;
 
         // Examine and check packed Stream ID. Value shall be in big-endian format.
-        const size_t STREAM_ID_BYTES = 4;
         const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
         const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
         check_ptr += STREAM_ID_BYTES;
         CHECK(packed_stream_id == STREAM_ID_BE);
 
         // Examine and check packed CIF0
-        const size_t CIF0_BYTES = 4;
         uint8_t FORMATTED_GEO_ENABLE;
         if (GPS_TEST) {
             FORMATTED_GEO_ENABLE = 0x1 << 6; // CIF 0 bit 14 (gps)
@@ -4267,18 +4232,17 @@ TEST_CASE("Context Packet CIF0 Optional")
         auto* check_ptr = data.data();
 
         // Examine and check packed header
+        const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
         const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
         check_ptr += HEADER_BYTES;
 
         // Examine and check packed Stream ID. Value shall be in big-endian format.
-        const size_t STREAM_ID_BYTES = 4;
         const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
         const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
         check_ptr += STREAM_ID_BYTES;
         CHECK(packed_stream_id == STREAM_ID_BE);
 
         // Examine and check packed CIF0
-        const size_t CIF0_BYTES = 4;
         uint8_t EPHEMERIS_ENABLE;
         if (ECEF_TEST) {
             EPHEMERIS_ENABLE = 0x1 << 4; // CIF 0 bit 12 (ecef ephemeris)
@@ -4350,7 +4314,6 @@ TEST_CASE("Context Packet CIF0 Optional")
     } // end SECTION("Epehmeris")
 
     SECTION("Ephemeris Ref ID") {
-        const size_t EPHEM_REF_ID_BYTES = 4;
         PACKED_SIZE += EPHEM_REF_ID_BYTES;
 
         SECTION("Rule 9.4.4-1") {
@@ -4383,18 +4346,17 @@ TEST_CASE("Context Packet CIF0 Optional")
             auto* check_ptr = data.data();
 
             // Examine and check packed header
+            const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
             const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
             check_ptr += HEADER_BYTES;
 
             // Examine and check packed Stream ID. Value shall be in big-endian format.
-            const size_t STREAM_ID_BYTES = 4;
             const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
             const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(packed_stream_id == STREAM_ID_BE);
 
             // Examine and check packed CIF0
-            const size_t CIF0_BYTES = 4;
             const uint8_t EPHEM_REF_ID_ENABLE = 0x1 << 2; // CIF 0 bit 10
             const bytes CIF0_BE{ 0, 0, EPHEM_REF_ID_ENABLE, 0 };
             const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -4447,7 +4409,6 @@ TEST_CASE("Context Packet CIF1 Optional")
 
     SECTION("Phase Offset") {
         // Add bytes to PACKED_SIZE count
-        const size_t PHASE_OFFSET_BYTES = 4;
         PACKED_SIZE += PHASE_OFFSET_BYTES;
 
         SECTION("Rule 9.5.8-2") {
@@ -4497,14 +4458,12 @@ TEST_CASE("Context Packet CIF1 Optional")
                 check_ptr += HEADER_BYTES;
 
                 // Examine and check packed Stream ID. Value shall be in big-endian format.
-                const size_t STREAM_ID_BYTES = 4;
                 const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
                 const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
                 check_ptr += STREAM_ID_BYTES;
                 CHECK(packed_stream_id == STREAM_ID_BE);
 
                 // Examine and check packed CIF0
-                const size_t CIF0_BYTES = 4;
                 const uint8_t CIF1_ENABLE = 0x1 << 1; // CIF 0 bit 1
                 const bytes CIF0_BE{ 0, 0, 0, CIF1_ENABLE };
                 const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -4512,7 +4471,6 @@ TEST_CASE("Context Packet CIF1 Optional")
                 CHECK(packed_cif0 == CIF0_BE);
 
                 // Examine and check packed CIF1
-                const size_t CIF1_BYTES = 4;
                 const uint8_t PHASE_OFFSET_ENABLE = 0x1 << 7; // CIF 1 bit 31
                 const bytes CIF1_BE{ PHASE_OFFSET_ENABLE, 0, 0, 0 };
                 const decltype(data) packed_cif1(check_ptr, check_ptr + CIF1_BYTES);
@@ -4582,14 +4540,12 @@ TEST_CASE("Context Packet CIF1 Optional")
                 check_ptr += HEADER_BYTES;
 
                 // Examine and check packed Stream ID. Value shall be in big-endian format.
-                const size_t STREAM_ID_BYTES = 4;
                 const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
                 const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
                 check_ptr += STREAM_ID_BYTES;
                 CHECK(packed_stream_id == STREAM_ID_BE);
 
                 // Examine and check packed CIF0
-                const size_t CIF0_BYTES = 4;
                 const uint8_t CIF1_ENABLE = 0x1 << 1; // CIF 0 bit 1
                 const bytes CIF0_BE{ 0, 0, 0, CIF1_ENABLE };
                 const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -4597,7 +4553,6 @@ TEST_CASE("Context Packet CIF1 Optional")
                 CHECK(packed_cif0 == CIF0_BE);
 
                 // Examine and check packed CIF1
-                const size_t CIF1_BYTES = 4;
                 const uint8_t PHASE_OFFSET_ENABLE = 0x1 << 7; // CIF 1 bit 31
                 const bytes CIF1_BE{ PHASE_OFFSET_ENABLE, 0, 0, 0 };
                 const decltype(data) packed_cif1(check_ptr, check_ptr + CIF1_BYTES);
@@ -4667,14 +4622,12 @@ TEST_CASE("Context Packet CIF1 Optional")
                 check_ptr += HEADER_BYTES;
 
                 // Examine and check packed Stream ID. Value shall be in big-endian format.
-                const size_t STREAM_ID_BYTES = 4;
                 const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
                 const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
                 check_ptr += STREAM_ID_BYTES;
                 CHECK(packed_stream_id == STREAM_ID_BE);
 
                 // Examine and check packed CIF0
-                const size_t CIF0_BYTES = 4;
                 const uint8_t CIF1_ENABLE = 0x1 << 1; // CIF 0 bit 1
                 const bytes CIF0_BE{ 0, 0, 0, CIF1_ENABLE };
                 const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -4682,7 +4635,6 @@ TEST_CASE("Context Packet CIF1 Optional")
                 CHECK(packed_cif0 == CIF0_BE);
 
                 // Examine and check packed CIF1
-                const size_t CIF1_BYTES = 4;
                 const uint8_t PHASE_OFFSET_ENABLE = 0x1 << 7; // CIF 1 bit 31
                 const bytes CIF1_BE{ PHASE_OFFSET_ENABLE, 0, 0, 0 };
                 const decltype(data) packed_cif1(check_ptr, check_ptr + CIF1_BYTES);
@@ -4752,14 +4704,12 @@ TEST_CASE("Context Packet CIF1 Optional")
                 check_ptr += HEADER_BYTES;
 
                 // Examine and check packed Stream ID. Value shall be in big-endian format.
-                const size_t STREAM_ID_BYTES = 4;
                 const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
                 const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
                 check_ptr += STREAM_ID_BYTES;
                 CHECK(packed_stream_id == STREAM_ID_BE);
 
                 // Examine and check packed CIF0
-                const size_t CIF0_BYTES = 4;
                 const uint8_t CIF1_ENABLE = 0x1 << 1; // CIF 0 bit 1
                 const bytes CIF0_BE{ 0, 0, 0, CIF1_ENABLE };
                 const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -4767,7 +4717,6 @@ TEST_CASE("Context Packet CIF1 Optional")
                 CHECK(packed_cif0 == CIF0_BE);
 
                 // Examine and check packed CIF1
-                const size_t CIF1_BYTES = 4;
                 const uint8_t PHASE_OFFSET_ENABLE = 0x1 << 7; // CIF 1 bit 31
                 const bytes CIF1_BE{ PHASE_OFFSET_ENABLE, 0, 0, 0 };
                 const decltype(data) packed_cif1(check_ptr, check_ptr + CIF1_BYTES);
@@ -4837,14 +4786,12 @@ TEST_CASE("Context Packet CIF1 Optional")
                 check_ptr += HEADER_BYTES;
 
                 // Examine and check packed Stream ID. Value shall be in big-endian format.
-                const size_t STREAM_ID_BYTES = 4;
                 const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
                 const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
                 check_ptr += STREAM_ID_BYTES;
                 CHECK(packed_stream_id == STREAM_ID_BE);
 
                 // Examine and check packed CIF0
-                const size_t CIF0_BYTES = 4;
                 const uint8_t CIF1_ENABLE = 0x1 << 1; // CIF 0 bit 1
                 const bytes CIF0_BE{ 0, 0, 0, CIF1_ENABLE };
                 const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -4852,7 +4799,6 @@ TEST_CASE("Context Packet CIF1 Optional")
                 CHECK(packed_cif0 == CIF0_BE);
 
                 // Examine and check packed CIF1
-                const size_t CIF1_BYTES = 4;
                 const uint8_t PHASE_OFFSET_ENABLE = 0x1 << 7; // CIF 1 bit 31
                 const bytes CIF1_BE{ PHASE_OFFSET_ENABLE, 0, 0, 0 };
                 const decltype(data) packed_cif1(check_ptr, check_ptr + CIF1_BYTES);
@@ -4894,7 +4840,6 @@ TEST_CASE("Context Packet CIF1 Optional")
 
     SECTION("Polarization") {
         // Add bytes to PACKED_SIZE count
-        const size_t POLARIZATION_BYTES = 4;
         PACKED_SIZE += POLARIZATION_BYTES;
 
         SECTION("Rule 9.4.8-1") {
@@ -4970,18 +4915,17 @@ TEST_CASE("Context Packet Context Association Lists")
         auto* check_ptr = data.data();
 
         // Examine and check packed header
+        const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
         const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
         check_ptr += HEADER_BYTES;
 
         // Examine and check packed Stream ID. Value shall be in big-endian format.
-        const size_t STREAM_ID_BYTES = 4;
         const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
         const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
         check_ptr += STREAM_ID_BYTES;
         CHECK(packed_stream_id == STREAM_ID_BE);
 
         // Examine and check packed CIF0
-        const size_t CIF0_BYTES = 4;
         const uint8_t CONTEXT_ASSOCIATION_LISTS_ENABLE = 0x1; // CIF 0 bit 8
         const bytes CIF0_BE{ 0, 0, CONTEXT_ASSOCIATION_LISTS_ENABLE, 0 };
         const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -5100,7 +5044,6 @@ TEST_CASE("Context Packet CIF7 Packet")
     probability.probability_function(PROBABILITY_FUNC);
     belief.belief_percent(BELIEF_PERCENT);
 
-    const size_t REF_LEVEL_BYTES = 4;
     size_t PHASE_OFFSET_BYTES = 0;
 
     // Add bytes to PACKED_SIZE count
@@ -5297,18 +5240,17 @@ TEST_CASE("Context Packet CIF7 Packet")
         CHECK(helper::bytes_required(packet_in) == PACKED_SIZE);
 
         // Examine and check packed header
+        const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
         const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
         check_ptr += HEADER_BYTES;
 
         // Examine and check packed Stream ID. Value shall be in big-endian format.
-        const size_t STREAM_ID_BYTES = 4;
         const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
         const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
         check_ptr += STREAM_ID_BYTES;
         CHECK(packed_stream_id == STREAM_ID_BE);
 
         // Examine and check packed CIF0
-        const size_t CIF0_BYTES = 4;
         const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
         check_ptr += CIF0_BYTES;
         CHECK(packed_cif0 == CIF0_BE);
@@ -5319,7 +5261,6 @@ TEST_CASE("Context Packet CIF7 Packet")
         CHECK(packed_cif1 == CIF1_BE);
 
         // Examine and check packed CIF0
-        const size_t CIF7_BYTES = 4;
         const uint8_t CURRENT_ENABLE = 1 << 7; // CIF 7 bit 31
         const uint8_t MEAN_ENABLE = 1 << 6; // CIF 7 bit 30
         const uint8_t MIN_ENABLE = 1 << 2; // CIF 7 bit 26
@@ -5467,24 +5408,22 @@ TEST_CASE("Context Packet CIF7 Packet")
         auto* check_ptr = data.data();
 
         // Examine and check packed header
+        const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::CONTEXT) << 4;
         const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
         check_ptr += HEADER_BYTES;
 
         // Examine and check packed Stream ID. Value shall be in big-endian format.
-        const size_t STREAM_ID_BYTES = 4;
         const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
         const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
         check_ptr += STREAM_ID_BYTES;
         CHECK(packed_stream_id == STREAM_ID_BE);
 
         // Examine and check packed CIF0
-        const size_t CIF0_BYTES = 4;
         const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
         check_ptr += CIF0_BYTES;
         CHECK(packed_cif0 == CIF0_BE);
 
         // Examine and check packed CIF0
-        const size_t CIF7_BYTES = 4;
         const uint8_t MEAN_ENABLE = 1 << 6; // CIF 7 bit 30
         const uint8_t MIN_ENABLE = 1 << 2; // CIF 7 bit 26
         const uint8_t MAX_ENABLE = 1 << 3; // CIF 7 bit 27
@@ -5614,14 +5553,12 @@ TEST_CASE("Context Packet Index List")
         check_ptr += HEADER_BYTES;
 
         // Examine and check packed Stream ID. Value shall be in big-endian format.
-        const size_t STREAM_ID_BYTES = 4;
         const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
         const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
         check_ptr += STREAM_ID_BYTES;
         CHECK(packed_stream_id == STREAM_ID_BE);
 
         // Examine and check packed CIF0
-        const size_t CIF0_BYTES = 4;
         const uint8_t CIF1_ENABLE = 0x1 << 1; // CIF 0 bit 1
         const bytes CIF0_BE{ 0, 0, 0, CIF1_ENABLE };
         const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -5629,7 +5566,6 @@ TEST_CASE("Context Packet Index List")
         CHECK(packed_cif0 == CIF0_BE);
 
         // Examine and check packed CIF1
-        const size_t CIF1_BYTES = 4;
         const uint8_t INDEX_LIST_ENABLE = 0x1 << 7; // CIF 1 bit 7
         const bytes CIF1_BE{ 0, 0, 0, INDEX_LIST_ENABLE };
         const decltype(data) packed_cif1(check_ptr, check_ptr + CIF1_BYTES);
@@ -5766,14 +5702,12 @@ TEST_CASE("Context Packet Sector Step/Scan")
     check_ptr += HEADER_BYTES;
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
-    const size_t STREAM_ID_BYTES = 4;
     const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
     check_ptr += STREAM_ID_BYTES;
     CHECK(packed_stream_id == STREAM_ID_BE);
 
     // Examine and check packed CIF0
-    const size_t CIF0_BYTES = 4;
     const uint8_t CIF1_ENABLE = 0x1 << 1; // CIF 0 bit 1
     const bytes CIF0_BE{ 0, 0, 0, CIF1_ENABLE };
     const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
@@ -5781,7 +5715,6 @@ TEST_CASE("Context Packet Sector Step/Scan")
     CHECK(packed_cif0 == CIF0_BE);
 
     // Examine and check packed CIF1
-    const size_t CIF1_BYTES = 4;
     const uint8_t SECTOR_STEP_SCAN_ENABLE = 0x1 << 1; // CIF 1 bit 9
     const bytes CIF1_BE{ 0, 0, SECTOR_STEP_SCAN_ENABLE, 0 };
     const decltype(data) packed_cif1(check_ptr, check_ptr + CIF1_BYTES);

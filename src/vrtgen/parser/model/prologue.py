@@ -9,7 +9,6 @@ class ClassIdentifier(PackedStruct):
     Class Identifier (5.1.3).
     """
     name : str = 'class_id'
-    # FIXME are these pad_bits needed?
     pad_bits : IntegerType = field(default_factory=lambda: IntegerType('pad_bits', bits=5, enabled=True, required=True, packed_tag=PackedTag(31,5,0,0)))
     oui : OUI = field(default_factory=lambda: OUI('oui', bits=24, enabled=True, required=True, packed_tag=PackedTag(23,24,0)))
     information_code : IntegerType = field(default_factory=lambda: IntegerType('information_code', bits=16, enabled=True, required=True, packed_tag=PackedTag(31,16,1,1)))
@@ -30,8 +29,7 @@ class ClassIdentifier(PackedStruct):
                 else:
                     raise KeyError(val)
             except:
-                raise  
-        # self.enabled = True
+                raise
 
 @dataclass
 class Timestamp(Field):

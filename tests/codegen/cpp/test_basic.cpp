@@ -102,14 +102,12 @@ TEST_CASE("Basic Context Packet")
     check_ptr += HEADER_BYTES;
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
-    const size_t STREAM_ID_BYTES = 4;
     const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
     check_ptr += STREAM_ID_BYTES;
     CHECK(packed_stream_id == STREAM_ID_BE);
 
     // Examine and check packed CIF0
-    const size_t CIF0_BYTES = 4;
     const bytes CIF0_BE{ 0, 0, 0, 0 };
     const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
     check_ptr += CIF0_BYTES;
@@ -166,28 +164,24 @@ TEST_CASE("Basic Control Packet")
     check_ptr += HEADER_BYTES;
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
-    const size_t STREAM_ID_BYTES = 4;
     const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
     check_ptr += STREAM_ID_BYTES;
     CHECK(packed_stream_id == STREAM_ID_BE);
 
     // Examine and check packed CAM
-    const size_t CAM_BYTES = 4;
     const bytes CAM_BE{ 0, 0, 0, 0 };
     const decltype(data) packed_cam(check_ptr, check_ptr + CAM_BYTES);
     check_ptr += CAM_BYTES;
     CHECK(packed_cam == CAM_BE);
 
     // Examine and check packed Message ID. Value shall be in big-endian format.
-    const size_t MESSAGE_ID_BYTES = 4;
     const bytes MESSAGE_ID_BE{ 0x00, 0xAB, 0xCD, 0xEF };
     const decltype(data) packed_message_id(check_ptr, check_ptr + MESSAGE_ID_BYTES);
     check_ptr += MESSAGE_ID_BYTES;
     CHECK(packed_message_id == MESSAGE_ID_BE);
 
     // Examine and check packed CIF0
-    const size_t CIF0_BYTES = 4;
     const bytes CIF0_BE{ 0, 0, 0, 0 };
     const decltype(data) packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
     check_ptr += CIF0_BYTES;
@@ -246,21 +240,18 @@ TEST_CASE("Basic Acknowledge Packet")
     check_ptr += HEADER_BYTES;
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
-    const size_t STREAM_ID_BYTES = 4;
     const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
     check_ptr += STREAM_ID_BYTES;
     CHECK(packed_stream_id == STREAM_ID_BE);
 
     // Examine and check packed CAM
-    const size_t CAM_BYTES = 4;
     const bytes CAM_BE{ 0, 0, 0, 0 };
     const decltype(data) packed_cam(check_ptr, check_ptr + CAM_BYTES);
     check_ptr += CAM_BYTES;
     CHECK(packed_cam == CAM_BE);
 
     // Examine and check packed Message ID. Value shall be in big-endian format.
-    const size_t MESSAGE_ID_BYTES = 4;
     const bytes MESSAGE_ID_BE{ 0x00, 0xAB, 0xCD, 0xEF };
     const decltype(data) packed_message_id(check_ptr, check_ptr + MESSAGE_ID_BYTES);
     check_ptr += MESSAGE_ID_BYTES;

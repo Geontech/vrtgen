@@ -77,6 +77,8 @@ def parse_oui(value):
     OUIs are specified as hex literals in the form 'XX-XX-XX', where each
     octet is separated by a dash. Case is ignored.
     """
+    if str(value) == '00-12-A2':
+        raise ValueError('The 00-12-A2 OUI is reserved for VITA49.2-2017 Extension Classes. This is not currently supported')
     match = _OUI_RE.match(str(value))
     if not match:
         raise ValueError('OUI format must be XX-XX-XX')
