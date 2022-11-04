@@ -50,11 +50,11 @@ TEST_CASE("Data Packet Stream ID")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
+    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA_STREAM_ID) << 4;
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
     check_ptr += HEADER_BYTES;
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
-    const size_t STREAM_ID_BYTES = 4;
     const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
     check_ptr += STREAM_ID_BYTES;
@@ -117,11 +117,12 @@ TEST_CASE("Data Packet Class ID")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
+    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA) << 4;
+    const uint8_t CLASS_ID_ENABLE = 0x1 << 3; // C bit 27
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
     check_ptr += HEADER_BYTES;
 
     // Examine and check packed Class ID. Value shall be in big-endian format.
-    const size_t CLASS_ID_BYTES = 8;
     const bytes CLASS_ID_BE{ 0, 0xFF, 0xEE, 0xDD, 0, 0, 0x12, 0x34 };
     const decltype(data) packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
     check_ptr += CLASS_ID_BYTES;
@@ -189,11 +190,11 @@ TEST_CASE("Data Packet Timestamp Integer")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
+    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA) << 4;
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
     check_ptr += HEADER_BYTES;
 
     // Examine and check packed Fractional Timestamp. Value shall be in big-endian format.
-    const size_t INTEGER_TS_BYTES = 4;
     const bytes INTEGER_TS_BE{ 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_integer_ts(check_ptr, check_ptr + INTEGER_TS_BYTES);
     check_ptr += INTEGER_TS_BYTES;
@@ -260,11 +261,11 @@ TEST_CASE("Data Packet Timestamp Fractional")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
+    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA) << 4;
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
     check_ptr += HEADER_BYTES;
 
     // Examine and check packed Fractional Timestamp. Value shall be in big-endian format.
-    const size_t FRACTIONAL_TS_BYTES = 8;
     const bytes FRACTIONAL_TS_BE{ 0x00, 0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_fractional_ts(check_ptr, check_ptr + FRACTIONAL_TS_BYTES);
     check_ptr += FRACTIONAL_TS_BYTES;
@@ -333,18 +334,17 @@ TEST_CASE("Data Packet Timestamp Full")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
+    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA) << 4;
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
     check_ptr += HEADER_BYTES;
 
     // Examine and check packed Integer Timestamp. Value shall be in big-endian format.
-    const size_t INTEGER_TS_BYTES = 4;
     const bytes INTEGER_TS_BE{ 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_integer_ts(check_ptr, check_ptr + INTEGER_TS_BYTES);
     check_ptr += INTEGER_TS_BYTES;
     CHECK(packed_integer_ts == INTEGER_TS_BE);
 
     // Examine and check packed Fractional Timestamp. Value shall be in big-endian format.
-    const size_t FRACTIONAL_TS_BYTES = 8;
     const bytes FRACTIONAL_TS_BE{ 0x00, 0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_fractional_ts(check_ptr, check_ptr + FRACTIONAL_TS_BYTES);
     check_ptr += FRACTIONAL_TS_BYTES;
@@ -408,6 +408,8 @@ TEST_CASE("Data Packet Trailer")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
+    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA) << 4;
+    const uint8_t TRAILER_INCLUDED = 0x1 << 2; // T bit 26
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
     check_ptr += HEADER_BYTES;
 
@@ -418,7 +420,6 @@ TEST_CASE("Data Packet Trailer")
     CHECK(packed_payload == PAYLOAD);
 
     // Examine and check packed trailer
-    const size_t TRAILER_BYTES = 4;
     const uint8_t ENABLES = 0;
     const uint8_t INDICATORS = 0;
     const bytes TRAILER_BE{ ENABLES, INDICATORS, 0, 0 };
@@ -484,6 +485,8 @@ TEST_CASE("Data Packet Trailer Fields")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
+    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA) << 4;
+    const uint8_t TRAILER_INCLUDED = 0x1 << 2; // T bit 26
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
     check_ptr += HEADER_BYTES;
 
@@ -494,7 +497,6 @@ TEST_CASE("Data Packet Trailer Fields")
     CHECK(packed_payload == PAYLOAD);
 
     // Examine and check packed trailer
-    const size_t TRAILER_BYTES = 4;
     const uint8_t ENABLES = (0x1 << 6) | (0x1 << 4); // valid_data_enable @ 30; agc_mgc_enable @ 28
     const uint8_t INDICATORS = (0x1 << 2) | 0x1; // valid_data @ 18; agc_mgc @ 16
     const bytes TRAILER_BE{ ENABLES, INDICATORS, 0, 0 };
@@ -565,18 +567,18 @@ TEST_CASE("Data Packet Both Identifiers")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
+    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA_STREAM_ID) << 4;
+    const uint8_t CLASS_ID_ENABLE = 0x1 << 3; // C bit 27
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
     check_ptr += HEADER_BYTES;
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
-    const size_t STREAM_ID_BYTES = 4;
     const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
     check_ptr += STREAM_ID_BYTES;
     CHECK(packed_stream_id == STREAM_ID_BE);
 
     // Examine and check packed Class ID. Value shall be in big-endian format.
-    const size_t CLASS_ID_BYTES = 8;
     const bytes CLASS_ID_BE{ 0, 0xFF, 0xEE, 0xDD, 0, 0, 0x12, 0x34 };
     const decltype(data) packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
     check_ptr += CLASS_ID_BYTES;
@@ -655,32 +657,31 @@ TEST_CASE("Data Packet Full Prologue")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
+    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA_STREAM_ID) << 4;
+    const uint8_t CLASS_ID_ENABLE = 0x1 << 3; // C bit 27
+    const uint8_t TSI_TSF = (static_cast<uint8_t>(vrtgen::packing::TSI::UTC) << 6) | (static_cast<uint8_t>(vrtgen::packing::TSF::REAL_TIME) << 4);
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
     check_ptr += HEADER_BYTES;
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
-    const size_t STREAM_ID_BYTES = 4;
     const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
     check_ptr += STREAM_ID_BYTES;
     CHECK(packed_stream_id == STREAM_ID_BE);
 
     // Examine and check packed Class ID. Value shall be in big-endian format.
-    const size_t CLASS_ID_BYTES = 8;
     const bytes CLASS_ID_BE{ 0, 0xFF, 0xEE, 0xDD, 0, 0, 0x12, 0x34 };
     const decltype(data) packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
     check_ptr += CLASS_ID_BYTES;
     CHECK(packed_class_id == CLASS_ID_BE);
 
     // Examine and check packed Integer Timestamp. Value shall be in big-endian format.
-    const size_t INTEGER_TS_BYTES = 4;
     const bytes INTEGER_TS_BE{ 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_integer_ts(check_ptr, check_ptr + INTEGER_TS_BYTES);
     check_ptr += INTEGER_TS_BYTES;
     CHECK(packed_integer_ts == INTEGER_TS_BE);
 
     // Examine and check packed Fractional Timestamp. Value shall be in big-endian format.
-    const size_t FRACTIONAL_TS_BYTES = 8;
     const bytes FRACTIONAL_TS_BE{ 0x00, 0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_fractional_ts(check_ptr, check_ptr + FRACTIONAL_TS_BYTES);
     check_ptr += FRACTIONAL_TS_BYTES;
@@ -768,32 +769,32 @@ TEST_CASE("Data Packet All")
     auto* check_ptr = data.data();
 
     // Examine and check packed header
+    const uint8_t PACKET_TYPE = static_cast<uint8_t>(vrtgen::packing::PacketType::SIGNAL_DATA_STREAM_ID) << 4;
+    const uint8_t CLASS_ID_ENABLE = 0x1 << 3; // C bit 27
+    const uint8_t TRAILER_INCLUDED = 0x1 << 2; // T bit 26
+    const uint8_t TSI_TSF = (static_cast<uint8_t>(vrtgen::packing::TSI::UTC) << 6) | (static_cast<uint8_t>(vrtgen::packing::TSF::REAL_TIME) << 4);
     const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
     check_ptr += HEADER_BYTES;
 
     // Examine and check packed Stream ID. Value shall be in big-endian format.
-    const size_t STREAM_ID_BYTES = 4;
     const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
     check_ptr += STREAM_ID_BYTES;
     CHECK(packed_stream_id == STREAM_ID_BE);
 
     // Examine and check packed Class ID. Value shall be in big-endian format.
-    const size_t CLASS_ID_BYTES = 8;
     const bytes CLASS_ID_BE{ 0, 0xFF, 0xEE, 0xDD, 0, 0, 0x12, 0x34 };
     const decltype(data) packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
     check_ptr += CLASS_ID_BYTES;
     CHECK(packed_class_id == CLASS_ID_BE);
 
     // Examine and check packed Integer Timestamp. Value shall be in big-endian format.
-    const size_t INTEGER_TS_BYTES = 4;
     const bytes INTEGER_TS_BE{ 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_integer_ts(check_ptr, check_ptr + INTEGER_TS_BYTES);
     check_ptr += INTEGER_TS_BYTES;
     CHECK(packed_integer_ts == INTEGER_TS_BE);
 
     // Examine and check packed Fractional Timestamp. Value shall be in big-endian format.
-    const size_t FRACTIONAL_TS_BYTES = 8;
     const bytes FRACTIONAL_TS_BE{ 0x00, 0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78 };
     const decltype(data) packed_fractional_ts(check_ptr, check_ptr + FRACTIONAL_TS_BYTES);
     check_ptr += FRACTIONAL_TS_BYTES;
@@ -806,7 +807,6 @@ TEST_CASE("Data Packet All")
     CHECK(packed_payload == PAYLOAD);
 
     // Examine and check packed trailer
-    const size_t TRAILER_BYTES = 4;
     const uint8_t ENABLES = (0x1 << 6) | (0x1 << 4); // valid_data_enable @ 30; agc_mgc_enable @ 28
     const uint8_t INDICATORS = (0x1 << 2) | 0x1; // valid_data @ 18; agc_mgc @ 16
     const bytes TRAILER_BE{ ENABLES, INDICATORS, 0, 0 };

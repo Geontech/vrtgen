@@ -23,6 +23,7 @@
 
 #include <vector>
 #include <bytes.hpp>
+#include "constants.hpp"
 
 TEST_CASE("Command Packet")
 {

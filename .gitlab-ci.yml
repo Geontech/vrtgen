@@ -39,6 +39,8 @@ build:ubuntu:16.04:
     script:
       - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file testing/ubuntu16.Dockerfile -t $CI_REGISTRY/geon/vita49/vrtgen/ubuntu16-builder:latest .
       - docker push $CI_REGISTRY/geon/vita49/vrtgen/ubuntu16-builder:latest
+    only:
+        - tags
 
 build:ubuntu:18.04:
     image: docker:19.03.8
@@ -193,6 +195,8 @@ lint:ubuntu:16.04:
         # Unfortunately, even if the command completely fails (e.g., invalid
         # path) it still exits with 0.
         - pylint -f colorized --exit-zero src/
+    only:
+        - tags
 
 test:ubuntu:16.04:
     image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu16-builder:latest
@@ -205,6 +209,8 @@ test:ubuntu:16.04:
             - vrtgen-pytests.xml
         reports:
             junit: vrtgen-pytests.xml
+    only:
+        - tags
 
 test:cpp:ubuntu:16.04:
     image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu16-builder:latest
@@ -221,6 +227,8 @@ test:cpp:ubuntu:16.04:
             - build/*-results.xml
         reports:
             junit: build/*-results.xml
+    only:
+        - tags
 
 # Ubuntu 20.04 Testing
 lint:ubuntu:20.04:

@@ -82,7 +82,7 @@ add_executable(test_libvrtgen
     tests/libvrtgen/cif1.cpp
     tests/libvrtgen/command.cpp
     tests/libvrtgen/header.cpp
-    tests/libvrtgen/prologue.cpp
+    tests/libvrtgen/class_id.cpp
     tests/libvrtgen/types.cpp
     tests/libvrtgen/trailer.cpp
 )
@@ -127,6 +127,7 @@ add_executable(test_codegen
     tests/codegen/cpp/test_data.cpp
     tests/codegen/cpp/test_context.cpp
     tests/codegen/cpp/test_stream_id.cpp
+    tests/codegen/cpp/test_class_id.cpp
     tests/codegen/cpp/test_trailer.cpp
     tests/codegen/cpp/test_timestamp.cpp
     tests/codegen/cpp/test_header.cpp
@@ -141,6 +142,7 @@ add_codegen_file(test_codegen tests/codegen/yamls/basic.yaml)
 add_codegen_file(test_codegen tests/codegen/yamls/data.yaml)
 add_codegen_file(test_codegen tests/codegen/yamls/context.yaml)
 add_codegen_file(test_codegen tests/codegen/yamls/streamid.yaml)
+add_codegen_file(test_codegen tests/codegen/yamls/classid.yaml)
 add_codegen_file(test_codegen tests/codegen/yamls/timestamp.yaml)
 add_codegen_file(test_codegen tests/codegen/yamls/packetheader.yaml)
 add_codegen_file(test_codegen tests/codegen/yamls/classid.yaml)
