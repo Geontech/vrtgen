@@ -63,7 +63,9 @@ class Trailer(PackedStruct):
                         self.state_event_indicators.subfields.append(EnableIndicatorType(key+'_enable', user_defined=True, bits=1, enabled=True, required=True, is_enable=True, packed_tag=PackedTag(packed_tag_pos+12,1,0,0)))
                         packed_tag_pos += 1
                     elif isinstance(val, list):
-                        bits = math.ceil(len(val)/2)
+                        bits = math.floor(math.log(len(val)-1)/math.log(2)) + 1
+                        if bits > 4:
+                            raise ValueError('Enum can only be 4 bits maximum')
                         enum_members = {}
                         member_val = 0
                         for item in val:
@@ -71,12 +73,11 @@ class Trailer(PackedStruct):
                             member_val += 1
                         user_defined_enum = BinaryEnum(key, enum_members)
                         user_defined_enum.bits = bits
-                        if bits > 4:
-                            raise ValueError("Enum can only be 4 bits maximum")
-                        elif bits > 2:
+                        if bits > 2:
                             greater_than_two = True
                         pos = packed_tag_pos + bits - 1
-                        self.state_event_indicators.subfields.append(EnumType(key, enabled=True, required=True, user_defined=True, type_=user_defined_enum, packed_tag=PackedTag(pos,bits,0,0)))
+                        enum_type = EnumType(key, enabled=True, required=True, user_defined=True, type_=user_defined_enum, packed_tag=PackedTag(pos,bits,0,0))
+                        self.state_event_indicators.subfields.append(enum_type)
                         self.state_event_indicators.subfields.append(EnableIndicatorType(key+'_enable', bits=bits, enabled=True, required=True, user_defined=True, is_enum=True, is_enable=True, packed_tag=PackedTag(pos+12,bits,0,0)))
                         packed_tag_pos += bits
                 elif key in [f.name for f in self.state_event_indicators.fields]:
@@ -104,14 +105,14 @@ class DataPacket(Packet):
     header : DataHeader = field(default_factory=lambda: DataHeader(enabled=True, required=True))
     trailer : Trailer = field(default_factory=Trailer)
 
-    # def validate_and_parse_mapping(self, **mapping):
-    #     self._validate(mapping)
-    #     self._parse_mapping(mapping)
-
     def _update_header(self):
         if self.stream_id.enabled:
             self.header.packet_type.value = PacketType.SIGNAL_DATA_STREAM_ID
         if self.trailer.enabled:
             self.header.trailer_included.enabled = True
             self.header.trailer_included.value = True
+            if self.trailer.sample_frame.enabled:
+                self.header.not_v49d0.enabled = True
+                self.header.not_v49d0.required = True
+                self.header.not_v49d0.value = True
         super()._update_header()

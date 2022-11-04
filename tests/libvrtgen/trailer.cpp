@@ -25,19 +25,22 @@
 
 using namespace vrtgen::packing;
 
-TEST_CASE("Trailer 5.1.6", "[trailer]") {
+TEST_CASE("Trailer 5.1.6", "[trailer]") 
+{
     Trailer trailer;
     Trailer unpack_trailer;
     bytes packed_bytes{ 
         0xFF, 0xFF, 0xFF, 0xFF, // Trailer
     };
 
-    SECTION("Zero on construction") {
+    SECTION("Zero on construction")
+    {
         trailer.pack_into(packed_bytes.data());
         CHECK(packed_bytes == bytes{ 0, 0, 0, 0 });
     }
 
-    SECTION("Rule 5.1.6-1") {
+    SECTION("Rule 5.1.6-1")
+    {
         trailer.calibrated_time(true);
         trailer.sample_loss(true);
         trailer.pack_into(packed_bytes.data());
@@ -45,7 +48,8 @@ TEST_CASE("Trailer 5.1.6", "[trailer]") {
         CHECK(packed_bytes == bytes{ 0x00, 0x08, 0x10, 0x00 });
     }
 
-    SECTION("Rule 5.1.6-2") {
+    SECTION("Rule 5.1.6-2")
+    {
 
         SECTION("Calibrated Time") {
             CHECK(trailer.calibrated_time() == false);
@@ -60,7 +64,9 @@ TEST_CASE("Trailer 5.1.6", "[trailer]") {
             CHECK(unpack_trailer.calibrated_time() == true);
             CHECK(unpack_trailer.calibrated_time_enable() == true);
         }
-        SECTION("Valid Data") {
+        
+        SECTION("Valid Data")
+        {
             CHECK(trailer.valid_data() == false);
             CHECK(trailer.valid_data_enable() == false);
             trailer.valid_data(true);
@@ -73,7 +79,9 @@ TEST_CASE("Trailer 5.1.6", "[trailer]") {
             CHECK(unpack_trailer.valid_data() == true);
             CHECK(unpack_trailer.valid_data_enable() == true);
         }
-        SECTION("Reference Lock") {
+
+        SECTION("Reference Lock")
+        {
             CHECK(trailer.reference_lock() == false);
             CHECK(trailer.reference_lock_enable() == false);
             trailer.reference_lock(true);
@@ -86,7 +94,9 @@ TEST_CASE("Trailer 5.1.6", "[trailer]") {
             CHECK(unpack_trailer.reference_lock() == true);
             CHECK(unpack_trailer.reference_lock_enable() == true);
         }
-        SECTION("AGC/MGC") {
+
+        SECTION("AGC/MGC")
+        {
             CHECK(trailer.agc_mgc() == false);
             CHECK(trailer.agc_mgc_enable() == false);
             trailer.agc_mgc(true);
@@ -99,7 +109,9 @@ TEST_CASE("Trailer 5.1.6", "[trailer]") {
             CHECK(unpack_trailer.agc_mgc() == true);
             CHECK(unpack_trailer.agc_mgc_enable() == true);
         }
-        SECTION("Detected Signal") {
+
+        SECTION("Detected Signal")
+        {
             CHECK(trailer.detected_signal() == false);
             CHECK(trailer.detected_signal_enable() == false);
             trailer.detected_signal(true);
@@ -112,7 +124,9 @@ TEST_CASE("Trailer 5.1.6", "[trailer]") {
             CHECK(unpack_trailer.detected_signal() == true);
             CHECK(unpack_trailer.detected_signal_enable() == true);
         }
-        SECTION("Spectral Inversion") {
+
+        SECTION("Spectral Inversion")
+        {
             CHECK(trailer.spectral_inversion() == false);
             CHECK(trailer.spectral_inversion_enable() == false);
             trailer.spectral_inversion(true);
@@ -125,7 +139,9 @@ TEST_CASE("Trailer 5.1.6", "[trailer]") {
             CHECK(unpack_trailer.spectral_inversion() == true);
             CHECK(unpack_trailer.spectral_inversion_enable() == true);
         }
-        SECTION("Over-range") {
+
+        SECTION("Over-range")
+        {
             CHECK(trailer.over_range() == false);
             CHECK(trailer.over_range_enable() == false);
             trailer.over_range(true);
@@ -138,7 +154,9 @@ TEST_CASE("Trailer 5.1.6", "[trailer]") {
             CHECK(unpack_trailer.over_range() == true);
             CHECK(unpack_trailer.over_range_enable() == true);
         }
-        SECTION("Sample Loss") {
+
+        SECTION("Sample Loss")
+        {
             CHECK(trailer.sample_loss() == false);
             CHECK(trailer.sample_loss_enable() == false);
             trailer.sample_loss(true);
@@ -155,14 +173,10 @@ TEST_CASE("Trailer 5.1.6", "[trailer]") {
         }
     }
 
-    SECTION("Rule 5.1.6-4") {
-        // in test_data.cpp
-        CHECK(true);
-    }
-
-    SECTION("Rule 5.1.6-13 and Rule 5.1.6-14") {
-        trailer.associated_context_packets_count_enable(true);
-        trailer.associated_context_packets_count(0x7F);
+    SECTION("Rule 5.1.6-14")
+    {
+        trailer.associated_context_packet_count_enable(true);
+        trailer.associated_context_packet_count(0x7F);
         trailer.pack_into(packed_bytes.data());
         // enabled the first and the last to verify the range of the state and event indicators
         CHECK(packed_bytes == bytes{ 0x00, 0x00, 0x00, 0xFF });
@@ -176,11 +190,13 @@ TEST_CASE("Sample Frames 5.1.6.1-1", "[trailer][sample_frames]") {
         0xFF, 0xFF, 0xFF, 0xFF, // Trailer
     };
     
-    SECTION("Rule 5.1.6.1-1") {
-        trailer.sample_frame(SSI(3));
-        trailer.sample_frame_enable(true);
-        trailer.pack_into(packed_bytes.data());
-        // enabled the first and the last to verify the range of the state and event indicators
-        CHECK(packed_bytes == bytes{ 0x00, 0xC0, 0x0C, 0x00 });
-    }
+    trailer.sample_frame(SSI(3));
+    trailer.sample_frame_enable(true);
+    trailer.pack_into(packed_bytes.data());
+    // enabled the first and the last to verify the range of the state and event indicators
+    CHECK(packed_bytes == bytes{ 0x00, 0xC0, 0x0C, 0x00 });
+
+    unpack_trailer.unpack_from(packed_bytes.data());
+    CHECK(unpack_trailer.sample_frame() == SSI(3));
+    CHECK(unpack_trailer.sample_frame_enable() == true);
 }

@@ -80,7 +80,7 @@ TEST_CASE("Trailer", "[trailer]")
             packet_in.sample_frame(vrtgen::packing::SSI::FIRST);
             CHECK(packet_in.user_defined1() == trailer_data6::enums::user_defined1::two);
             CHECK(packet_in.sample_frame() == vrtgen::packing::SSI::FIRST);
-            // FIXME #43
+            // FIXME Does not sync up when user_defined1 is set
             // CHECK(packet_out.user_defined1_enable() == true);
 
             auto data = TrailerData6::helper::pack(packet_in);
@@ -105,9 +105,9 @@ TEST_CASE("Trailer", "[trailer]")
         SECTION("Required")
         {
             TrailerData1 packet_in;
-            CHECK(packet_in.associated_context_packets_count() == 0);
-            packet_in.associated_context_packets_count(0x7F);
-            CHECK(packet_in.associated_context_packets_count() == 0x7F);
+            CHECK(packet_in.associated_context_packet_count() == 0);
+            packet_in.associated_context_packet_count(0x7F);
+            CHECK(packet_in.associated_context_packet_count() == 0x7F);
 
             auto data = TrailerData1::helper::pack(packet_in);
             auto* check_ptr = data.data();
@@ -118,15 +118,15 @@ TEST_CASE("Trailer", "[trailer]")
 
             TrailerData1 packet_out;
             TrailerData1::helper::unpack(packet_out, data.data(), data.size());
-            CHECK(packet_out.associated_context_packets_count() == 0x7F);
+            CHECK(packet_out.associated_context_packet_count() == 0x7F);
         }
 
         SECTION("Optional OFF")
         {
             bytes TRAILER_BE{ 0, 0, 0, 0 };
             TrailerData2 packet_in;
-            CHECK(packet_in.has_associated_context_packets_count() == false);
-            REQUIRE_THROWS(packet_in.associated_context_packets_count());
+            CHECK(packet_in.has_associated_context_packet_count() == false);
+            REQUIRE_THROWS(packet_in.associated_context_packet_count());
 
             auto data = TrailerData2::helper::pack(packet_in);
             auto* check_ptr = data.data();
@@ -137,18 +137,18 @@ TEST_CASE("Trailer", "[trailer]")
 
             TrailerData2 packet_out;
             TrailerData2::helper::unpack(packet_out, data.data(), data.size());
-            REQUIRE_THROWS(packet_out.associated_context_packets_count());
-            CHECK(packet_out.has_associated_context_packets_count() == false);
+            REQUIRE_THROWS(packet_out.associated_context_packet_count());
+            CHECK(packet_out.has_associated_context_packet_count() == false);
         }
 
         SECTION("Optional ON")
         {
             TrailerData2 packet_in;
-            CHECK(packet_in.has_associated_context_packets_count() == false);
-            REQUIRE_THROWS(packet_in.associated_context_packets_count());
-            packet_in.associated_context_packets_count(0x7F);
-            CHECK(packet_in.has_associated_context_packets_count() == true);
-            CHECK(packet_in.associated_context_packets_count() == 0x7F);
+            CHECK(packet_in.has_associated_context_packet_count() == false);
+            REQUIRE_THROWS(packet_in.associated_context_packet_count());
+            packet_in.associated_context_packet_count(0x7F);
+            CHECK(packet_in.has_associated_context_packet_count() == true);
+            CHECK(packet_in.associated_context_packet_count() == 0x7F);
 
             auto data = TrailerData2::helper::pack(packet_in);
             auto* check_ptr = data.data();
@@ -159,8 +159,8 @@ TEST_CASE("Trailer", "[trailer]")
 
             TrailerData2 packet_out;
             TrailerData2::helper::unpack(packet_out, data.data(), data.size());
-            CHECK(packet_out.has_associated_context_packets_count() == true);
-            CHECK(packet_out.associated_context_packets_count() == 0x7F);
+            CHECK(packet_out.has_associated_context_packet_count() == true);
+            CHECK(packet_out.associated_context_packet_count() == 0x7F);
         }
     }
 
@@ -188,7 +188,7 @@ TEST_CASE("Trailer", "[trailer]")
         packet_in.sample_frame(vrtgen::packing::SSI::MIDDLE);
 
         auto data = TrailerData5::helper::pack(packet_in);
-        // FIXME #43
+        // FIXME the input header is never set to true even with sample_frame on
         // CHECK(packet_in.header().not_v49d0() == true);
 
         CHECK(((data[0] >> 1) & 0b1)  == 0b1); // check the 25th bit in the header
