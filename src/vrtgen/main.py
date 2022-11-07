@@ -42,6 +42,13 @@ def main():
         default=False,
         help='display debug messages'
     )
+    common_parser.add_argument(
+        '-p',
+        '--project',
+        action='store_true',
+        default=False,
+        help='create project with directory structure'
+    )
 
     arg_parser = argparse.ArgumentParser(
         description='Generate VITA 49.2 packet classes.',
@@ -99,6 +106,12 @@ def main():
         generator = generators[args.generator]()
     except KeyError:
         raise SystemExit("invalid backend '"+args.backend+"'")
+
+    if args.project:
+        if hasattr(generator, 'project'):
+            setattr(generator, 'project', args.project)
+        else:
+            raise SystemExit("generator {} does not have a project option".format(generator.__class__.__name__))
 
     for attr, _ in generator.get_options():
         value = getattr(args, attr, None)

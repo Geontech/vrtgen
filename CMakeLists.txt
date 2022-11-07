@@ -22,45 +22,7 @@ if(NOT import_vrtgen_error_code EQUAL 0)
     message(FATAL_ERROR "vrtgen Python module not found")
 endif()
 
-# Head files
-set(header_files
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/buffer.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/cif0.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/cif1.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/cif2.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/command.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/enums.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/header.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/indicator_fields.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/prologue.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/state_event_indicators.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/trailer.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/socket_base.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/socket_endpoint.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/tcp.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/udp.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/fixed.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/packed.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/swap.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/uuid.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/utility.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/version.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/vrtgen.hpp
-)
-
-add_library(vrtgen INTERFACE)
-target_sources(vrtgen INTERFACE ${header_files})
-target_include_directories(vrtgen INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-install(TARGETS vrtgen)
-install(
-    DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen
-    TYPE INCLUDE
-    FILES_MATCHING PATTERN "*.hpp"
-)
+add_subdirectory(include/vrtgen)
 
 # Create an empty "check" target to hang tests off of
 add_custom_target(check)
@@ -105,13 +67,19 @@ add_custom_target(check-libvrtgen
 add_dependencies(check check-libvrtgen)
 
 # Helper function to generate C++ source from a YAML file using vrtpktgen
-function(add_codegen_file TARGET YAML_FILE)
+function(add_codegen_file TARGET YAML_FILE FILE_LIST GEN_TARGET)
     set(TEST_DIRNAME tests/codegen/cpp)
+    set(hpp_list ${FILE_LIST})
+    set(cpp_list ${FILE_LIST})
+    list(TRANSFORM hpp_list APPEND ".hpp")
+    list(TRANSFORM cpp_list APPEND ".cpp")
+    #message("${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME} ${YAML_FILE}")
     get_filename_component(TEST_BASENAME "${YAML_FILE}" NAME_WE)
     add_custom_command(
         OUTPUT
-        ${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME}/${TEST_BASENAME}.cpp
-        ${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME}/${TEST_BASENAME}.hpp
+        ${hpp_list}
+        ${cpp_list}
+        ${TEST_DIRNAME}/${TEST_BASENAME}.hpp
         COMMAND
         ${Python3_EXECUTABLE} -m vrtgen.main cpp --dir ${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME} ${YAML_FILE}
         WORKING_DIRECTORY
@@ -119,7 +87,7 @@ function(add_codegen_file TARGET YAML_FILE)
         DEPENDS
             ${YAML_FILE}
     )
-    target_sources(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME}/${TEST_BASENAME}.cpp)
+    target_sources(${TARGET} PRIVATE ${cpp_list})
 endfunction()
 
 add_executable(test_codegen
@@ -132,21 +100,23 @@ add_executable(test_codegen
     tests/codegen/cpp/test_timestamp.cpp
     tests/codegen/cpp/test_header.cpp
     # tests/codegen/cpp/test_command.cpp
-#     tests/codegen/test_cif0.cpp
-#     tests/codegen/test_control_ids.cpp
-#     tests/codegen/test_timestamp.cpp
-#     tests/codegen/test_structs.cpp
-#     tests/codegen/test_user.cpp
+    # tests/codegen/test_cif0.cpp
+    # tests/codegen/test_control_ids.cpp
+    # tests/codegen/test_timestamp.cpp
+    # tests/codegen/test_structs.cpp
+    # tests/codegen/test_user.cpp
 )
-add_codegen_file(test_codegen tests/codegen/yamls/basic.yaml)
-add_codegen_file(test_codegen tests/codegen/yamls/data.yaml)
-add_codegen_file(test_codegen tests/codegen/yamls/context.yaml)
-add_codegen_file(test_codegen tests/codegen/yamls/streamid.yaml)
-add_codegen_file(test_codegen tests/codegen/yamls/classid.yaml)
-add_codegen_file(test_codegen tests/codegen/yamls/timestamp.yaml)
-add_codegen_file(test_codegen tests/codegen/yamls/packetheader.yaml)
-add_codegen_file(test_codegen tests/codegen/yamls/classid.yaml)
-add_codegen_file(test_codegen tests/codegen/yamls/packettrailer.yaml)
+
+add_subdirectory(tests/codegen/cpp)
+
+add_codegen_file(test_codegen tests/codegen/yamls/basic.yaml "${basic_gen_list}" generate-basic)
+add_codegen_file(test_codegen tests/codegen/yamls/data.yaml "${data_gen_list}" generate-data)
+add_codegen_file(test_codegen tests/codegen/yamls/context.yaml "${context_gen_list}" generate-context)
+add_codegen_file(test_codegen tests/codegen/yamls/streamid.yaml "${stream_id_gen_list}" generate-streamid)
+add_codegen_file(test_codegen tests/codegen/yamls/timestamp.yaml "${timestamp_gen_list}" generate-timestamp)
+add_codegen_file(test_codegen tests/codegen/yamls/packetheader.yaml "${packetheader_gen_list}" generate-packetheader)
+add_codegen_file(test_codegen tests/codegen/yamls/classid.yaml "${classid_gen_list}" generate-classid)
+add_codegen_file(test_codegen tests/codegen/yamls/packettrailer.yaml "${packettrailer_gen_list}" generate-packettrailer)
 # add_codegen_file(test_codegen tests/codegen/yamls/command.yaml)
 # add_codegen_file(test_codegen tests/codegen/yamls/cif0.yaml)
 # add_codegen_file(test_codegen tests/codegen/yamls/control_ids.yaml)

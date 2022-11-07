@@ -317,6 +317,7 @@ class CppGenerator(Generator):
         self.controller_file = None
         self.controllee_base_file = None
         self.controllee_file = None
+        self.project = False
 
     output_dir = GeneratorOption(
         '--dir',
@@ -365,42 +366,78 @@ class CppGenerator(Generator):
 
     def end_file(self):
         os.makedirs(self.output_dir, exist_ok=True)
-        context = {
+        main_context = {
             'packets': self.packets,
             'namespace': self.namespace,
             'type_helper': self.type_helper
         }
-        context['header'] = self.header_file
-        context['header_name'] = self.header_name
-        template = self.env.get_template('packet.hpp.jinja2')
-        with open(os.path.join(self.output_dir, self.header_file), 'w') as fp:
-            fp.write(template.render(context))
 
-        template = self.env.get_template('packet.cpp.jinja2')
-        with open(os.path.join(self.output_dir, self.implfile), 'w') as fp:
-            fp.write(template.render(context))
+        if self.project:
+            self.include_dir = self.output_dir + '/include'
+            self.src_dir = self.output_dir + '/src'
+            os.makedirs(self.include_dir, exist_ok=True)
+            os.makedirs(self.src_dir, exist_ok=True)
 
-        if self.information_class:
-            context['information_class'] = self.information_class[1]
-            context['controller_name'] = self.information_class[0] + 'Controller'
-            # context['capability'] = self.capability
-            context['cmd_socket'] = self.cmd_socket
-            template = self.env.get_template('controller.hpp.jinja2')
-            self.controller_file = '{}.{}'.format(context['controller_name'], self.header_ext)
-            with open(os.path.join(self.output_dir, self.controller_file), 'w') as fp:
+            template = self.env.get_template('main.cpp.jinja2')
+            with open(os.path.join(self.output_dir, 'main.cpp'), 'w') as fp:
+                fp.write(template.render(main_context))
+
+            template = self.env.get_template('CMakeLists.main.jinja2')
+            with open(os.path.join(self.output_dir, 'CMakeLists.txt'), 'w') as fp:
+                fp.write(template.render(main_context))
+
+            template = self.env.get_template('CMakeLists.src.jinja2')
+            with open(os.path.join(self.src_dir, 'CMakeLists.txt'), 'w') as fp:
+                fp.write(template.render(main_context))
+        else:
+            self.include_dir = self.output_dir
+            self.src_dir = self.output_dir
+
+        main_context['header_name'] = self.header_name
+        template = self.env.get_template('packet_header.hpp.jinja2')
+        with open(os.path.join(self.include_dir, self.header_file), 'w') as fp:
+            fp.write(template.render(main_context))
+
+        for packet in self.packets:
+            context = {
+                'packets': [packet],
+                'namespace': self.namespace,
+                'type_helper': self.type_helper
+            }
+            header_file = name_to_snake(packet.name) + '.' + self.header_ext
+            implfile = name_to_snake(packet.name) + '.' + self.source_ext
+            context['header'] = header_file
+            context['header_name'] = self.header_name + '_' + name_to_snake(packet.name).upper()
+
+            template = self.env.get_template('packet.hpp.jinja2')
+            with open(os.path.join(self.include_dir, header_file), 'w') as fp:
                 fp.write(template.render(context))
 
-            context['controllee_base_name'] = self.information_class[0] + 'Controllee_base'
-            template = self.env.get_template('controllee_base.hpp.jinja2')
-            self.controllee_base_file = '{}.{}'.format(context['controllee_base_name'], self.header_ext)
-            with open(os.path.join(self.output_dir, self.controllee_base_file), 'w') as fp:
+            template = self.env.get_template('packet.cpp.jinja2')
+            with open(os.path.join(self.src_dir, implfile), 'w') as fp:
                 fp.write(template.render(context))
 
-            context['controllee_name'] = self.information_class[0] + 'Controllee'
-            template = self.env.get_template('controllee.hpp.jinja2')
-            self.controllee_file = '{}.{}'.format(context['controllee_name'], self.header_ext)
-            with open(os.path.join(self.output_dir, self.controllee_file), 'w') as fp:
-                fp.write(template.render(context))
+            if self.information_class:
+                context['information_class'] = self.information_class[1]
+                context['controller_name'] = self.information_class[0] + 'Controller'
+                # context['capability'] = self.capability
+                context['cmd_socket'] = self.cmd_socket
+                template = self.env.get_template('controller.hpp.jinja2')
+                self.controller_file = '{}{}.{}'.format(context['controller_name'], name_to_snake(packet.name), self.header_ext)
+                with open(os.path.join(self.output_dir, self.controller_file), 'w') as fp:
+                    fp.write(template.render(context))
+
+                context['controllee_base_name'] = self.information_class[0] + 'Controllee_base'
+                template = self.env.get_template('controllee_base.hpp.jinja2')
+                self.controllee_base_file = '{}{}.{}'.format(context['controllee_base_name'], name_to_snake(packet.name), self.header_ext)
+                with open(os.path.join(self.output_dir, self.controllee_base_file), 'w') as fp:
+                    fp.write(template.render(context))
+
+                context['controllee_name'] = self.information_class[0] + 'Controllee'
+                template = self.env.get_template('controllee.hpp.jinja2')
+                self.controllee_file = '{}{}.{}'.format(context['controllee_name'], name_to_snake(packet.name), self.header_ext)
+                with open(os.path.join(self.output_dir, self.controllee_file), 'w') as fp:
+                    fp.write(template.render(context))
 
 
     def generate_packet(self, name, packet):

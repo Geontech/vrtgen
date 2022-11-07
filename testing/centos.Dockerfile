@@ -1,5 +1,4 @@
 FROM centos:7
-ARG branch
 
 COPY . /root/vrtgen
 
