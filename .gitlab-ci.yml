@@ -15,7 +15,7 @@ build:centos:7:
     before_script:
       - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     script:
-      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file testing/centos.Dockerfile -t $CI_REGISTRY/geon/vita49/vrtgen/centos-builder:latest .
+      - docker build --pull --file testing/centos.Dockerfile -t $CI_REGISTRY/geon/vita49/vrtgen/centos-builder:latest .
       - docker push $CI_REGISTRY/geon/vita49/vrtgen/centos-builder:latest
 
 build:rockylinux:8:
