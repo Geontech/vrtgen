@@ -36,25 +36,25 @@ def test_trailer_default():
     """
     name,trailer = parse_document(document)
     check_basics(name, trailer)
-    assert not trailer.state_event_indicators.calibrated_time.enabled
-    assert not trailer.state_event_indicators.calibrated_time.required
-    assert not trailer.state_event_indicators.valid_data.enabled
-    assert not trailer.state_event_indicators.valid_data.required
-    assert not trailer.state_event_indicators.reference_lock.enabled
-    assert not trailer.state_event_indicators.reference_lock.required
-    assert not trailer.state_event_indicators.agc_mgc.enabled
-    assert not trailer.state_event_indicators.agc_mgc.required
-    assert not trailer.state_event_indicators.detected_signal.enabled
-    assert not trailer.state_event_indicators.detected_signal.required
-    assert not trailer.state_event_indicators.spectral_inversion.enabled
-    assert not trailer.state_event_indicators.spectral_inversion.required
-    assert not trailer.state_event_indicators.over_range.enabled
-    assert not trailer.state_event_indicators.over_range.required
-    assert not trailer.state_event_indicators.sample_loss.enabled
-    assert not trailer.state_event_indicators.sample_loss.required
-    assert not trailer.associated_context_packet_count.enabled
-    assert not trailer.associated_context_packet_count.required
-    assert len(trailer.state_event_indicators.subfields) == 0
+    assert not trailer.calibrated_time.enabled
+    assert not trailer.calibrated_time.required
+    assert not trailer.valid_data.enabled
+    assert not trailer.valid_data.required
+    assert not trailer.reference_lock.enabled
+    assert not trailer.reference_lock.required
+    assert not trailer.agc_mgc.enabled
+    assert not trailer.agc_mgc.required
+    assert not trailer.detected_signal.enabled
+    assert not trailer.detected_signal.required
+    assert not trailer.spectral_inversion.enabled
+    assert not trailer.spectral_inversion.required
+    assert not trailer.over_range.enabled
+    assert not trailer.over_range.required
+    assert not trailer.sample_loss.enabled
+    assert not trailer.sample_loss.required
+    assert not trailer.associated_context_packets_count.enabled
+    assert not trailer.associated_context_packets_count.required
+    assert len(trailer.subfields) == 0
 
 testdata = [
     ('calibrated_time', 'required'),
@@ -83,16 +83,16 @@ def test_trailer_state_event_fields(parameter, mode):
     """.format(parameter, mode)
     name,trailer = parse_document(document)
     check_basics(name, trailer)
-    assert hasattr(trailer.state_event_indicators, parameter)
-    assert getattr(trailer.state_event_indicators, parameter).enabled
+    assert hasattr(trailer, parameter)
+    assert getattr(trailer, parameter).enabled
     if mode == 'required':
-        assert getattr(trailer.state_event_indicators, parameter).required
+        assert getattr(trailer, parameter).required
     else:
-        assert not getattr(trailer.state_event_indicators, parameter).required
+        assert not getattr(trailer, parameter).required
 
 testdata = [
-    ('associated_context_packet_count', 'required'),
-    ('associated_context_packet_count', 'optional'),
+    ('associated_context_packets_count', 'required'),
+    ('associated_context_packets_count', 'optional'),
     ('sample_frame', 'required'),
     ('sample_frame', 'optional'),
 ]
@@ -170,7 +170,7 @@ def test_trailer_largest_user_defined():
     """
     _, trailer = parse_document(document)
     i = 0
-    for f in trailer.state_event_indicators.subfields[0].type_:
+    for f in trailer.subfields[0].type_:
         assert f.value == i
         i += 1
 
@@ -208,15 +208,15 @@ def test_trailer_basic_user_defined():
     """.format(var)
     name,trailer = parse_document(document)
     assert name == 'trailer'
-    assert len(trailer.state_event_indicators.subfields) == 2
-    assert trailer.state_event_indicators.valid_data.enabled
-    assert trailer.state_event_indicators.valid_data.required
-    assert trailer.state_event_indicators.subfields[0].name == var
-    assert trailer.state_event_indicators.subfields[0].enabled
-    assert trailer.state_event_indicators.subfields[0].required
-    assert trailer.state_event_indicators.subfields[1].name == var + '_enable'
-    assert trailer.state_event_indicators.subfields[1].enabled
-    assert trailer.state_event_indicators.subfields[1].required
+    assert len(trailer.subfields) == 2
+    assert trailer.valid_data.enabled
+    assert trailer.valid_data.required
+    assert trailer.subfields[0].name == var
+    assert trailer.subfields[0].enabled
+    assert trailer.subfields[0].required
+    assert trailer.subfields[1].name == var + '_enable'
+    assert trailer.subfields[1].enabled
+    assert trailer.subfields[1].required
 
 def test_trailer_all_four_user_defined():
     var = 'test_var'
@@ -230,16 +230,16 @@ def test_trailer_all_four_user_defined():
     """.format(var, var, var, var)
     name,trailer = parse_document(document)
     assert name == 'trailer'
-    assert trailer.state_event_indicators.valid_data.enabled
-    assert trailer.state_event_indicators.valid_data.required
-    assert len(trailer.state_event_indicators.subfields) == 2*4
+    assert trailer.valid_data.enabled
+    assert trailer.valid_data.required
+    assert len(trailer.subfields) == 2*4
     for i in range(0, 4):
-        assert trailer.state_event_indicators.subfields[2*i].name == var + str(i+1)
-        assert trailer.state_event_indicators.subfields[2*i].enabled
-        assert trailer.state_event_indicators.subfields[2*i].required
-        assert trailer.state_event_indicators.subfields[2*i+1].name == var + str(i+1) + '_enable'
-        assert trailer.state_event_indicators.subfields[2*i+1].enabled
-        assert trailer.state_event_indicators.subfields[2*i+1].required
+        assert trailer.subfields[2*i].name == var + str(i+1)
+        assert trailer.subfields[2*i].enabled
+        assert trailer.subfields[2*i].required
+        assert trailer.subfields[2*i+1].name == var + str(i+1) + '_enable'
+        assert trailer.subfields[2*i+1].enabled
+        assert trailer.subfields[2*i+1].required
         
 def test_trailer_sample_and_user_defined():
     var = 'test_var'
@@ -255,18 +255,18 @@ def test_trailer_sample_and_user_defined():
     assert trailer.sample_frame.required
     assert trailer.sample_frame.packed_tag.position == 11
     assert trailer.sample_frame.bits == 2
-    assert len(trailer.state_event_indicators.subfields) == 2*2
+    assert len(trailer.subfields) == 2*2
     for i in range(0, 2):
-        assert trailer.state_event_indicators.subfields[2*i].name == var + str(i+1)
-        assert trailer.state_event_indicators.subfields[2*i].enabled
-        assert trailer.state_event_indicators.subfields[2*i].required
-        assert trailer.state_event_indicators.subfields[2*i].packed_tag.position == i + 8
-        assert trailer.state_event_indicators.subfields[2*i].bits == 1
-        assert trailer.state_event_indicators.subfields[2*i+1].name == var + str(i+1) + '_enable'
-        assert trailer.state_event_indicators.subfields[2*i+1].enabled
-        assert trailer.state_event_indicators.subfields[2*i+1].required
-        assert trailer.state_event_indicators.subfields[2*i+1].packed_tag.position == i + 20
-        assert trailer.state_event_indicators.subfields[2*i+1].bits == 1
+        assert trailer.subfields[2*i].name == var + str(i+1)
+        assert trailer.subfields[2*i].enabled
+        assert trailer.subfields[2*i].required
+        assert trailer.subfields[2*i].packed_tag.position == i + 8
+        assert trailer.subfields[2*i].bits == 1
+        assert trailer.subfields[2*i+1].name == var + str(i+1) + '_enable'
+        assert trailer.subfields[2*i+1].enabled
+        assert trailer.subfields[2*i+1].required
+        assert trailer.subfields[2*i+1].packed_tag.position == i + 20
+        assert trailer.subfields[2*i+1].bits == 1
 
 def test_trailer_user_defined_list():
     var = 'test_var'
@@ -280,15 +280,15 @@ def test_trailer_user_defined_list():
     """.format(var)
     name,trailer = parse_document(document)
     assert name == 'trailer'
-    assert trailer.state_event_indicators.valid_data.enabled
-    assert trailer.state_event_indicators.valid_data.required
-    assert len(trailer.state_event_indicators.subfields) == 1*2
-    assert trailer.state_event_indicators.subfields[0].bits == 2
-    assert trailer.state_event_indicators.subfields[0].name == var
-    assert trailer.state_event_indicators.subfields[0].enabled
-    assert trailer.state_event_indicators.subfields[0].required
+    assert trailer.valid_data.enabled
+    assert trailer.valid_data.required
+    assert len(trailer.subfields) == 1*2
+    assert trailer.subfields[0].bits == 2
+    assert trailer.subfields[0].name == var
+    assert trailer.subfields[0].enabled
+    assert trailer.subfields[0].required
     
-    enums = [f for f in trailer.state_event_indicators.subfields[0].type_]
+    enums = [f for f in trailer.subfields[0].type_]
     assert enums[0].name == 'one'
     assert enums[0].value == 0
     assert enums[1].name == 'two'
@@ -304,7 +304,7 @@ def test_trailer_sample_frame():
     """
     name,trailer = parse_document(document)
     assert name == 'trailer'
-    assert trailer.state_event_indicators.valid_data.enabled
-    assert trailer.state_event_indicators.valid_data.required
+    assert trailer.valid_data.enabled
+    assert trailer.valid_data.required
     assert trailer.sample_frame.enabled
     assert trailer.sample_frame.required

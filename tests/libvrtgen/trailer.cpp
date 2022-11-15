@@ -175,8 +175,8 @@ TEST_CASE("Trailer 5.1.6", "[trailer]")
 
     SECTION("Rule 5.1.6-14")
     {
-        trailer.associated_context_packet_count_enable(true);
-        trailer.associated_context_packet_count(0x7F);
+        trailer.associated_context_packets_count_enable(true);
+        trailer.associated_context_packets_count(0x7F);
         trailer.pack_into(packed_bytes.data());
         // enabled the first and the last to verify the range of the state and event indicators
         CHECK(packed_bytes == bytes{ 0x00, 0x00, 0x00, 0xFF });

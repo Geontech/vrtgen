@@ -32,9 +32,8 @@ TEST_CASE("StreamID 5.1.2", "[stream_id]")
         // The user is in charge of setting the stream id for the data packet and context packets they want 
         // this shows that it is a 32bit number and can be carried in ever VRT Packet
         const uint32_t STREAM_ID = 0x12345678;
-        uint8_t* check_ptr;
         const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
-        bytes data;
+        // bytes data;
         
         SECTION("Data Packet 32-bit Stream ID")
         {
@@ -43,15 +42,14 @@ TEST_CASE("StreamID 5.1.2", "[stream_id]")
             packet_in.stream_id(STREAM_ID);
             CHECK(packet_in.stream_id() == STREAM_ID);
 
-            data = WithStreamIdData::helper::pack(packet_in);
+            auto data = packet_in.data();
             // CHECK endianess
-            check_ptr = data.data();
+            auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
             // if equal to 0x12 big endian but if equal to 0x78 little endian
             CHECK(check_ptr[0] == 0x12);
             
-            WithStreamIdData packet_out;
-            WithStreamIdData::helper::unpack(packet_out, data.data(), data.size());
+            WithStreamIdData packet_out(data);
             CHECK(packet_out.stream_id() == STREAM_ID);
         }
 
@@ -62,15 +60,14 @@ TEST_CASE("StreamID 5.1.2", "[stream_id]")
             packet_in.stream_id(STREAM_ID);
             CHECK(packet_in.stream_id() == STREAM_ID);
 
-            data = WithStreamIdContext::helper::pack(packet_in);
+            auto data = packet_in.data();
             // CHECK endianess
-            check_ptr = data.data();
+            auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
             // if equal to 0x12 big endian but if equal to 0x78 little endian
             CHECK(check_ptr[0] == 0x12);
             
-            WithStreamIdContext packet_out;
-            WithStreamIdContext::helper::unpack(packet_out, data.data(), data.size());
+            WithStreamIdContext packet_out(data);
             CHECK(packet_out.stream_id() == STREAM_ID);
         }
 
@@ -81,15 +78,14 @@ TEST_CASE("StreamID 5.1.2", "[stream_id]")
             packet_in.stream_id(STREAM_ID);
             CHECK(packet_in.stream_id() == STREAM_ID);
 
-            data = WithStreamIdControl::helper::pack(packet_in);
+            auto data = packet_in.data();
             // CHECK endianess
-            check_ptr = data.data();
+            auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
             // if equal to 0x12 big endian but if equal to 0x78 little endian
             CHECK(check_ptr[0] == 0x12);
             
-            WithStreamIdControl packet_out;
-            WithStreamIdControl::helper::unpack(packet_out, data.data(), data.size());
+            WithStreamIdControl packet_out(data);
             CHECK(packet_out.stream_id() == STREAM_ID);
         }
     }
@@ -97,16 +93,14 @@ TEST_CASE("StreamID 5.1.2", "[stream_id]")
     SECTION("Rule 5.1.2-2") 
     {
         // Stream ID Consistently Omitted/Included - "Consistency" is up to the user to design the yaml correctly
-        uint8_t* check_ptr;
-        bytes data;
         const uint32_t STREAM_ID = 0x12345678;
         bytes STREAM_ID_BE{ 0, 0, 0, 0 };
 
         SECTION("Data Packet without Stream ID")
         {
             WithoutStreamIdData packet_in;
-            data = WithoutStreamIdData::helper::pack(packet_in);
-            auto bytes_required = WithoutStreamIdData::helper::bytes_required(packet_in);
+            auto data = packet_in.data();
+            auto bytes_required = packet_in.size();
 
             CHECK(bytes_required == HEADER_BYTES);
         }
@@ -114,14 +108,14 @@ TEST_CASE("StreamID 5.1.2", "[stream_id]")
         SECTION("Data Packet with default Stream ID")
         {
             WithStreamIdData packet_in;
-            data = WithStreamIdData::helper::pack(packet_in);
-            auto bytes_required = WithStreamIdData::helper::bytes_required(packet_in);
+            auto data = packet_in.data();
+            auto bytes_required = packet_in.size();
 
             CHECK(bytes_required == HEADER_BYTES + STREAM_ID_BYTES);
 
-            check_ptr = data.data();
+            auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
-            const decltype(data) stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
+            const bytes stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(stream_id == STREAM_ID_BE);
         }
@@ -129,14 +123,14 @@ TEST_CASE("StreamID 5.1.2", "[stream_id]")
         SECTION("Context Packet default Stream ID")
         {
             WithStreamIdContext packet_in;
-            data = WithStreamIdContext::helper::pack(packet_in);
-            auto bytes_required = WithStreamIdContext::helper::bytes_required(packet_in);
+            auto data = packet_in.data();
+            auto bytes_required = packet_in.size();
 
             CHECK(bytes_required == BASIC_CONTEXT_BYTES); // header, streamid, and cif
 
-            check_ptr = data.data();
+            auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
-            const decltype(data) stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
+            const bytes stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(stream_id == STREAM_ID_BE);
         }
@@ -144,14 +138,14 @@ TEST_CASE("StreamID 5.1.2", "[stream_id]")
         SECTION("Control Packet default Stream ID")
         {
             WithStreamIdControl packet_in;
-            data = WithStreamIdControl::helper::pack(packet_in);
-            auto bytes_required = WithStreamIdControl::helper::bytes_required(packet_in);
+            auto data = packet_in.data();
+            auto bytes_required = packet_in.size();
 
             CHECK(bytes_required == BASIC_CONTROL_BYTES); // header, stream id, cif, cam, and message_id
 
-            check_ptr = data.data();
+            auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
-            const decltype(data) stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
+            const bytes stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(stream_id == STREAM_ID_BE);
         }
@@ -161,14 +155,14 @@ TEST_CASE("StreamID 5.1.2", "[stream_id]")
             WithStreamIdData packet_in;
             packet_in.stream_id(STREAM_ID);
             STREAM_ID_BE = bytes { 0x12, 0x34, 0x56, 0x78 };
-            data = WithStreamIdData::helper::pack(packet_in);
-            auto bytes_required = WithStreamIdData::helper::bytes_required(packet_in);
+            auto data = packet_in.data();
+            auto bytes_required = packet_in.size();
 
             CHECK(bytes_required == BASIC_DATA_BYTES + STREAM_ID_BYTES);
 
-            check_ptr = data.data();
+            auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
-            const decltype(data) stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
+            const bytes stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(stream_id == STREAM_ID_BE);
         }
@@ -178,14 +172,14 @@ TEST_CASE("StreamID 5.1.2", "[stream_id]")
             WithStreamIdContext packet_in;
             packet_in.stream_id(STREAM_ID);
             STREAM_ID_BE = bytes { 0x12, 0x34, 0x56, 0x78 };
-            data = WithStreamIdContext::helper::pack(packet_in);
-            auto bytes_required = WithStreamIdContext::helper::bytes_required(packet_in);
+            auto data = packet_in.data();
+            auto bytes_required = packet_in.size();
 
             CHECK(bytes_required == BASIC_CONTEXT_BYTES); // header, streamid, and cif
 
-            check_ptr = data.data();
+            auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
-            const decltype(data) stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
+            const bytes stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(stream_id == STREAM_ID_BE);
         }
@@ -195,14 +189,14 @@ TEST_CASE("StreamID 5.1.2", "[stream_id]")
             WithStreamIdControl packet_in;
             packet_in.stream_id(STREAM_ID);
             STREAM_ID_BE = bytes { 0x12, 0x34, 0x56, 0x78 };
-            data = WithStreamIdControl::helper::pack(packet_in);
-            auto bytes_required = WithStreamIdControl::helper::bytes_required(packet_in);
+            auto data = packet_in.data();
+            auto bytes_required = packet_in.size();
 
             CHECK(bytes_required == BASIC_CONTROL_BYTES); // header, stream id, cif, cam, and message_id
 
-            check_ptr = data.data();
+            auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
-            const decltype(data) stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
+            const bytes stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
             check_ptr += STREAM_ID_BYTES;
             CHECK(stream_id == STREAM_ID_BE);
         }
@@ -226,17 +220,17 @@ TEST_CASE("Stream ID User Defined", "[stream_id][user_defined]")
     const bytes STREAM_ID_BE{ 0, 0, 0x03, 0xFF };
     TestStreamIdData4 packet_in;
     CHECK(packet_in.stream_id().thing1() == 0);
-    packet_in.stream_id().thing1(0x3FF);
+    test_stream_id_data4::structs::StreamIdentifier id;
+    id.thing1(0x3FF);
+    packet_in.stream_id(id);
     CHECK(packet_in.stream_id().thing1() == 0x3FF);
 
-    auto data = TestStreamIdData4::helper::pack(packet_in);
+    auto data = packet_in.data();
     auto* check_ptr = data.data();
-    check_ptr = data.data();
     check_ptr += HEADER_BYTES;
-    const decltype(data) stream_id(check_ptr, check_ptr + 4);
+    const bytes stream_id(check_ptr, check_ptr + 4);
     CHECK(stream_id == STREAM_ID_BE);
 
-    TestStreamIdData4 packet_out;
-    TestStreamIdData4::helper::unpack(packet_out, data.data(), data.size());
+    TestStreamIdData4 packet_out(data);
     CHECK(packet_out.stream_id().thing1() == 0x3FF);
 }

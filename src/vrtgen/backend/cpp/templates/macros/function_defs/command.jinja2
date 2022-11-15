@@ -16,19 +16,20 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
-{% for packet in packets %}
-#include "{{packet.name | to_snake}}.hpp"
-{% endfor %}
-#include <iostream>
 
-typedef std::vector<uint8_t> bytes;
-
-int main() {
-{% for packet in packets %}
+{%- macro message_id_defs(packet, type_helper) %}
+{{ type_helper.value_type(packet.message_id) }} {{ packet.name }}::{{ packet.message_id.name }}() const
 {
-    using packet_type = {{packet.name}};
-    packet_type packet_in;
-    std::cout << "Size: " << packet_in.size() << std::endl;
+    const auto pos{ m_positions.at("{{ packet.message_id.name }}") };
+    {{ type_helper.value_type(packet.message_id) }} retval{};
+    memcpy(&retval, m_data.data() + pos, sizeof({{ type_helper.value_type(packet.message_id) }}));
+    return vrtgen::swap::from_be(retval);
 }
-{% endfor %}
+
+void {{ packet.name }}::{{ packet.message_id.name }}(const {{ type_helper.value_type(packet.message_id) }} value)
+{
+    auto swapped{ vrtgen::swap::to_be(value) };
+    const auto pos{ m_positions.at("{{ packet.message_id.name }}") };
+    memcpy(m_data.data() + pos, &swapped, sizeof(swapped));
 }
+{% endmacro %}

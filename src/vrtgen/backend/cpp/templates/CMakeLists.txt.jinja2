@@ -16,19 +16,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
-{% for packet in packets %}
-#include "{{packet.name | to_snake}}.hpp"
-{% endfor %}
-#include <iostream>
+cmake_minimum_required(VERSION 3.17)
+project({{ project_name }} VERSION {{ project_version }} LANGUAGES CXX)
+include(GNUInstallDirs)
 
-typedef std::vector<uint8_t> bytes;
+# Set the C++ version required
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-int main() {
-{% for packet in packets %}
-{
-    using packet_type = {{packet.name}};
-    packet_type packet_in;
-    std::cout << "Size: " << packet_in.size() << std::endl;
-}
-{% endfor %}
-}
+add_executable(
+)

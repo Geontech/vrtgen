@@ -14,8 +14,8 @@ class Polarization(PackedStruct):
     Antenna polarization [9.4.8].
     """
     name : str = 'polarization'
-    tilt_angle : FixedPointType = field(default_factory=lambda: FixedPointType('tilt_angle', bits=16, signed=True, radix=13, resolution=8, packed_tag=PackedTag(31,16,0)))
-    ellipticity_angle : FixedPointType = field(default_factory=lambda: FixedPointType('ellipticity_angle', bits=16, signed=True, radix=13, resolution=8, packed_tag=PackedTag(15,16,0)))
+    tilt_angle : FixedPointType = field(default_factory=lambda: FixedPointType('tilt_angle', bits=16, signed=True, radix=13, packed_tag=PackedTag(31,16,0)))
+    ellipticity_angle : FixedPointType = field(default_factory=lambda: FixedPointType('ellipticity_angle', bits=16, signed=True, radix=13, packed_tag=PackedTag(15,16,0)))
 
     def __post_init__(self):
         super().__post_init__()
@@ -132,11 +132,9 @@ class Time(FixedPointType):
     """
     name : str = 'Time'
     def __post_init__(self):
-        super().__post_init__()
         self.bits = 64
         self.signed = True
         self.radix = 22
-        self.resolution = 9
 
 @dataclass
 class SectorStepScanCIF(CIF):
@@ -248,6 +246,10 @@ class DiscreteIO(PackedStruct):
     """
     name : str = 'discrete_io'
     subfields : List[Field] = field(default_factory=list)
+
+    @property
+    def is_integer(self):
+        return len(self.subfields) == 0
 
     def _validate(self, mapping):
         for key,val in mapping.items():

@@ -44,9 +44,9 @@ public:
      * VRT Packet Type is 4 bits long at bit position 31
      * See VITA 49.2 Figure 5.1.1-1 and Table 5.1.1-1
      */
-    PacketType packet_type() const noexcept
+    constexpr PacketType packet_type() const noexcept
     {
-        return m_packed_0.get<31,4,PacketType>();
+        return m_packed.get<31,4,PacketType>();
     }
 
     /**
@@ -56,9 +56,9 @@ public:
      * VRT Packet Type is 4 bits long at bit position 31
      * See VITA 49.2 Figure 5.1.1-1 and Table 5.1.1-1
      */
-    void packet_type(PacketType value) noexcept
+    constexpr void packet_type(PacketType value) noexcept
     {
-        m_packed_0.set<31,4>(value);
+        m_packed.set<31,4>(value);
     }
 
     /**
@@ -68,9 +68,9 @@ public:
      * Class ID Enable is 1 bit long at bit position 27
      * See VITA 49.2 Figure 5.1.1-1
      */
-    bool class_id_enable() const noexcept
+    constexpr bool class_id_enable() const noexcept
     {
-        return m_packed_0.get<27>();
+        return m_packed.get<27>();
     }
 
     /**
@@ -80,9 +80,9 @@ public:
      * Class ID Enable is 1 bit long at bit position 27
      * See VITA 49.2 Figure 5.1.1-1
      */
-    void class_id_enable(bool value) noexcept
+    constexpr void class_id_enable(bool value) noexcept
     {
-        m_packed_0.set<27>(value);
+        m_packed.set<27>(value);
     }
 
     /**
@@ -92,9 +92,9 @@ public:
      * TimeStamp-Integer (TSI) Code is 2 bits long at bit position 23
      * See VITA 49.2 Figure 5.1.1-1 and Table 5.1.1-2
      */
-    TSI tsi() const noexcept
+    constexpr TSI tsi() const noexcept
     {
-        return m_packed_0.get<23,2,TSI>();
+        return m_packed.get<23,2,TSI>();
     }
 
     /**
@@ -104,9 +104,9 @@ public:
      * TimeStamp-Integer (TSI) Code is 2 bits long at bit position 23
      * See VITA 49.2 Figure 5.1.1-1 and Table 5.1.1-2
      */
-    void tsi(TSI value) noexcept
+    constexpr void tsi(TSI value) noexcept
     {
-        m_packed_0.set<23,2>(value);
+        m_packed.set<23,2>(value);
     }
 
     /**
@@ -116,9 +116,9 @@ public:
      * TimeStamp-Fractional (TSF) Code is 2 bits long at bit position 21
      * See VITA 49.2 Figure 5.1.1-1 and Table 5.1.1-3
      */
-    TSF tsf() const noexcept
+    constexpr TSF tsf() const noexcept
     {
-        return m_packed_0.get<21,2,TSF>();
+        return m_packed.get<21,2,TSF>();
     }
 
     /**
@@ -128,9 +128,9 @@ public:
      * TimeStamp-Fractional (TSF) Code is 2 bits long at bit position 21
      * See VITA 49.2 Figure 5.1.1-1 and Table 5.1.1-3
      */
-    void tsf(TSF value) noexcept
+    constexpr void tsf(TSF value) noexcept
     {
-        m_packed_0.set<21,2>(value);
+        m_packed.set<21,2>(value);
     }
 
     /**
@@ -140,9 +140,9 @@ public:
      * Packet Count is 4 bits long at bit position 19
      * See VITA 49.2 Figure 5.1.1-1
      */
-    uint8_t packet_count() const noexcept
+    constexpr uint8_t packet_count() const noexcept
     {
-        return m_packed_0.get<19,4,uint8_t>();
+        return m_packed.get<19,4,uint8_t>();
     }
 
     /**
@@ -152,9 +152,9 @@ public:
      * Packet Count is 4 bits long at bit position 19
      * See VITA 49.2 Figure 5.1.1-1
      */
-    void packet_count(uint8_t value) noexcept
+    constexpr void packet_count(uint8_t value) noexcept
     {
-        m_packed_0.set<19,4>(value);
+        m_packed.set<19,4>(value);
     }
 
     /**
@@ -164,9 +164,9 @@ public:
      * Packet Size is 16 bits long at bit position 15
      * See VITA 49.2 Figure 5.1.1-1
      */
-    uint16_t packet_size() const noexcept
+    constexpr uint16_t packet_size() const noexcept
     {
-        return m_packed_0.get<15,16,uint16_t>();
+        return m_packed.get<15,16,uint16_t>();
     }
 
     /**
@@ -176,9 +176,9 @@ public:
      * Packet Size is 16 bits long at bit position 15
      * See VITA 49.2 Figure 5.1.1-1
      */
-    void packet_size(uint16_t value) noexcept
+    constexpr void packet_size(uint16_t value) noexcept
     {
-        m_packed_0.set<15,16>(value);
+        m_packed.set<15,16>(value);
     }
 
     /**
@@ -187,29 +187,29 @@ public:
      */
     constexpr std::size_t size() const noexcept
     {
-        return m_packed_0.size();
+        return m_packed.size();
     }
 
     /**
      * @brief Pack Header as bytes into the buffer
      * @param buffer_ptr Pointer to buffer location to add Header bytes
      */
-    inline void pack_into(uint8_t* buffer_ptr) const
+    inline constexpr void pack_into(uint8_t* buffer_ptr) const
     {
-        m_packed_0.pack_into(buffer_ptr);
+        m_packed.pack_into(buffer_ptr);
     }
 
     /**
      * @brief Unpack buffer bytes into Header
      * @param buffer_ptr Pointer to beginning of Header bytes in the buffer
      */
-    inline void unpack_from(const uint8_t* buffer_ptr)
+    inline constexpr void unpack_from(const uint8_t* buffer_ptr)
     {
-        m_packed_0.unpack_from(buffer_ptr);
+        m_packed.unpack_from(buffer_ptr);
     }
 
 protected:
-    vrtgen::packed<uint32_t> m_packed_0; //!< Packed Header bits structure
+    vrtgen::packed<uint32_t> m_packed; //!< Packed Header bits structure
 
 }; // end class Header
 
@@ -229,7 +229,7 @@ public:
      */
     bool trailer_included() const noexcept
     {
-        return m_packed_0.get<26>();
+        return m_packed.get<26>();
     }
 
     /**
@@ -241,7 +241,7 @@ public:
      */
     void trailer_included(bool value) noexcept
     {
-        m_packed_0.set<26>(value);
+        m_packed.set<26>(value);
     }
 
     /**
@@ -253,7 +253,7 @@ public:
      */
     bool not_v49d0() const noexcept
     {
-        return m_packed_0.get<25>();
+        return m_packed.get<25>();
     }
 
     /**
@@ -265,7 +265,7 @@ public:
      */
     void not_v49d0(bool value) noexcept
     {
-        m_packed_0.set<25>(value);
+        m_packed.set<25>(value);
     }
 
     /**
@@ -277,7 +277,7 @@ public:
      */
     bool spectrum_or_time() const noexcept
     {
-        return m_packed_0.get<24>();
+        return m_packed.get<24>();
     }
 
     /**
@@ -289,7 +289,7 @@ public:
      */
     void spectrum_or_time(bool value) noexcept
     {
-        m_packed_0.set<24>(value);
+        m_packed.set<24>(value);
     }
 
 }; // end class DataHeader
@@ -310,7 +310,7 @@ public:
      */
     bool not_v49d0() const noexcept
     {
-        return m_packed_0.get<25>();
+        return m_packed.get<25>();
     }
 
     /**
@@ -322,7 +322,7 @@ public:
      */
     void not_v49d0(bool value) noexcept
     {
-        m_packed_0.set<25>(value);
+        m_packed.set<25>(value);
     }
 
     /**
@@ -334,7 +334,7 @@ public:
      */
     TSM tsm() const noexcept
     {
-        return TSM{ m_packed_0.get<24>() };
+        return TSM{ m_packed.get<24>() };
     }
 
     /**
@@ -346,7 +346,7 @@ public:
      */
     void tsm(TSM value) noexcept
     {
-        m_packed_0.set<24>(static_cast<bool>(value));
+        m_packed.set<24>(static_cast<bool>(value));
     }
 
 }; // end class ContextHeader
@@ -367,7 +367,7 @@ public:
      */
     bool acknowledge_packet() const noexcept
     {
-        return m_packed_0.get<26>();
+        return m_packed.get<26>();
     }
 
     /**
@@ -379,7 +379,7 @@ public:
      */
     void acknowledge_packet(bool value) noexcept
     {
-        m_packed_0.set<26>(value);
+        m_packed.set<26>(value);
     }
 
     /**
@@ -391,7 +391,7 @@ public:
      */
     bool cancellation_packet() const noexcept
     {
-        return m_packed_0.get<24>();
+        return m_packed.get<24>();
     }
 
      /**
@@ -403,7 +403,7 @@ public:
      */
     void cancellation_packet(bool value) noexcept
     {
-        m_packed_0.set<24>(value);
+        m_packed.set<24>(value);
     }
 
 }; // end class CommandHeader

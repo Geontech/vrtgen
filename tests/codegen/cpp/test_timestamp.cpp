@@ -30,7 +30,6 @@ TEST_CASE("Timestamp", "[timestamp]")
         const uint32_t INTEGER_TIMESTAMP = 0xABCDEF12;
         const bytes INTEGER_TS_BE{ 0xAB, 0xCD, 0xEF, 0x12 };
         bytes data;
-        uint8_t* check_ptr;
 
         SECTION("Data Packet")
         {
@@ -38,10 +37,15 @@ TEST_CASE("Timestamp", "[timestamp]")
             packet_in.integer_timestamp(INTEGER_TIMESTAMP);
             CHECK(packet_in.integer_timestamp() == INTEGER_TIMESTAMP);
 
-            data = TimestampData1::helper::pack(packet_in);
+            auto data = packet_in.data();
 
-            TimestampData1 packet_out;
-            TimestampData1::helper::unpack(packet_out, data.data(), data.size());
+            CHECK(int(data[(HEADER_BYTES + STREAM_ID_BYTES + CLASS_ID_BYTES + INTEGER_TS_BYTES)-1]) == 0x12);
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CLASS_ID_BYTES;
+            const bytes packed_integer_ts(check_ptr, check_ptr + INTEGER_TS_BYTES);
+            CHECK(packed_integer_ts == INTEGER_TS_BE);
+
+            TimestampData1 packet_out(data);
             CHECK(packet_out.integer_timestamp() == INTEGER_TIMESTAMP);
         }
 
@@ -51,10 +55,15 @@ TEST_CASE("Timestamp", "[timestamp]")
             packet_in.integer_timestamp(INTEGER_TIMESTAMP);
             CHECK(packet_in.integer_timestamp() == INTEGER_TIMESTAMP);
 
-            data = TimestampContext1::helper::pack(packet_in);
+            auto data = packet_in.data();
 
-            TimestampContext1 packet_out;
-            TimestampContext1::helper::unpack(packet_out, data.data(), data.size());
+            CHECK(int(data[(HEADER_BYTES + STREAM_ID_BYTES + CLASS_ID_BYTES + INTEGER_TS_BYTES)-1]) == 0x12);
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CLASS_ID_BYTES;
+            const bytes packed_integer_ts(check_ptr, check_ptr + INTEGER_TS_BYTES);
+            CHECK(packed_integer_ts == INTEGER_TS_BE);
+
+            TimestampContext1 packet_out(data);
             CHECK(packet_out.integer_timestamp() == INTEGER_TIMESTAMP);
         }
 
@@ -64,18 +73,17 @@ TEST_CASE("Timestamp", "[timestamp]")
             packet_in.integer_timestamp(INTEGER_TIMESTAMP);
             CHECK(packet_in.integer_timestamp() == INTEGER_TIMESTAMP);
 
-            data = TimestampControl1::helper::pack(packet_in);
+            auto data = packet_in.data();
 
-            TimestampControl1 packet_out;
-            TimestampControl1::helper::unpack(packet_out, data.data(), data.size());
+            CHECK(int(data[(HEADER_BYTES + STREAM_ID_BYTES + CLASS_ID_BYTES + INTEGER_TS_BYTES)-1]) == 0x12);
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CLASS_ID_BYTES;
+            const bytes packed_integer_ts(check_ptr, check_ptr + INTEGER_TS_BYTES);
+            CHECK(packed_integer_ts == INTEGER_TS_BE);
+
+            TimestampControl1 packet_out(data);
             CHECK(packet_out.integer_timestamp() == INTEGER_TIMESTAMP);
         }
-
-        CHECK(int(data[(HEADER_BYTES + STREAM_ID_BYTES + CLASS_ID_BYTES + INTEGER_TS_BYTES)-1]) == 0x12);
-        check_ptr = data.data();
-        check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CLASS_ID_BYTES;
-        const decltype(data) packed_integer_ts(check_ptr, check_ptr + INTEGER_TS_BYTES);
-        CHECK(packed_integer_ts == INTEGER_TS_BE);
     }
 
     SECTION("Rule 5.1.4.2-1")
@@ -86,8 +94,6 @@ TEST_CASE("Timestamp", "[timestamp]")
         bytes FRACTIONAL_TS_BE;
         FRACTIONAL_TS_BE.insert( FRACTIONAL_TS_BE.end(), MOST_SIGNIFICANT_BE.begin(), MOST_SIGNIFICANT_BE.end() );
         FRACTIONAL_TS_BE.insert( FRACTIONAL_TS_BE.end(), LEAST_SIGNIFICANT_BE.begin(), LEAST_SIGNIFICANT_BE.end() );
-        bytes data;
-        uint8_t* check_ptr;
 
         SECTION("Data Packet")
         {
@@ -95,10 +101,19 @@ TEST_CASE("Timestamp", "[timestamp]")
             packet_in.fractional_timestamp(FRACIONAL_TS);
             CHECK(packet_in.fractional_timestamp() == FRACIONAL_TS);
 
-            data = TimestampData1::helper::pack(packet_in);
+            auto data = packet_in.data();
 
-            TimestampData1 packet_out;
-            TimestampData1::helper::unpack(packet_out, data.data(), data.size());
+            // CHECK(int(data[(HEADER_BYTES + STREAM_ID_BYTES + CLASS_ID_BYTES + FRACTIONAL_TS_BYTES)-1]) == 0xF0);
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CLASS_ID_BYTES + INTEGER_TS_BYTES;
+            const bytes packed_most_significant(check_ptr, check_ptr + FRACTIONAL_TS_BYTES/2);
+            const bytes packed_least_significant(check_ptr + FRACTIONAL_TS_BYTES/2, check_ptr + FRACTIONAL_TS_BYTES);
+            const bytes packed_fractional_ts(check_ptr, check_ptr + FRACTIONAL_TS_BYTES);
+            CHECK(packed_most_significant == MOST_SIGNIFICANT_BE);
+            CHECK(packed_least_significant == LEAST_SIGNIFICANT_BE);
+            CHECK(packed_fractional_ts == FRACTIONAL_TS_BE);
+
+            TimestampData1 packet_out(data);
             CHECK(packet_out.fractional_timestamp() == FRACIONAL_TS);
         }
         
@@ -108,10 +123,19 @@ TEST_CASE("Timestamp", "[timestamp]")
             packet_in.fractional_timestamp(FRACIONAL_TS);
             CHECK(packet_in.fractional_timestamp() == FRACIONAL_TS);
 
-            data = TimestampContext1::helper::pack(packet_in);
+            auto data = packet_in.data();
 
-            TimestampContext1 packet_out;
-            TimestampContext1::helper::unpack(packet_out, data.data(), data.size());
+            // CHECK(int(data[(HEADER_BYTES + STREAM_ID_BYTES + CLASS_ID_BYTES + FRACTIONAL_TS_BYTES)-1]) == 0xF0);
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CLASS_ID_BYTES + INTEGER_TS_BYTES;
+            const bytes packed_most_significant(check_ptr, check_ptr + FRACTIONAL_TS_BYTES/2);
+            const bytes packed_least_significant(check_ptr + FRACTIONAL_TS_BYTES/2, check_ptr + FRACTIONAL_TS_BYTES);
+            const bytes packed_fractional_ts(check_ptr, check_ptr + FRACTIONAL_TS_BYTES);
+            CHECK(packed_most_significant == MOST_SIGNIFICANT_BE);
+            CHECK(packed_least_significant == LEAST_SIGNIFICANT_BE);
+            CHECK(packed_fractional_ts == FRACTIONAL_TS_BE);
+
+            TimestampContext1 packet_out(data);
             CHECK(packet_out.fractional_timestamp() == FRACIONAL_TS);
         }
         
@@ -121,21 +145,20 @@ TEST_CASE("Timestamp", "[timestamp]")
             packet_in.fractional_timestamp(FRACIONAL_TS);
             CHECK(packet_in.fractional_timestamp() == FRACIONAL_TS);
 
-            data = TimestampControl1::helper::pack(packet_in);
+            auto data = packet_in.data();
 
-            TimestampControl1 packet_out;
-            TimestampControl1::helper::unpack(packet_out, data.data(), data.size());
+            // CHECK(int(data[(HEADER_BYTES + STREAM_ID_BYTES + CLASS_ID_BYTES + FRACTIONAL_TS_BYTES)-1]) == 0xF0);
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CLASS_ID_BYTES + INTEGER_TS_BYTES;
+            const bytes packed_most_significant(check_ptr, check_ptr + FRACTIONAL_TS_BYTES/2);
+            const bytes packed_least_significant(check_ptr + FRACTIONAL_TS_BYTES/2, check_ptr + FRACTIONAL_TS_BYTES);
+            const bytes packed_fractional_ts(check_ptr, check_ptr + FRACTIONAL_TS_BYTES);
+            CHECK(packed_most_significant == MOST_SIGNIFICANT_BE);
+            CHECK(packed_least_significant == LEAST_SIGNIFICANT_BE);
+            CHECK(packed_fractional_ts == FRACTIONAL_TS_BE);
+
+            TimestampControl1 packet_out(data);
             CHECK(packet_out.fractional_timestamp() == FRACIONAL_TS);
         }
-
-        // CHECK(int(data[(HEADER_BYTES + STREAM_ID_BYTES + CLASS_ID_BYTES + FRACTIONAL_TS_BYTES)-1]) == 0xF0);
-        check_ptr = data.data();
-        check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CLASS_ID_BYTES + INTEGER_TS_BYTES;
-        const decltype(data) packed_most_significant(check_ptr, check_ptr + FRACTIONAL_TS_BYTES/2);
-        const decltype(data) packed_least_significant(check_ptr + FRACTIONAL_TS_BYTES/2, check_ptr + FRACTIONAL_TS_BYTES);
-        const decltype(data) packed_fractional_ts(check_ptr, check_ptr + FRACTIONAL_TS_BYTES);
-        CHECK(packed_most_significant == MOST_SIGNIFICANT_BE);
-        CHECK(packed_least_significant == LEAST_SIGNIFICANT_BE);
-        CHECK(packed_fractional_ts == FRACTIONAL_TS_BE);
     }
 }

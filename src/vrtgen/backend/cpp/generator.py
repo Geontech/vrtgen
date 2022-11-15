@@ -265,10 +265,9 @@ class CppPacket:
         if self.cif7 and self.cif7.enabled:
             self.cif7.attributes.packet_name = name_to_snake(self.name)
             return_value.append(self.cif7.attributes)
-        if self.trailer and self.trailer.state_event_indicators.is_user_defined: 
+        if self.trailer and self.trailer.is_user_defined: 
             self.trailer.packet_name = name_to_snake(self.name)
-            self.trailer.state_event_indicators.packet_name = name_to_snake(self.name)
-            return_value.append(self.trailer.state_event_indicators)
+            return_value.append(self.trailer)
         if self.stream_id and self.stream_id.user_defined:
             self.stream_id.packet_name = name_to_snake(self.name)
             return_value.append(self.stream_id)
@@ -286,8 +285,8 @@ class CppPacket:
                 for field in self.cif1.discrete_io_64.type_.fields:
                     if isinstance(field, EnumType):
                         retval.append(format_enum(field.type_))
-        if len(self.trailer.state_event_indicators.enums) > 0:
-            for enum in self.trailer.state_event_indicators.enums:
+        if len(self.trailer.enums) > 0:
+            for enum in self.trailer.enums:
                 enum.packet_name = name_to_snake(self.name)
                 retval.append(format_enum(enum.type_))
         return retval
@@ -368,7 +367,6 @@ class CppGenerator(Generator):
         os.makedirs(self.output_dir, exist_ok=True)
         main_context = {
             'packets': self.packets,
-            'namespace': self.namespace,
             'type_helper': self.type_helper
         }
 
@@ -401,7 +399,6 @@ class CppGenerator(Generator):
         for packet in self.packets:
             context = {
                 'packets': [packet],
-                'namespace': self.namespace,
                 'type_helper': self.type_helper
             }
             header_file = name_to_snake(packet.name) + '.' + self.header_ext

@@ -19,7 +19,7 @@ import yaml
 from dataclasses import make_dataclass
 
 from vrtgen.parser.model import data, context, command
-from vrtgen.parser.model.types import packing, basic
+from vrtgen.parser.model.types import packing
 from vrtgen.parser.model import prologue, cif0, cif1, cif2, cif7
 from vrtgen.parser.model import information
 
@@ -116,8 +116,6 @@ def stream_id_constructor(loader, node) -> prologue.StreamIdentifier:
         fields = [('name',str,'stream_id')]
         for key,val in loader.construct_mapping(node, deep=True).items():
             val.name = key
-            val.accessors['getter'] = key
-            val.accessors['setter'] = key
             if val.packed_tag:
                 val.packed_tag.field_word = 0
                 val.packed_tag.packed_int = 0
@@ -205,23 +203,11 @@ def discrete_io_32_constructor(loader, node) -> cif1.DiscreteIO:
         discrete_io.validate_and_parse_mapping(**loader.construct_mapping(node, deep=True))
     return discrete_io
 
-# def discrete_io_32_optional_constructor(loader, node) -> cif1.DiscreteIO:
-#     discrete_io = cif1.DiscreteIO32(enabled=True)
-#     if not isinstance(node, yaml.ScalarNode):
-#         discrete_io.validate_and_parse_mapping(**loader.construct_mapping(node, deep=True))
-#     return discrete_io
-
 def discrete_io_64_constructor(loader, node) -> cif1.DiscreteIO:
     discrete_io = cif1.DiscreteIO64(enabled=True)
     if not isinstance(node, yaml.ScalarNode):
         discrete_io.validate_and_parse_mapping(**loader.construct_mapping(node, deep=True))
     return discrete_io
-
-# def discrete_io_64_optional_constructor(loader, node) -> cif1.DiscreteIO:
-#     discrete_io = cif1.DiscreteIO64(enabled=True)
-#     if not isinstance(node, yaml.ScalarNode):
-#         discrete_io.validate_and_parse_mapping(**loader.construct_mapping(node, deep=True))
-#     return discrete_io
 
 def trailer_constructor(loader, node) -> data.Trailer:
     trailer = data.Trailer(enabled=True, required=True)
@@ -235,8 +221,8 @@ def information_class_contructor(loader, node) -> information.InformationClass:
         info_class.validate_and_parse_mapping(**loader.construct_mapping(node, deep=True))
     return info_class
 
-def integer_type_constructor(loader, node) -> basic.IntegerType:
-    integer_type = basic.IntegerType(enabled=True, required=True)
+def integer_type_constructor(loader, node) -> packing.IntegerType:
+    integer_type = packing.IntegerType(enabled=True, required=True)
 
     if not isinstance(node, yaml.ScalarNode):
         integer_type.parse_mapping(**loader.construct_mapping(node))

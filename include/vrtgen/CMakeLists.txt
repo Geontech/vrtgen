@@ -33,8 +33,6 @@ add_library(vrtgen INTERFACE)
 target_sources(vrtgen INTERFACE ${header_files})
 target_include_directories(vrtgen INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/../)
 
-message("TEST TEST ${CMAKE_CURRENT_SOURCE_DIR}")
-
 install(TARGETS vrtgen)
 install(
     DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}

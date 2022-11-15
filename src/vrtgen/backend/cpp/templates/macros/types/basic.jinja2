@@ -110,12 +110,12 @@ void reset_{{ field.name }}_attributes() noexcept
 
 {%- macro ref_getter(field, type_helper, cif7) %}
 {% set field_name = field.name %}
-{% set field_getter = field.getter %}
+{% set field_getter = field.name %}
 {% set field_type = type_helper.member_type(field) %}
 {% if cif7 is defined and cif7 is not none %}
 {%   if cif7.enabled and not field.indicator_only %}
 {% set field_name = field.name + "_attributes" %}
-{% set field_getter = field.getter + "_attributes" %}
+{% set field_getter = field.name + "_attributes" %}
 {% set field_type = type_helper.member_type(cif7.attributes) + "<" + type_helper.value_type(field.type_) + ">" %}
 {%   endif %}
 {% endif %}
@@ -134,12 +134,12 @@ constexpr {{ field_type }}& {{ field_getter }}(){{ ' noexcept' if not field.is_o
 
 {%- macro const_ref_getter(field, type_helper, cif7) %}
 {% set field_name = field.name %}
-{% set field_getter = field.getter %}
+{% set field_getter = field.name %}
 {% set field_type = type_helper.member_type(field) %}
 {% if cif7 is defined and cif7 is not none %}
 {%   if cif7.enabled and not field.indicator_only %}
 {% set field_name = field.name + "_attributes" %}
-{% set field_getter = field.getter + "_attributes" %}
+{% set field_getter = field.name + "_attributes" %}
 {% set field_type = type_helper.member_type(cif7.attributes) + "<" + type_helper.value_type(field.type_) + ">" %}
 {% endif %}
 {% endif %}
@@ -158,12 +158,12 @@ constexpr const {{ field_type }}& {{ field_getter }}() const{{ ' noexcept' if no
 
 {%- macro value_getter(field, type_helper, cif7, packed) %}
 {% set field_name = field.name %}
-{% set field_getter = field.getter %}
+{% set field_getter = field.name %}
 {% set field_type = type_helper.value_type(field) %}
 {% if cif7 is defined and cif7 is not none %}
 {%   if cif7.enabled and not field.indicator_only %}
 {% set field_name = field.name + "_attributes" %}
-{% set field_getter = field.getter + "_attributes" %}
+{% set field_getter = field.name + "_attributes" %}
 {% set field_type = type_helper.member_type(cif7.attributes) + "<" + type_helper.value_type(field.type_) + ">" %}
 {%   endif %}
 {% endif %}
@@ -196,7 +196,7 @@ constexpr const {{ field_type }}& {{ field_getter }}() const{{ ' noexcept' if no
 {% elif field.is_integer_type or field.type_.is_integer_type %}
     return vrtgen::swap::from_be(_{{ field_name }}{{ '.value()' if field.is_optional }});
 {% else %}
-    return _{{ field_name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
+    return _{{ field_name }}{{ '.value()' if field.is_optional }}{{ '.get()' }}; //if type_helper.requires_get_set(field);
 {% endif %}
 }
 {% endmacro %}
@@ -228,11 +228,11 @@ constexpr const {{ field_type }}& {{ field_getter }}() const{{ ' noexcept' if no
  * @param value Value to assign to {{ field.name }}
  */
 {% if field.user_defined %}
-void {{ field.setter }}(const {{ type_helper.member_type(field) }}& value)
+void {{ field.name }}(const {{ type_helper.value_type(field) }}& value)
 {% elif not type_helper.is_scalar(field) %}
-void {{ field.setter }}(const {{ type_helper.value_type(field) }}& value)
+void {{ field.name }}(const {{ type_helper.value_type(field) }}& value)
 {% else %}
-void {{ field.setter }}({{ type_helper.value_type(field) }} value)
+void {{ field.name }}({{ type_helper.value_type(field) }} value)
 {% endif %}
 {
 {% if type_helper.requires_get_set(field)  %}

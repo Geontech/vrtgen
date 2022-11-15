@@ -16,7 +16,7 @@
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
 from dataclasses import dataclass
-from .basic import IntegerType
+from .packing import IntegerType
 
 @dataclass
 class StreamIdentifier(IntegerType):
@@ -27,7 +27,6 @@ class StreamIdentifier(IntegerType):
     name : str = 'stream_id'
 
     def __post_init__(self):
-        super().__post_init__()
         self.type_ = type(self).__name__
         self.bits = 32
 
@@ -42,7 +41,6 @@ class IntegerTimestamp(IntegerType):
     name : str = 'integer_timestamp'
 
     def __post_init__(self):
-        super().__post_init__()
         self.type_ = type(self).__name__
         self.bits = 32
 
@@ -54,7 +52,6 @@ class FractionalTimestamp(IntegerType):
     name : str = 'fractional_timestamp'
 
     def __post_init__(self):
-        super().__post_init__()
         self.type_ = type(self).__name__
         self.bits = 64
 
@@ -65,7 +62,6 @@ class OUI(IntegerType):
     """
 
     def __post_init__(self):
-        super().__post_init__()
         self.bits = 24
     
     def __str__(self):

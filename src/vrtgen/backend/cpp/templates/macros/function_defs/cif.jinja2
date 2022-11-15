@@ -1,0 +1,143 @@
+/*#
+ * Copyright (C) 2022 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- import "macros/function_defs/common.jinja2" as common %}
+
+{%- macro function_defs(packet_name, cif, type_helper) %}
+{% for field in cif.fields if field.enabled %}
+{% if type_helper.is_scalar(field) %}
+{%   if field.is_optional %}
+std::optional<{{ type_helper.value_type(field) }}> {{ packet_name }}::{{ field.name }}() const
+{%   else %}
+{{ type_helper.value_type(field) }} {{ packet_name }}::{{ field.name }}() const
+{%   endif %}
+{
+{%   if field.is_optional %}
+    if (!m_{{ cif.name }}.{{ field.name }}()) {
+        return std::nullopt;
+    }
+{%   endif %}
+{% if field.indicator_only %}
+    return m_{{ cif.name }}.{{ field.name }}();
+{% else %}
+    const auto pos{ m_positions.at("{{ field.name }}") };
+    {{ type_helper.member_type(field) }} retval{};
+{%   if type_helper.is_scalar(field) %}
+    std::memcpy(&retval, m_data.data() + pos, sizeof(retval));
+{%     if field.is_fixed_point %}
+    return vrtgen::fixed::to_fp{{ type_helper.fixed_template(field) }}(vrtgen::swap::from_be(retval));
+{%     elif field.is_integer %}
+    return vrtgen::swap::from_be(retval);
+{%     endif %}
+{%   else %}
+    retval.unpack_from(m_data.data() + pos);
+    return retval;
+{%   endif %}
+{% endif %}
+}
+{% else %}
+{{ common.getters(packet_name, field, type_helper) | trim }}
+{% endif %}
+
+void {{ packet_name }}::{{ field.name }}(const {{ type_helper.value_type(field) }}{{ '&' if not type_helper.is_scalar(field) }} value)
+{
+{% if not field.indicator_only %}
+{%   if field.is_fixed_point %}
+    auto swapped{ vrtgen::swap::to_be(vrtgen::fixed::to_int{{ type_helper.fixed_template(field) }}(value)) };
+{%   elif field.is_integer %}
+    auto swapped{ vrtgen::swap::to_be(value) };
+{%   else %}
+    m_{{ field.name }} = value;
+{%   endif %}
+    const auto pos{ m_positions.at("{{ field.name }}") };
+{%   if field.is_optional %}
+    if (!m_{{ cif.name }}.{{ field.name }}()) {
+{%     if type_helper.is_scalar(field) %}
+        m_data.insert(m_data.begin() + pos, sizeof(swapped), 0);
+{%     else %}
+{%       if field.is_optional %}
+        m_data.insert(m_data.begin() + pos, m_{{ field.name }}->size(), 0);
+{%       else %}
+        m_data.insert(m_data.begin() + pos, m_{{ field.name }}.size(), 0);
+{%       endif %}
+{%     endif %}
+        update_positions();
+        update_packet_size();
+    }
+{%   endif %}
+{%   if type_helper.is_scalar(field) %}
+    std::memcpy(m_data.data() + pos, &swapped, sizeof(swapped));
+{%   else %}
+{%     if field.is_optional %}
+    m_{{ field.name }}->pack_into(m_data.data() + pos);
+{%     else %}
+    m_{{ field.name }}.pack_into(m_data.data() + pos);
+{%     endif %}
+{%   endif %}
+    m_{{ cif.name }}.{{ field.name }}(true);
+{% else %}
+    m_{{ cif.name }}.{{ field.name }}(value);
+{% endif %}
+    const auto cif_pos{ m_positions.at("{{ cif.name }}") };
+    m_{{ cif.name }}.pack_into(m_data.data() + cif_pos);
+}
+{% if field.is_optional %}
+
+void {{ packet_name }}::reset_{{ field.name }}()
+{
+    m_{{ cif.name }}.{{ field.name }}(false);
+    const auto pos{ m_positions.at("{{ field.name }}") };
+{%   if type_helper.is_scalar(field) %}
+    m_data.erase(m_data.begin() + pos, m_data.begin() + pos + sizeof({{ type_helper.member_type(field) }}));
+{%   else %}
+{%     if field.is_optional %}
+    m_data.erase(m_data.begin() + pos, m_data.begin() + pos + m_{{ field.name }}->size());
+{%     else %}
+    m_data.erase(m_data.begin() + pos, m_data.begin() + pos + m_{{ field.name }}.size());
+{%     endif %}
+{%   endif %}
+    update_positions();
+    update_packet_size();
+}
+{% endif %}
+
+{% endfor %}
+{% endmacro %}
+
+{%- macro enable_function_defs(packet_name, cif, type_helper) %}
+{% for field in cif.fields if field.enabled and not field.indicator_only %}
+/**
+ * @brief Check if {{ field.name }} is enabled in {{ cif.name }}
+ * @return true if {{ field.name }} is enabled in {{ cif.name }}, otherwise false
+ */
+bool {{ packet_name }}::{{ field.name }}_enabled() const
+{
+    return m_{{ cif.name }}.{{ field.name }}();
+}
+
+/**
+ * @brief Check if {{ field.name }} is enabled in {{ cif.name }}
+ * @param value Value to set {{ field.name }} in {{ cif.name }}
+ */
+void {{ packet_name }}::{{ field.name }}_enabled(bool value)
+{
+    m_{{ cif.name }}.{{ field.name }}(value);
+}
+{% endfor %}
+{% endmacro %}

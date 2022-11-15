@@ -1,0 +1,95 @@
+/*#
+ * Copyright (C) 2022 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- macro function_defs(packet, type_helper) %}
+std::span<const uint8_t> {{ packet.name }}::payload() const
+{
+    return { m_data.data() + m_positions.at("payload"), payload_size() };
+}
+
+void {{ packet.name }}::payload(std::span<const uint8_t> data)
+{
+    const auto pos{ m_positions.at("payload") };
+{% if packet.trailer.enabled %}
+    m_data.resize(pos + data.size_bytes() + m_{{ packet.trailer.name }}.size());
+    if (!data.empty()) {
+        std::memcpy(m_data.data() + pos, data.data(), data.size_bytes());
+    }
+    m_positions.at("{{ packet.trailer.name }}") = m_data.size() - m_{{ packet.trailer.name }}.size();
+{% else %}
+    m_data.resize(pos + data.size_bytes());
+    if (!data.empty()) {
+        std::memcpy(m_data.data() + pos, data.data(), data.size_bytes());
+    }
+{% endif %}
+    update_packet_size();
+}
+
+std::size_t {{ packet.name }}::payload_size() const
+{
+{% if packet.trailer.enabled %}
+    return m_positions.at("{{ packet.trailer.name }}") - m_positions.at("payload");
+{% else %}
+    return m_data.size() - m_positions.at("payload");
+{% endif %}
+}
+
+{% if packet.trailer.enabled %}
+const {{ type_helper.value_type(packet.trailer) }}& {{ packet.name }}::{{ packet.trailer.name }}() const
+{
+    return m_{{ packet.trailer.name }};
+}
+
+{% for field in packet.trailer.fields if field.enabled and not field.indicator_only and not field.is_enable %}
+{%   set value_type = type_helper.value_type(field) %}
+std::optional<{{ value_type }}> {{ packet.name }}::{{ field.name }}() const
+{
+{% if field.is_enum %}
+    if (static_cast<typename std::underlying_type<{{ value_type }}>::type>(m_{{ packet.trailer.name }}.{{ field.name }}())) {
+{% else %}
+    if (m_{{ packet.trailer.name }}.{{ field.name }}_enable()) {
+{% endif %}
+        return m_{{ packet.trailer.name }}.{{ field.name }}();
+    }
+    return std::nullopt;
+}
+
+void {{ packet.name }}::{{ field.name }}(const {{ value_type }} value)
+{
+    m_{{ packet.trailer.name }}.{{ field.name }}_enable(true);
+    m_{{ packet.trailer.name }}.{{ field.name }}(value);
+    const auto pos{ m_positions.at("{{ packet.trailer.name }}") };
+    m_{{ packet.trailer.name }}.pack_into(m_data.data() + pos);
+}
+
+void {{ packet.name }}::reset_{{ field.name }}()
+{
+    m_{{ packet.trailer.name }}.{{ field.name }}_enable(false);
+{% if field.is_enum %}
+    m_{{ packet.trailer.name }}.{{ field.name }}(static_cast<{{ value_type }}>(0));
+{% else %}
+    m_{{ packet.trailer.name }}.{{ field.name }}(false);
+{% endif %}
+    const auto pos{ m_positions.at("{{ packet.trailer.name }}") };
+    m_{{ packet.trailer.name }}.pack_into(m_data.data() + pos);
+}
+
+{% endfor %}
+{% endif %}
+{% endmacro %}

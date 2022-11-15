@@ -58,7 +58,7 @@ public:
 
     template <std::size_t Pos, std::size_t Bits=1, typename Tout=bool>
     requires (detail::valid_position<Pos, packed::BITS>)
-    inline Tout get() const
+    inline constexpr Tout get() const
     {
         using traits = detail::field_traits<T,Pos,Bits>;
         // Fetch the stored bits in host order, then extract the field  bits
@@ -67,7 +67,7 @@ public:
 
     template <std::size_t Pos, std::size_t Bits=1, typename Tin>
     requires (detail::valid_position<Pos, packed::BITS>)
-    inline void set(Tin value)
+    inline constexpr void set(Tin value)
     {
         using traits = detail::field_traits<T,Pos,Bits>;
         // Fetch the current value in host order, then mask off the field bits
@@ -81,7 +81,7 @@ public:
      * @brief Checks if any of the packed bits are set to true
      * @return true if any of the bits are set to true, otherwise false
      */
-    bool any() const noexcept
+    constexpr bool any() const noexcept
     {
         return !none();
     }
@@ -90,7 +90,7 @@ public:
      * @brief Checks if none of the packed bits are set to true
      * @return true if none of the bits are set to true, otherwise false
      */
-    bool none() const noexcept
+    constexpr bool none() const noexcept
     {
         return m_value == 0;
     }
@@ -108,7 +108,7 @@ public:
      * @brief Pack packed value as bytes into the buffer
      * @param buffer_ptr Pointer to buffer location to add packed value bytes
      */
-    inline void pack_into(uint8_t* buffer_ptr) const
+    inline constexpr void pack_into(uint8_t* buffer_ptr) const
     {
         std::memcpy(buffer_ptr, &m_value, sizeof(value_type));
     }
@@ -117,7 +117,7 @@ public:
      * @brief Unpack buffer bytes into packed value
      * @param buffer_ptr Pointer to beginning of packed value bytes in the buffer
      */
-    inline void unpack_from(const uint8_t* buffer_ptr)
+    inline constexpr void unpack_from(const uint8_t* buffer_ptr)
     {
         std::memcpy(&m_value, buffer_ptr, sizeof(value_type));
     }
@@ -151,7 +151,7 @@ public:
      * @brief Pack field as bytes into the buffer
      * @param buffer_ptr Pointer to buffer location to add field bytes
      */
-    inline void pack_into(uint8_t* buffer_ptr) const
+    inline constexpr void pack_into(uint8_t* buffer_ptr) const
     {
         m_packed.pack_into(buffer_ptr);
     }
@@ -160,7 +160,7 @@ public:
      * @brief Unpack buffer bytes into field
      * @param buffer_ptr Pointer to beginning of field bytes in the buffer
      */
-    inline void unpack_from(const uint8_t* buffer_ptr)
+    inline constexpr void unpack_from(const uint8_t* buffer_ptr)
     {
         m_packed.unpack_from(buffer_ptr);
     }
@@ -170,7 +170,7 @@ protected:
      * @brief Returns the subfield value at bit position 31
      * @return Subfield value at bit position 31
      */
-    double subfield_31() const noexcept
+    constexpr double subfield_31() const noexcept
     {
         return vrtgen::fixed::to_fp<16,R>(m_packed.get<31,16,int16_t>());
     }
@@ -179,7 +179,7 @@ protected:
      * @brief Sets the subfield value at bit position 31
      * @param value Subfield value to set
      */
-    void subfield_31(double value) noexcept
+    constexpr void subfield_31(double value) noexcept
     {
         m_packed.set<31,16>(vrtgen::fixed::to_int<16,R>(value));
     }
@@ -188,7 +188,7 @@ protected:
      * @brief Returns the subfield value at bit position 15
      * @return Subfield value at bit position 15
      */
-    double subfield_15() const noexcept
+    constexpr double subfield_15() const noexcept
     {
         return vrtgen::fixed::to_fp<16,R>(m_packed.get<15,16,int16_t>());
     }
@@ -197,7 +197,7 @@ protected:
      * @brief Sets the subfield value at bit position 15
      * @param value Subfield value to set
      */
-    void subfield_15(double value) noexcept
+    constexpr void subfield_15(double value) noexcept
     {
         m_packed.set<15,16,uint16_t>(vrtgen::fixed::to_int<16,R>(value));
     }

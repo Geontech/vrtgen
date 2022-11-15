@@ -108,6 +108,8 @@ class TypeHelper:
                 return self.value_type(field.type_)
             else:
                 return 'bool'
+        elif field.type_ == 'StreamIdentifier' and field.user_defined:
+            return '{}::structs::{}'.format(field.packet_name, field.type_)
         elif isinstance(field, BooleanType):
             return 'bool'
         elif isinstance(field, OUI):
@@ -146,6 +148,8 @@ class TypeHelper:
             return PACKING_NAMESPACE + field.type_
         elif isinstance(field, TemplateArrayStruct):
             return PACKING_NAMESPACE + field.type_ + '<{}>'.format(field.template_type)
+        elif isinstance(field, Trailer) and field.is_user_defined:
+            return '{}::structs::{}'.format(field.packet_name, field.type_)
         elif isinstance(field, Field):
             return PACKING_NAMESPACE + field.type_
         else:
@@ -164,12 +168,15 @@ class TypeHelper:
             return int_type(field)
         elif isinstance(field, ControlIdentifier) and (field.format == IdentifierFormat.UUID):
             return VRTGEN_NAMESPACE + 'UUID'
-        elif isinstance(field, Trailer) and field.state_event_indicators.is_user_defined:
+        elif isinstance(field, Trailer) and field.is_user_defined:
             return '{}::structs::{}'.format(field.packet_name, field.type_)
-        elif field.type_ == 'StreamIdentifier' and field.user_defined:
-            return '{}::structs::{}'.format(field.packet_name, field.type_)
+        # elif field.type_ == 'StreamIdentifier' and field.user_defined:
+        #     return '{}::structs::{}'.format(field.packet_name, field.type_)
         else:
             return self.value_type(field)
+
+    def requires_get_set(self, field):
+        return False
 
     def fixed_template(self, field):
         if isinstance(field, CIFEnableType):
@@ -222,13 +229,4 @@ class TypeHelper:
         elif isinstance(field, CIFEnableType):
             if field.type_:
                 return self.is_scalar(field.type_)
-        return False
-
-    def requires_get_set(self, field):
-        if isinstance(field, CIFEnableType):
-            return self.requires_get_set(field.type_)
-        if isinstance(field, OUI):
-            return True
-        # elif isinstance(field, ControlIdentifier) and (field.format == IdentifierFormat.UUID):
-        #     return True
         return False

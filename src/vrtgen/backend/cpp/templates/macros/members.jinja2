@@ -1,0 +1,80 @@
+/*#
+ * Copyright (C) 2022 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- macro literal_value(field, type_helper) %}
+{% if type_helper.literal_value(field) is not none %}
+{ {{ type_helper.literal_value(field) }} }
+{% endif %}
+{% endmacro %}
+
+{%- macro member(field, type_helper) %}
+{%   if field.is_optional %}
+std::optional<{{ type_helper.member_type(field) }}> m_{{ field.name }};
+{%   else %}
+{{ type_helper.member_type(field) }} m_{{ field.name }}{{ literal_value(field, type_helper) | trim }};
+{%   endif %}
+{% endmacro %}
+
+{%- macro ptr_member(field, type_helper) %}
+{{ type_helper.member_type(field) }}* m_{{ field.name }};
+{% endmacro %}
+
+{%- macro prologue(packet, type_helper) %}
+{{ member(packet.header, type_helper) | trim }}
+{% if packet.class_id.enabled %}
+{{ member(packet.class_id, type_helper) | trim }}
+{% endif %}
+{% if packet.stream_id.enabled %}
+{{ member(packet.stream_id, type_helper) | trim }}
+{% endif %}
+{% endmacro %}
+
+{%- macro command(packet, type_helper) %}
+{% if packet.cam.enabled %}
+{{ member(packet.cam, type_helper) | trim }}
+{% endif %}
+{% if packet.controllee_id.enabled and not type_helper.is_scalar(packet.controllee_id) %}
+{{ member(packet.controllee_id, type_helper) | trim }}
+{% endif %}
+{% if packet.controller_id.enabled and not type_helper.is_scalar(packet.controller_id) %}
+{{ member(packet.controller_id, type_helper) | trim }}
+{% endif %}
+{% endmacro %}
+
+{%- macro cif(packet, type_helper) %}
+{% if packet.cif0.enabled %}
+{{ member(packet.cif0, type_helper) | trim }}
+{%   for field in packet.cif0.fields if 
+        (field.enabled and not type_helper.is_scalar(field) and not field.indicator_only) %}
+{{ member(field, type_helper) | trim }}
+{%   endfor %}
+{% endif %}
+{% if packet.cif1.enabled %}
+{{ member(packet.cif1, type_helper) | trim }}
+{% endif %}
+{% if packet.cif2.enabled %}
+{{ member(packet.cif2, type_helper) | trim }}
+{% endif %}
+{% endmacro %}
+
+{%- macro data(packet, type_helper) %}
+{% if packet.trailer.enabled %}
+{{ member(packet.trailer, type_helper) | trim }}
+{% endif %}
+{% endmacro %}
