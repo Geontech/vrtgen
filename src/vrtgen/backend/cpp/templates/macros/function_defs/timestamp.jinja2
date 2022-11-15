@@ -1,0 +1,56 @@
+/*#
+ * Copyright (C) 2022 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- macro function_defs(packet, type_helper) %}
+{% if packet.timestamp.integer.enabled %}
+{{ type_helper.value_type(packet.timestamp.integer) }} {{ packet.name }}::{{ packet.timestamp.integer.name }}() const
+{
+    const auto pos{ m_positions.at("{{ packet.timestamp.integer.name }}") };
+    {{ type_helper.value_type(packet.timestamp.integer) }} retval{};
+    std::memcpy(&retval, m_data.data() + pos, sizeof({{ type_helper.value_type(packet.timestamp.integer) }}));
+    return vrtgen::swap::from_be(retval);
+}
+
+void {{ packet.name }}::{{ packet.timestamp.integer.name }}(const {{ type_helper.value_type(packet.timestamp.integer) }} value)
+{
+    auto swapped{ vrtgen::swap::to_be(value) };
+    const auto pos{ m_positions.at("{{ packet.timestamp.integer.name }}") };
+    std::memcpy(m_data.data() + pos, &swapped, sizeof(swapped));
+}
+{% endif %}
+{% if packet.timestamp.fractional.enabled %}
+{%   if packet.timestamp.integer.enabled %}
+
+{%   endif %}
+{{ type_helper.value_type(packet.timestamp.fractional) }} {{ packet.name }}::{{ packet.timestamp.fractional.name }}() const
+{
+    const auto pos{ m_positions.at("{{ packet.timestamp.fractional.name }}") };
+    {{ type_helper.value_type(packet.timestamp.fractional) }} retval{};
+    std::memcpy(&retval, m_data.data() + pos, sizeof({{ type_helper.value_type(packet.timestamp.fractional) }}));
+    return vrtgen::swap::from_be(retval);
+}
+
+void {{ packet.name }}::{{ packet.timestamp.fractional.name }}(const {{ type_helper.value_type(packet.timestamp.fractional) }} value)
+{
+    auto swapped{ vrtgen::swap::to_be(value) };
+    const auto pos{ m_positions.at("{{ packet.timestamp.fractional.name }}") };
+    std::memcpy(m_data.data() + pos, &swapped, sizeof(swapped));
+}
+{% endif %}
+{% endmacro %}

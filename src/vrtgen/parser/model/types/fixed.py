@@ -16,7 +16,7 @@
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
 from dataclasses import dataclass
-from .basic import FixedPointType
+from .packing import FixedPointType
 
 @dataclass
 class FixedPoint64r20(FixedPointType):
@@ -26,7 +26,6 @@ class FixedPoint64r20(FixedPointType):
     name : str = 'fixed64r20_t'
 
     def __post_init__(self):
-        super().__post_init__()
         self.type_ = type(self).__name__
         self.bits = 64
         self.signed = True
@@ -41,7 +40,6 @@ class FixedPoint32r6(FixedPointType):
     name : str = 'fixed32r6_t'
 
     def __post_init__(self):
-        super().__post_init__()
         self.type_ = type(self).__name__
         self.bits = 32
         self.signed = True
@@ -56,7 +54,6 @@ class FixedPoint16r7(FixedPointType):
     name : str = 'fixed16r7_t'
 
     def __post_init__(self):
-        super().__post_init__()
         self.type_ = type(self).__name__
         self.bits = 16
         self.signed = True
@@ -71,7 +68,6 @@ class FixedPoint16r6(FixedPointType):
     name : str = 'fixed16r6_t'
 
     def __post_init__(self):
-        super().__post_init__()
         self.type_ = type(self).__name__
         self.bits = 16
         self.signed = True

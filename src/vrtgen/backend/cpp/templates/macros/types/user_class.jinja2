@@ -17,6 +17,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
 {% import "macros/types/basic.jinja2" as basic %}
+{% import "macros/function_decls.jinja2" as common %}
 
 {%- macro define_class(class, type_helper) %}
 {% set fields = (class.fields | sort_packed_tags) %}
@@ -35,7 +36,7 @@ public:
 {% set packed = field.packed_tag.packed_int is not none and field.user_defined %}
 {% if class.child_of or field.is_extension_type %}
 {%   if field.packed_tag.packed_int is not none and field.user_defined %}
-    {{ basic.getters_and_setters(field, type_helper, packed) | indent(4) | trim }}
+    {{ basic.getters_and_setters(field, type_helper, true) | indent(4) | trim }}
 {%   endif %}
 {% else %}
     {{ basic.getters_and_setters(field, type_helper) | indent(4) | trim }}
@@ -44,92 +45,17 @@ public:
 {% if not class.child_of %}
     size_t size() const
     {
-        size_t retval = 0;
-{% for field in fields if field.enabled and field.packed_tag.packed_int is none %}
-{%   if type_helper.is_scalar(field) %}
-        retval += sizeof({{ type_helper.member_type(field) }}); // {{ field.name }}
-{%   else %}
-{%     if field.is_list %}
-        for (const auto{{ '&' if not type_helper.is_scalar(field.type_) }} elem : _{{ field.name }}) {
-{%       if not type_helper.is_scalar(field.type_) %}
-            retval += elem.size();
-{%       else %}
-            retval += sizeof(elem);
-{%       endif %}
-        }
-{%     else %}
-        retval += _{{ field.name }}.size();
-{%     endif %}
-{%   endif %}
-{% endfor %}
-        return retval;
+        return m_packed.size();
     }
 
     void pack_into(uint8_t* buffer_ptr) const
     {
-{% for field in fields if field.enabled and field.packed_tag.packed_int is none %}
-{%   if field.is_list %}
-        for (const auto{{ '&' if not type_helper.is_scalar(field.type_) }} elem : _{{ field.name }}) {
-{%     if type_helper.is_scalar(field.type_) %}
-            static_assert(std::is_trivially_copyable_v<decltype(elem)>);
-            std::memcpy(buffer_ptr, &elem, sizeof(elem));
-            buffer_ptr += sizeof(elem);
-{%     else %}
-            elem.pack_into(buffer_ptr);
-            buffer_ptr += elem.size();
-{%     endif %}
-        }
-{%   elif type_helper.is_scalar(field) %}
-{%      if not field.is_packed_type %}
-{%         set field_name = '_' + field.name %}
-{%      else %}
-{%         set field_name = field.name %}
-{%      endif %}
-        std::memcpy(buffer_ptr, &{{ field_name }}, sizeof({{ field_name }}));
-{%     if not loop.last %}
-        buffer_ptr += sizeof({{ field_name }});
-{%     endif %}
-{%   else %}
-        _{{ field.name }}.pack_into(buffer_ptr);
-{%     if not loop.last %}
-        buffer_ptr += _{{ field.name }}.size();
-{%     endif %}
-{%   endif %}
-{% endfor %}
+        m_packed.pack_into(buffer_ptr);
     }
 
     void unpack_from(const uint8_t* data)
     {
-        auto* ptr = data;
-{% for field in fields if field.enabled and field.packed_tag.packed_int is none %}
-{%   if field.is_list %}
-        _{{ field.name}}.resize({{ field.linked_size.getter }}());
-        for (size_t i=0; i<_{{ field.name }}.size(); ++i) {
-{%     if type_helper.is_scalar(field.type_) %}
-            std::memcpy(_{{ field.name }}.data() + i, ptr, sizeof(_{{ field.name }}[i]));
-            ptr += sizeof(_{{ field.name }}[i]);
-{%     else %}
-            _{{ field.name}}[i].unpack_from(ptr);
-            ptr += _{{ field.name }}[i].size();
-{%     endif %}
-        }
-{%  elif type_helper.is_scalar(field) %}
-{%      if not field.is_packed_type %}
-{%         set field_name = '_' + field.name %}
-{%      else %}
-{%         set field_name = field.name %}
-{%      endif %}
-        std::memcpy(&{{ field_name }}, ptr, sizeof({{ field_name }}));
-{%     if not loop.last %}
-        ptr += sizeof({{ field_name }});
-{%     endif %}
-{%   else %}
-        _{{ field.name }}.unpack_from(ptr);
-{%     if not loop.last %}
-        ptr += _{{ field.name }}.size();
-{%     endif %}
-{%   endif %}
-{% endfor %}
+        m_packed.unpack_from(data);
     }
 {% endif %}
 

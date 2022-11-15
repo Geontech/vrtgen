@@ -1,0 +1,187 @@
+/*#
+ * Copyright (C) 2022 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- macro constructor(packet, type_helper) %}
+{% set ns = namespace(curr_pos=0,has_cif0_field=false) %}
+{{ packet.name }}::{{ packet.name }}()
+{
+    m_data.resize(min_bytes());
+{% for field in packet.header.fields if field.enabled and field.value %}
+    m_{{ packet.header.name }}.{{ field.name }}({{ type_helper.literal_value(field) }});
+{%   if loop.last %}
+    m_{{ packet.header.name }}.pack_into(m_data.data());
+{%   endif %}
+{% endfor %}
+{% set ns.curr_pos = ns.curr_pos + (packet.header.bits / 8)|int %}
+{% if packet.stream_id.enabled %}
+    m_positions["{{ packet.stream_id.name }}"] = {{ ns.curr_pos }};
+{%   if packet.stream_id.value %}
+    {{ packet.stream_id.name }}({{ type_helper.literal_value(packet.stream_id) }});
+{%   endif %}
+{%   set ns.curr_pos = (ns.curr_pos + (packet.stream_id.bits / 8))|int %}
+{% endif %}
+{% if packet.class_id.enabled %}
+    m_positions["{{ packet.class_id.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.class_id.bits / 8))|int %}
+{%   for field in packet.class_id.fields if field.enabled and field.value %}
+    m_{{ packet.class_id.name }}.{{ field.name }}({{ type_helper.literal_value(field) }});
+{%   endfor %}
+    m_{{ packet.class_id.name }}.pack_into(m_data.data() + m_positions["{{ packet.class_id.name }}"]);
+{% endif %}
+{% if packet.timestamp.enabled %}
+{%   if packet.timestamp.integer.enabled %}
+    m_positions["{{ packet.timestamp.integer.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.timestamp.integer.bits / 8))|int %}
+{%   endif %}
+{%   if packet.timestamp.fractional.enabled %}
+    m_positions["{{ packet.timestamp.fractional.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.timestamp.fractional.bits / 8))|int %}
+{%   endif %}
+{% endif %}
+{% if packet.is_data %}
+    m_positions["payload"] = {{ ns.curr_pos }};
+{%   if packet.trailer.enabled %}
+    m_positions["{{ packet.trailer.name }}"] = {{ ns.curr_pos }};
+{%   endif %}
+{% endif %}
+{% if packet.cam.enabled %}
+    m_positions["{{ packet.cam.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.cam.bits / 8))|int %}
+{%   for field in packet.cam.fields if field.enabled and not field.is_optional %}
+    m_{{ packet.cam.name }}.{{ field.name }}({{ type_helper.literal_value(field) }});
+{%     if loop.last %}
+    m_{{ packet.cam.name }}.pack_into(m_data.data() + m_positions["{{ packet.cam.name }}"]);
+{%     endif %}
+{%   endfor %}
+{% endif %}
+{% if packet.message_id.enabled %}
+    m_positions["{{ packet.message_id.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.cam.bits / 8))|int %}
+{% endif %}
+{% if packet.controllee_id.enabled %}
+    m_positions["{{ packet.controllee_id.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.controllee_id.bits / 8))|int %}
+{% endif %}
+{% if packet.controller_id.enabled %}
+    m_positions["{{ packet.controller_id.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.controller_id.bits / 8))|int %}
+{% endif %}
+{% if packet.cif0.enabled %}
+    m_positions["{{ packet.cif0.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.cif0.bits / 8))|int %}
+{%   for field in packet.cif0.fields if field.enabled and not field.indicator_only %}
+{%     if field.required %}
+    m_{{ packet.cif0.name }}.{{ field.name }}(true);
+{%       set ns.has_cif0_field = true %}
+{%     endif %}
+    m_positions["{{ field.name }}"] = {{ ns.curr_pos }};
+{%     if loop.last and ns.has_cif0_field %}
+    m_{{ packet.cif0.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cif0.name }}"));
+{%     endif %}
+{%     if not field.is_optional %}
+{%       set ns.curr_pos = (ns.curr_pos + (field.type_.bits / 8))|int %}
+{%     endif %}
+{%   endfor %}
+{% endif %}
+{% if packet.cif1.enabled %}
+    m_positions["{{ packet.cif1.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.cif1.bits / 8))|int %}
+{% endif %}
+{% if packet.cif2.enabled %}
+    m_positions["{{ packet.cif2.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.cif2.bits / 8))|int %}
+{% endif %}
+    update_packet_size();
+}
+{% endmacro %}
+
+{%- macro unpack_constructor(packet, type_helper) %}
+{% set ns = namespace(curr_pos=0) %}
+{{ packet.name }}::{{ packet.name }}(std::span<const uint8_t> data)
+{
+    m_data.resize(data.size());
+    std::memcpy(m_data.data(), data.data(), data.size());
+    m_{{ packet.header.name }}.unpack_from(m_data.data());
+{% set ns.curr_pos = ns.curr_pos + (packet.header.bits / 8)|int %}
+{% if packet.stream_id.enabled %}
+    m_positions["{{ packet.stream_id.name }}"] = {{ ns.curr_pos }};
+{%   if packet.stream_id.user_defined %}
+    m_{{ packet.stream_id.name }}.unpack_from(m_data.data() + {{ ns.curr_pos }});
+{%   endif %}
+{%   set ns.curr_pos = (ns.curr_pos + (packet.stream_id.bits / 8))|int %}
+{% endif %}
+{% if packet.class_id.enabled %}
+    m_positions["{{ packet.class_id.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.class_id.bits / 8))|int %}
+    m_{{ packet.class_id.name }}.unpack_from(m_data.data() + m_positions.at("{{ packet.class_id.name }}"));
+{% endif %}
+{% if packet.timestamp.enabled %}
+{%   if packet.timestamp.integer.enabled %}
+    m_positions["{{ packet.timestamp.integer.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.timestamp.integer.bits / 8))|int %}
+{%   endif %}
+{%   if packet.timestamp.fractional.enabled %}
+    m_positions["{{ packet.timestamp.fractional.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.timestamp.fractional.bits / 8))|int %}
+{%   endif %}
+{% endif %}
+{% if packet.cam.enabled %}
+    m_positions["{{ packet.cam.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.cam.bits / 8))|int %}
+    m_{{ packet.cam.name }}.pack_into(m_data.data() + m_positions["{{ packet.cam.name }}"]);
+{% endif %}
+{% if packet.message_id.enabled %}
+    m_positions["{{ packet.message_id.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.cam.bits / 8))|int %}
+{% endif %}
+{% if packet.controllee_id.enabled %}
+    m_positions["{{ packet.controllee_id.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.controllee_id.bits / 8))|int %}
+{% endif %}
+{% if packet.controller_id.enabled %}
+    m_positions["{{ packet.controller_id.name }}"] = {{ ns.curr_pos }};
+{%   set ns.curr_pos = (ns.curr_pos + (packet.controller_id.bits / 8))|int %}
+{% endif %}
+{% if packet.cif0.enabled %}
+    m_positions["{{ packet.cif0.name }}"] = {{ ns.curr_pos }};
+    m_{{ packet.cif0.name }}.unpack_from(m_data.data() + m_positions.at("{{ packet.cif0.name }}"));
+{%   set ns.curr_pos = (ns.curr_pos + (packet.cif0.bits / 8))|int %}
+{%   for field in packet.cif0.fields if field.enabled and not field.indicator_only %}
+    m_positions["{{ field.name }}"] = {{ ns.curr_pos }};
+{%     if not type_helper.is_scalar(field) %}
+{%       if field.is_optional %}
+    m_{{ field.name }}->unpack_from(m_data.data() + m_positions.at("{{ field.name }}"));
+{%       else %}
+    m_{{ field.name }}.unpack_from(m_data.data() + m_positions.at("{{ field.name }}"));
+{%       endif %}
+{%     endif %}
+{%     if not field.is_optional %}
+{%       set ns.curr_pos = (ns.curr_pos + (field.type_.bits / 8))|int %}
+{%     endif %}
+{%   endfor %}
+{% endif %}
+{% if packet.is_data %}
+    m_positions["payload"] = {{ ns.curr_pos }};
+{%   if packet.trailer.enabled %}
+    m_positions["{{ packet.trailer.name }}"] = size() - m_{{ packet.trailer.name }}.size();
+    m_{{ packet.trailer.name }}.unpack_from(m_data.data() + m_positions.at("{{ packet.trailer.name }}"));
+{%   endif %}
+{% endif %}
+}
+{% endmacro %}

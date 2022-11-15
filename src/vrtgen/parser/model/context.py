@@ -25,9 +25,6 @@ class ContextHeader(Header):
 @dataclass
 class ContextPacket(Packet):
     header : ContextHeader = field(default_factory=lambda: ContextHeader(enabled=True, required=True))
-    # stream_id : StreamIdentifier = field(default_factory=lambda: StreamIdentifier(enabled=True, required=True))
-    # class_id  : ClassIdentifier = field(default_factory=ClassIdentifier)
-    # timestamp : Timestamp = field(default_factory=Timestamp)
     cif_0 : CIF0 = field(default_factory=lambda: CIF0(enabled=True, required=True))
     cif_1 : CIF1 = field(default_factory=CIF1)
     cif_2 : CIF2 = field(default_factory=CIF2)

@@ -45,6 +45,7 @@ add_executable(test_libvrtgen
     tests/libvrtgen/command.cpp
     tests/libvrtgen/header.cpp
     tests/libvrtgen/class_id.cpp
+    # tests/libvrtgen/prologue.cpp
     tests/libvrtgen/types.cpp
     tests/libvrtgen/trailer.cpp
 )
@@ -73,7 +74,6 @@ function(add_codegen_file TARGET YAML_FILE FILE_LIST GEN_TARGET)
     set(cpp_list ${FILE_LIST})
     list(TRANSFORM hpp_list APPEND ".hpp")
     list(TRANSFORM cpp_list APPEND ".cpp")
-    #message("${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME} ${YAML_FILE}")
     get_filename_component(TEST_BASENAME "${YAML_FILE}" NAME_WE)
     add_custom_command(
         OUTPUT
@@ -114,9 +114,9 @@ add_codegen_file(test_codegen tests/codegen/yamls/data.yaml "${data_gen_list}" g
 add_codegen_file(test_codegen tests/codegen/yamls/context.yaml "${context_gen_list}" generate-context)
 add_codegen_file(test_codegen tests/codegen/yamls/streamid.yaml "${stream_id_gen_list}" generate-streamid)
 add_codegen_file(test_codegen tests/codegen/yamls/timestamp.yaml "${timestamp_gen_list}" generate-timestamp)
-add_codegen_file(test_codegen tests/codegen/yamls/packetheader.yaml "${packetheader_gen_list}" generate-packetheader)
 add_codegen_file(test_codegen tests/codegen/yamls/classid.yaml "${classid_gen_list}" generate-classid)
 add_codegen_file(test_codegen tests/codegen/yamls/packettrailer.yaml "${packettrailer_gen_list}" generate-packettrailer)
+add_codegen_file(test_codegen tests/codegen/yamls/packetheader.yaml "${packetheader_gen_list}" generate-packetheader)
 # add_codegen_file(test_codegen tests/codegen/yamls/command.yaml)
 # add_codegen_file(test_codegen tests/codegen/yamls/cif0.yaml)
 # add_codegen_file(test_codegen tests/codegen/yamls/control_ids.yaml)

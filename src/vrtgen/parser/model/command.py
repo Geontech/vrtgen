@@ -57,17 +57,13 @@ class ControlAcknowledgeMode(PackedStruct):
 
     def _validate(self, mapping):
         for field in mapping:
-            error = False
-            error_msg = 'invalid trailer field provided: ' + field  
+            error_msg = 'invalid cam field provided: ' + field  
             if not field in [f.name for f in self.fields]:
-                error = True
+                raise ValueError(error_msg)
             else:
                 for cls_field in self.fields:
                     if cls_field.name == field and isinstance(cls_field, EnableIndicatorType) and cls_field.is_enable:
-                            error = True
-                            break
-            if error:
-                raise ValueError(error_msg)
+                        raise ValueError(error_msg)                
 
     def _parse_mapping(self, mapping):
         for key,val in mapping.items():
@@ -76,8 +72,7 @@ class ControlAcknowledgeMode(PackedStruct):
                     mode = parse_enable(val)
                     self.__dict__[key].enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
                     self.__dict__[key].required = True if (mode == Mode.REQUIRED) else False
-                    if mode == Mode.REQUIRED:
-                        self.__dict__[key].value = True
+                    self.__dict__[key].value = (mode == Mode.REQUIRED)
                 elif isinstance(val, bool):
                     self.__dict__[key].enabled = val
                     self.__dict__[key].required = val
@@ -137,7 +132,6 @@ class ControlIdentifier(Field):
     format : IdentifierFormat = field(default_factory=IdentifierFormat)
 
     def __post_init__(self):
-        super().__post_init__()
         self.type_ = type(self).__name__
         self.bits = 32
 
@@ -158,9 +152,6 @@ class CommandPacket(Packet):
     Command base class
     """
     header : CommandHeader = field(default_factory=lambda: CommandHeader(enabled=True, required=True))
-    stream_id : StreamIdentifier = field(default_factory=lambda: StreamIdentifier(enabled=True, required=True))
-    class_id  : ClassIdentifier = field(default_factory=ClassIdentifier)
-    timestamp : Timestamp = field(default_factory=Timestamp)
     message_id : IntegerType = field(default_factory=lambda: IntegerType('message_id', bits=32, enabled=True, required=True))
     controllee_id : ControlIdentifier = field(default_factory=lambda: ControlIdentifier('controllee_id'))
     controller_id : ControlIdentifier = field(default_factory=lambda: ControlIdentifier('controller_id'))
@@ -172,6 +163,8 @@ class CommandPacket(Packet):
     def __post_init__(self):
         super().__post_init__()
         self.type_ = type(self).__name__
+        self.stream_id.enabled = True
+        self.stream_id.required = True
 
     def _parse_mapping(self, mapping):
         try:

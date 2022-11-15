@@ -18,8 +18,7 @@
 import yaml
 import pytest
 from helpers.utils import parse_document
-from vrtgen.parser.model.types.packing import PackedType
-from vrtgen.parser.model.types.basic import EnumType
+from vrtgen.parser.model.types.packing import PackedType, EnumType
 from vrtgen.parser.loader import get_loader
 from vrtgen.parser.model.types.enums import *
 

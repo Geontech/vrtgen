@@ -4,5 +4,5 @@ BasicContextPacket: !Context
 
 BasicControlPacket: !Control
 
-BasicControlPacketAck: !Ack
-  responds_to: BasicControlPacket
+#BasicControlPacketAck: !Ack
+#responds_to: BasicControlPacket

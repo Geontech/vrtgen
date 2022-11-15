@@ -1,0 +1,112 @@
+/*#
+ * Copyright (C) 2021 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- import "macros/function_defs/common.jinja2" as common %}
+{%- import "macros/function_defs/header.jinja2" as header %}
+{%- import "macros/function_defs/stream_id.jinja2" as stream_id %}
+{%- import "macros/function_defs/timestamp.jinja2" as timestamp %}
+{%- import "macros/function_defs/data.jinja2" as data_ %}
+{%- import "macros/function_defs/cif.jinja2" as cif_ %}
+{%- import "macros/function_defs/command.jinja2" as command_ %}
+
+/*#
+ * Prologue function definitions
+#*/
+{%- macro prologue(packet, type_helper) %}
+{{ header.function_defs(packet, type_helper) | trim }}
+
+{% if packet.stream_id.enabled %}
+{{ stream_id.function_defs(packet, type_helper) | trim }}
+
+{% endif %}
+{% if packet.class_id.enabled %}
+{{ common.const_ref_getter(packet.name, packet.class_id, type_helper) | trim }}
+
+{% endif %}
+{% if packet.timestamp.enabled %}
+{{ timestamp.function_defs(packet, type_helper) | trim }}
+{% endif %}
+{% endmacro %}
+
+/*#
+ * Command function definitions
+#*/
+{%- macro command(packet, type_helper) %}
+{% if packet.cam.enabled %}
+{{ common.const_ref_getter(packet.name, packet.cam, type_helper) | trim }}
+
+{%   if packet.is_control and packet.cam.req_v.optional %}
+{{ common.getters_and_setters(packet.name, packet.cam.req_v, type_helper) | trim }}
+
+{%   endif %}
+{%   if packet.is_control and packet.cam.req_x.optional %}
+{{ common.getters_and_setters(packet.name, packet.cam.req_x, type_helper) | trim }}
+
+{%   endif %}
+{% endif %}
+{% if packet.message_id.enabled %}
+{{ command_.message_id_defs(packet, type_helper) | trim }}
+
+{% endif %}
+{% if packet.controllee_id.enabled %}
+{{ common.value_getter(packet.name, packet.controllee_id, type_helper) | trim }}
+
+{{ common.setters(packet.name, packet.controllee_id, type_helper) | trim }}
+
+{% endif %}
+{% if packet.controller_id.enabled %}
+{{ common.value_getter(packet.name, packet.controller_id, type_helper) | trim }}
+
+{{ common.setters(packet.name, packet.controller_id, type_helper) | trim }}
+
+{% endif %}
+{% endmacro %}
+
+/*#
+ * CIF function definitions
+#*/
+{%- macro cif(packet, type_helper) %}
+{% if packet.cif0.enabled %}
+{{ common.const_ref_getter(packet.name, packet.cif0, type_helper) | trim }}
+
+{%   if packet.requires_cif_functions %}
+{{ cif_.function_defs(packet.name, packet.cif0, type_helper) | trim }}
+{%   elif packet.requires_cif_enable_functions %}
+{{ cif_.enable_function_defs(packet.cif0, type_helper) | trim }}
+{%   endif %}
+
+{% endif %}
+{% if packet.cif1.enabled %}
+{{ common.const_ref_getter(packet.name, packet.cif1, type_helper) | trim }}
+
+{%   if packet.requires_cif_functions %}
+{{ cif_.function_defs(packet.name, packet.cif1, type_helper) | trim }}
+{%   elif packet.requires_cif_enable_functions %}
+{{ cif_.enable_function_defs(packet.cif1, type_helper) | trim }}
+{%   endif %}
+
+{% endif %}
+{% endmacro %}
+
+/*#
+ * Data function definitions
+#*/
+{%- macro data(packet, type_helper) %}
+{{ data_.function_defs(packet, type_helper) | trim }}
+{% endmacro %}

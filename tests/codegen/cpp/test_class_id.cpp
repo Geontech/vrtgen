@@ -27,16 +27,14 @@ TEST_CASE("ClassID 5.1.3", "[class_id]")
 {
     SECTION("Rule 5.1.3-5")
     {
-        bytes data;
         bytes CLASS_ID_BE;
         TestDataClassId1 packet_in;
-        data = TestDataClassId1::helper::pack(packet_in);
+        auto data = packet_in.data();
         CHECK((data[0] & 0b00000111) == 0);
     }
 
     SECTION("Zero on construction (either oui or packet code)") 
     {
-        bytes data;
         bytes CLASS_ID_BE;
 
         SECTION ("OUI")
@@ -59,14 +57,14 @@ TEST_CASE("ClassID 5.1.3", "[class_id]")
     SECTION("Byte Size")
     {
         TestDataClassId1 packet_in;
-        auto data = TestDataClassId1::helper::pack(packet_in);
+        auto data = packet_in.data();
         CHECK(data.size() == HEADER_BYTES + CLASS_ID_BYTES);
     }
 
     SECTION("Header Flag and Byte Size")
     {
         TestDataClassId1 packet_in;
-        auto data = TestDataClassId1::helper::pack(packet_in);
+        auto data = packet_in.data();
 
         // Examine and check packed header
         CHECK((data[0] & 0b00001000) == 1 << 3);
@@ -75,94 +73,118 @@ TEST_CASE("ClassID 5.1.3", "[class_id]")
     SECTION("Yaml Input") 
     {
         bytes data;
-        uint8_t* check_ptr;
         bytes CLASS_ID_BE;
 
         SECTION ("Data: OUI")
         {
             TestDataClassId1 packet_in;
             CHECK(packet_in.class_id().oui() == 0xAABBCC);
-            data = TestDataClassId1::helper::pack(packet_in);
+            auto data = packet_in.data();
             CLASS_ID_BE = bytes{ 0, 0xAA, 0xBB, 0xCC, 0, 0, 0, 0 };
 
             TestDataClassId1 packet_out;
             CHECK(packet_out.class_id().oui() == 0xAABBCC);
-            check_ptr = data.data();
+            auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
+
+            // Examine and check packed Class ID. Value shall be in big-endian format.
+            const bytes packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
+            check_ptr += CLASS_ID_BYTES;
+            CHECK(packed_class_id == CLASS_ID_BE);
         }
 
         SECTION("Data: Packet Code")
         {
             TestDataClassId2 packet_in;
             CHECK(packet_in.class_id().packet_code() == 0x1234);
-            data = TestDataClassId2::helper::pack(packet_in);
+            auto data = packet_in.data();
             CLASS_ID_BE = bytes{ 0, 0, 0, 0, 0, 0, 0x12, 0x34 };
 
             TestDataClassId2 packet_out;
             CHECK(packet_out.class_id().packet_code() == 0x1234);
-            check_ptr = data.data();
+            auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
+
+            // Examine and check packed Class ID. Value shall be in big-endian format.
+            const bytes packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
+            check_ptr += CLASS_ID_BYTES;
+            CHECK(packed_class_id == CLASS_ID_BE);
         }
 
         SECTION ("Context: OUI")
         {
             TestContextClassId1 packet_in;
             CHECK(packet_in.class_id().oui() == 0xAABBCC);
-            data = TestContextClassId1::helper::pack(packet_in);
+            auto data = packet_in.data();
             CLASS_ID_BE = bytes{ 0, 0xAA, 0xBB, 0xCC, 0, 0, 0, 0 };
 
             TestContextClassId1 packet_out;
             CHECK(packet_out.class_id().oui() == 0xAABBCC);
-            check_ptr = data.data();
+            auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
             check_ptr += CIF_BYTES;
+
+            // Examine and check packed Class ID. Value shall be in big-endian format.
+            const bytes packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
+            check_ptr += CLASS_ID_BYTES;
+            CHECK(packed_class_id == CLASS_ID_BE);
         }
 
         SECTION("Context: Packet Code")
         {
             TestContextClassId2 packet_in;
             CHECK(packet_in.class_id().packet_code() == 0x1234);
-            data = TestContextClassId2::helper::pack(packet_in);
+            auto data = packet_in.data();
             CLASS_ID_BE = bytes{ 0, 0, 0, 0, 0, 0, 0x12, 0x34 };
 
             TestContextClassId2 packet_out;
             CHECK(packet_out.class_id().packet_code() == 0x1234);
-            check_ptr = data.data();
+            auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
             check_ptr += CIF_BYTES;
+
+            // Examine and check packed Class ID. Value shall be in big-endian format.
+            const bytes packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
+            check_ptr += CLASS_ID_BYTES;
+            CHECK(packed_class_id == CLASS_ID_BE);
         }
 
         SECTION ("Control: OUI")
         {
             TestControlClassId1 packet_in;
             CHECK(packet_in.class_id().oui() == 0xAABBCC);
-            data = TestControlClassId1::helper::pack(packet_in);
+            auto data = packet_in.data();
             CLASS_ID_BE = bytes{ 0, 0xAA, 0xBB, 0xCC, 0, 0, 0, 0 };
 
             TestControlClassId1 packet_out;
             CHECK(packet_out.class_id().oui() == 0xAABBCC);
-            check_ptr = data.data();
+            auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
             check_ptr += CIF_BYTES;
+
+            // Examine and check packed Class ID. Value shall be in big-endian format.
+            const bytes packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
+            check_ptr += CLASS_ID_BYTES;
+            CHECK(packed_class_id == CLASS_ID_BE);
         }
 
         SECTION("Control: Packet Code")
         {
             TestControlClassId2 packet_in;
             CHECK(packet_in.class_id().packet_code() == 0x1234);
-            data = TestControlClassId2::helper::pack(packet_in);
+            auto data = packet_in.data();
             CLASS_ID_BE = bytes{ 0, 0, 0, 0, 0, 0, 0x12, 0x34 };
 
             TestControlClassId2 packet_out;
             CHECK(packet_out.class_id().packet_code() == 0x1234);
-            check_ptr = data.data();
+            auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
             check_ptr += CIF_BYTES;
-        }
 
-        // Examine and check packed Class ID. Value shall be in big-endian format.
-        const decltype(data) packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
-        check_ptr += CLASS_ID_BYTES;
-        CHECK(packed_class_id == CLASS_ID_BE);
+            // Examine and check packed Class ID. Value shall be in big-endian format.
+            const bytes packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
+            check_ptr += CLASS_ID_BYTES;
+            CHECK(packed_class_id == CLASS_ID_BE);
+        }
     }
 }

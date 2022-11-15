@@ -98,7 +98,7 @@ public:
      * Associated Context Packets Count Enable is 1 bit long at bit position 7
      * See VITA 49.2 Table 5.1.6-1
      */
-    bool associated_context_packet_count_enable() const noexcept
+    bool associated_context_packets_count_enable() const noexcept
     {
         return m_packed.get<7>();
     }
@@ -110,7 +110,7 @@ public:
      * Associated Context Packets Count Enable is 1 bit long at bit position 7
      * See VITA 49.2 Table 5.1.6-1
      */
-    void associated_context_packet_count_enable(bool value) noexcept
+    void associated_context_packets_count_enable(bool value) noexcept
     {
         m_packed.set<7>(value);
     }
@@ -122,7 +122,7 @@ public:
      * Associated Context Packets Enable is 7 bits long at bit position 6
      * See VITA 49.2 Table 5.1.6-1
      */
-    uint8_t associated_context_packet_count() const noexcept
+    uint8_t associated_context_packets_count() const noexcept
     {
         return m_packed.get<6,7,uint8_t>();
     }
@@ -134,7 +134,7 @@ public:
      * Associated Context Packets Count is 7 bits long at bit position 6
      * See VITA 49.2 Table 5.1.6-1
      */
-    void associated_context_packet_count(uint8_t value) noexcept
+    void associated_context_packets_count(uint8_t value) noexcept
     {
         m_packed.set<6,7>(value);
     }

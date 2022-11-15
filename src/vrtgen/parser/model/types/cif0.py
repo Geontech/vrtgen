@@ -16,7 +16,7 @@
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
 from dataclasses import dataclass
-from .basic import FixedPointType
+from .packing import FixedPointType
 
 @dataclass
 class GeolocationAngle(FixedPointType):
@@ -24,7 +24,6 @@ class GeolocationAngle(FixedPointType):
     Geolocation Angle Format [Definition 9.4.5-1].
     """
     def __post_init__(self):
-        super().__post_init__()
         self.type_ = type(self).__name__
         self.bits = 32
         self.signed = True
@@ -37,7 +36,6 @@ class CartesianCoordinate(FixedPointType):
     Position coordinate format for ECEF Ephermeris [Rule 9.4.3-5].
     """
     def __post_init__(self):
-        super().__post_init__()
         self.type_ = type(self).__name__
         self.bits = 32
         self.signed = True
@@ -50,7 +48,6 @@ class VelocityCoordinate(FixedPointType):
     Velocity coordinate format for ECEF Ephemeris [Rule 9.4.3-7].
     """
     def __post_init__(self):
-        super().__post_init__()
         self.type_ = type(self).__name__
         self.bits = 32
         self.signed = True

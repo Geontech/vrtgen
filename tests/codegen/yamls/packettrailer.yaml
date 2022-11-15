@@ -1,10 +1,10 @@
 TrailerData1: !Data
   trailer: !Trailer
-    associated_context_packet_count: required
+    associated_context_packets_count: required
 
 TrailerData2: !Data
   trailer: !Trailer
-    associated_context_packet_count: optional
+    associated_context_packets_count: optional
 
 TrailerData3: !Data
   trailer: !Trailer
