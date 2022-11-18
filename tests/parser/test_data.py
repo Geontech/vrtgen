@@ -18,12 +18,19 @@
 from helpers.utils import parse_document
 from vrtgen.parser.model.types.enums import *
 from vrtgen.parser.model.data import *
-import yaml
+import pytest
+
+from vrtgen.parser.model.types.enums import SPECTRUM_OR_TIME
 
 def test_data_default():
     document = """data: !Data"""
     name,data = parse_document(document)
     assert name == 'data'
+    assert data.type_ == 'DataPacket'
+    assert not data.stream_id.enabled
+    assert not data.stream_id.required
+    assert not data.header.spectrum_or_time.enabled
+    assert not data.header.spectrum_or_time.required
     assert data.header.packet_type.value == PacketType.SIGNAL_DATA
     assert data.header.enabled
     assert data.header.required
@@ -51,6 +58,26 @@ def test_data_update_header_stream_id():
     """
     _,data = parse_document(document)
     assert data.header.packet_type.value == PacketType.SIGNAL_DATA_STREAM_ID
+    assert data.stream_id.enabled
+    assert data.stream_id.required
+    assert not data.header.spectrum_or_time.enabled
+    assert not data.header.spectrum_or_time.required
+
+testdata = [
+    ('spectrum', SPECTRUM_OR_TIME.SPECTRUM),
+    ('time', SPECTRUM_OR_TIME.TIME),
+]
+
+@pytest.mark.parametrize('mode,enum', testdata)
+def test_data_header(mode, enum):
+    document = """
+        data: !Data
+            spectrum_or_time: {}
+    """.format(mode)
+    name,data = parse_document(document)
+    assert data.header.spectrum_or_time.enabled
+    assert data.header.spectrum_or_time.required
+    assert data.header.spectrum_or_time.value == enum
 
 def test_data_update_header_trailer():
     document = """

@@ -67,7 +67,7 @@ TEST_CASE("Basic Data Packet")
     CHECK_FALSE(header.trailer_included());
     // NB: As configured, BasicDatatPacket is V49.0-compatible
     CHECK_FALSE(header.not_v49d0());
-    CHECK_FALSE(header.spectrum_or_time());
+    CHECK(header.spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::TIME);
     CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
     CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
     CHECK(header.packet_size() == PACKET_SIZE);
@@ -240,11 +240,11 @@ TEST_CASE("Basic Acknowledge Packet")
     packet_in.message_id(MESSAGE_ID);
 
     // Check bytes required
-    const size_t PACKED_SIZE = helper::bytes_required(packet_in);
+    const size_t PACKED_SIZE = packet_in.size();
     CHECK(PACKED_SIZE == 16);
 
     // Get buffer from pack
-    auto data = helper::pack(packet_in);
+    auto data = packet_in.data();
     CHECK(data.size() == PACKED_SIZE);
     auto* check_ptr = data.data();
 
@@ -273,11 +273,11 @@ TEST_CASE("Basic Acknowledge Packet")
     CHECK(packed_message_id == MESSAGE_ID_BE);
 
     // Check match
-    CHECK_FALSE(helper::match(data.data(), data.size()));
+    CHECK_FALSE(packet_in.match(data));
 
     // Unpack verifed packed data
-    packet_type packet_out;
-    helper::unpack(packet_out, data.data(), data.size());
+    packet_type packet_out(data);
+    packet_type packet_out(data);
 
     // Examine and check unpacked packet header
     const auto& header = packet_out.header();

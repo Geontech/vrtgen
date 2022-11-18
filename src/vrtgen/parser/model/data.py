@@ -1,9 +1,12 @@
 from dataclasses import dataclass, field
 
+from vrtgen.parser.model.types.enums import *
 from vrtgen.parser import value
 from vrtgen.parser.model.base import *
 from vrtgen.parser.model.types import *
 import math 
+from vrtgen.parser.value import parse_spectrum_or_time
+
 @dataclass
 class DataHeader(Header):
     """
@@ -11,7 +14,7 @@ class DataHeader(Header):
     """
     trailer_included : BooleanType = field(default_factory=lambda: BooleanType('trailer_included', packed_tag=PackedTag(26,1,0,0)))
     not_v49d0 : BooleanType = field(default_factory=lambda: BooleanType('not_v49d0', packed_tag=PackedTag(25,1,0,0)))
-    spectrum_or_time : BooleanType = field(default_factory=lambda: BooleanType('spectrum_or_time', packed_tag=PackedTag(24,1,0,0)))
+    spectrum_or_time : EnumType = field(default_factory=lambda: EnumType('spectrum_or_time', type_=SPECTRUM_OR_TIME, packed_tag=PackedTag(24,1,0,0)))
     
     def __post_init__(self):
         super().__post_init__()
@@ -104,8 +107,25 @@ class DataPacket(Packet):
         if self.trailer.enabled:
             self.header.trailer_included.enabled = True
             self.header.trailer_included.value = True
-            if self.trailer.sample_frame.enabled:
-                self.header.not_v49d0.enabled = True
-                self.header.not_v49d0.required = True
-                self.header.not_v49d0.value = True
+        if self.trailer.sample_frame.enabled:
+            self.header.not_v49d0.enabled = True
+            self.header.not_v49d0.required = True
+            self.header.not_v49d0.value = True
         super()._update_header()
+
+    def _validate(self, mapping):
+        for field in mapping:
+            if not field in [f.name for f in (self.fields + self.header.fields)]:
+                raise ValueError('invalid field provided: ' + field)
+
+    def _parse_mapping(self, mapping):
+        for key,val in mapping.items():
+            if key == 'spectrum_or_time':
+                try:
+                    self.header.spectrum_or_time.enabled = True
+                    self.header.spectrum_or_time.required = True
+                    self.header.spectrum_or_time.value = parse_spectrum_or_time(val)
+                except:
+                    raise
+            else:
+                self.__dict__[key] = val

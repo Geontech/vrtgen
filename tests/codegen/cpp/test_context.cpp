@@ -603,7 +603,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //         // Get buffer from pack
-//         auto data = packet_helper::pack(packet_in);
+//         auto data = packet_packet_in.data();
 //         CHECK(data.size() == PACKED_SIZE);
 //         auto* check_ptr = data.data();
 
@@ -633,8 +633,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK_FALSE(packet_packet_type::match(data));
 
 //         // Unpack verifed packed data
-//         packet_type packet_out;
-//         packet_helper::unpack(packet_out, data.data(), data.size());
+//         packet_type packet_out(data);
+//         packet_packet_type packet_out(data);
 
 //         // Examine and check unpacked packet header
 //         const auto& header = packet_out.header();
@@ -713,16 +713,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 IF_REF_FREQ_BE = bytes { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 //             }
 
-//             CHECK_FALSE(packet_in.has_if_ref_frequency());
+//             
 //             packet_in.if_ref_frequency(IF_REF_FREQ);
-//             CHECK(packet_in.has_if_ref_frequency());
+//             
 //             CHECK(packet_in.if_ref_frequency() == IF_REF_FREQ);
 
 //             // Check bytes required
 //             CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //             // Get buffer from pack
-//             auto data = packet_helper::pack(packet_in);
+//             auto data = packet_packet_in.data();
 //             CHECK(data.size() == PACKED_SIZE);
 //             auto* check_ptr = data.data();
 
@@ -759,8 +759,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK_FALSE(packet_packet_type::match(data));
 
 //             // Unpack verifed packed data
-//             packet_type packet_out;
-//             packet_helper::unpack(packet_out, data.data(), data.size());
+//             packet_type packet_out(data);
+//             packet_packet_type packet_out(data);
 
 //             // Examine and check unpacked packet header
 //             const auto& header = packet_out.header();
@@ -776,7 +776,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_out.stream_id() == STREAM_ID);
 
 //             // Examine and check unpacked IF Reference Frequency
-//             CHECK(packet_out.has_if_ref_frequency());
+//             
 //             CHECK(packet_out.if_ref_frequency() == IF_REF_FREQ);
 //         } // end SECTION("Rule 9.5.5-3")
 //     } // end SECTION("IF Reference Frequency")
@@ -840,16 +840,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 RF_REF_FREQ_BE = bytes { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 //             }
 
-//             CHECK_FALSE(packet_in.has_rf_ref_frequency());
+//             
 //             packet_in.rf_ref_frequency(RF_REF_FREQ);
-//             CHECK(packet_in.has_rf_ref_frequency());
+//             
 //             CHECK(packet_in.rf_ref_frequency() == RF_REF_FREQ);
                 
 //             // Check bytes required
 //             CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //             // Get buffer from pack
-//             auto data = packet_helper::pack(packet_in);
+//             auto data = packet_packet_in.data();
 //             CHECK(data.size() == PACKED_SIZE);
 //             auto* check_ptr = data.data();
 
@@ -886,8 +886,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK_FALSE(packet_packet_type::match(data));
 
 //             // Unpack verifed packed data
-//             packet_type packet_out;
-//             packet_helper::unpack(packet_out, data.data(), data.size());
+//             packet_type packet_out(data);
+//             packet_packet_type packet_out(data);
 
 //             // Examine and check unpacked packet header
 //             const auto& header = packet_out.header();
@@ -903,7 +903,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_out.stream_id() == STREAM_ID);
 
 //             // Examine and check unpacked RF Reference Frequency
-//             CHECK(packet_out.has_rf_ref_frequency());
+//             
 //             CHECK(packet_out.rf_ref_frequency() == RF_REF_FREQ);
 //         } // end SECTION("Rule 9.5.10-2")
 //     } // end SECTION("RF Reference Frequency")
@@ -969,7 +969,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 RF_REF_FREQ_OFFSET_BE = bytes { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 //             }
 
-//             CHECK_FALSE(packet_in.has_rf_ref_frequency_offset());
+//             
 //             packet_in.rf_ref_frequency_offset(RF_REF_FREQ_OFFSET);
 //             CHECK(packet_in.rf_ref_frequency_offset());
 //             CHECK(packet_in.rf_ref_frequency_offset() == RF_REF_FREQ_OFFSET);
@@ -978,7 +978,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //             // Get buffer from pack
-//             auto data = packet_helper::pack(packet_in);
+//             auto data = packet_packet_in.data();
 //             CHECK(data.size() == PACKED_SIZE);
 //             auto* check_ptr = data.data();
 
@@ -1015,8 +1015,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK_FALSE(packet_packet_type::match(data));
 
 //             // Unpack verifed packed data
-//             packet_type packet_out;
-//             packet_helper::unpack(packet_out, data.data(), data.size());
+//             packet_type packet_out(data);
+//             packet_packet_type packet_out(data);
 
 //             // Examine and check unpacked packet header
 //             const auto& header = packet_out.header();
@@ -1032,7 +1032,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_out.stream_id() == STREAM_ID);
 
 //             // Examine and check unpacked RF Reference Frequency Offset
-//             CHECK(packet_out.has_rf_ref_frequency_offset());
+//             
 //             CHECK(packet_out.rf_ref_frequency_offset() == RF_REF_FREQ_OFFSET);
 //         } // end SECTION("Rule 9.5.11-3")
 //     } // end SECTION("RF Reference Frequency Offset")
@@ -1095,7 +1095,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 IF_BAND_OFFSET_BE = bytes { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 //             }
 
-//             CHECK_FALSE(packet_in.has_if_band_offset());
+//             
 //             packet_in.if_band_offset(IF_BAND_OFFSET);
 //             CHECK(packet_in.if_band_offset());
 //             CHECK(packet_in.if_band_offset() == IF_BAND_OFFSET);
@@ -1105,7 +1105,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //             // Get buffer from pack
-//             auto data = packet_helper::pack(packet_in);
+//             auto data = packet_packet_in.data();
 //             CHECK(data.size() == PACKED_SIZE);
 //             auto* check_ptr = data.data();
 
@@ -1142,8 +1142,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK_FALSE(packet_packet_type::match(data));
 
 //             // Unpack verifed packed data
-//             packet_type packet_out;
-//             packet_helper::unpack(packet_out, data.data(), data.size());
+//             packet_type packet_out(data);
+//             packet_packet_type packet_out(data);
 
 //             // Examine and check unpacked packet header
 //             const auto& header = packet_out.header();
@@ -1159,7 +1159,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_out.stream_id() == STREAM_ID);
 
 //             // Examine and check unpacked IF Band Offset
-//             CHECK(packet_out.has_if_band_offset());
+//             
 //             CHECK(packet_out.if_band_offset() == IF_BAND_OFFSET);
 //         } // end SECTION("Rule 9.5.4-2")
 //     } // end SECTION("IF Band Offset")
@@ -1225,7 +1225,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 REF_LEVEL_BE = bytes { 0, 0, 0xFF, 0xFF };
 //             }
 
-//             CHECK_FALSE(packet_in.has_reference_level());
+//             
 //             packet_in.reference_level(REF_LEVEL);
 //             CHECK(packet_in.reference_level());
 //             CHECK(packet_in.reference_level() == REF_LEVEL);
@@ -1234,7 +1234,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //             // Get buffer from pack
-//             auto data = packet_helper::pack(packet_in);
+//             auto data = packet_packet_in.data();
 //             CHECK(data.size() == PACKED_SIZE);
 //             auto* check_ptr = data.data();
 
@@ -1271,8 +1271,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK_FALSE(packet_packet_type::match(data));
 
 //             // Unpack verifed packed data
-//             packet_type packet_out;
-//             packet_helper::unpack(packet_out, data.data(), data.size());
+//             packet_type packet_out(data);
+//             packet_packet_type packet_out(data);
 
 //             // Examine and check unpacked packet header
 //             const auto& header = packet_out.header();
@@ -1288,7 +1288,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_out.stream_id() == STREAM_ID);
 
 //             // Examine and check unpacked Reference Level
-//             CHECK(packet_out.has_reference_level());
+//             
 //             CHECK(packet_out.reference_level() == REF_LEVEL);
 //         } // end SECTION("Rule 9.5.9-2")
 //     } // end SECTION("Reference Level")
@@ -1373,9 +1373,9 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             vrtgen::packing::Gain gain;
 //             gain.stage_1(GAIN_STAGE_1);
 //             gain.stage_2(GAIN_STAGE_2);
-//             CHECK_FALSE(packet_in.has_gain());
+//             
 //             packet_in.gain(gain);
-//             CHECK(packet_in.has_gain());
+//             
 //             CHECK(packet_in.gain().stage_1() == GAIN_STAGE_1);
 //             CHECK(packet_in.gain().stage_2() == GAIN_STAGE_2);
 
@@ -1383,7 +1383,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //             // Get buffer from pack
-//             auto data = packet_helper::pack(packet_in);
+//             auto data = packet_packet_in.data();
 //             CHECK(data.size() == PACKED_SIZE);
 //             auto* check_ptr = data.data();
 
@@ -1420,8 +1420,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK_FALSE(packet_packet_type::match(data));
 
 //             // Unpack verifed packed data
-//             packet_type packet_out;
-//             packet_helper::unpack(packet_out, data.data(), data.size());
+//             packet_type packet_out(data);
+//             packet_packet_type packet_out(data);
 
 //             // Examine and check unpacked packet header
 //             const auto& header = packet_out.header();
@@ -1437,7 +1437,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_out.stream_id() == STREAM_ID);
 
 //             // Examine and check unpacked Gain
-//             CHECK(packet_out.has_gain());
+//             
 //             CHECK(packet_out.gain().stage_1() == GAIN_STAGE_1);
 //             CHECK(packet_out.gain().stage_2() == GAIN_STAGE_2);
 //         } // end SECTION("Rule 9.5.5-3")
@@ -1465,16 +1465,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 
 //             // Set over range count value to check
 //             const uint32_t OVER_RANGE_COUNT = 0x12345678;
-//             CHECK_FALSE(packet_in.has_over_range_count());
+//             
 //             packet_in.over_range_count(OVER_RANGE_COUNT);
-//             CHECK(packet_in.has_over_range_count());
+//             
 //             CHECK(packet_in.over_range_count() == OVER_RANGE_COUNT);
 
 //             // Check bytes required
 //             CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //             // Get buffer from pack
-//             auto data = packet_helper::pack(packet_in);
+//             auto data = packet_packet_in.data();
 //             CHECK(data.size() == PACKED_SIZE);
 //             auto* check_ptr = data.data();
 
@@ -1512,8 +1512,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK_FALSE(packet_packet_type::match(data));
 
 //             // Unpack verifed packed data
-//             packet_type packet_out;
-//             packet_helper::unpack(packet_out, data.data(), data.size());
+//             packet_type packet_out(data);
+//             packet_packet_type packet_out(data);
 
 //             // Examine and check unpacked packet header
 //             const auto& header = packet_out.header();
@@ -1529,7 +1529,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_out.stream_id() == STREAM_ID);
 
 //             // Examine and check unpacked Ref Point ID
-//             CHECK(packet_out.has_over_range_count());
+//             
 //             CHECK(packet_out.over_range_count() == OVER_RANGE_COUNT);
 //         } // end SECTION("Rule 9.10.6-3")
 //     } // end SECTION("Over-Range Count")
@@ -1582,16 +1582,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 SAMPLE_RATE_BE = bytes { 0, 0, 0, 0, 0, 0, 0, 0x01 };
 //             }
 
-//             CHECK_FALSE(packet_in.has_sample_rate());
+//             
 //             packet_in.sample_rate(SAMPLE_RATE);
-//             CHECK(packet_in.has_sample_rate());
+//             
 //             CHECK(packet_in.sample_rate() == SAMPLE_RATE);
 
 //             // Check bytes required
 //             CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //             // Get buffer from pack
-//             auto data = packet_helper::pack(packet_in);
+//             auto data = packet_packet_in.data();
 //             CHECK(data.size() == PACKED_SIZE);
 //             auto* check_ptr = data.data();
 
@@ -1628,8 +1628,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK_FALSE(packet_packet_type::match(data));
 
 //             // Unpack verifed packed data
-//             packet_type packet_out;
-//             packet_helper::unpack(packet_out, data.data(), data.size());
+//             packet_type packet_out(data);
+//             packet_packet_type packet_out(data);
 
 //             // Examine and check unpacked packet header
 //             const auto& header = packet_out.header();
@@ -1645,7 +1645,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_out.stream_id() == STREAM_ID);
 
 //             // Examine and check unpacked Sample Rate
-//             CHECK(packet_out.has_sample_rate());
+//             
 //             CHECK(packet_out.sample_rate() == SAMPLE_RATE);
 //         } // end SECTION("Rule 9.5.12-2")
 //     } // end SECTION("Sample Rate")
@@ -1673,16 +1673,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 
 //             // Set timestamp adjustment value to check
 //             const int64_t TIMESTAMP_ADJ = 0xABCDEF12345678;
-//             CHECK_FALSE(packet_in.has_timestamp_adjustment());
+//             
 //             packet_in.timestamp_adjustment(TIMESTAMP_ADJ);
-//             CHECK(packet_in.has_timestamp_adjustment());
+//             
 //             CHECK(packet_in.timestamp_adjustment() == TIMESTAMP_ADJ);
 
 //             // Check bytes required
 //             CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //             // Get buffer from pack
-//             auto data = packet_helper::pack(packet_in);
+//             auto data = packet_packet_in.data();
 //             CHECK(data.size() == PACKED_SIZE);
 //             auto* check_ptr = data.data();
 
@@ -1720,8 +1720,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK_FALSE(packet_packet_type::match(data));
 
 //             // Unpack verifed packed data
-//             packet_type packet_out;
-//             packet_helper::unpack(packet_out, data.data(), data.size());
+//             packet_type packet_out(data);
+//             packet_packet_type packet_out(data);
 
 //             // Examine and check unpacked packet header
 //             const auto& header = packet_out.header();
@@ -1737,7 +1737,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_out.stream_id() == STREAM_ID);
 
 //             // Examine and check unpacked Timestamp Adjustment
-//             CHECK(packet_out.has_timestamp_adjustment());
+//             
 //             CHECK(packet_out.timestamp_adjustment() == TIMESTAMP_ADJ);
 //         } // end SECTION("Rule 9.7.3.1-2")
 //     } // end SECTION("Timestamp Adjustment")
@@ -1765,16 +1765,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 
 //             // Set timestamp calibration time value to check
 //             const uint32_t TIMESTAMP_CAL_TIME = 0x87654321;
-//             CHECK_FALSE(packet_in.has_timestamp_calibration_time());
+//             
 //             packet_in.timestamp_calibration_time(TIMESTAMP_CAL_TIME);
-//             CHECK(packet_in.has_timestamp_calibration_time());
+//             
 //             CHECK(packet_in.timestamp_calibration_time() == TIMESTAMP_CAL_TIME);
 
 //             // Check bytes required
 //             CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //             // Get buffer from pack
-//             auto data = packet_helper::pack(packet_in);
+//             auto data = packet_packet_in.data();
 //             CHECK(data.size() == PACKED_SIZE);
 //             auto* check_ptr = data.data();
 
@@ -1812,8 +1812,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK_FALSE(packet_packet_type::match(data));
 
 //             // Unpack verifed packed data
-//             packet_type packet_out;
-//             packet_helper::unpack(packet_out, data.data(), data.size());
+//             packet_type packet_out(data);
+//             packet_packet_type packet_out(data);
 
 //             // Examine and check unpacked packet header
 //             const auto& header = packet_out.header();
@@ -1829,7 +1829,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_out.stream_id() == STREAM_ID);
 
 //             // Examine and check unpacked Timestamp Calibration Time
-//             CHECK(packet_out.has_timestamp_calibration_time());
+//             
 //             CHECK(packet_out.timestamp_calibration_time() == TIMESTAMP_CAL_TIME);
 //         } // end SECTION("Rule 9.7.3.3-2")
 //     } // end SECTION("Timestamp Calibration Time")
@@ -1894,7 +1894,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 TEMP_BE = bytes { 0, 0, 0xFF, 0xFF };
 //             }
 
-//             CHECK_FALSE(packet_in.has_temperature());
+//             
 //             packet_in.temperature(TEMP);
 //             CHECK(packet_in.temperature());
 //             CHECK(packet_in.temperature() == TEMP);
@@ -1903,7 +1903,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //             // Get buffer from pack
-//             auto data = packet_helper::pack(packet_in);
+//             auto data = packet_packet_in.data();
 //             CHECK(data.size() == PACKED_SIZE);
 //             auto* check_ptr = data.data();
 
@@ -1940,8 +1940,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK_FALSE(packet_packet_type::match(data));
 
 //             // Unpack verifed packed data
-//             packet_type packet_out;
-//             packet_helper::unpack(packet_out, data.data(), data.size());
+//             packet_type packet_out(data);
+//             packet_packet_type packet_out(data);
 
 //             // Examine and check unpacked packet header
 //             const auto& header = packet_out.header();
@@ -1957,7 +1957,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_out.stream_id() == STREAM_ID);
 
 //             // Examine and check unpacked Temperature
-//             CHECK(packet_out.has_temperature());
+//             
 //             CHECK(packet_out.temperature() == TEMP);
 //         } // end SECTION("Rule 9.10.5-1")
 //     } // end SECTION("Temperature")
@@ -1994,12 +1994,12 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         // Set device id values to check
 //         const uint32_t OUI = 0x123456;
 //         const uint16_t DEVICE_CODE = 0x789A;
-//         CHECK_FALSE(packet_in.has_device_id());
+//         
 //         vrtgen::packing::DeviceIdentifier device_id;
 //         device_id.manufacturer_oui(OUI);
 //         device_id.device_code(DEVICE_CODE);
 //         packet_in.device_id(device_id);
-//         CHECK(packet_in.has_device_id());
+//         
 //         CHECK(packet_in.device_id().manufacturer_oui() == OUI);
 //         CHECK(packet_in.device_id().device_code() == DEVICE_CODE);
 
@@ -2007,7 +2007,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //         // Get buffer from pack
-//         auto data = packet_helper::pack(packet_in);
+//         auto data = packet_packet_in.data();
 //         CHECK(data.size() == PACKED_SIZE);
 //         auto* check_ptr = data.data();
 
@@ -2045,8 +2045,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK_FALSE(packet_packet_type::match(data));
 
 //         // Unpack verifed packed data
-//         packet_type packet_out;
-//         packet_helper::unpack(packet_out, data.data(), data.size());
+//         packet_type packet_out(data);
+//         packet_packet_type packet_out(data);
 
 //         // Examine and check unpacked packet header
 //         const auto& header = packet_out.header();
@@ -2062,7 +2062,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK(packet_out.stream_id() == STREAM_ID);
 
 //         // Examine and check unpacked Device Identifier
-//         CHECK(packet_out.has_device_id());
+//         
 //         CHECK(packet_out.device_id().manufacturer_oui() == OUI);
 //         CHECK(packet_out.device_id().device_code() == DEVICE_CODE);
 //     } // SECTION("Device Identifier")
@@ -2105,14 +2105,14 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK(packet_in.stream_id() == STREAM_ID);
 
 //         // Set state and event indicator values to check
-//         CHECK_FALSE(packet_in.has_state_event_indicators());
+//         
 //         vrtgen::packing::StateEventIndicators state_event_indicators;
 //         state_event_indicators.valid_data_enable(true);
 //         state_event_indicators.valid_data(true);
 //         state_event_indicators.agc_mgc_enable(true);
 //         state_event_indicators.agc_mgc(false);
 //         packet_in.state_event_indicators(state_event_indicators);
-//         CHECK(packet_in.has_state_event_indicators());
+//         
 //         CHECK(packet_in.state_event_indicators().valid_data_enable());
 //         CHECK(packet_in.state_event_indicators().valid_data());
 //         CHECK(packet_in.state_event_indicators().agc_mgc_enable());
@@ -2122,7 +2122,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //         // Get buffer from pack
-//         auto data = packet_helper::pack(packet_in);
+//         auto data = packet_packet_in.data();
 //         CHECK(data.size() == PACKED_SIZE);
 //         auto* check_ptr = data.data();
 
@@ -2162,8 +2162,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK_FALSE(packet_packet_type::match(data));
 
 //         // Unpack verifed packed data
-//         packet_type packet_out;
-//         packet_helper::unpack(packet_out, data.data(), data.size());
+//         packet_type packet_out(data);
+//         packet_packet_type packet_out(data);
 
 //         // Examine and check unpacked packet header
 //         const auto& header = packet_out.header();
@@ -2179,7 +2179,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK(packet_out.stream_id() == STREAM_ID);
 
 //         // Examine and check unpacked State Event Indicators
-//         CHECK(packet_out.has_state_event_indicators());
+//         
 //         CHECK(packet_out.state_event_indicators().valid_data_enable());
 //         CHECK(packet_out.state_event_indicators().valid_data());
 //         CHECK(packet_out.state_event_indicators().agc_mgc_enable());
@@ -2211,14 +2211,14 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK(packet_in.stream_id() == STREAM_ID);
 
 //         // Set Payload Format values to check
-//         CHECK_FALSE(packet_in.has_signal_data_format());
+//         
 //         vrtgen::packing::PayloadFormat payload_format;
 //         payload_format.packing_method(vrtgen::packing::PackingMethod::LINK_EFFICIENT);
 //         payload_format.real_complex_type(vrtgen::packing::DataSampleType::REAL);
 //         payload_format.data_item_format(vrtgen::packing::DataItemFormat::UNSIGNED_FIXED);
 //         payload_format.data_item_size(16);
 //         packet_in.signal_data_format(payload_format);
-//         CHECK(packet_in.has_signal_data_format());
+//         
 //         CHECK(packet_in.signal_data_format().packing_method() == vrtgen::packing::PackingMethod::LINK_EFFICIENT);
 //         CHECK(packet_in.signal_data_format().real_complex_type() == vrtgen::packing::DataSampleType::REAL);
 //         CHECK(packet_in.signal_data_format().data_item_format() == vrtgen::packing::DataItemFormat::UNSIGNED_FIXED);
@@ -2228,7 +2228,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //         // Get buffer from pack
-//         auto data = packet_helper::pack(packet_in);
+//         auto data = packet_packet_in.data();
 //         CHECK(data.size() == PACKED_SIZE);
 //         auto* check_ptr = data.data();
 
@@ -2266,8 +2266,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK_FALSE(packet_packet_type::match(data));
 
 //         // Unpack verifed packed data
-//         packet_type packet_out;
-//         packet_helper::unpack(packet_out, data.data(), data.size());
+//         packet_type packet_out(data);
+//         packet_packet_type packet_out(data);
 
 //         // Examine and check unpacked packet header
 //         const auto& header = packet_out.header();
@@ -2283,7 +2283,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK(packet_out.stream_id() == STREAM_ID);
 
 //         // Examine and check unpacked Payload Format
-//         CHECK(packet_out.has_signal_data_format());
+//         
 //         CHECK(packet_out.signal_data_format().packing_method() == vrtgen::packing::PackingMethod::LINK_EFFICIENT);
 //         CHECK(packet_out.signal_data_format().real_complex_type() == vrtgen::packing::DataSampleType::REAL);
 //         CHECK(packet_out.signal_data_format().data_item_format() == vrtgen::packing::DataItemFormat::UNSIGNED_FIXED);
@@ -2351,16 +2351,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             geo.manufacturer_oui(OUI);
 //             SECTION("GPS") {
 //                 GPS_TEST = true;
-//                 CHECK_FALSE(packet_in.has_formatted_gps());
+//                 
 //                 packet_in.formatted_gps(geo);
-//                 CHECK(packet_in.has_formatted_gps());
+//                 
 //                 CHECK(packet_in.formatted_gps().manufacturer_oui() == OUI);
 //             }
 //             SECTION("INS") {
 //                 INS_TEST = true;
-//                 CHECK_FALSE(packet_in.has_formatted_ins());
+//                 
 //                 packet_in.formatted_ins(geo);
-//                 CHECK(packet_in.has_formatted_ins());
+//                 
 //                 CHECK(packet_in.formatted_ins().manufacturer_oui() == OUI);
 //             }
 //             FORMATTED_GEO_BE = bytes { 
@@ -2411,16 +2411,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.tsi(TSI);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().tsi() == TSI);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().tsi() == TSI);
 //                 }
 //             } // end SECTION("Undefined")
@@ -2442,16 +2442,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.tsi(TSI);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().tsi() == TSI);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().tsi() == TSI);
 //                 }
 //             } // end SECTION("UTC")
@@ -2473,16 +2473,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.tsi(TSI);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().tsi() == TSI);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().tsi() == TSI);
 //                 }
 //             } // end SECTION("GPS Time")
@@ -2504,16 +2504,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.tsi(TSI);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().tsi() == TSI);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().tsi() == TSI);
 //                 }
 //             } // end SECTION("Other")
@@ -2552,16 +2552,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.tsf(TSF);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().tsf() == TSF);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().tsf() == TSF);
 //                 }
 //             } // end SECTION("Undefined")
@@ -2583,16 +2583,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.tsf(TSF);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().tsf() == TSF);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().tsf() == TSF);
 //                 }
 //             } // end SECTION("Sample Count Time")
@@ -2614,16 +2614,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.tsf(TSF);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().tsf() == TSF);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().tsf() == TSF);
 //                 }
 //             } // end SECTION("Real (Picoseconds) Time")
@@ -2645,16 +2645,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.tsf(TSF);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().tsf() == TSF);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().tsf() == TSF);
 //                 }
 //             } // end SECTION("Other")
@@ -2677,9 +2677,9 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             geo.fractional_timestamp(FRACTIONAL_TIMESTAMP);
 //             SECTION("GPS") {
 //                 GPS_TEST = true;
-//                 CHECK_FALSE(packet_in.has_formatted_gps());
+//                 
 //                 packet_in.formatted_gps(geo);
-//                 CHECK(packet_in.has_formatted_gps());
+//                 
 //                 CHECK(packet_in.formatted_gps().tsi() == TSI);
 //                 CHECK(packet_in.formatted_gps().tsf() == TSF);
 //                 CHECK(packet_in.formatted_gps().integer_timestamp() == INTEGER_TIMESTAMP);
@@ -2687,9 +2687,9 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             }
 //             SECTION("INS") {
 //                 INS_TEST = true;
-//                 CHECK_FALSE(packet_in.has_formatted_ins());
+//                 
 //                 packet_in.formatted_ins(geo);
-//                 CHECK(packet_in.has_formatted_ins());
+//                 
 //                 CHECK(packet_in.formatted_ins().tsi() == TSI);
 //                 CHECK(packet_in.formatted_ins().tsf() == TSF);
 //                 CHECK(packet_in.formatted_ins().integer_timestamp() == INTEGER_TIMESTAMP);
@@ -2726,9 +2726,9 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             geo.fractional_timestamp(FRACTIONAL_TIMESTAMP);
 //             SECTION("GPS") {
 //                 GPS_TEST = true;
-//                 CHECK_FALSE(packet_in.has_formatted_gps());
+//                 
 //                 packet_in.formatted_gps(geo);
-//                 CHECK(packet_in.has_formatted_gps());
+//                 
 //                 CHECK(packet_in.formatted_gps().tsi() == TSI);
 //                 CHECK(packet_in.formatted_gps().tsf() == TSF);
 //                 CHECK(packet_in.formatted_gps().integer_timestamp() == INTEGER_TIMESTAMP);
@@ -2736,9 +2736,9 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             }
 //             SECTION("INS") {
 //                 INS_TEST = true;
-//                 CHECK_FALSE(packet_in.has_formatted_ins());
+//                 
 //                 packet_in.formatted_ins(geo);
-//                 CHECK(packet_in.has_formatted_ins());
+//                 
 //                 CHECK(packet_in.formatted_ins().tsi() == TSI);
 //                 CHECK(packet_in.formatted_ins().tsf() == TSF);
 //                 CHECK(packet_in.formatted_ins().integer_timestamp() == INTEGER_TIMESTAMP);
@@ -2777,17 +2777,17 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             geo.longitude(LONGITUDE);
 //             SECTION("GPS") {
 //                 GPS_TEST = true;
-//                 CHECK_FALSE(packet_in.has_formatted_gps());
+//                 
 //                 packet_in.formatted_gps(geo);
-//                 CHECK(packet_in.has_formatted_gps());
+//                 
 //                 CHECK(packet_in.formatted_gps().longitude() == LATITUDE);
 //                 CHECK(packet_in.formatted_gps().longitude() == LONGITUDE);
 //             }
 //             SECTION("INS") {
 //                 INS_TEST = true;
-//                 CHECK_FALSE(packet_in.has_formatted_ins());
+//                 
 //                 packet_in.formatted_ins(geo);
-//                 CHECK(packet_in.has_formatted_ins());
+//                 
 //                 CHECK(packet_in.formatted_ins().longitude() == LATITUDE);
 //                 CHECK(packet_in.formatted_ins().longitude() == LONGITUDE);
 //             }
@@ -2829,16 +2829,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.latitude(LATITUDE);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().latitude() == LATITUDE);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().latitude() == LATITUDE);
 //                 }
 //             } // end SECTION("Min")
@@ -2860,16 +2860,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.latitude(LATITUDE);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().latitude() == LATITUDE);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().latitude() == LATITUDE);
 //                 }
 //             } // end SECTION("Max")
@@ -2900,16 +2900,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.longitude(LONGITUDE);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().longitude() == LONGITUDE);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().longitude() == LONGITUDE);
 //                 }
 //             } // end SECTION("Min")
@@ -2932,16 +2932,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.longitude(LONGITUDE);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().longitude() == LONGITUDE);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().longitude() == LONGITUDE);
 //                 }
 //             } // end SECTION("Max")
@@ -2980,16 +2980,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.altitude(ALTITUDE);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().altitude() == ALTITUDE);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().altitude() == ALTITUDE);
 //                 }
 //             } //  end SECTION("Resolution")
@@ -3011,16 +3011,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.altitude(ALTITUDE);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().altitude() == ALTITUDE);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().altitude() == ALTITUDE);
 //                 }
 //             } //  end SECTION("Min")
@@ -3042,16 +3042,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.altitude(ALTITUDE);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().altitude() == ALTITUDE);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().altitude() == ALTITUDE);
 //                 }
 //             } //  end SECTION("Max")
@@ -3091,16 +3091,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.speed_over_ground(GROUND_SPEED);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().speed_over_ground() == GROUND_SPEED);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().speed_over_ground() == GROUND_SPEED);
 //                 }
 //             } //  end SECTION("Resolution")
@@ -3122,16 +3122,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.speed_over_ground(GROUND_SPEED);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().speed_over_ground() == GROUND_SPEED);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().speed_over_ground() == GROUND_SPEED);
 //                 }
 //             } //  end SECTION("Min")
@@ -3153,16 +3153,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.speed_over_ground(GROUND_SPEED);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().speed_over_ground() == GROUND_SPEED);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().speed_over_ground() == GROUND_SPEED);
 //                 }
 //             } //  end SECTION("Max")
@@ -3186,16 +3186,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             geo.heading_angle(HEADING_ANGLE);
 //             SECTION("GPS") {
 //                 GPS_TEST = true;
-//                 CHECK_FALSE(packet_in.has_formatted_gps());
+//                 
 //                 packet_in.formatted_gps(geo);
-//                 CHECK(packet_in.has_formatted_gps());
+//                 
 //                 CHECK(packet_in.formatted_gps().heading_angle() == HEADING_ANGLE);
 //             }
 //             SECTION("INS") {
 //                 INS_TEST = true;
-//                 CHECK_FALSE(packet_in.has_formatted_ins());
+//                 
 //                 packet_in.formatted_ins(geo);
-//                 CHECK(packet_in.has_formatted_ins());
+//                 
 //                 CHECK(packet_in.formatted_ins().heading_angle() == HEADING_ANGLE);
 //             }
 //             FORMATTED_GEO_BE = bytes { 
@@ -3239,16 +3239,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.heading_angle(HEADING_ANGLE);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().heading_angle() == HEADING_ANGLE);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().heading_angle() == HEADING_ANGLE);
 //                 }
 //             } //  end SECTION("Min")
@@ -3270,16 +3270,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.heading_angle(HEADING_ANGLE);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().heading_angle() == HEADING_ANGLE);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().heading_angle() == HEADING_ANGLE);
 //                 }
 //             } //  end SECTION("Max")
@@ -3303,16 +3303,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             geo.track_angle(TRACK_ANGLE);
 //             SECTION("GPS") {
 //                 GPS_TEST = true;
-//                 CHECK_FALSE(packet_in.has_formatted_gps());
+//                 
 //                 packet_in.formatted_gps(geo);
-//                 CHECK(packet_in.has_formatted_gps());
+//                 
 //                 CHECK(packet_in.formatted_gps().track_angle() == TRACK_ANGLE);
 //             }
 //             SECTION("INS") {
 //                 INS_TEST = true;
-//                 CHECK_FALSE(packet_in.has_formatted_ins());
+//                 
 //                 packet_in.formatted_ins(geo);
-//                 CHECK(packet_in.has_formatted_ins());
+//                 
 //                 CHECK(packet_in.formatted_ins().track_angle() == TRACK_ANGLE);
 //             }
 //             FORMATTED_GEO_BE = bytes { 
@@ -3356,16 +3356,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.track_angle(TRACK_ANGLE);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().track_angle() == TRACK_ANGLE);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().track_angle() == TRACK_ANGLE);
 //                 }
 //             } //  end SECTION("Min")
@@ -3387,16 +3387,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.track_angle(TRACK_ANGLE);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().track_angle() == TRACK_ANGLE);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().track_angle() == TRACK_ANGLE);
 //                 }
 //             } //  end SECTION("Max")
@@ -3420,16 +3420,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             geo.magnetic_variation(MAGNETIC_VARIATION);
 //             SECTION("GPS") {
 //                 GPS_TEST = true;
-//                 CHECK_FALSE(packet_in.has_formatted_gps());
+//                 
 //                 packet_in.formatted_gps(geo);
-//                 CHECK(packet_in.has_formatted_gps());
+//                 
 //                 CHECK(packet_in.formatted_gps().magnetic_variation() == MAGNETIC_VARIATION);
 //             }
 //             SECTION("INS") {
 //                 INS_TEST = true;
-//                 CHECK_FALSE(packet_in.has_formatted_ins());
+//                 
 //                 packet_in.formatted_ins(geo);
-//                 CHECK(packet_in.has_formatted_ins());
+//                 
 //                 CHECK(packet_in.formatted_ins().magnetic_variation() == MAGNETIC_VARIATION);
 //             }
 //             FORMATTED_GEO_BE = bytes { 
@@ -3470,16 +3470,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.magnetic_variation(MAGNETIC_VARIATION);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().magnetic_variation() == MAGNETIC_VARIATION);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().magnetic_variation() == MAGNETIC_VARIATION);
 //                 }
 //             } //  end SECTION("Min")
@@ -3501,16 +3501,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 geo.magnetic_variation(MAGNETIC_VARIATION);
 //                 SECTION("GPS") {
 //                     GPS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_gps());
+//                     
 //                     packet_in.formatted_gps(geo);
-//                     CHECK(packet_in.has_formatted_gps());
+//                     
 //                     CHECK(packet_in.formatted_gps().magnetic_variation() == MAGNETIC_VARIATION);
 //                 }
 //                 SECTION("INS") {
 //                     INS_TEST = true;
-//                     CHECK_FALSE(packet_in.has_formatted_ins());
+//                     
 //                     packet_in.formatted_ins(geo);
-//                     CHECK(packet_in.has_formatted_ins());
+//                     
 //                     CHECK(packet_in.formatted_ins().magnetic_variation() == MAGNETIC_VARIATION);
 //                 }
 //             } //  end SECTION("Max")
@@ -3528,15 +3528,15 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //              */
 //             SECTION("GPS") {
 //                 GPS_TEST = true;
-//                 CHECK_FALSE(packet_in.has_formatted_gps());
+//                 
 //                 packet_in.formatted_gps(geo);
-//                 CHECK(packet_in.has_formatted_gps());
+//                 
 //             }
 //             SECTION("INS") {
 //                 INS_TEST = true;
-//                 CHECK_FALSE(packet_in.has_formatted_ins());
+//                 
 //                 packet_in.formatted_ins(geo);
-//                 CHECK(packet_in.has_formatted_ins());
+//                 
 //             }
 //             FORMATTED_GEO_BE = bytes { 
 //                 0x00, 0x00, 0x00, 0x00, // word 1
@@ -3557,7 +3557,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //         // Get buffer from pack
-//         auto data = packet_helper::pack(packet_in);
+//         auto data = packet_packet_in.data();
 //         CHECK(data.size() == PACKED_SIZE);
 //         auto* check_ptr = data.data();
 
@@ -3599,8 +3599,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK_FALSE(packet_packet_type::match(data));
 
 //         // Unpack verifed packed data
-//         packet_type packet_out;
-//         packet_helper::unpack(packet_out, data.data(), data.size());
+//         packet_type packet_out(data);
+//         packet_packet_type packet_out(data);
 
 //         // Examine and check unpacked packet header
 //         const auto& header = packet_out.header();
@@ -3617,7 +3617,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 
 //         // Examine and check unpacked Formatted Geolocation
 //         if (GPS_TEST) {
-//             CHECK(packet_out.has_formatted_gps());
+//             
 //             CHECK(packet_out.formatted_gps().tsi() == TSI);
 //             CHECK(packet_out.formatted_gps().tsf() == TSF);
 //             CHECK(packet_out.formatted_gps().integer_timestamp() == INTEGER_TIMESTAMP);
@@ -3630,7 +3630,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_out.formatted_gps().track_angle() == TRACK_ANGLE);
 //             CHECK(packet_out.formatted_gps().magnetic_variation() == MAGNETIC_VARIATION);
 //         } else if (INS_TEST) {
-//             CHECK(packet_out.has_formatted_ins());
+//             
 //             CHECK(packet_out.formatted_ins().tsi() == TSI);
 //             CHECK(packet_out.formatted_ins().tsf() == TSF);
 //             CHECK(packet_out.formatted_ins().integer_timestamp() == INTEGER_TIMESTAMP);
@@ -3731,16 +3731,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 };
 //                 SECTION("ECEF") {
 //                     ECEF_TEST = true;
-//                     CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                     
 //                     packet_in.ecef_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_ecef_ephemeris());
+//                     
 //                     CHECK(packet_in.ecef_ephemeris().manufacturer_oui() == OUI);
 //                 }
 //                 SECTION("Relative") {
 //                     REL_TEST = true;
-//                     CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                     
 //                     packet_in.relative_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_relative_ephemeris());
+//                     
 //                     CHECK(packet_in.relative_ephemeris().manufacturer_oui() == OUI);
 //                 }
 //             } // end SECTION("OUI - Rule 9.4.5-2")
@@ -3780,16 +3780,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                     ephemeris.tsi(TSI);
 //                     SECTION("ECEF") {
 //                         ECEF_TEST = true;
-//                         CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                         
 //                         packet_in.ecef_ephemeris(ephemeris);
-//                         CHECK(packet_in.has_ecef_ephemeris());
+//                         
 //                         CHECK(packet_in.ecef_ephemeris().tsi() == TSI);
 //                     }
 //                     SECTION("Relative") {
 //                         REL_TEST = true;
-//                         CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                         
 //                         packet_in.relative_ephemeris(ephemeris);
-//                         CHECK(packet_in.has_relative_ephemeris());
+//                         
 //                         CHECK(packet_in.relative_ephemeris().tsi() == TSI);
 //                     }
 //                 } // end SECTION("Undefined")
@@ -3813,16 +3813,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                     ephemeris.tsi(TSI);
 //                     SECTION("ECEF") {
 //                         ECEF_TEST = true;
-//                         CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                         
 //                         packet_in.ecef_ephemeris(ephemeris);
-//                         CHECK(packet_in.has_ecef_ephemeris());
+//                         
 //                         CHECK(packet_in.ecef_ephemeris().tsi() == TSI);
 //                     }
 //                     SECTION("Relative") {
 //                         REL_TEST = true;
-//                         CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                         
 //                         packet_in.relative_ephemeris(ephemeris);
-//                         CHECK(packet_in.has_relative_ephemeris());
+//                         
 //                         CHECK(packet_in.relative_ephemeris().tsi() == TSI);
 //                     }
 //                 } // end SECTION("UTC")
@@ -3846,16 +3846,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                     ephemeris.tsi(TSI);
 //                     SECTION("ECEF") {
 //                         ECEF_TEST = true;
-//                         CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                         
 //                         packet_in.ecef_ephemeris(ephemeris);
-//                         CHECK(packet_in.has_ecef_ephemeris());
+//                         
 //                         CHECK(packet_in.ecef_ephemeris().tsi() == TSI);
 //                     }
 //                     SECTION("Relative") {
 //                         REL_TEST = true;
-//                         CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                         
 //                         packet_in.relative_ephemeris(ephemeris);
-//                         CHECK(packet_in.has_relative_ephemeris());
+//                         
 //                         CHECK(packet_in.relative_ephemeris().tsi() == TSI);
 //                     }
 //                 } // end SECTION("GPS Time")
@@ -3879,16 +3879,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                     ephemeris.tsi(TSI);
 //                     SECTION("ECEF") {
 //                         ECEF_TEST = true;
-//                         CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                         
 //                         packet_in.ecef_ephemeris(ephemeris);
-//                         CHECK(packet_in.has_ecef_ephemeris());
+//                         
 //                         CHECK(packet_in.ecef_ephemeris().tsi() == TSI);
 //                     }
 //                     SECTION("Relative") {
 //                         REL_TEST = true;
-//                         CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                         
 //                         packet_in.relative_ephemeris(ephemeris);
-//                         CHECK(packet_in.has_relative_ephemeris());
+//                         
 //                         CHECK(packet_in.relative_ephemeris().tsi() == TSI);
 //                     }
 //                 } // end SECTION("Other")
@@ -3929,16 +3929,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                     ephemeris.tsf(TSF);
 //                     SECTION("ECEF") {
 //                         ECEF_TEST = true;
-//                         CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                         
 //                         packet_in.ecef_ephemeris(ephemeris);
-//                         CHECK(packet_in.has_ecef_ephemeris());
+//                         
 //                         CHECK(packet_in.ecef_ephemeris().tsf() == TSF);
 //                     }
 //                     SECTION("Relative") {
 //                         REL_TEST = true;
-//                         CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                         
 //                         packet_in.relative_ephemeris(ephemeris);
-//                         CHECK(packet_in.has_relative_ephemeris());
+//                         
 //                         CHECK(packet_in.relative_ephemeris().tsf() == TSF);
 //                     }
 //                 } // end SECTION("Undefined")
@@ -3962,16 +3962,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                     ephemeris.tsf(TSF);
 //                     SECTION("ECEF") {
 //                         ECEF_TEST = true;
-//                         CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                         
 //                         packet_in.ecef_ephemeris(ephemeris);
-//                         CHECK(packet_in.has_ecef_ephemeris());
+//                         
 //                         CHECK(packet_in.ecef_ephemeris().tsf() == TSF);
 //                     }
 //                     SECTION("Relative") {
 //                         REL_TEST = true;
-//                         CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                         
 //                         packet_in.relative_ephemeris(ephemeris);
-//                         CHECK(packet_in.has_relative_ephemeris());
+//                         
 //                         CHECK(packet_in.relative_ephemeris().tsf() == TSF);
 //                     }
 //                 } // end SECTION("Sample Count Time")
@@ -3995,16 +3995,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                     ephemeris.tsf(TSF);
 //                     SECTION("ECEF") {
 //                         ECEF_TEST = true;
-//                         CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                         
 //                         packet_in.ecef_ephemeris(ephemeris);
-//                         CHECK(packet_in.has_ecef_ephemeris());
+//                         
 //                         CHECK(packet_in.ecef_ephemeris().tsf() == TSF);
 //                     }
 //                     SECTION("Relative") {
 //                         REL_TEST = true;
-//                         CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                         
 //                         packet_in.relative_ephemeris(ephemeris);
-//                         CHECK(packet_in.has_relative_ephemeris());
+//                         
 //                         CHECK(packet_in.relative_ephemeris().tsf() == TSF);
 //                     }
 //                 } // end SECTION("Real (Picoseconds) Time")
@@ -4028,16 +4028,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                     ephemeris.tsf(TSF);
 //                     SECTION("ECEF") {
 //                         ECEF_TEST = true;
-//                         CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                         
 //                         packet_in.ecef_ephemeris(ephemeris);
-//                         CHECK(packet_in.has_ecef_ephemeris());
+//                         
 //                         CHECK(packet_in.ecef_ephemeris().tsf() == TSF);
 //                     }
 //                     SECTION("Relative") {
 //                         REL_TEST = true;
-//                         CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                         
 //                         packet_in.relative_ephemeris(ephemeris);
-//                         CHECK(packet_in.has_relative_ephemeris());
+//                         
 //                         CHECK(packet_in.relative_ephemeris().tsf() == TSF);
 //                     }
 //                 } // end SECTION("Other")
@@ -4060,9 +4060,9 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 ephemeris.fractional_timestamp(FRACTIONAL_TIMESTAMP);
 //                 SECTION("ECEF") {
 //                     ECEF_TEST = true;
-//                     CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                     
 //                     packet_in.ecef_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_ecef_ephemeris());
+//                     
 //                     CHECK(packet_in.ecef_ephemeris().tsi() == TSI);
 //                     CHECK(packet_in.ecef_ephemeris().tsf() == TSF);
 //                     CHECK(packet_in.ecef_ephemeris().integer_timestamp() == INTEGER_TIMESTAMP);
@@ -4070,9 +4070,9 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 }
 //                 SECTION("Relative") {
 //                     REL_TEST = true;
-//                     CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                     
 //                     packet_in.relative_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_relative_ephemeris());
+//                     
 //                     CHECK(packet_in.relative_ephemeris().tsi() == TSI);
 //                     CHECK(packet_in.relative_ephemeris().tsf() == TSF);
 //                     CHECK(packet_in.relative_ephemeris().integer_timestamp() == INTEGER_TIMESTAMP);
@@ -4110,9 +4110,9 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 ephemeris.fractional_timestamp(FRACTIONAL_TIMESTAMP);
 //                 SECTION("ECEF") {
 //                     ECEF_TEST = true;
-//                     CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                     
 //                     packet_in.ecef_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_ecef_ephemeris());
+//                     
 //                     CHECK(packet_in.ecef_ephemeris().tsi() == TSI);
 //                     CHECK(packet_in.ecef_ephemeris().tsf() == TSF);
 //                     CHECK(packet_in.ecef_ephemeris().integer_timestamp() == INTEGER_TIMESTAMP);
@@ -4120,9 +4120,9 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 }
 //                 SECTION("Relative") {
 //                     REL_TEST = true;
-//                     CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                     
 //                     packet_in.relative_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_relative_ephemeris());
+//                     
 //                     CHECK(packet_in.relative_ephemeris().tsi() == TSI);
 //                     CHECK(packet_in.relative_ephemeris().tsf() == TSF);
 //                     CHECK(packet_in.relative_ephemeris().integer_timestamp() == INTEGER_TIMESTAMP);
@@ -4165,16 +4165,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 ephemeris.position_x(POSITION_X);
 //                 SECTION("ECEF") {
 //                     ECEF_TEST = true;
-//                     CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                     
 //                     packet_in.ecef_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_ecef_ephemeris());
+//                     
 //                     CHECK(packet_in.ecef_ephemeris().position_x() == POSITION_X);
 //                 }
 //                 SECTION("Relative") {
 //                     REL_TEST = true;
-//                     CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                     
 //                     packet_in.relative_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_relative_ephemeris());
+//                     
 //                     CHECK(packet_in.relative_ephemeris().position_x() == POSITION_X);
 //                 }
 //                 EPHEMERIS_BE = bytes { 
@@ -4198,16 +4198,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 ephemeris.position_y(POSITION_Y);
 //                 SECTION("ECEF") {
 //                     ECEF_TEST = true;
-//                     CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                     
 //                     packet_in.ecef_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_ecef_ephemeris());
+//                     
 //                     CHECK(packet_in.ecef_ephemeris().position_y() == POSITION_Y);
 //                 }
 //                 SECTION("Relative") {
 //                     REL_TEST = true;
-//                     CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                     
 //                     packet_in.relative_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_relative_ephemeris());
+//                     
 //                     CHECK(packet_in.relative_ephemeris().position_y() == POSITION_Y);
 //                 }
 //                 EPHEMERIS_BE = bytes { 
@@ -4231,16 +4231,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 ephemeris.position_z(POSITION_Z);
 //                 SECTION("ECEF") {
 //                     ECEF_TEST = true;
-//                     CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                     
 //                     packet_in.ecef_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_ecef_ephemeris());
+//                     
 //                     CHECK(packet_in.ecef_ephemeris().position_z() == POSITION_Z);
 //                 }
 //                 SECTION("Relative") {
 //                     REL_TEST = true;
-//                     CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                     
 //                     packet_in.relative_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_relative_ephemeris());
+//                     
 //                     CHECK(packet_in.relative_ephemeris().position_z() == POSITION_Z);
 //                 }
 //                 EPHEMERIS_BE = bytes { 
@@ -4280,16 +4280,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 ephemeris.attitude_alpha(ATTITUDE_ALPHA);
 //                 SECTION("ECEF") {
 //                     ECEF_TEST = true;
-//                     CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                     
 //                     packet_in.ecef_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_ecef_ephemeris());
+//                     
 //                     CHECK(packet_in.ecef_ephemeris().attitude_alpha() == ATTITUDE_ALPHA);
 //                 }
 //                 SECTION("Relative") {
 //                     REL_TEST = true;
-//                     CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                     
 //                     packet_in.relative_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_relative_ephemeris());
+//                     
 //                     CHECK(packet_in.relative_ephemeris().attitude_alpha() == ATTITUDE_ALPHA);
 //                 }
 //                 EPHEMERIS_BE = bytes { 
@@ -4313,16 +4313,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 ephemeris.attitude_beta(ATTITUDE_BETA);
 //                 SECTION("ECEF") {
 //                     ECEF_TEST = true;
-//                     CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                     
 //                     packet_in.ecef_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_ecef_ephemeris());
+//                     
 //                     CHECK(packet_in.ecef_ephemeris().attitude_beta() == ATTITUDE_BETA);
 //                 }
 //                 SECTION("Relative") {
 //                     REL_TEST = true;
-//                     CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                     
 //                     packet_in.relative_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_relative_ephemeris());
+//                     
 //                     CHECK(packet_in.relative_ephemeris().attitude_beta() == ATTITUDE_BETA);
 //                 }
 //                 EPHEMERIS_BE = bytes { 
@@ -4346,16 +4346,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 ephemeris.attitude_phi(ATTITUDE_PHI);
 //                 SECTION("ECEF") {
 //                     ECEF_TEST = true;
-//                     CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                     
 //                     packet_in.ecef_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_ecef_ephemeris());
+//                     
 //                     CHECK(packet_in.ecef_ephemeris().attitude_phi() == ATTITUDE_PHI);
 //                 }
 //                 SECTION("Relative") {
 //                     REL_TEST = true;
-//                     CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                     
 //                     packet_in.relative_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_relative_ephemeris());
+//                     
 //                     CHECK(packet_in.relative_ephemeris().attitude_phi() == ATTITUDE_PHI);
 //                 }
 //                 EPHEMERIS_BE = bytes { 
@@ -4395,16 +4395,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 ephemeris.velocity_dx(VELOCITY_DX);
 //                 SECTION("ECEF") {
 //                     ECEF_TEST = true;
-//                     CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                     
 //                     packet_in.ecef_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_ecef_ephemeris());
+//                     
 //                     CHECK(packet_in.ecef_ephemeris().velocity_dx() == VELOCITY_DX);
 //                 }
 //                 SECTION("Relative") {
 //                     REL_TEST = true;
-//                     CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                     
 //                     packet_in.relative_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_relative_ephemeris());
+//                     
 //                     CHECK(packet_in.relative_ephemeris().velocity_dx() == VELOCITY_DX);
 //                 }
 //                 EPHEMERIS_BE = bytes { 
@@ -4428,16 +4428,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 ephemeris.velocity_dy(VELOCITY_DY);
 //                 SECTION("ECEF") {
 //                     ECEF_TEST = true;
-//                     CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                     
 //                     packet_in.ecef_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_ecef_ephemeris());
+//                     
 //                     CHECK(packet_in.ecef_ephemeris().velocity_dy() == VELOCITY_DY);
 //                 }
 //                 SECTION("Relative") {
 //                     REL_TEST = true;
-//                     CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                     
 //                     packet_in.relative_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_relative_ephemeris());
+//                     
 //                     CHECK(packet_in.relative_ephemeris().velocity_dy() == VELOCITY_DY);
 //                 }
 //                 EPHEMERIS_BE = bytes { 
@@ -4461,16 +4461,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 ephemeris.velocity_dz(VELOCITY_DZ);
 //                 SECTION("ECEF") {
 //                     ECEF_TEST = true;
-//                     CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                     
 //                     packet_in.ecef_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_ecef_ephemeris());
+//                     
 //                     CHECK(packet_in.ecef_ephemeris().velocity_dz() == VELOCITY_DZ);
 //                 }
 //                 SECTION("Relative") {
 //                     REL_TEST = true;
-//                     CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                     
 //                     packet_in.relative_ephemeris(ephemeris);
-//                     CHECK(packet_in.has_relative_ephemeris());
+//                     
 //                     CHECK(packet_in.relative_ephemeris().velocity_dz() == VELOCITY_DZ);
 //                 }
 //                 EPHEMERIS_BE = bytes { 
@@ -4499,15 +4499,15 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //              */
 //             SECTION("ECEF") {
 //                 ECEF_TEST = true;
-//                 CHECK_FALSE(packet_in.has_ecef_ephemeris());
+//                 
 //                 packet_in.ecef_ephemeris(ephemeris);
-//                 CHECK(packet_in.has_ecef_ephemeris());
+//                 
 //             }
 //             SECTION("Relative") {
 //                 REL_TEST = true;
-//                 CHECK_FALSE(packet_in.has_relative_ephemeris());
+//                 
 //                 packet_in.relative_ephemeris(ephemeris);
-//                 CHECK(packet_in.has_relative_ephemeris());
+//                 
 //             }
 //             EPHEMERIS_BE = bytes {
 //                 0x00, 0x00, 0x00, 0x00, // word 1
@@ -4530,7 +4530,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //         // Get buffer from pack
-//         auto data = packet_helper::pack(packet_in);
+//         auto data = packet_packet_in.data();
 //         CHECK(data.size() == PACKED_SIZE);
 //         auto* check_ptr = data.data();
 
@@ -4572,8 +4572,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK_FALSE(packet_packet_type::match(data));
 
 //         // Unpack verifed packed data
-//         packet_type packet_out;
-//         packet_helper::unpack(packet_out, data.data(), data.size());
+//         packet_type packet_out(data);
+//         packet_packet_type packet_out(data);
 
 //         // Examine and check unpacked packet header
 //         const auto& header = packet_out.header();
@@ -4590,7 +4590,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 
 //         // Examine and check unpacked Ephemeris
 //         if (ECEF_TEST) {
-//             CHECK(packet_out.has_ecef_ephemeris());
+//             
 //             CHECK(packet_out.ecef_ephemeris().tsi() == TSI);
 //             CHECK(packet_out.ecef_ephemeris().tsf() == TSF);
 //             CHECK(packet_out.ecef_ephemeris().integer_timestamp() == INTEGER_TIMESTAMP);
@@ -4605,7 +4605,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_out.ecef_ephemeris().velocity_dy() == VELOCITY_DY);
 //             CHECK(packet_out.ecef_ephemeris().velocity_dz() == VELOCITY_DZ);
 //         } else if (REL_TEST) {
-//             CHECK(packet_out.has_relative_ephemeris());
+//             
 //             CHECK(packet_out.relative_ephemeris().tsi() == TSI);
 //             CHECK(packet_out.relative_ephemeris().tsf() == TSF);
 //             CHECK(packet_out.relative_ephemeris().integer_timestamp() == INTEGER_TIMESTAMP);
@@ -4642,16 +4642,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 
 //             // Set ephemeris ref id value to check
 //             const uint32_t EPHEM_REF_ID = 0x12345678;
-//             CHECK_FALSE(packet_in.has_ephemeris_ref_id());
+//             
 //             packet_in.ephemeris_ref_id(EPHEM_REF_ID);
-//             CHECK(packet_in.has_ephemeris_ref_id());
+//             
 //             CHECK(packet_in.ephemeris_ref_id() == EPHEM_REF_ID);
 
 //             // Check bytes required
 //             CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //             // Get buffer from pack
-//             auto data = packet_helper::pack(packet_in);
+//             auto data = packet_packet_in.data();
 //             CHECK(data.size() == PACKED_SIZE);
 //             auto* check_ptr = data.data();
 
@@ -4689,8 +4689,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK_FALSE(packet_packet_type::match(data));
 
 //             // Unpack verifed packed data
-//             packet_type packet_out;
-//             packet_helper::unpack(packet_out, data.data(), data.size());
+//             packet_type packet_out(data);
+//             packet_packet_type packet_out(data);
 
 //             // Examine and check unpacked packet header
 //             const auto& header = packet_out.header();
@@ -4706,7 +4706,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK(packet_out.stream_id() == STREAM_ID);
 
 //             // Examine and check unpacked Ephemeris Ref ID
-//             CHECK(packet_out.has_ephemeris_ref_id());
+//             
 //             CHECK(packet_out.ephemeris_ref_id() == EPHEM_REF_ID);
 //         } // end SECTION("Rule 9.4.4-1")
 //     } // end SECTION("Ephemeris Ref ID")
@@ -4753,16 +4753,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 
 //                 // Set phase offset value to check
 //                 const double PHASE_OFFSET_1 = 1.0; // represents 0x0000 0080
-//                 CHECK_FALSE(packet_in.has_phase_offset());
+//                 
 //                 packet_in.phase_offset(PHASE_OFFSET_1);
-//                 CHECK(packet_in.has_phase_offset());
+//                 
 //                 CHECK(packet_in.phase_offset() == PHASE_OFFSET_1);
 
 //                 // Check bytes required
 //                 CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //                 // Get buffer from pack
-//                 auto data = packet_helper::pack(packet_in);
+//                 auto data = packet_packet_in.data();
 //                 CHECK(data.size() == PACKED_SIZE);
 //                 auto* check_ptr = data.data();
 
@@ -4808,8 +4808,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 CHECK_FALSE(packet_packet_type::match(data));
 
 //                 // Unpack verifed packed data
-//                 packet_type packet_out;
-//                 packet_helper::unpack(packet_out, data.data(), data.size());
+//                 packet_type packet_out(data);
+//                 packet_packet_type packet_out(data);
 
 //                 // Examine and check unpacked packet header
 //                 const auto& header = packet_out.header();
@@ -4825,7 +4825,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 CHECK(packet_out.stream_id() == STREAM_ID);
 
 //                 // Examine and check unpacked Phase Offset
-//                 CHECK(packet_out.has_phase_offset());
+//                 
 //                 CHECK(packet_out.phase_offset() == PHASE_OFFSET_1);
 //             } // end SECTION("Phase Offset Value 1")
         
@@ -4839,16 +4839,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 
 //                 // Set phase offset value to check
 //                 const double PHASE_OFFSET_1 = 1.0; // represents 0x0000 0080
-//                 CHECK_FALSE(packet_in.has_phase_offset());
+//                 
 //                 packet_in.phase_offset(PHASE_OFFSET_1);
-//                 CHECK(packet_in.has_phase_offset());
+//                 
 //                 CHECK(packet_in.phase_offset() == PHASE_OFFSET_1);
 
 //                 // Check bytes required
 //                 CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //                 // Get buffer from pack
-//                 auto data = packet_helper::pack(packet_in);
+//                 auto data = packet_packet_in.data();
 //                 CHECK(data.size() == PACKED_SIZE);
 //                 auto* check_ptr = data.data();
 
@@ -4894,8 +4894,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 CHECK_FALSE(packet_packet_type::match(data));
 
 //                 // Unpack verifed packed data
-//                 packet_type packet_out;
-//                 packet_helper::unpack(packet_out, data.data(), data.size());
+//                 packet_type packet_out(data);
+//                 packet_packet_type packet_out(data);
 
 //                 // Examine and check unpacked packet header
 //                 const auto& header = packet_out.header();
@@ -4911,7 +4911,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 CHECK(packet_out.stream_id() == STREAM_ID);
 
 //                 // Examine and check unpacked Phase Offset
-//                 CHECK(packet_out.has_phase_offset());
+//                 
 //                 CHECK(packet_out.phase_offset() == PHASE_OFFSET_1);
 //             } // end SECTION("Phase Offset Value 1")
         
@@ -4925,16 +4925,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 
 //                 // Set phase offset value to check
 //                 const double PHASE_OFFSET_2 = -1.0; // represents 0x0000 FF80
-//                 CHECK_FALSE(packet_in.has_phase_offset());
+//                 
 //                 packet_in.phase_offset(PHASE_OFFSET_2);
-//                 CHECK(packet_in.has_phase_offset());
+//                 
 //                 CHECK(packet_in.phase_offset() == PHASE_OFFSET_2);
 
 //                 // Check bytes required
 //                 CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //                 // Get buffer from pack
-//                 auto data = packet_helper::pack(packet_in);
+//                 auto data = packet_packet_in.data();
 //                 CHECK(data.size() == PACKED_SIZE);
 //                 auto* check_ptr = data.data();
 
@@ -4980,8 +4980,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 CHECK_FALSE(packet_packet_type::match(data));
 
 //                 // Unpack verifed packed data
-//                 packet_type packet_out;
-//                 packet_helper::unpack(packet_out, data.data(), data.size());
+//                 packet_type packet_out(data);
+//                 packet_packet_type packet_out(data);
 
 //                 // Examine and check unpacked packet header
 //                 const auto& header = packet_out.header();
@@ -4997,7 +4997,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 CHECK(packet_out.stream_id() == STREAM_ID);
 
 //                 // Examine and check unpacked Phase Offset
-//                 CHECK(packet_out.has_phase_offset());
+//                 
 //                 CHECK(packet_out.phase_offset() == PHASE_OFFSET_2);
 //             } // end SECTION("Phase Offset Value 2")
         
@@ -5011,16 +5011,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 
 //                 // Set phase offset value to check
 //                 const double PHASE_OFFSET_3 = 0.0078125; // represents 0x0000 0001
-//                 CHECK_FALSE(packet_in.has_phase_offset());
+//                 
 //                 packet_in.phase_offset(PHASE_OFFSET_3);
-//                 CHECK(packet_in.has_phase_offset());
+//                 
 //                 CHECK(packet_in.phase_offset() == PHASE_OFFSET_3);
 
 //                 // Check bytes required
 //                 CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //                 // Get buffer from pack
-//                 auto data = packet_helper::pack(packet_in);
+//                 auto data = packet_packet_in.data();
 //                 CHECK(data.size() == PACKED_SIZE);
 //                 auto* check_ptr = data.data();
 
@@ -5066,8 +5066,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 CHECK_FALSE(packet_packet_type::match(data));
 
 //                 // Unpack verifed packed data
-//                 packet_type packet_out;
-//                 packet_helper::unpack(packet_out, data.data(), data.size());
+//                 packet_type packet_out(data);
+//                 packet_packet_type packet_out(data);
 
 //                 // Examine and check unpacked packet header
 //                 const auto& header = packet_out.header();
@@ -5083,7 +5083,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 CHECK(packet_out.stream_id() == STREAM_ID);
 
 //                 // Examine and check unpacked Phase Offset
-//                 CHECK(packet_out.has_phase_offset());
+//                 
 //                 CHECK(packet_out.phase_offset() == PHASE_OFFSET_3);
 //             } // end SECTION("Phase Offset Value 3")
 
@@ -5097,16 +5097,16 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 
 //                 // Set phase offset value to check
 //                 const double PHASE_OFFSET_4 = -0.0078125; // represents 0x0000 FFFF
-//                 CHECK_FALSE(packet_in.has_phase_offset());
+//                 
 //                 packet_in.phase_offset(PHASE_OFFSET_4);
-//                 CHECK(packet_in.has_phase_offset());
+//                 
 //                 CHECK(packet_in.phase_offset() == PHASE_OFFSET_4);
 
 //                 // Check bytes required
 //                 CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //                 // Get buffer from pack
-//                 auto data = packet_helper::pack(packet_in);
+//                 auto data = packet_packet_in.data();
 //                 CHECK(data.size() == PACKED_SIZE);
 //                 auto* check_ptr = data.data();
 
@@ -5152,8 +5152,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 CHECK_FALSE(packet_packet_type::match(data));
 
 //                 // Unpack verifed packed data
-//                 packet_type packet_out;
-//                 packet_helper::unpack(packet_out, data.data(), data.size());
+//                 packet_type packet_out(data);
+//                 packet_packet_type packet_out(data);
 
 //                 // Examine and check unpacked packet header
 //                 const auto& header = packet_out.header();
@@ -5169,7 +5169,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //                 CHECK(packet_out.stream_id() == STREAM_ID);
 
 //                 // Examine and check unpacked Phase Offset
-//                 CHECK(packet_out.has_phase_offset());
+//                 
 //                 CHECK(packet_out.phase_offset() == PHASE_OFFSET_4);
 //             } // end SECTION("Phase Offset Value 4")
 //         } // end SECTION("Rule 9.5.8-1")
@@ -5248,7 +5248,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //         // Get buffer from pack
-//         auto data = packet_helper::pack(packet_in);
+//         auto data = packet_packet_in.data();
 //         CHECK(data.size() == PACKED_SIZE);
 //         auto* check_ptr = data.data();
 
@@ -5312,8 +5312,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK_FALSE(packet_packet_type::match(data));
 
 //         // Unpack verifed packed data
-//         packet_type packet_out;
-//         packet_helper::unpack(packet_out, data.data(), data.size());
+//         packet_type packet_out(data);
+//         packet_packet_type packet_out(data);
 
 //         // Examine and check unpacked packet header
 //         const auto& header = packet_out.header();
@@ -5432,7 +5432,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 
 //     SECTION ("Rule 9.12-1 With Current Value") {
 //         using packet_type = TestContext6;
-//         using helper = packet_type::helper;
+//         
 //         packet_type packet_in;
 
 //         // Test regular required property with all optional off
@@ -5443,10 +5443,10 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             packet_in.reference_level(REF_LEVEL);
 //             CHECK(packet_in.reference_level());
 //             CHECK(packet_in.reference_level() == REF_LEVEL);
-//             CHECK_FALSE(packet_in.has_phase_offset());
+//             
 //             CIF0_BE = bytes{ REF_LEVEL_ENABLE, 0, 0, CIF7_ENABLE };
 //             PACKED_SIZE += REF_LEVEL_BYTES;
-//             CHECK_FALSE(packet_in.has_gain());
+//             
 //         }
 //         // Test an option parameter of standard type
 //         SECTION ("Rule 9.12-1 Reference and Phase with Current Value") {
@@ -5466,9 +5466,9 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             PHASE_OFFSET_PROB_BE   = bytes { 0, 0, PROBABILITY_FUNC, PROBABILITY_PERCENT };
 //             PHASE_OFFSET_BELIEF_BE = bytes { 0, 0, 0, BELIEF_PERCENT };
 
-//             CHECK_FALSE(packet_in.has_phase_offset());
+//             
 //             packet_in.phase_offset(PHASE_OFFSET);
-//             CHECK(packet_in.has_phase_offset());
+//             
 //             CHECK(packet_in.phase_offset() == PHASE_OFFSET);
 //             const uint8_t CIF1_ENABLE = 0x1 << 1;
 //             CIF0_BE = bytes{ REF_LEVEL_ENABLE, 0, 0, CIF7_ENABLE | CIF1_ENABLE };
@@ -5479,7 +5479,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             PACKED_SIZE += REF_LEVEL_BYTES;
 //             PACKED_SIZE += CIF1_BYTES;
 //             PACKED_SIZE += PHASE_OFFSET_BYTES;
-//             CHECK_FALSE(packet_in.has_gain());
+//             
 
 //             test_context6::structs::CIF7Attributes<double> phase_attributes;
 //             phase_attributes.mean_value(PHASE_OFFSET_MEAN);
@@ -5503,7 +5503,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         // Test an optional property with non-standard type
 //         SECTION ("9.12-1 Gain") {
 //             packet_in.reference_level(REF_LEVEL);
-//             CHECK_FALSE(packet_in.has_gain());
+//             
 //             // const double PHASE_OFFSET = 1.0;
 
 //             GAIN_STAGE_2 = 0;
@@ -5519,7 +5519,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             gain.stage_1(GAIN_STAGE_1);
 //             gain.stage_2(GAIN_STAGE_2);
 //             packet_in.gain(gain);
-//             CHECK(packet_in.has_gain());
+//             
 //             CHECK(packet_in.gain().stage_1() == GAIN_STAGE_1);
 //             CHECK(packet_in.gain().stage_2() == GAIN_STAGE_2);
 
@@ -5529,7 +5529,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             GAIN_BYTES = 4;
 //             PACKED_SIZE += REF_LEVEL_BYTES;
 //             PACKED_SIZE += GAIN_BYTES;
-//             CHECK_FALSE(packet_in.has_phase_offset());
+//             
 //             test_context6::structs::CIF7Attributes<vrtgen::packing::Gain> gain_attributes;
 //             gain_attributes.mean_value(gain);
 //             PACKED_SIZE += GAIN_BYTES;
@@ -5578,7 +5578,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 
 
 //         // Get buffer from pack
-//         auto data = helper::pack(packet_in);
+//         auto data = packet_in.data();
 //         CHECK(data.size() == PACKED_SIZE);
 //         auto* check_ptr = data.data();
 //         // Check bytes required
@@ -5691,8 +5691,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK_FALSE(packet_type::match(data));
 
 //         // Unpack verifed packed data
-//         packet_type packet_out;
-//         helper::unpack(packet_out, data.data(), data.size());
+//         packet_type packet_out(data);
+//         packet_type packet_out(data);
 
 //         // Examine and check unpacked packet header
 //         const auto& header = packet_out.header();
@@ -5712,7 +5712,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 
 //     SECTION ("Rule 9.12-1 With No Current Value") {
 //         using packet_type = TestContext7;
-//         using helper = packet_type::helper;
+//         
 //         packet_type packet_in;
 
 //         // Test regular required property with all optional off
@@ -5723,8 +5723,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //             CHECK_FALSE(packet_in.reference_level());
 //             CHECK(packet_in.reference_level() == 0);
 //             CIF0_BE = bytes{ REF_LEVEL_ENABLE, 0, 0, CIF7_ENABLE };
-//             CHECK_FALSE(packet_in.has_gain());
-//             CHECK_FALSE(packet_in.has_phase_offset());
+//             
+//             
 //         }
 
 //         // Stream ID is required field. Set value to check
@@ -5755,7 +5755,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK(helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //         // Get buffer from pack
-//         auto data = helper::pack(packet_in);
+//         auto data = packet_in.data();
 //         CHECK(data.size() == PACKED_SIZE);
 //         auto* check_ptr = data.data();
 
@@ -5833,8 +5833,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK_FALSE(packet_type::match(data));
 
 //         // Unpack verifed packed data
-//         packet_type packet_out;
-//         helper::unpack(packet_out, data.data(), data.size());
+//         packet_type packet_out(data);
+//         packet_type packet_out(data);
         
 //         // Examine and check unpacked packet header
 //         const auto& header = packet_out.header();
@@ -5849,7 +5849,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         // Examine and check unpacked Stream ID
 //         CHECK(packet_out.stream_id() == STREAM_ID);
 //         CHECK(packet_out.reference_level() == 0);
-//         CHECK_FALSE(packet_out.has_gain());
+//         
 //     }
 // }
 
@@ -5899,7 +5899,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //         // Get buffer from pack
-//         auto data = packet_helper::pack(packet_in);
+//         auto data = packet_packet_in.data();
 //         CHECK(data.size() == PACKED_SIZE);
 //         auto* check_ptr = data.data();
 
@@ -5962,8 +5962,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //         CHECK_FALSE(packet_packet_type::match(data));
 
 //         // Unpack verifed packed data
-//         packet_type packet_out;
-//         packet_helper::unpack(packet_out, data.data(), data.size());
+//         packet_type packet_out(data);
+//         packet_packet_type packet_out(data);
 
 //         // Examine and check unpacked packet header
 //         const auto& header = packet_out.header();
@@ -6052,7 +6052,7 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //     CHECK(packet_helper::bytes_required(packet_in) == PACKED_SIZE);
 
 //     // Get buffer from pack
-//     auto data = packet_helper::pack(packet_in);
+//     auto data = packet_packet_in.data();
 //     CHECK(data.size() == PACKED_SIZE);
 //     auto* check_ptr = data.data();
 
@@ -6127,8 +6127,8 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
 //     CHECK_FALSE(packet_packet_type::match(data));
 
 //     // Unpack verifed packed data
-//     packet_type packet_out;
-//     packet_helper::unpack(packet_out, data.data(), data.size());
+//     packet_type packet_out(data);
+//     packet_packet_type packet_out(data);
 
 //     // Examine and check unpacked packet header
 //     const auto& header = packet_out.header();

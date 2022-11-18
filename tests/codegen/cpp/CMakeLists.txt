@@ -36,7 +36,8 @@ list(APPEND data_gen_list
     "test_data8"
     "test_data9"
     "test_data10"
-    # "test_data11"
+    "test_data12"
+    "test_data13"
 )
 list(TRANSFORM data_gen_list PREPEND "${CMAKE_CURRENT_BINARY_DIR}/")
 set(data_gen_list "${data_gen_list}" PARENT_SCOPE)

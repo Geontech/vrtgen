@@ -21,7 +21,250 @@
 #include "data.hpp"
 #include <bytes.hpp>
 #include <vrtgen/packing/enums.hpp>
+#include "streamid.hpp"
 #include "constants.hpp"
+
+TEST_CASE("Section 6.1", "[data_packet][6.1]")
+{
+    SECTION("Rule 6.1-1")
+    {
+        using packet_type = TestData10;
+        
+        packet_type packet_in;
+
+        // Stream ID is required field. Set value to check
+        const uint32_t STREAM_ID = 0x12345678;
+        packet_in.stream_id(STREAM_ID);
+
+        // Timestamp is required field. Set value to check
+        const uint32_t INTEGER_TS = 0x12345678;
+        const uint64_t FRACTIONAL_TS = 0xABCDEF12345678;
+        packet_in.integer_timestamp(INTEGER_TS);
+        packet_in.fractional_timestamp(FRACTIONAL_TS);
+
+        // Set small payload to verify
+        const bytes PAYLOAD{ 0x12, 0x34, 0x56, 0x78 };
+        packet_in.payload(PAYLOAD);
+
+        // Trailer required. Set values to check
+        packet_in.valid_data(true);
+        packet_in.agc_mgc(true);
+
+        // Check bytes required
+        const size_t EXPECTED_SIZE = 4 +  // header
+                                    4 +  // stream_id
+                                    8 +  // class_id
+                                    12 + // timestamp
+                                    4 +  // payload
+                                    4;   // trailer
+        const size_t PACKED_SIZE = packet_in.size();
+        CHECK(PACKED_SIZE == EXPECTED_SIZE);
+
+        // Get buffer from pack
+        auto data = packet_in.data();
+        CHECK(data.size() == PACKED_SIZE);
+        auto* check_ptr = data.data();
+
+        // Examine and check packed header
+        const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
+        check_ptr += HEADER_BYTES;
+
+        // Examine and check packed Stream ID. Value shall be in big-endian format.
+        const size_t STREAM_ID_BYTES = 4;
+        const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
+        const bytes packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
+        check_ptr += STREAM_ID_BYTES;
+        CHECK(packed_stream_id == STREAM_ID_BE);
+
+        // Examine and check packed Class ID. Value shall be in big-endian format.
+        const size_t CLASS_ID_BYTES = 8;
+        const bytes CLASS_ID_BE{ 0, 0xFF, 0xEE, 0xDD, 0, 0, 0x12, 0x34 };
+        const bytes packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
+        check_ptr += CLASS_ID_BYTES;
+        CHECK(packed_class_id == CLASS_ID_BE);
+
+        // Examine and check packed Integer Timestamp. Value shall be in big-endian format.
+        const size_t INTEGER_TS_BYTES = 4;
+        const bytes INTEGER_TS_BE{ 0x12, 0x34, 0x56, 0x78 };
+        const bytes packed_integer_ts(check_ptr, check_ptr + INTEGER_TS_BYTES);
+        check_ptr += INTEGER_TS_BYTES;
+        CHECK(packed_integer_ts == INTEGER_TS_BE);
+
+        // Examine and check packed Fractional Timestamp. Value shall be in big-endian format.
+        const size_t FRACTIONAL_TS_BYTES = 8;
+        const bytes FRACTIONAL_TS_BE{ 0x00, 0xAB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78 };
+        const bytes packed_fractional_ts(check_ptr, check_ptr + FRACTIONAL_TS_BYTES);
+        check_ptr += FRACTIONAL_TS_BYTES;
+        CHECK(packed_fractional_ts == FRACTIONAL_TS_BE);
+
+        // Examine and check packed payload
+        const size_t PAYLOAD_BYTES = PAYLOAD.size();
+        const bytes packed_payload(check_ptr, check_ptr + PAYLOAD_BYTES);
+        check_ptr += PAYLOAD_BYTES;
+        CHECK(packed_payload == PAYLOAD);
+
+        // Examine and check packed trailer
+        const size_t TRAILER_BYTES = 4;
+        const uint8_t ENABLES = (0x1 << 6) | (0x1 << 4); // valid_data_enable @ 30; agc_mgc_enable @ 28
+        const uint8_t INDICATORS = (0x1 << 2) | 0x1; // valid_data @ 18; agc_mgc @ 16
+        const bytes TRAILER_BE{ ENABLES, INDICATORS, 0, 0 };
+        const bytes packed_trailer(check_ptr, check_ptr + HEADER_BYTES);
+        check_ptr += TRAILER_BYTES;
+        CHECK(packed_trailer == TRAILER_BE);
+
+        // Check match
+        CHECK_FALSE(packet_in.match(data));
+
+        // Unpack verifed packed data
+        packet_type packet_out(data);
+
+        // Examine and check unpacked packet header
+        const auto& header = packet_out.header();
+        CHECK(header.packet_type() == vrtgen::packing::PacketType::SIGNAL_DATA_STREAM_ID);
+        CHECK(header.class_id_enable());
+        CHECK(header.trailer_included());
+        CHECK_FALSE(header.not_v49d0());
+        CHECK(header.spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::TIME);
+        CHECK(header.tsi() == vrtgen::packing::TSI::UTC);
+        CHECK(header.tsf() == vrtgen::packing::TSF::REAL_TIME);
+        CHECK(header.packet_size() == PACKET_SIZE);
+
+        // Examine and check unpacked Stream ID
+        CHECK(packet_out.stream_id() == STREAM_ID);
+
+        // Examine and check unpacked Class ID
+        CHECK(packet_out.class_id().oui() == 0xFFEEDD);
+        CHECK(packet_out.class_id().packet_code() == 0x1234);
+
+        // Examine and check unpacked timestamps
+        CHECK(packet_out.integer_timestamp() == INTEGER_TS);
+        CHECK(packet_out.fractional_timestamp() == FRACTIONAL_TS);
+
+        // Examine and check unpacked payload
+        bytes payload(packet_out.payload_size());
+        std::memcpy(payload.data(), packet_out.payload().data(), packet_out.payload_size());
+        CHECK(payload == PAYLOAD);
+
+        // Examine and check unpacked packet trailer
+        const auto& trailer = packet_out.trailer();
+        
+        CHECK(packet_out.valid_data());
+        CHECK(trailer.valid_data_enable());
+        CHECK(trailer.valid_data());
+        CHECK(packet_out.agc_mgc());
+        CHECK(trailer.agc_mgc_enable());
+        CHECK(trailer.agc_mgc());
+    }
+
+    SECTION("Rule 6.1-3")
+    {
+        // Stream ID Consistently Omitted/Included - "Consistency" is up to the user to design the yaml correctly
+        uint8_t PACKET_TYPE;
+
+        SECTION("Data Packet without Stream ID")
+        {
+            WithoutStreamIdData packet_in;
+            PACKET_TYPE = (0b0000) << 4;
+            auto data = packet_in.data();
+            auto* check_ptr = data.data();
+
+            const bytes HEADER_BE{ PACKET_TYPE };
+            const bytes packet_type(check_ptr, check_ptr + 1);
+            check_ptr += HEADER_BYTES;
+            CHECK(packet_type == HEADER_BE);
+
+            WithoutStreamIdData packet_out(data);
+            CHECK(packet_out.header().packet_type() == vrtgen::packing::PacketType::SIGNAL_DATA);
+        }
+
+        SECTION("Data Packet with Stream ID")
+        {
+            WithStreamIdData packet_in;
+            PACKET_TYPE = (0b0001) << 4;
+            const bytes HEADER_BE{ PACKET_TYPE };
+            auto data = packet_in.data();
+            auto* check_ptr = data.data();
+
+            const bytes packet_type(check_ptr, check_ptr + 1);
+            check_ptr += HEADER_BYTES;
+            CHECK(packet_type == HEADER_BE);
+
+            WithStreamIdData packet_out(data);
+            CHECK(packet_out.header().packet_type() == vrtgen::packing::PacketType::SIGNAL_DATA_STREAM_ID);
+        }
+    }
+
+    // Issue #66
+    // SECTION("Rule 6.1.1-1")
+    // {
+    //     TestData1 packet_in;
+    //     bytes payload;
+    //     size_t prologue_size = packet_in.header().size() + sizeof(packet_in.stream_id());
+    //     size_t payload_size = ((65535*4) - prologue_size) + 15; // (2^16-1) 32-bit words minux the header and optional params
+    //     payload.resize(payload_size);
+    //     REQUIRE_THROWS(packet_in.payload(payload);
+    // }
+
+    SECTION("Rule 6.1.1-2")
+    {
+        TestData1 packet_in;
+        bytes payload;
+        size_t payload_size = 16;
+        payload.resize(payload_size);
+        packet_in.payload(payload);
+        CHECK(packet_in.payload_size() == payload_size);
+        payload.resize(32);
+        packet_in.payload(payload);
+        CHECK(packet_in.payload_size() == 32);
+    }
+
+    // SECTION("Rule 6.1.1-3")
+    // {
+    //     TestData1 packet_in;
+    //     bytes payload;
+    //     size_t payload_size = 10; 
+    //     size_t new_size = 12;
+    //     payload.resize(payload_size);
+    //     packet_in.payload(payload);
+    //     CHECK(packet_in.payload_size() == new_size);
+    // }
+}
+
+TEST_CASE("Section 6.2", "[data_packet][6.2]")
+{
+    SECTION("Rule 6.2-1")
+    {
+        TestData12 packet_in;
+        CHECK(packet_in.header().spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::TIME);
+
+        auto data = packet_in.data();
+
+        TestData12 packet_out(data);
+        CHECK(packet_out.header().spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::TIME);
+    }
+}
+
+TEST_CASE("Section 6.3", "[data_packet][6.3]")
+{
+    SECTION("Rule 6.3.1-2")
+    {
+        TestData13 packet_in;
+        // FIXME #43
+        // CHECK(packet_in.header().spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::SPECTRUM);
+
+        auto data = packet_in.data();
+
+        TestData13 packet_out(data);
+        CHECK(packet_out.header().spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::SPECTRUM);
+    }
+}
+
+
+
+
+
+
+/////////////////////////// LEGACY //////////////////////////////
 
 TEST_CASE("Data Packet Stream ID")
 {
@@ -80,7 +323,7 @@ TEST_CASE("Data Packet Stream ID")
     CHECK_FALSE(header.class_id_enable());
     CHECK_FALSE(header.trailer_included());
     CHECK_FALSE(header.not_v49d0());
-    CHECK_FALSE(header.spectrum_or_time());
+    CHECK(header.spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::TIME);
     CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
     CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
     CHECK(header.packet_size() == PACKET_SIZE);
@@ -148,7 +391,7 @@ TEST_CASE("Data Packet Class ID")
     CHECK(header.class_id_enable());
     CHECK_FALSE(header.trailer_included());
     CHECK_FALSE(header.not_v49d0());
-    CHECK_FALSE(header.spectrum_or_time());
+    CHECK(header.spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::TIME);
     CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
     CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
     CHECK(header.packet_size() == PACKET_SIZE);
@@ -221,7 +464,7 @@ TEST_CASE("Data Packet Timestamp Integer")
     CHECK_FALSE(header.class_id_enable());
     CHECK_FALSE(header.trailer_included());
     CHECK_FALSE(header.not_v49d0());
-    CHECK_FALSE(header.spectrum_or_time());
+    CHECK(header.spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::TIME);
     CHECK(header.tsi() == vrtgen::packing::TSI::UTC);
     CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
     CHECK(header.packet_size() == PACKET_SIZE);
@@ -293,7 +536,7 @@ TEST_CASE("Data Packet Timestamp Fractional")
     CHECK_FALSE(header.class_id_enable());
     CHECK_FALSE(header.trailer_included());
     CHECK_FALSE(header.not_v49d0());
-    CHECK_FALSE(header.spectrum_or_time());
+    CHECK(header.spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::TIME);
     CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
     CHECK(header.tsf() == vrtgen::packing::TSF::REAL_TIME);
     CHECK(header.packet_size() == PACKET_SIZE);
@@ -373,7 +616,7 @@ TEST_CASE("Data Packet Timestamp Full")
     CHECK_FALSE(header.class_id_enable());
     CHECK_FALSE(header.trailer_included());
     CHECK_FALSE(header.not_v49d0());
-    CHECK_FALSE(header.spectrum_or_time());
+    CHECK(header.spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::TIME);
     CHECK(header.tsi() == vrtgen::packing::TSI::UTC);
     CHECK(header.tsf() == vrtgen::packing::TSF::REAL_TIME);
     CHECK(header.packet_size() == PACKET_SIZE);
@@ -444,7 +687,7 @@ TEST_CASE("Data Packet Trailer")
     CHECK_FALSE(header.class_id_enable());
     CHECK(header.trailer_included());
     CHECK_FALSE(header.not_v49d0());
-    CHECK_FALSE(header.spectrum_or_time());
+    CHECK(header.spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::TIME);
     CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
     CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
     CHECK(header.packet_size() == PACKET_SIZE);
@@ -521,7 +764,7 @@ TEST_CASE("Data Packet Trailer Fields")
     CHECK_FALSE(header.class_id_enable());
     CHECK(header.trailer_included());
     CHECK_FALSE(header.not_v49d0());
-    CHECK_FALSE(header.spectrum_or_time());
+    CHECK(header.spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::TIME);
     CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
     CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
     CHECK(header.packet_size() == PACKET_SIZE);
@@ -607,7 +850,7 @@ TEST_CASE("Data Packet Both Identifiers")
     CHECK(header.class_id_enable());
     CHECK_FALSE(header.trailer_included());
     CHECK_FALSE(header.not_v49d0());
-    CHECK_FALSE(header.spectrum_or_time());
+    CHECK(header.spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::TIME);
     CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
     CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
     CHECK(header.packet_size() == PACKET_SIZE);
@@ -709,7 +952,7 @@ TEST_CASE("Data Packet Full Prologue")
     CHECK(header.class_id_enable());
     CHECK_FALSE(header.trailer_included());
     CHECK_FALSE(header.not_v49d0());
-    CHECK_FALSE(header.spectrum_or_time());
+    CHECK(header.spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::TIME);
     CHECK(header.tsi() == vrtgen::packing::TSI::UTC);
     CHECK(header.tsf() == vrtgen::packing::TSF::REAL_TIME);
     CHECK(header.packet_size() == PACKET_SIZE);
@@ -828,7 +1071,7 @@ TEST_CASE("Data Packet All")
     CHECK(header.class_id_enable());
     CHECK(header.trailer_included());
     CHECK_FALSE(header.not_v49d0());
-    CHECK_FALSE(header.spectrum_or_time());
+    CHECK(header.spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::TIME);
     CHECK(header.tsi() == vrtgen::packing::TSI::UTC);
     CHECK(header.tsf() == vrtgen::packing::TSF::REAL_TIME);
     CHECK(header.packet_size() == PACKET_SIZE);
