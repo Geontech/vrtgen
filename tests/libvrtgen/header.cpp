@@ -322,7 +322,25 @@ TEST_CASE("Indicator Bits 5.1.1.1", "[header][indicator_bits]")
             CHECK(unpack_header.not_v49d0() == true);
         }
 
-        SECTION("TSM")
+        SECTION("Rule 7.1.1-3")
+        {
+            // Verify zero on construction
+            CHECK(header.tsm() == TSM::FINE);
+            // Setter
+            header.tsm(TSM::FINE);
+            // Getter check set value
+            CHECK(header.tsm() == TSM::FINE);
+            // Pack
+            header.pack_into(packed_bytes.data());
+            // Verify packed bits
+            CHECK(packed_bytes[0] == 0x00);
+            // Unpack
+            unpack_header.unpack_from(packed_bytes.data());
+            // Verify unpacked value
+            CHECK(unpack_header.tsm() == TSM::FINE);
+        }
+
+        SECTION("Rule 7.1.1-4")
         {
             // Verify zero on construction
             CHECK(header.tsm() == TSM::FINE);

@@ -167,7 +167,9 @@ TEST_CASE("StreamID 5.1.2", "[stream_id]")
             CHECK(stream_id == STREAM_ID_BE);
         }
 
-        SECTION("Context Packet default Stream ID")
+        // Context Packet Stream ID proven in rule 7.1.2-1
+
+        SECTION("Control Packet default Stream ID")
         {
             WithStreamIdContext packet_in;
             packet_in.stream_id(STREAM_ID);

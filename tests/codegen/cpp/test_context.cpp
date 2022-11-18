@@ -20,7 +20,71 @@
 #include "catch.hpp"
 #include "context.hpp"
 #include <bytes.hpp>
+#include "streamid.hpp"
 #include "constants.hpp"
+
+TEST_CASE("Section 7.1", "[context_packet][7.1]")
+{
+    SECTION("Rule 7.1.1-2") 
+    {
+        // Stream ID Consistently Omitted/Included - "Consistency" is up to the user to design the yaml correctly
+        uint8_t PACKET_TYPE;
+
+        WithStreamIdContext packet_in;
+        PACKET_TYPE = (0b0100) << 4;
+        auto data = packet_in.data();
+        auto* check_ptr = data.data();
+        
+        WithStreamIdContext packet_out(data);
+        CHECK(packet_out.header().packet_type() == vrtgen::packing::PacketType::CONTEXT);
+
+        const bytes HEADER_BE{ PACKET_TYPE };
+        const bytes packet_type(check_ptr, check_ptr + 1);
+        check_ptr += HEADER_BYTES;
+        CHECK(packet_type == HEADER_BE);
+    }
+
+    SECTION("Rule 7.1.2-1")
+    {
+        // Stream ID Consistently Omitted/Included - "Consistency" is up to the user to design the yaml correctly
+        const uint32_t STREAM_ID = 0x12345678;
+        bytes STREAM_ID_BE{ 0, 0, 0, 0 };
+        
+        SECTION("Context Packet default Stream ID")
+        {
+            WithStreamIdContext packet_in;
+            auto data = packet_in.data();
+            auto bytes_required = packet_in.size();
+
+            CHECK(bytes_required == 8 + 4); // header, streamid, and cif
+
+            auto* check_ptr = data.data();
+            check_ptr += 4;
+            const bytes stream_id(check_ptr, check_ptr + 4);
+            check_ptr += 4;
+            CHECK(stream_id == STREAM_ID_BE);
+        }
+
+        SECTION("Context Packet default Stream ID")
+        {
+            WithoutStreamIdContext packet_in;
+            packet_in.stream_id(STREAM_ID);
+            STREAM_ID_BE = bytes { 0x12, 0x34, 0x56, 0x78 };
+            auto data = packet_in.data();
+            auto bytes_required = packet_in.size();
+
+            CHECK(bytes_required == 4 + 4 + 4); // header, streamid, and cif
+
+            auto* check_ptr = data.data();
+            check_ptr += 4;
+            const bytes stream_id(check_ptr, check_ptr + 4);
+            check_ptr += 4;
+            CHECK(stream_id == STREAM_ID_BE);
+        }
+    }
+}
+
+/////////////////////////////////// LEGACY ///////////////////////////////////////////////
 
 TEST_CASE("Context Packet Stream ID")
 {
@@ -83,6 +147,8 @@ TEST_CASE("Context Packet Stream ID")
     CHECK(packet_out.stream_id() == STREAM_ID);
 
 } // end TEST_CASE("Context Packet Stream ID")
+
+
 
 TEST_CASE("Context Packet Class ID")
 {
