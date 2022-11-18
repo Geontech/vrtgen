@@ -154,6 +154,7 @@ TEST_CASE("VRT Packet Header", "[header]")
         uint8_t PACKET_TYPE;
         bytes data;
 
+        // Moved to 6.1-3 to not have repeated tests
         SECTION("Data Packet without Stream ID")
         {
             WithoutStreamIdData packet_in;

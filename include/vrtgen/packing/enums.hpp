@@ -97,6 +97,19 @@ enum class TSM : bool
 }; // end enum class TSM
 
 /**
+ * @enum SPECTRUM_OR_TIME
+ * @brief S Bit (SPECTRUM_OR_TIME) field in the VRT Context Packet Header specific bits
+ * 
+ * Constants for the 1-bit S Bit (SPECTRUM_OR_TIME) field in the VRT Packet Header.
+ * Refer to VITA 49.2 Table 5.1.1.1-1, rules 7.1.1-3, 7.1.1-4, 7.1.1-5.
+ */
+enum class SPECTRUM_OR_TIME : bool
+{
+    TIME = 0b0, //!< Conveys that the vector contains spectrum data
+    SPECTRUM = 0b1, //!< Conveys that the vector contains time data
+}; // end enum class SPECTRUM_OR_TIME
+
+/**
  * @enum IdentifierFormat
  * @brief Controllee/Controller Identifier Format field in the ControlAcknowledgeMode
  * 

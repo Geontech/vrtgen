@@ -186,6 +186,15 @@ class TSM(BinaryEnum, bits=1):
     FINE = 0
     COARSE = 1
 
+class SPECTRUM_OR_TIME(BinaryEnum, bits=1):
+    """
+    S Bit (S_BIT) of data packets:
+        SPECTRUM (0) - Conveys that the vector contains spectrum data
+        TIME     (1) - Conveys that the vector contains time data
+    """
+    TIME = 0
+    SPECTRUM = 1
+
 class SSI(BinaryEnum, bits=2):
     """
     Start/Stop of Sample Frame Indication (SSI) Bits:

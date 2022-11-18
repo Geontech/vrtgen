@@ -275,9 +275,10 @@ public:
      * Signal Spectrum or Signal Time Data is 1 bit long at bit position 24
      * See VITA 49.2 Figure 6.1-2 and Table 5.1.1.1-1
      */
-    bool spectrum_or_time() const noexcept
+    
+    SPECTRUM_OR_TIME spectrum_or_time() const noexcept
     {
-        return m_packed.get<24>();
+        return SPECTRUM_OR_TIME {m_packed.get<24>()};
     }
 
     /**
@@ -287,9 +288,9 @@ public:
      * Signal Spectrum or Signal Time Data is 1 bit long at bit position 24
      * See VITA 49.2 Figure 6.1-2 and Table 5.1.1.1-1
      */
-    void spectrum_or_time(bool value) noexcept
+    void spectrum_or_time(SPECTRUM_OR_TIME value) noexcept
     {
-        m_packed.set<24>(value);
+        m_packed.set<24>(static_cast<bool>(value));
     }
 
 }; // end class DataHeader

@@ -82,7 +82,7 @@ TEST_CASE("ClassID 5.1.3", "[class_id]")
             auto data = packet_in.data();
             CLASS_ID_BE = bytes{ 0, 0xAA, 0xBB, 0xCC, 0, 0, 0, 0 };
 
-            TestDataClassId1 packet_out;
+            TestDataClassId1 packet_out(data);
             CHECK(packet_out.class_id().oui() == 0xAABBCC);
             auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
@@ -100,7 +100,7 @@ TEST_CASE("ClassID 5.1.3", "[class_id]")
             auto data = packet_in.data();
             CLASS_ID_BE = bytes{ 0, 0, 0, 0, 0, 0, 0x12, 0x34 };
 
-            TestDataClassId2 packet_out;
+            TestDataClassId2 packet_out(data);
             CHECK(packet_out.class_id().packet_code() == 0x1234);
             auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
@@ -118,7 +118,7 @@ TEST_CASE("ClassID 5.1.3", "[class_id]")
             auto data = packet_in.data();
             CLASS_ID_BE = bytes{ 0, 0xAA, 0xBB, 0xCC, 0, 0, 0, 0 };
 
-            TestContextClassId1 packet_out;
+            TestContextClassId1 packet_out(data);
             CHECK(packet_out.class_id().oui() == 0xAABBCC);
             auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
@@ -137,7 +137,7 @@ TEST_CASE("ClassID 5.1.3", "[class_id]")
             auto data = packet_in.data();
             CLASS_ID_BE = bytes{ 0, 0, 0, 0, 0, 0, 0x12, 0x34 };
 
-            TestContextClassId2 packet_out;
+            TestContextClassId2 packet_out(data);
             CHECK(packet_out.class_id().packet_code() == 0x1234);
             auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
@@ -156,7 +156,7 @@ TEST_CASE("ClassID 5.1.3", "[class_id]")
             auto data = packet_in.data();
             CLASS_ID_BE = bytes{ 0, 0xAA, 0xBB, 0xCC, 0, 0, 0, 0 };
 
-            TestControlClassId1 packet_out;
+            TestControlClassId1 packet_out(data);
             CHECK(packet_out.class_id().oui() == 0xAABBCC);
             auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
@@ -175,7 +175,7 @@ TEST_CASE("ClassID 5.1.3", "[class_id]")
             auto data = packet_in.data();
             CLASS_ID_BE = bytes{ 0, 0, 0, 0, 0, 0, 0x12, 0x34 };
 
-            TestControlClassId2 packet_out;
+            TestControlClassId2 packet_out(data);
             CHECK(packet_out.class_id().packet_code() == 0x1234);
             auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;

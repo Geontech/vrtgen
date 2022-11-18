@@ -28,18 +28,18 @@
 TEST_CASE("Command Packet")
 {
     using packet_type = SampleControl;
-    using helper = packet_type::helper;
+    
     packet_type packet_in;
 
     // Examine and check packed header
     // check_ptr += HEADER_BYTES;
 
     // // Check match
-    // CHECK(helper::match(data.data(), data.size()));
+    // CHECK(packet_in.match(data));
 
     // // Unpack verifed packed data
-    // packet_type packet_out;
-    // helper::unpack(packet_out, data.data(), data.size());
+    // packet_type packet_out(data);
+    // packet_type packet_out(data);
 
     // // Examine and check unpacked packet header
     // const auto& header = packet_out.header();

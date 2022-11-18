@@ -276,11 +276,11 @@ TEST_CASE("Indicator Bits 5.1.1.1", "[header][indicator_bits]")
         SECTION("Signal Spectrum or Signal Time Data Packet")
         {
             // Verify zero on construction
-            CHECK(header.spectrum_or_time() == false);
+            CHECK(header.spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::TIME);
             // Setter
-            header.spectrum_or_time(true);
+            header.spectrum_or_time(vrtgen::packing::SPECTRUM_OR_TIME::SPECTRUM);
             // Getter check set value
-            CHECK(header.spectrum_or_time() == true);
+            CHECK(header.spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::SPECTRUM);
             // Pack
             header.pack_into(packed_bytes.data());
             // Verify packed bits
@@ -288,7 +288,7 @@ TEST_CASE("Indicator Bits 5.1.1.1", "[header][indicator_bits]")
             // Unpack
             unpack_header.unpack_from(packed_bytes.data());
             // Verify unpacked value
-            CHECK(unpack_header.spectrum_or_time() == true);
+            CHECK(unpack_header.spectrum_or_time() == vrtgen::packing::SPECTRUM_OR_TIME::SPECTRUM);
         }
     }
 
