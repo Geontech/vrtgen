@@ -30,6 +30,8 @@ def test_context_default():
     assert name == 'context'
     assert context.stream_id.enabled
     assert context.stream_id.required
+    assert context.header.enabled
+    assert context.header.required
 
 def test_context_update_header_class_id():
     document = """
