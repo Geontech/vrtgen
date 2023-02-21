@@ -14,8 +14,10 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses/.
- 
+
 from dataclasses import dataclass, field, asdict
+from typing import List
+from enum import IntEnum
 
 VRTGEN_NAMESPACE = 'vrtgen::'
 PACKING_NAMESPACE = 'vrtgen::packing::'
@@ -35,29 +37,206 @@ class Field:
     enabled      : bool = False
     required     : bool = False
     user_defined : bool = False
+    template_type: bool = False
     reserved_bits: int = 0
     packed_tag   : PackedTag = None
     packet_name  : str = ''
-    accessors    : dict = field(default_factory=dict)
-    desc         : dict = field(default_factory=dict)
-
-    def __post_init__(self):
-        self.accessors['getter'] = self.name
-        self.accessors['setter'] = self.name
-        self.desc['brief'] = str()
-        self.desc['detailed'] = str()
 
     @property
     def is_optional(self):
         return (self.enabled and not self.required)
 
     @property
-    def getter(self):
-        return self.accessors['getter']
+    def is_boolean(self):
+        return isinstance(self, BooleanType)
 
     @property
-    def setter(self):
-        return self.accessors['setter']
+    def is_enum(self):
+        return isinstance(self, EnumType)
+
+    @property
+    def is_integer(self):
+        return isinstance(self, IntegerType)
+
+    @property
+    def is_fixed_point(self):
+        return isinstance(self, FixedPointType)
+
+    @property
+    def is_packed(self):
+        return isinstance(self, PackedType)
+
+    @property
+    def is_packed_struct(self):
+        return isinstance(self, PackedStruct)
+
+@dataclass
+class BooleanType(Field):
+    name : str = 'basic_boolean_type'
+    value : bool = False
+
+@dataclass
+class IntegerType(Field):
+    """
+    Integer Type
+    """
+    name : str = 'basic_integer_type'
+    signed : bool = False
+    value : int = None
+
+    @property
+    def range(self):
+        if self.signed:
+            minval = -(2**(self.bits-1))
+            maxval = -minval - 1
+        else:
+            minval = 0
+            maxval = (2**self.bits) - 1
+        return (minval, maxval)
+
+    def parse_mapping(self, **mapping):
+        for key,val in mapping.items():
+            if key == 'bits':
+                self.bits = int(val)
+            if key == 'value':
+                self.value = val
+
+@dataclass
+class SignedIntegerType(IntegerType):
+    name : str = 'signed_int_t'
+
+    def __post_init__(self):
+        self.signed = True
+
+@dataclass
+class Unsigned8(IntegerType):
+    name : str = 'unsigned_8_t'
+
+    def __post_init__(self):
+        self.bits = 8
+
+@dataclass
+class Unsigned16(IntegerType):
+    name : str = 'unsigned_16_t'
+
+    def __post_init__(self):
+        self.bits = 16
+
+@dataclass
+class Signed16(SignedIntegerType):
+    name : str = 'signed_16_t'
+
+    def __post_init__(self):
+        self.bits = 16
+
+@dataclass
+class Unsigned32(IntegerType):
+    name : str = 'unsigned_32_t'
+
+    def __post_init__(self):
+        self.bits = 32
+
+@dataclass
+class Signed32(SignedIntegerType):
+    name : str = 'signed_32_t'
+
+    def __post_init__(self):
+        self.bits = 32
+
+@dataclass
+class Unsigned64(IntegerType):
+    name : str = 'unsigned_64_t'
+
+    def __post_init__(self):
+        self.bits = 64
+
+@dataclass
+class Signed64(SignedIntegerType):
+    name : str = 'signed_64_t'
+
+    def __post_init__(self):
+        self.bits = 64
+
+@dataclass
+class Identifier32(Unsigned32):
+    name : str = 'identifier_32_t'
+
+    def __post_init__(self):
+        self.bits = 32
+
+@dataclass
+class Identifier16(IntegerType):
+    name : str = 'identifier_16_t'
+
+    def __post_init__(self):
+        self.bits = 16
+        self.reserved_bits = 16
+
+@dataclass
+class FixedPointType(IntegerType):
+    """
+    Fixed-Point Integer Type
+    """
+    radix : int = 0
+
+    @property
+    def range(self):
+        scale = 1 << self.radix
+        minval, maxval = super().range
+        return (minval / scale, maxval / scale)
+
+@dataclass
+class EnumType(Field):
+    type_ : IntEnum = field(default_factory=IntEnum)
+    value : int = None
+
+    def __post_init__(self):
+        self.bits = self.type_.bits
+        if not self.value:
+            self.value = self.type_()
+        else:
+            self.value = self.type_(self.value)
+
+@dataclass
+class CIFEnableType(Field):
+    type_ : Field = None
+    indicator_only : bool = False
+
+    @property
+    def is_enum(self):
+        if self.type_:
+            return self.type_.is_enum
+        return False
+
+    @property
+    def is_integer(self):
+        if self.type_:
+            return self.type_.is_integer
+        return False
+
+    @property
+    def is_fixed_point(self):
+        if self.type_:
+            return self.type_.is_fixed_point
+        return False
+
+@dataclass
+class EnableIndicatorType(BooleanType):
+    bits : int = 2
+    is_enable : bool = False
+    is_enum: bool = False
+
+@dataclass
+class ListType(Field):
+    type_ : Field = None
+    linked_size : Field = None
+
+    def __post_init__(self):
+        self.values = []
+
+    @property
+    def is_list(self):
+        return True
 
 @dataclass
 class PackedType(Field):
@@ -74,7 +253,6 @@ class PackedStruct(Field):
     Structure for packing fields
     """
     def __post_init__(self):
-        super().__post_init__()
         self.type_ = type(self).__name__
         self._dynamic_size = False
 
@@ -98,6 +276,7 @@ class TemplateArrayStruct(PackedStruct):
 
     def __post_init__(self):
         super().__post_init__()
+        self.template_name = "T"
         self.template_type = str()
         self._dynamic_size = True
         self.total_size_field = None

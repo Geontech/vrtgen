@@ -1,0 +1,8 @@
+add_library(packetlib
+{% for packet in packets %}
+    {{ packet.name | to_snake }}.cpp
+{% endfor %}
+)
+target_include_directories(packetlib PUBLIC
+    ${CMAKE_SOURCE_DIR}/include/packets
+)

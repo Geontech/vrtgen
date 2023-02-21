@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Geon Technologies, LLC
+# Copyright (C) 2023 Geon Technologies, LLC
 #
 # This file is part of vrtgen.
 #
@@ -16,9 +16,11 @@
 # along with this program.  If not, see http://www.gnu.org/licenses/. 
 
 import yaml
+from dataclasses import make_dataclass
 
 from vrtgen.parser.model import data, context, command
-from vrtgen.parser.model import prologue, cif0, cif1, cif2
+from vrtgen.parser.model.types import packing
+from vrtgen.parser.model import prologue, cif0, cif1, cif2, cif7
 from vrtgen.parser.model import information
 
 def data_packet_constructor(loader, node) -> data.DataPacket:
@@ -28,7 +30,7 @@ def data_packet_constructor(loader, node) -> data.DataPacket:
     packet = data.DataPacket()
     if not isinstance(node, yaml.ScalarNode):
         packet.validate_and_parse_mapping(**loader.construct_mapping(node))
-        packet._update_header()
+        # packet._update_header()
     return packet
 
 def context_packet_constructor(loader, node) -> context.ContextPacket:
@@ -38,7 +40,7 @@ def context_packet_constructor(loader, node) -> context.ContextPacket:
     packet = context.ContextPacket()
     if not isinstance(node, yaml.ScalarNode):
         packet.validate_and_parse_mapping(**loader.construct_mapping(node))
-        packet._update_header()
+        # packet._update_header()
     return packet
 
 def ext_context_packet_constructor(loader, node) -> context.ExtensionContextPacket:
@@ -48,7 +50,7 @@ def ext_context_packet_constructor(loader, node) -> context.ExtensionContextPack
     packet = context.ExtensionContextPacket()
     if not isinstance(node, yaml.ScalarNode):
         packet.validate_and_parse_mapping(**loader.construct_mapping(node))
-        packet._update_header()
+        # packet._update_header()
     return packet
 
 def control_packet_constructor(loader, node) -> command.ControlPacket:
@@ -58,24 +60,9 @@ def control_packet_constructor(loader, node) -> command.ControlPacket:
     packet = command.ControlPacket()
     if not isinstance(node, yaml.ScalarNode):
         packet.validate_and_parse_mapping(**loader.construct_mapping(node))
-        packet._update_header()
+        # packet._update_header()
         packet._update_cam()
     return packet
-
-def ext_control_packet_constructor(loader, node) -> command.ExtensionControlPacket:
-    """
-    Construct an ExtensionCommandPacket.
-    """
-    packet = command.ControlPacket()
-    ack_packet = command.AcknowledgePacket()
-    if not isinstance(node, yaml.ScalarNode):
-        packet.validate_and_parse_mapping(**loader.construct_mapping(node))
-        packet._update_header()
-        packet._update_cam()
-        ack_packet.validate_and_parse_mapping(**loader.construct_mapping(node))
-        ack_packet._update_header()
-        ack_packet._update_cam()
-    return [packet, ack_packet]
 
 def ack_packet_constructor(loader, node) -> command.AcknowledgePacket:
     """
@@ -84,6 +71,16 @@ def ack_packet_constructor(loader, node) -> command.AcknowledgePacket:
     packet = command.AcknowledgePacket()
     if not isinstance(node, yaml.ScalarNode):
         packet.validate_and_parse_mapping(**loader.construct_mapping(node))
+    return packet
+
+def ext_control_packet_constructor(loader, node) -> command.ExtensionControlPacket:
+    """
+    Construct an ExtensionCommandPacket.
+    """
+    packet = command.ExtensionControlPacket()
+    if not isinstance(node, yaml.ScalarNode):
+        packet.validate_and_parse_mapping(**loader.construct_mapping(node))
+        packet._update_cam()
     return packet
 
 def ext_ack_packet_constructor(loader, node) -> command.ExtensionAcknowledgePacket:
@@ -96,7 +93,43 @@ def ext_ack_packet_constructor(loader, node) -> command.ExtensionAcknowledgePack
     return packet
 
 def stream_id_constructor(loader, node) -> prologue.StreamIdentifier:
-    return prologue.StreamIdentifier(enabled=True, required=True)
+    stream_id = prologue.StreamIdentifier(enabled=True, required=True)
+    if isinstance(node, yaml.ScalarNode):
+        node_scalar_value = loader.construct_scalar(node)
+        if node_scalar_value:
+            try:
+                if node_scalar_value.startswith('0x'):
+                    node_scalar_value = int(node_scalar_value, base=16)
+                else:
+                    node_scalar_value = int(node_scalar_value)
+            except:
+                raise
+            if not isinstance(node_scalar_value, int):
+                raise ValueError('stream_id value must be an int, not',type(node_scalar_value))
+            stream_id.value = node_scalar_value
+    else:
+        fields = [('name',str,'stream_id')]
+        for key,val in loader.construct_mapping(node, deep=True).items():
+            val.name = key
+            if val.packed_tag:
+                val.packed_tag.field_word = 0
+                val.packed_tag.packed_int = 0
+            else:
+                pos = val.bits - 1
+                val.packed_tag = packing.PackedTag(position=pos, bits=val.bits, field_word=0, packed_int=0)
+            val.is_extension_type =  True
+            val.user_defined = True
+            fields.append((key,type(val),val))
+        fields.append(('packed', packing.PackedType, packing.PackedType('packed', bits=32, enabled=True, required=True, packed_tag=packing.PackedTag(0,32,0))))
+        packed_stream_id_type = make_dataclass(
+            cls_name='StreamIdentifier',
+            fields=fields,
+            bases=(packing.PackedStruct,)
+        )
+        packed_stream_id_type.__doc__ = '''Custom Packed Stream Identifier'''
+        stream_id = packed_stream_id_type(enabled=True, required=True, user_defined=True)
+        stream_id.bits = 32
+    return stream_id
 
 def class_id_constructor(loader, node) -> prologue.ClassIdentifier:
     class_id = prologue.ClassIdentifier(enabled=True, required=True)
@@ -135,14 +168,22 @@ def cif2_constructor(loader, node) -> cif2.CIF2:
         cif_2.validate_and_parse_mapping(**loader.construct_mapping(node))
     return cif_2
 
+def cif7_constructor(loader, node) -> cif7.CIF7:
+    cif_7 = cif7.CIF7(enabled=True, required=True)
+    if not isinstance(node, yaml.ScalarNode):
+        cif_7.validate_and_parse_mapping(**loader.construct_mapping(node))
+    return cif_7
+
 def sector_step_scan_constructor(loader, node) -> cif1.SectorStepScan:
     sector_step_scan = cif1.SectorStepScan(enabled=True, required=True)
-    sector_step_scan.validate_and_parse_mapping(**loader.construct_mapping(node))
+    if not isinstance(node, yaml.ScalarNode):
+        sector_step_scan.validate_and_parse_mapping(**loader.construct_mapping(node))
     return sector_step_scan
 
 def sector_step_scan_cif_constructor(loader, node) -> cif1.SectorStepScanCIF:
     sector_step_scan_cif = cif1.SectorStepScanCIF(enabled=True, required=True)
-    sector_step_scan_cif.validate_and_parse_mapping(**loader.construct_mapping(node))
+    if not isinstance(node, yaml.ScalarNode):
+        sector_step_scan_cif.validate_and_parse_mapping(**loader.construct_mapping(node))
     return sector_step_scan_cif
 
 def index_list_constructor(loader, node) -> cif1.IndexList:
@@ -152,24 +193,12 @@ def index_list_constructor(loader, node) -> cif1.IndexList:
     return index_list
 
 def discrete_io_32_constructor(loader, node) -> cif1.DiscreteIO:
-    discrete_io = cif1.DiscreteIO32(enabled=True, required=True)
-    if not isinstance(node, yaml.ScalarNode):
-        discrete_io.validate_and_parse_mapping(**loader.construct_mapping(node, deep=True))
-    return discrete_io
-
-def discrete_io_32_optional_constructor(loader, node) -> cif1.DiscreteIO:
     discrete_io = cif1.DiscreteIO32(enabled=True)
     if not isinstance(node, yaml.ScalarNode):
         discrete_io.validate_and_parse_mapping(**loader.construct_mapping(node, deep=True))
     return discrete_io
 
 def discrete_io_64_constructor(loader, node) -> cif1.DiscreteIO:
-    discrete_io = cif1.DiscreteIO64(enabled=True, required=True)
-    if not isinstance(node, yaml.ScalarNode):
-        discrete_io.validate_and_parse_mapping(**loader.construct_mapping(node, deep=True))
-    return discrete_io
-
-def discrete_io_64_optional_constructor(loader, node) -> cif1.DiscreteIO:
     discrete_io = cif1.DiscreteIO64(enabled=True)
     if not isinstance(node, yaml.ScalarNode):
         discrete_io.validate_and_parse_mapping(**loader.construct_mapping(node, deep=True))
@@ -178,7 +207,7 @@ def discrete_io_64_optional_constructor(loader, node) -> cif1.DiscreteIO:
 def trailer_constructor(loader, node) -> data.Trailer:
     trailer = data.Trailer(enabled=True, required=True)
     if not isinstance(node, yaml.ScalarNode):
-        trailer.validate_and_parse_mapping(**loader.construct_mapping(node))
+        trailer.validate_and_parse_mapping(**loader.construct_mapping(node, deep=True))
     return trailer
 
 def information_class_contructor(loader, node) -> information.InformationClass:
@@ -187,6 +216,13 @@ def information_class_contructor(loader, node) -> information.InformationClass:
         info_class.validate_and_parse_mapping(**loader.construct_mapping(node, deep=True))
     return info_class
 
+def integer_type_constructor(loader, node) -> packing.IntegerType:
+    integer_type = packing.IntegerType(enabled=True, required=True)
+
+    if not isinstance(node, yaml.ScalarNode):
+        integer_type.parse_mapping(**loader.construct_mapping(node))
+    return integer_type
+
 def get_loader():
     loader = yaml.SafeLoader
     # Packet constructors
@@ -194,8 +230,8 @@ def get_loader():
     loader.add_constructor('!Context', context_packet_constructor)
     loader.add_constructor('!ExtensionContext', ext_context_packet_constructor)
     loader.add_constructor('!Control', control_packet_constructor)
-    loader.add_constructor('!ExtensionControl', ext_control_packet_constructor)
     loader.add_constructor('!Ack', ack_packet_constructor)
+    loader.add_constructor('!ExtensionControl', ext_control_packet_constructor)
     loader.add_constructor('!ExtensionAck', ext_ack_packet_constructor)
     # Prologue constructors
     loader.add_constructor('!StreamID', stream_id_constructor)
@@ -209,15 +245,18 @@ def get_loader():
     loader.add_constructor('!SectorStepScanCIF', sector_step_scan_cif_constructor)
     loader.add_constructor('!IndexList', index_list_constructor)
     loader.add_constructor('!DiscreteIO32', discrete_io_32_constructor)
-    loader.add_constructor('!DiscreteIO32Optional', discrete_io_32_optional_constructor)
     loader.add_constructor('!DiscreteIO64', discrete_io_64_constructor)
-    loader.add_constructor('!DiscreteIO64Optional', discrete_io_64_optional_constructor)
     # CIF2 constructors
     loader.add_constructor('!CIF2', cif2_constructor)
+    # CIF7 constructors
+    loader.add_constructor('!CIF7', cif7_constructor)
     # Command constructors
     loader.add_constructor('!ControlAcknowledgeMode', cam_constructor)
     # Trailer constructor
     loader.add_constructor('!Trailer', trailer_constructor)
     # Information Class constructor
     loader.add_constructor('!InformationClass', information_class_contructor)
+    # Types
+    loader.add_constructor('!IntegerType', integer_type_constructor)
+
     return loader

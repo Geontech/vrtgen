@@ -1,0 +1,301 @@
+/*#
+ * Copyright (C) 2023 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- macro ref_getter(field, is_const, type_helper) %}
+/**
+ * @brief Returns a {{ 'const ' if is_const }}reference to {{ field.name }}
+ * @return A {{ 'const ' if is_const }}{{ 'optional ' if field.is_optional }}reference to {{ field.name }}
+ */
+[[nodiscard]]
+{%   if field.is_optional %}
+auto {{ field.name }}(){{ ' const' if is_const }} -> {{ 'const ' if is_const }}std::optional<{{ type_helper.value_type(field) }}>&;
+{%   else %}
+auto {{ field.name }}(){{ ' const' if is_const }} -> {{ 'const ' if is_const }}{{ type_helper.value_type(field) }}&;
+{%   endif %}
+{% endmacro %}
+
+{%- macro const_ref_getter(field, type_helper) %}
+{{ ref_getter(field, true, type_helper) }}
+{% endmacro %}
+
+{%- macro value_getter(field, type_helper) %}
+/**
+ * @brief Returns the value of {{ field.name }}
+ * @return {{ field.name }}'s value
+ */
+{%   if field.is_optional %}
+auto {{ field.name }}() const -> std::optional<{{ type_helper.value_type(field) }}>;
+{%   else %}
+auto {{ field.name }}() const -> {{ type_helper.value_type(field) }};
+{%   endif %}
+{% endmacro %}
+
+{%- macro getters(field, type_helper) %}
+{% if not type_helper.is_scalar(field) %}
+{{ ref_getter(field, false, type_helper) | trim }}
+{% else %}
+{{ value_getter(field, type_helper) | trim }}
+{% endif %}
+{% endmacro %}
+
+{%- macro setters(field, type_helper) %}
+/**
+ * @brief Set the value of {{ field.name }}
+ * @param value Value to assign to {{ field.name }}
+ */
+auto {{ field.name }}(const {{ type_helper.value_type(field) }}{{ '&' if not type_helper.is_scalar(field) }} value) -> void;
+{% endmacro %}
+
+{%- macro getters_and_setters(field, type_helper, cif7=none) %}
+{{ getters(field, type_helper) | trim }}
+
+{{ setters(field, type_helper) | trim }}
+{% if cif7.enabled and not field.indicator_only %}
+{%   set ns = namespace(member_type=type_helper.member_type(field), value_type=type_helper.value_type(field)) %}
+
+/**
+ * @brief Returns a reference to {{ field.name }} attributes
+ * @return A reference to {{ field.name }} attributes
+ */
+[[nodiscard]]
+{%     if field.is_fixed_point %}
+auto {{ field.name }}_attributes() -> {{ 'std::optional<' if field.is_optional }}{{ type_helper.value_type(cif7.attributes) }}<{{ ns.member_type }},{{ ns.value_type }},{{ field.type_.bits }},{{ field.type_.radix }}>{{ '>' if field.is_optional }}&;
+{%     else %}
+auto {{ field.name }}_attributes() -> {{ 'std::optional<' if field.is_optional }}{{ type_helper.value_type(cif7.attributes) }}<{{ ns.member_type }}>{{ '>' if field.is_optional }}&;
+{%     endif %}
+{% endif %}
+{% endmacro %}
+
+/*#
+ * Prologue function declarations
+#*/
+{%- macro prologue(packet, type_helper) %}
+{{ const_ref_getter(packet.header, type_helper) | trim }}
+
+{{ getters_and_setters(packet.header.packet_count, type_helper) | trim }}
+
+{% if packet.stream_id.enabled %}
+{{ getters_and_setters(packet.stream_id, type_helper) | trim }}
+
+{% endif %}
+{% if packet.class_id.enabled %}
+{{ const_ref_getter(packet.class_id, type_helper) | trim }}
+
+{% endif %}
+{% if packet.timestamp.enabled %}
+{%   if packet.timestamp.integer.enabled %}
+{{ getters_and_setters(packet.timestamp.integer, type_helper) | trim }}
+
+{%   endif %}
+{%   if packet.timestamp.fractional.enabled %}
+{{ getters_and_setters(packet.timestamp.fractional, type_helper) | trim }}
+
+{%   endif %}
+{% endif %}
+{% endmacro %}
+
+/*#
+ * Command function declarations
+#*/
+{%- macro req_getter(field, type_helper) %}
+/**
+ * @brief Returns the value of {{ field.name }} from the CAM
+ * @return {{ field.name }}'s value
+ */
+auto {{ field.name }}() const -> {{ type_helper.value_type(field) }};
+{% endmacro %}
+
+{%- macro command(packet, type_helper) %}
+{% if packet.cam.enabled %}
+{{ const_ref_getter(packet.cam, type_helper) | trim }}
+{%   if packet.cam.is_control and packet.cam.req_v.is_optional %}
+
+{{ req_getter(packet.cam.req_v, type_helper) | trim }}
+
+{{ setters(packet.cam.req_v, type_helper) | trim }}
+{%   elif packet.cam.is_ack and packet.cam.ack_v.is_optional %}
+
+{{ req_getter(packet.cam.ack_v, type_helper) | trim }}
+
+{{ setters(packet.cam.ack_v, type_helper) | trim }}
+{%   endif %}
+{%   if packet.cam.is_control and packet.cam.req_x.is_optional %}
+
+{{ req_getter(packet.cam.req_x, type_helper) | trim }}
+
+{{ setters(packet.cam.req_x, type_helper) | trim }}
+{%   elif packet.cam.is_ack and packet.cam.ack_x.is_optional %}
+
+{{ req_getter(packet.cam.ack_x, type_helper) | trim }}
+
+{{ setters(packet.cam.ack_x, type_helper) | trim }}
+{%   endif %}
+{%   if packet.cam.is_control and packet.cam.req_s.is_optional %}
+
+{{ req_getter(packet.cam.req_s, type_helper) | trim }}
+
+{{ setters(packet.cam.req_s, type_helper) | trim }}
+{%   elif packet.cam.is_ack and packet.cam.ack_s.is_optional %}
+
+{{ req_getter(packet.cam.ack_s, type_helper) | trim }}
+
+{{ setters(packet.cam.ack_s, type_helper) | trim }}
+{%   endif %}
+
+{% endif %}
+{% if packet.message_id.enabled %}
+{{ getters_and_setters(packet.message_id, type_helper) | trim }}
+
+{% endif %}
+{% if packet.controllee_id.enabled %}
+{{ getters_and_setters(packet.controllee_id, type_helper) | trim }}
+
+{% endif %}
+{% if packet.controller_id.enabled %}
+{{ getters_and_setters(packet.controller_id, type_helper) | trim }}
+
+{% endif %}
+{% endmacro %}
+
+/*#
+ * CIF function declarations
+#*/
+{%- macro cif_functions(cif, type_helper, cif7) %}
+{% for field in cif.fields if field.enabled %}
+{{ getters_and_setters(field, type_helper, cif7) | trim }}
+{%   if field.is_optional %}
+
+/**
+ * @brief If {{ field.name }} contains a value, destroy it
+ */
+auto reset_{{ field.name }}() -> void;
+{%   endif %}
+
+{% endfor %}
+{%  endmacro %}
+
+{%- macro cif_enable_functions(cif, type_helper) %}
+{% for field in cif.fields if field.enabled and not field.indicator_only %}
+/**
+ * @brief Check if {{ field.name }} is enabled in {{ cif.name }}
+ * @return true if {{ field.name }} is enabled in {{ cif.name }}, otherwise false
+ */
+auto {{ field.name }}_enabled() const -> bool;
+
+/**
+ * @brief Check if {{ field.name }} is enabled in {{ cif.name }}
+ * @param value Value to set {{ field.name }} in {{ cif.name }}
+ */
+auto {{ field.name }}_enabled(bool value) -> void;
+{%   if field.is_optional %}
+
+/**
+ * @brief Set {{ field.name }} enabled to false
+ */
+auto reset_{{ field.name }}() -> void;
+{%   endif %}
+
+{% endfor %}
+{% endmacro %}
+
+{%- macro cif(packet, type_helper) %}
+{% if packet.cif0.enabled %}
+{{ const_ref_getter(packet.cif0, type_helper) | trim }}
+
+{%   if packet.requires_cif_functions %}
+{{ cif_functions(packet.cif0, type_helper, packet.cif7) | trim }}
+{%   elif packet.requires_cif_enable_functions %}
+{{ cif_enable_functions(packet.cif0, type_helper) | trim }}
+{%   endif %}
+
+{% endif %}
+{% if packet.cif1.enabled %}
+{{ const_ref_getter(packet.cif1, type_helper) | trim }}
+{%   if packet.cif1.is_optional %}
+
+/**
+ * @brief If {{ packet.cif1.name }} contains a value, destroy it and all underlying fields
+ */
+auto reset_{{ packet.cif1.name }}() -> void;
+{%   endif %}
+
+{%   if packet.requires_cif_functions %}
+{{ cif_functions(packet.cif1, type_helper, packet.cif7) | trim }}
+{%   elif packet.requires_cif_enable_functions %}
+{{ cif_enable_functions(packet.cif1, type_helper) | trim }}
+{%   endif %}
+
+{% endif %}
+{% if packet.cif2.enabled %}
+{{ const_ref_getter(packet.cif2, type_helper) | trim }}
+{%   if packet.cif1.is_optional %}
+
+/**
+ * @brief If {{ packet.cif2.name }} contains a value, destroy it and all underlying fields
+ */
+auto reset_{{ packet.cif2.name }}() -> void;
+{%   endif %}
+
+{%   if packet.requires_cif_functions %}
+{{ cif_functions(packet.cif2, type_helper, packet.cif7) | trim }}
+{%   elif packet.requires_cif_enable_functions %}
+{{ cif_enable_functions(packet.cif2, type_helper) | trim }}
+{%   endif %}
+
+{% endif %}
+{% if packet.cif7.enabled %}
+{{ const_ref_getter(packet.cif7, type_helper) | trim }}
+{%   if packet.cif7.is_optional %}
+
+/**
+ * @brief If {{ packet.cif7.name }} contains a value, destroy it and all underlying fields
+ */
+auto reset_{{ packet.cif7.name }}() -> void;
+{%   endif %}
+
+{% endif %}
+{% endmacro %}
+
+/*#
+ * Data packet function declarations
+#*/
+{%- macro data(packet, type_helper) %}
+/**
+ * @brief Get a span to the underlying payload vector
+ * @return A const pointer to the underlying payload vector
+ */
+auto payload() const -> std::span<const uint8_t>;
+
+/**
+ * @brief Set the underlying payload vector data
+ * @param data Data to assign to the payload vector
+ * @param len Length of @param data in bytes
+ */
+auto payload(std::span<const uint8_t> data) -> void;
+
+/**
+ * @brief Get the size of the underlying payload vector data
+ * @return Number of bytes in the payload data
+ */
+auto payload_size() const -> std::size_t;
+
+{% if packet.trailer.enabled %}
+{{ ref_getter(packet.trailer, false, type_helper) | trim }}
+{% endif %}
+{% endmacro %}

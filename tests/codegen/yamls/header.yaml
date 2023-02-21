@@ -1,0 +1,40 @@
+TestHeaderDataPacket: !Data
+
+TestHeaderContextPacket: !Context
+
+TestHeaderControlPacket: !Control
+  cam: !ControlAcknowledgeMode
+    req_v: required
+
+TestHeaderAckPacket: !Ack
+  responds_to: TestHeaderControlPacket
+
+TestHeaderDataTSPacket: !Data
+  timestamp: !Timestamp
+    integer: utc
+    fractional: picoseconds
+
+TestHeaderContextTSPacket: !Context
+  timestamp: !Timestamp
+    integer: utc
+    fractional: picoseconds
+
+TestHeaderControlTSPacket: !Control
+  timestamp: !Timestamp
+    integer: utc
+    fractional: picoseconds
+  cam: !ControlAcknowledgeMode
+    req_v: required
+
+TestHeaderAckTSPacket: !Ack
+  responds_to: TestHeaderControlTSPacket
+
+TestHeaderContextNotV49d0Packet: !Context
+  cif_1: !CIF1
+    phase_offset: optional
+  timestamp: !Timestamp
+    integer: utc
+    fractional: picoseconds
+
+TestHeaderTsmContext8: !Context
+  tsm: coarse

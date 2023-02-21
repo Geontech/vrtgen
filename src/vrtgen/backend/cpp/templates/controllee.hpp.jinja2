@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -26,54 +26,100 @@ virtual void send_{{ packet.name | to_snake }}({{ packet.name }}& value)
 {% endmacro %}
 
 {%- macro handle_packet_callback(packet) %}
-virtual void handle_{{ packet.name | to_snake }}(const {{ packet.name }}& packet)
+{% if packet.cam.req_v.enabled %}
+auto validate_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> {{ packet.name }}AckVX override
 {
     // AUTO-GENERATED FUNCTION STUB
     // IMPLEMENT PACKET HANDLING FUNCTIONALITY HERE
-    throw std::runtime_error("handle_{{ packet.name | to_snake }} not implemented");
+    auto ack = {{ packet.name }}AckVX{};
+    return ack;
 }
+
+{% endif %}
+{% if packet.cam.req_x.enabled %}
+{%   if packet.cam.req_s.enabled %}
+auto execute_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> std::tuple<{{ packet.name }}AckVX, {{ packet.name }}AckS> override
+{
+    // AUTO-GENERATED FUNCTION STUB
+    // IMPLEMENT PACKET HANDLING FUNCTIONALITY HERE
+    auto ack_x = {{ packet.name }}AckVX{};
+    auto ack_s = {{ packet.name }}AckS{};
+    return { ack_x, ack_s };
+}
+
+{%   else %}
+auto execute_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> {{ packet.name }}AckVX override
+{
+    // AUTO-GENERATED FUNCTION STUB
+    // IMPLEMENT PACKET HANDLING FUNCTIONALITY HERE
+    auto ack = {{ packet.name }}AckVX{};
+    return ack;
+}
+
+{%   endif %}
+{% endif %}
+{% if packet.cam.req_s.enabled and not packet.cam.req_x.enabled %}
+auto execute_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> {{ packet.name}}AckS override
+{
+    // AUTO-GENERATED FUNCTION STUB
+    // IMPLEMENT PACKET HANDLING FUNCTIONALITY HERE
+    auto ack = {{ packet.name }}AckS{};
+    return ack;
+}
+
+{% endif %}
 {% endmacro %}
 
 {%- macro define_controllee(class_name, base_class_name) %}
-#ifndef {{ class_name.upper() }}_HPP
-#define {{ class_name.upper() }}_HPP
+#pragma once
 
-#include <stdexcept>
+#include <{{ base_class_name }}.hpp>
+{% if namespace_ %}
 
-#include "{{ base_class_name }}.hpp"
+namespace {{ namespace_ }}::controllee {
+{% endif %}
 
 class {{ class_name }} : public {{ base_class_name }}
 {
-
 public:
-{% set has_datactxt = [] %}
-{% set has_ctrl = [] %}
+{% set ns = namespace(has_datactxt=false,has_control=false) %}
 {% for packet in packets %}
-{%   if packet.is_data or packet.is_control %}
-{%     do has_datactxt.append(packet.name) %}
+{%   if packet.is_data or packet.is_context %}
+{%     set ns.has_datactxt = true %}
 {%   endif %}
 {%   if packet.is_control %}
-{%     do has_ctrl.append(packet.name) %}
+{%     set ns.has_control = true %}
 {%   endif %}
 {% endfor %}
-{% if has_ctrl %}
-    explicit {{ class_name }}(const cmd_endpoint_type& endpoint)
+{% if ns.has_control %}
+    /**
+     * @brief Endpoint constructor
+     * @param endpoint Desired endpoint to bind command socket to
+     */
+    explicit {{ class_name }}(const cmd_endpoint_type& endpoint) :
+        {{ base_class_name }}(endpoint)
     {
-        if (!_cmd_socket.bind(endpoint)) {
-            throw std::runtime_error("Failed to bind socket during {{ class_name }} construction");
-        }
     }
 {% else %}
+    /**
+     * @brief Default constructor
+     */
     {{ class_name }}() = default;
 {% endif %}
-    virtual ~{{ class_name }}() = default;
+
+    /**
+     * @brief Deconstructor
+     */
+    ~{{ class_name }}() override = default;
 
 {% for packet in packets if packet.is_control %}
     {{ handle_packet_callback(packet) | indent(4) | trim }}
 
 {% endfor %}
 }; // end class {{ class_name }}
+{% if namespace_ %}
 
-#endif // {{ class_name.upper() }}_HPP
+} // end namespace {{ namespace_ }}::controllee
+{% endif %}
 {% endmacro %}
 {{ define_controllee(controllee_name, controllee_base_name) | trim }}

@@ -5,8 +5,10 @@ __pycache__/
 *.egg-info
 .eggs/
 .pytest_cache/
-examples/packets/*pp
-examples/app/Example*pp
-examples/app/example*pp
-examples/app/test_controller
-examples/app/test_controllee
+examples/*/*pp
+examples/app/example_project
+**/venv/**
+.coverage
+**/docs/html/**
+**/docs/latex/**
+**/docs/man/**

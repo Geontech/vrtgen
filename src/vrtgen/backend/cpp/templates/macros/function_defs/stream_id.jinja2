@@ -1,0 +1,45 @@
+/*#
+ * Copyright (C) 2023 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- macro function_defs(packet, type_helper) %}
+{% if packet.stream_id.user_defined %}
+auto {{ packet.name }}::{{ packet.stream_id.name }}() -> {{ type_helper.member_type(packet.stream_id) }}&
+{% else %}
+auto {{ packet.name }}::{{ packet.stream_id.name }}() const -> {{ type_helper.member_type(packet.stream_id) }}
+{% endif %}
+{
+{% if packet.stream_id.user_defined %}
+    return m_{{ packet.stream_id.name }};
+{% else %}
+    const auto pos{ m_positions.at("{{ packet.stream_id.name }}") };
+    {{ type_helper.member_type(packet.stream_id) }} retval{};
+    std::memcpy(&retval, m_data.data() + pos, sizeof({{ type_helper.member_type(packet.stream_id) }}));
+    return vrtgen::swap::from_be(retval);
+{% endif %}
+}
+
+{% if not packet.stream_id.user_defined %}
+auto {{ packet.name }}::{{ packet.stream_id.name }}(const {{ type_helper.member_type(packet.stream_id) }} value) -> void
+{
+    auto swapped{ vrtgen::swap::to_be(value) };
+    const auto pos{ m_positions.at("{{ packet.stream_id.name }}") };
+    std::memcpy(m_data.data() + pos, &swapped, sizeof(swapped));
+}
+{% endif %}
+{% endmacro %}

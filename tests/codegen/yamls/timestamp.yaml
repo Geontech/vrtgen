@@ -1,0 +1,23 @@
+TimestampData1: !Data
+  stream_id: !StreamID 0x123456
+  class_id: !ClassID
+    oui: AA-BB-CC
+  timestamp: !Timestamp
+    integer: utc
+    fractional: picoseconds
+
+TimestampContext1: !Context
+  stream_id: !StreamID 0x123456
+  class_id: !ClassID
+    oui: AA-BB-CC
+  timestamp: !Timestamp
+    integer: utc
+    fractional: picoseconds
+
+TimestampControl1: !Control
+  stream_id: !StreamID 0x123456
+  class_id: !ClassID
+    oui: AA-BB-CC
+  timestamp: !Timestamp
+    integer: utc
+    fractional: picoseconds

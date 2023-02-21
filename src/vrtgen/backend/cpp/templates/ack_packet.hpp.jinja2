@@ -1,0 +1,283 @@
+/*#
+ * Copyright (C) 2022 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+{%- import "macros/packet/decls.jinja2" as packet_ %}
+{%- import "macros/function_decls.jinja2" as function_decls %}
+{%- import "macros/members.jinja2" as members %}
+
+{%- macro public_function_declarations(packet, type_helper) %}
+{% if packet.cam.enabled %}
+{{ function_decls.const_ref_getter(packet.cam, type_helper) | trim }}
+
+{% endif %}
+{% if packet.message_id.enabled %}
+{{ function_decls.getters_and_setters(packet.message_id, type_helper) | trim }}
+
+{% endif %}
+{% if packet.controllee_id.enabled %}
+{{ function_decls.getters_and_setters(packet.controllee_id, type_helper) | trim }}
+
+{% endif %}
+{% if packet.controller_id.enabled %}
+{{ function_decls.getters_and_setters(packet.controller_id, type_helper) | trim }}
+
+{% endif %}
+/**
+ * @brief Return a span of the underlying packed data
+ * @retval Pointer to underlying packed data
+ */
+auto data() -> std::span<const uint8_t>;
+
+/**
+ * @brief Return the size of the packet in bytes
+ * @retval Number of packet bytes
+ */
+auto size() -> std::size_t;
+{% endmacro %}
+
+{%- macro weif_functions(weif, is_warning, type_helper) %}
+{{ function_decls.const_ref_getter(weif, type_helper) | trim }}
+
+/**
+ * @brief If {{ weif.name }} contains a value, destroy it and all associated fields
+ */
+auto reset_{{ weif.name }}() -> void;
+
+{% for field in weif.fields if field.enabled %}
+{%   set func_name = field.name + ('_warnings' if is_warning else '_errors') %}
+/**
+ * @brief Returns the value of {{ func_name }}
+ * @return {{ func_name }}'s value
+ */
+auto {{ func_name }}() -> std::optional<{{ type_helper.member_type(field) }}>&;
+
+/**
+ * @brief Sets the value of {{ func_name }}
+ * @param value Value to assign to {{ func_name }}
+ */
+auto {{ func_name }}(const {{ type_helper.member_type(field) }}& value) -> void;
+
+/**
+ * @brief If {{ func_name }} contains a value, destroy it
+ */
+auto reset_{{ func_name }}() -> void;
+
+{% endfor %}
+{%  endmacro %}
+
+{%- macro ackvx_public_function_declarations(packet, type_helper) %}
+{%  if packet.cam.ack_v.is_optional %}
+{{ function_decls.req_getter(packet.cam.ack_v, type_helper) | trim }}
+
+{{ function_decls.setters(packet.cam.ack_v, type_helper) | trim }}
+
+{%  endif %}
+{%  if packet.cam.ack_x.is_optional %}
+{{ function_decls.req_getter(packet.cam.ack_x, type_helper) | trim }}
+
+{{ function_decls.setters(packet.cam.ack_x, type_helper) | trim }}
+
+{%  endif %}
+{% if packet.wif0.enabled and packet.warnings_enabled %}
+{{ weif_functions(packet.wif0, true, type_helper) | trim }}
+
+{% endif %}
+{% if packet.wif1.enabled and packet.warnings_enabled %}
+{{ weif_functions(packet.wif1, true, type_helper) | trim }}
+
+{% endif %}
+{% if packet.wif2.enabled and packet.warnings_enabled %}
+{{ weif_functions(packet.wif2, true, type_helper) | trim }}
+
+{% endif %}
+{% if packet.eif0.enabled and packet.errors_enabled %}
+{{ weif_functions(packet.eif0, false, type_helper) | trim }}
+
+{% endif %}
+{% if packet.eif1.enabled and packet.errors_enabled %}
+{{ weif_functions(packet.eif1, false, type_helper) | trim }}
+
+{% endif %}
+{% if packet.eif2.enabled and packet.errors_enabled %}
+{{ weif_functions(packet.eif2, false, type_helper) | trim }}
+
+{% endif %}
+{% endmacro %}
+
+{%- macro acks_public_function_declarations(packet, type_helper) %}
+{{ function_decls.cif(packet, type_helper) | trim }}
+{% endmacro %}
+
+{%- macro base_ack_class_members(packet, type_helper) %}
+{{ packet_.base_class_members(packet, type_helper) | trim }}
+{{ members.command(packet, type_helper) | trim }}
+std::vector<uint8_t> m_data;
+std::map<std::string, std::size_t> m_positions;
+{% endmacro %}
+
+{%- macro ackvx_members(packet, type_helper) %}
+{% if packet.wif0.enabled and packet.warnings_enabled %}
+{{ members.member(packet.wif0, type_helper) | trim }}
+{% endif %}
+{% if packet.eif0.enabled and packet.errors_enabled %}
+{{ members.member(packet.eif0, type_helper) | trim }}
+{% endif %}
+{% if packet.wif1.enabled and packet.warnings_enabled %}
+{{ members.member(packet.wif1, type_helper) | trim }}
+{% endif %}
+{% if packet.eif1.enabled and packet.errors_enabled %}
+{{ members.member(packet.eif1, type_helper) | trim }}
+{% endif %}
+{% if packet.wif2.enabled and packet.warnings_enabled %}
+{{ members.member(packet.wif2, type_helper) | trim }}
+{% endif %}
+{% if packet.eif2.enabled and packet.errors_enabled %}
+{{ members.member(packet.eif2, type_helper) | trim }}
+{% endif %}
+{% if packet.wif0.enabled and packet.warnings_enabled %}
+{%   for field in packet.wif0.fields if field.enabled %}
+std::optional<{{ type_helper.member_type(field) }}> m_{{ field.name }}_warnings;
+{%   endfor %}
+{% endif %}
+{% if packet.wif1.enabled and packet.warnings_enabled %}
+{%   for field in packet.wif1.fields if field.enabled %}
+std::optional<{{ type_helper.member_type(field) }}> m_{{ field.name }}_warnings;
+{%   endfor %}
+{% endif %}
+{% if packet.wif2.enabled and packet.warnings_enabled %}
+{%   for field in packet.wif2.fields if field.enabled %}
+std::optional<{{ type_helper.member_type(field) }}> m_{{ field.name }}_warnings;
+{%   endfor %}
+{% endif %}
+{% if packet.eif0.enabled and packet.warnings_enabled %}
+{%   for field in packet.eif0.fields if field.enabled %}
+std::optional<{{ type_helper.member_type(field) }}> m_{{ field.name }}_errors;
+{%   endfor %}
+{% endif %}
+{% if packet.eif1.enabled and packet.warnings_enabled %}
+{%   for field in packet.eif1.fields if field.enabled %}
+std::optional<{{ type_helper.member_type(field) }}> m_{{ field.name }}_errors;
+{%   endfor %}
+{% endif %}
+{% if packet.eif2.enabled and packet.warnings_enabled %}
+{%   for field in packet.eif2.fields if field.enabled %}
+std::optional<{{ type_helper.member_type(field) }}> m_{{ field.name }}_errors;
+{%   endfor %}
+{% endif %}
+{% endmacro %}
+
+{%- macro acks_members(packet, type_helper) %}
+{{ members.cif(packet, type_helper) | trim }}
+{% endmacro %}
+
+{%- macro define_base_ack(packet, type_helper) %}
+{{ packet_.packet_doc(packet) | trim }}
+class {{ packet.name }}
+{
+public:
+    {{ packet_.constructor(packet.name, type_helper) | indent(4) | trim }}
+
+    {{ packet_.unpack_constructor(packet.name, type_helper) | indent(4) | trim }}
+
+    /**
+     * @brief Default deconstructor
+     */
+    virtual ~{{ packet.name }}() = default;
+
+    {{ packet_.base_public_function_declarations(packet, type_helper) | indent(4) | trim }}
+
+    {{ public_function_declarations(packet, type_helper) | indent(4) | trim }}
+
+protected:
+    auto update_packet_size() -> void;
+    auto min_bytes() const -> std::size_t;
+    virtual auto update_positions() -> void = 0;
+    virtual auto sync() -> void = 0;
+
+    {{ base_ack_class_members(packet, type_helper) | indent(4) | trim }}
+
+}; // end class {{ packet.name }}
+{% endmacro%}
+
+{%- macro define_ackvx(packet, packet_name, type_helper) %}
+/**
+ * @class {{ packet_name }}
+ */
+class {{ packet_name }} : public {{ packet.name }}
+{
+public:
+    {{ packet_.constructor(packet_name, type_helper) | indent(4) | trim }}
+
+    {{ packet_.unpack_constructor(packet_name, type_helper) | indent(4) | trim }}
+
+    /**
+     * @brief Default deconstructor
+     */
+    ~{{ packet_name }}() override = default;
+
+    {{ ackvx_public_function_declarations(packet, type_helper) | indent(4) | trim }}
+
+private:
+    auto update_positions() -> void override;
+    auto sync() -> void override;
+
+    {{ ackvx_members(packet, type_helper) | indent(4) | trim }}
+
+}; // end class {{ packet_name }}
+{% endmacro%}
+
+{%- macro define_acks(packet, packet_name, type_helper) %}
+/**
+ * @class {{ packet_name }}
+ */
+class {{ packet_name }} : public {{ packet.name }}
+{
+public:
+    {{ packet_.constructor(packet_name, type_helper) | indent(4) | trim }}
+
+    {{ packet_.unpack_constructor(packet_name, type_helper) | indent(4) | trim }}
+
+    /**
+     * @brief Default deconstructor
+     */
+    ~{{ packet_name }}() override = default;
+
+    {{ acks_public_function_declarations(packet, type_helper) | indent(4) | trim }}
+
+private:
+    auto min_bytes() const -> std::size_t;
+    auto update_positions() -> void override;
+    auto sync() -> void override;
+
+    {{ acks_members(packet, type_helper) | indent(4) | trim }}
+
+}; // end class {{ packet_name }}
+{% endmacro%}
+
+{%- macro define_packets(packet, type_helper) %}
+{{ define_base_ack(packet, type_helper) | trim }}
+
+{% if packet.cam.ack_v.enabled or packet.cam.ack_x.enabled %}
+{{ define_ackvx(packet, packet.name+'VX', type_helper) | trim }}
+
+{% endif %}
+{% if packet.cam.ack_s.enabled %}
+{{ define_acks(packet, packet.name+'S', type_helper) | trim }}
+
+{% endif %}
+{%- endmacro %}

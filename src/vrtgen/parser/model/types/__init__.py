@@ -18,9 +18,8 @@
 """
 Types for VITA 49 data model.
 """
-from .basic import *
+from .packing import *
 from .cif0 import *
 from .enums import *
 from .fixed import *
-from .packing import *
 from .prologue import *

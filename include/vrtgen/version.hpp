@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -17,13 +17,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
 
-#ifndef _VRTGEN_VERSION_HPP
-#define _VRTGEN_VERSION_HPP
+#pragma once
 
 #define VRTGEN_VERSION_MAJOR 0
-#define VRTGEN_VERSION_MINOR 5
+#define VRTGEN_VERSION_MINOR 6
 #define VRTGEN_VERSION_PATCH 0
 #define VRTGEN_VERSION_TWEAK 
-#define VRTGEN_VERSION "0.5.0"
-
-#endif // _VRTGEN_VERSION_HPP
+#define VRTGEN_VERSION "0.6.0"

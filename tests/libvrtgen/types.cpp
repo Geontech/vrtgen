@@ -20,7 +20,6 @@
 #include <cmath>
 #include <limits>
 #include <utility>
-
 #include "catch.hpp"
 #include "bytes.hpp"
 #include "vrtgen/types.hpp"
@@ -319,7 +318,7 @@ TEST_CASE("Q16.16 fixed-point conversion", "[fixed]")
 TEST_CASE("Q44.20 fixed-point conversion", "[fixed]")
 {
     using int_type = int64_t;
-    using float_type = double;
+    using float_type = long double;
     constexpr std::size_t BITS = 64;
     constexpr std::size_t RADIX = 20;
 
@@ -351,7 +350,13 @@ TEST_CASE("Q44.20 fixed-point conversion", "[fixed]")
         CHECK(vrtgen::fixed::to_int<BITS,RADIX>(float_val) == int_val);
         CHECK(vrtgen::fixed::to_fp<BITS,RADIX>(int_val) == float_val);
     }
-    // TODO: Largest positive value
+    SECTION("Largest positive value")
+    {
+        auto int_val = static_cast<int_type>(0x7FFFFFFFFFFFFFFF);
+        auto float_val = static_cast<float_type>(8796093022208.0) - (1.0 / 1048576.0);
+        CHECK(vrtgen::fixed::to_int<BITS,RADIX>(float_val) == int_val);
+        CHECK(vrtgen::fixed::to_fp<BITS,RADIX>(int_val) == float_val);
+    }
     SECTION("Largest positive fraction")
     {
         auto int_val = static_cast<int_type>(0x00000000000FFFFF);
@@ -481,36 +486,6 @@ TEST_CASE("From Big Endian", "[swap]")
         value = 0xEFCDAB9078563412;
         CHECK(vrtgen::swap::from_be(value) == 0x1234567890ABCDEF);
     }
-}
-
-/*
- * OUI Test
- */
-TEST_CASE("OUI", "[oui]")
-{
-    using namespace vrtgen;
-    OUI oui;
-    OUI unpack_oui;
-    bytes packed_bytes{ 0xFF, 0xFF, 0xFF };
-
-    // Verify zero on construction
-    oui.pack_into(packed_bytes.data());
-    CHECK(packed_bytes == bytes{ 0, 0, 0 });
-    CHECK(oui.get() == 0);
-    // Setter
-    oui.set(0xABCDEF);
-    // Getter check set value
-    CHECK(oui.get() == 0xABCDEF);
-    // Verify to_string
-    CHECK(oui.to_string() == "AB-CD-EF");
-    // Pack
-    oui.pack_into(packed_bytes.data());
-    // Verify packed bits
-    CHECK(packed_bytes == bytes{ 0xAB, 0xCD, 0xEF });
-    // Unpack
-    unpack_oui.unpack_from(packed_bytes.data());
-    // Verify unpacked value
-    CHECK(unpack_oui.get() == 0xABCDEF);
 }
 
 /*

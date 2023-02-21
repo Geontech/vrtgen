@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -17,167 +17,79 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
 {%- from "enums.hpp.jinja2" import define_enum %}
-{%- from "macros/types/user_class.jinja2" import define_class %}
-{%- import "macros/types/prologue.jinja2" as prologue %}
-{%- import "macros/types/command.jinja2" as command %}
-{%- import "macros/types/weif.jinja2" as weif %}
-{%- import "macros/types/cif.jinja2" as cif %}
-{%- import "macros/packet/data.jinja2" as data %}
-
-{%- macro constructor(packet, type_helper) %}
-/**
- * @brief {{ packet.name }} constrcutor
- */
-{% if packet.class_id.enabled %}
-{{ packet.name }}()
-{
-{%   for field in packet.class_id.fields if field.enabled and field.value %}
-    _{{ packet.class_id.name }}.{{ field.setter }}({{ type_helper.literal_value(field) }});
-{%   endfor %}
-}
-{% else %}
-{{ packet.name }}() = default;
-{% endif %}
-{% endmacro %}
-
-{%- macro public_functions(packet, type_helper) %}
-/**
- * @brief Return the packet's name
- * @retval Name of the packet
- */
-std::string name() const noexcept
-{
-    return _name;
-}
-
-{{ prologue.public_functions(packet, type_helper) | trim }}
-
-{% if packet.is_command %}
-{{ command.public_functions(packet, type_helper) | trim }}
-
-{% endif %}
-{% if packet.is_context or packet.is_command %}
-{{ cif.public_functions(packet, type_helper) | trim }}
-
-{% endif %}
-{% if packet.is_ack %}
-{{ weif.public_functions(packet, type_helper) | trim }}
-{% endif %}
-
-{% if packet.is_data %}
-{{ data.public_functions(packet, type_helper) | trim }}
-
-{% endif %}
-{% endmacro %}
-
-{%- macro members(packet, type_helper) %}
-std::string _name{ "{{ packet.name }}" };
-{{ prologue.members(packet, type_helper) | trim }}
-{% if packet.is_command %}
-{{ command.members(packet, type_helper) | trim }}
-{% endif %}
-{% if packet.is_context or packet.is_command %}
-{{ cif.members(packet, type_helper) | trim }}
-{% endif %}
-{% if packet.is_ack %}
-{{ weif.members(packet, type_helper) | trim }}
-{% endif %}
-{% if packet.is_data %}
-{{ data.members(packet, type_helper) | trim }}
-{% endif %}
-{% endmacro %}
+{%- import "macros/types/user_class.jinja2" as user_class %}
+{%- import "macros/packet/decls.jinja2" as packet_ %}
+{%- import "ack_packet.hpp.jinja2" as ack %}
 
 {%- macro define_packet(packet, type_helper) %}
-/**
-{% if not packet.doc %}
- * @class {{ packet.name }}
-{% else %}
-{%   for line in packet.doc %}
- * {{ line }}
-{%   endfor %}
-{% endif %}
- */
-class {{packet.name}}
+{{ packet_.packet_doc(packet) | trim }}
+class {{ packet.name }}
 {
 public:
-    using helper = {{ packet.namespace }}::packing::{{ packet.helper }};
+    {{ packet_.constructor(packet.name, type_helper) | indent(4) | trim }}
 
-    {{ constructor(packet, type_helper) | indent(4) | trim }}
+    {{ packet_.unpack_constructor(packet.name, type_helper) | indent(4) | trim }}
 
-    {{ public_functions(packet, type_helper) | indent(4) | trim }}
+    {{ packet_.public_function_declarations(packet, type_helper) | indent(4) | trim }}
 
 private:
-    friend helper;
+    auto min_bytes() const -> std::size_t;
+    auto update_packet_size() -> void;
+    auto update_positions() -> void;
+    auto sync() -> void;
 
-    {{ members(packet, type_helper) | indent(4) | trim }}
+    {{ packet_.class_members(packet, type_helper) | indent(4) | trim }}
 
-}; // end class {{packet.name}}
+}; // end class {{ packet.name }}
 {%- endmacro %}
 
 {%- macro define_header() %}
-#ifndef {{ header_name | upper }}_HPP
-#define {{ header_name | upper }}_HPP
+#pragma once
 
 #include <cstddef>
 #include <cstring>
+#include <span>
 #include <vector>
+#include <map>
 #include <optional>
 #include <vrtgen/vrtgen.hpp>
+{% if namespace_ %}
 
-namespace packing {
-
-{% for packet in packets %}
-struct {{packet.helper}};
-{% endfor %}
-
-} // end namespace packing
-{% for packet in packets if packet.enums or packet.structs %}
-
-namespace {{ packet.name | to_snake }} {
+namespace {{ namespace_ }}::packets {
+{% endif %}
+{% for packet in packets if packet.enums or packet.structs or packet.cif7.enabled %}
 {%   if packet.enums %}
-namespace enums {
+
+namespace {{ packet.name | to_snake }}::enums {
 
 {%     for enum in packet.enums %}
 {{ define_enum(enum) | trim }}
 
 {%     endfor %}
-} // end namespace enums
-
+} // end namespace {{ packet.name | to_snake }}::enums
 {%   endif %}
 {%   if packet.structs %}
-namespace structs {
+
+namespace {{ packet.name | to_snake }}::structs {
 
 {%     for struct in packet.structs %}
-{{ define_class(struct, type_helper) | trim }}
+{{ user_class.decl(struct, type_helper) | trim }}
 
 {%     endfor %}
-} // end namespace structs
+} // end namespace {{ packet.name | to_snake }}::structs
 {%   endif %}
-} // end namespace {{ packet.name | to_snake }}
 {% endfor %}
 
 {% for packet in packets %}
-{{ define_packet(packet, type_helper) }}
+{%   if packet.is_ack %}
+{{ ack.define_packets(packet, type_helper) | trim}}
+{%   else %}
+{{ define_packet(packet, type_helper) | trim}}
+{%   endif %}
 
 {% endfor %}
-
-/**
- * namespace packing
- */
-namespace packing {
-
-{% for packet in packets %}
-    struct {{ packet.helper }}
-    {
-        static std::optional<std::string> match(const void* ptr, size_t length);
-        static size_t bytes_required(const {{ packet.name }}& packet);
-        static std::vector<uint8_t> pack(const {{ packet.name }}& packet);
-        static void unpack({{ packet.name }}& packet, const void* ptr, size_t bufsize);
-    }; // end struct {{ packet.helper }}
-
-{% endfor %}
-} // end namespace packing
-
-#endif // {{ header_name | upper }}_HPP
+{% if namespace_ %}
+} // end namespace {{ namespace_ }}::packets
+{% endif %}
 {% endmacro %}
 {{ define_header() }}

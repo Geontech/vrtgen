@@ -1,0 +1,22 @@
+WithoutStreamIdData: !Data
+
+WithoutStreamIdContext: !Context
+
+WithoutStreamIdControl: !Control
+
+WithStreamIdData: !Data
+  stream_id: !StreamID
+
+WithStreamIdContext: !Context
+  stream_id: !StreamID
+
+WithStreamIdControl: !Control
+  stream_id: !StreamID
+
+TestStreamIdData3: !Data
+  stream_id: !StreamID 0xDEADBEEF
+
+TestStreamIdData4: !Data
+  stream_id: !StreamID
+    thing1: !IntegerType
+      bits: 10

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from vrtgen.parser.model.types import *
-from vrtgen.parser.model.base import CIF
+from vrtgen.parser.model.base import CIF, StateEventIndicators
 from vrtgen.parser.value import parse_enable
 
 @dataclass
@@ -35,38 +35,6 @@ class DeviceIdentifier(PackedStruct):
         self.bits = 64
 
 @dataclass
-class StateEventIndicators(PackedStruct):
-    """
-    State and Event Indicator Field [9.10.8].
-    """
-    name : str = 'state_event_indicators'
-    # Enables
-    calibrated_time_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('calibrated_time_enable', is_enable=True, packed_tag=PackedTag(31,1,0,0)))
-    valid_data_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('valid_data_enable', is_enable=True, packed_tag=PackedTag(30,1,0,0)))
-    reference_lock_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('reference_lock_enable', is_enable=True, packed_tag=PackedTag(29,1,0,0)))
-    agc_mgc_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('agc_mgc_enable', is_enable=True, packed_tag=PackedTag(28,1,0,0)))
-    detected_signal_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('detected_signal_enable', is_enable=True, packed_tag=PackedTag(27,1,0,0)))
-    spectral_inversion_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('spectral_inversion_enable', is_enable=True, packed_tag=PackedTag(26,1,0,0)))
-    over_range_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('over_range_enable', is_enable=True, packed_tag=PackedTag(25,1,0,0)))
-    sample_loss_enable : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('sample_loss_enable', is_enable=True, packed_tag=PackedTag(24,1,0,0)))
-    # Indicators
-    calibrated_time : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('calibrated_time', packed_tag=PackedTag(19,1,0,0)))
-    valid_data : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('valid_data', packed_tag=PackedTag(18,1,0,0)))
-    reference_lock : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('reference_lock', packed_tag=PackedTag(17,1,0,0)))
-    agc_mgc : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('agc_mgc', packed_tag=PackedTag(16,1,0,0)))
-    detected_signal : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('detected_signal', packed_tag=PackedTag(15,1,0,0)))
-    spectral_inversion : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('spectral_inversion', packed_tag=PackedTag(14,1,0,0)))
-    over_range : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('over_range', packed_tag=PackedTag(13,1,0,0)))
-    sample_loss : EnableIndicatorType = field(default_factory=lambda: EnableIndicatorType('sample_loss', packed_tag=PackedTag(12,1,0,0)))
-    # TODO user_defined
-    packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0)))
-
-    def __post_init__(self):
-        super().__post_init__()
-        self.type_ = type(self).__name__
-        self.bits = 32
-
-@dataclass
 class PayloadFormat(PackedStruct):
     """
     Data Packet Payload Format Field [9.13.3]
@@ -79,11 +47,11 @@ class PayloadFormat(PackedStruct):
     event_tag_size : IntegerType = IntegerType('event_tag_size', bits=3, packed_tag=PackedTag(22,3,0,0))
     channel_tag_size : IntegerType = IntegerType('channel_tag_size', bits=4, packed_tag=PackedTag(19,4,0,0))
     data_item_fraction_size : IntegerType = IntegerType('data_item_fraction_size', bits=4, packed_tag=PackedTag(15,4,0,0))
-    item_packing_field_size : NonZeroIntegerType = NonZeroIntegerType('item_packing_field_size', bits=6, packed_tag=PackedTag(11,6,0,0))
-    data_item_size : NonZeroIntegerType = NonZeroIntegerType('data_item_size', bits=6, packed_tag=PackedTag(5,6,0,0))
+    item_packing_field_size : IntegerType = IntegerType('item_packing_field_size', bits=6, packed_tag=PackedTag(11,6,0,0))
+    data_item_size : IntegerType = IntegerType('data_item_size', bits=6, packed_tag=PackedTag(5,6,0,0))
     packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
-    repeat_count : NonZeroIntegerType = NonZeroIntegerType('repeat_count', bits=16, packed_tag=PackedTag(31,16,1))
-    vector_size : NonZeroIntegerType = NonZeroIntegerType('vector_size', bits=16, packed_tag=PackedTag(15,16,1))
+    repeat_count : IntegerType = IntegerType('repeat_count', bits=16, packed_tag=PackedTag(31,16,1))
+    vector_size : IntegerType = IntegerType('vector_size', bits=16, packed_tag=PackedTag(15,16,1))
 
     def __post_init__(self):
         super().__post_init__()
@@ -107,8 +75,8 @@ class Geolocation(PackedStruct):
     # Default values for these subfields shall be 0x7FFFFFFF when unspecified (rule 9.4.5-6)
     latitude : GeolocationAngle = GeolocationAngle('latitude', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,4))
     longitude : GeolocationAngle = GeolocationAngle('longitude', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,5))
-    altitude : FixedPointType = FixedPointType('altitude', bits=32, signed=True, radix=5, resolution=3, value=0x7FFFFFFF, packed_tag=PackedTag(31,32,6))
-    speed_over_ground : FixedPointType = FixedPointType('speed_over_ground', bits=32, signed=True, radix=16, resolution=6, value=0x7FFFFFFF, packed_tag=PackedTag(31,32,7))
+    altitude : FixedPointType = FixedPointType('altitude', bits=32, signed=True, radix=5, value=0x7FFFFFFF, packed_tag=PackedTag(31,32,6))
+    speed_over_ground : FixedPointType = FixedPointType('speed_over_ground', bits=32, signed=True, radix=16, value=0x7FFFFFFF, packed_tag=PackedTag(31,32,7))
     heading_angle : GeolocationAngle = GeolocationAngle('heading_angle', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,8))
     track_angle : GeolocationAngle = GeolocationAngle('track_angle', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,9))
     magnetic_variation : GeolocationAngle = GeolocationAngle('magnetic_variation', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,10))
@@ -219,12 +187,12 @@ class CIF0(CIF):
     relative_ephemeris : CIFEnableType = field(default_factory=lambda: CIFEnableType('relative_ephemeris', type_=Ephemeris(), packed_tag=PackedTag(11,1,0,0)))
     ephemeris_ref_id : CIFEnableType = field(default_factory=lambda: CIFEnableType('ephemeris_ref_id', type_=Unsigned32(), packed_tag=PackedTag(10,1,0,0)))
     # not currently supported
-    # gps_ascii : CIFEnableType = field(default_factory=lambda: CIFEnableType('gps_ascii', type_=GPS_ASCII(), packed_tag=PackedTag(9,1,0,0)))
+    gps_ascii : CIFEnableType = field(default_factory=lambda: CIFEnableType('gps_ascii', type_=GPS_ASCII(), packed_tag=PackedTag(9,1,0,0)))
     context_association_lists : CIFEnableType = field(default_factory=lambda: CIFEnableType('context_association_lists', type_=ContextAssociationLists(), packed_tag=PackedTag(8,1,0,0)))
-    cif7_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif7_enable', indicator_only=True, packed_tag=PackedTag(7,1,0,0)))
-    cif3_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif3_enable', indicator_only=True, packed_tag=PackedTag(3,1,0,0)))
-    cif2_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif2_enable', indicator_only=True, packed_tag=PackedTag(2,1,0,0)))
-    cif1_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif1_enable', indicator_only=True, packed_tag=PackedTag(1,1,0,0)))
+    # cif7_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif7_enable', indicator_only=True, packed_tag=PackedTag(7,1,0,0)))
+    # cif3_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif3_enable', indicator_only=True, packed_tag=PackedTag(3,1,0,0)))
+    # cif2_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif2_enable', indicator_only=True, packed_tag=PackedTag(2,1,0,0)))
+    # cif1_enable : CIFEnableType = field(default_factory=lambda: CIFEnableType('cif1_enable', indicator_only=True, packed_tag=PackedTag(1,1,0,0)))
 
     @property
     def all_optional_fields(self):

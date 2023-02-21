@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -16,23 +16,125 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
+{%- import "macros/function_defs.jinja2" as function_defs %}
+{%- from "macros/function_defs/bytes_required.jinja2" import bytes_required %}
+{%- from "macros/function_defs/match.jinja2" import match %}
+{%- from "macros/function_defs/cif.jinja2" import sync_cifs, update_cif_pos %}
+{%- import "macros/function_defs/constructors.jinja2" as constructors %}
+{%- import "ack_packet.cpp.jinja2" as ack %}
+{%- import "macros/types/user_class.jinja2" as user_class %}
 
-{%- from "macros/helper/match.jinja2" import define_match %}
-{%- from "macros/helper/bytes_required.jinja2" import define_bytes_required %}
-{%- from "macros/helper/pack.jinja2" import define_pack %}
-{%- from "macros/helper/unpack.jinja2" import define_unpack %}
-#include <vrtgen/buffer.hpp>
+{%- macro update_positions(packet, type_helper) %}
+{% set ns = namespace(curr_pos=0) %}
+auto {{ packet.name }}::update_positions() -> void
+{
+    {{ update_cif_pos(packet, type_helper) | indent(4) | trim }}
+}
+{% endmacro %}
+
+{%- macro sync(packet, type_helper) %}
+auto {{ packet.name }}::sync() -> void
+{
+{% if packet.stream_id.enabled and packet.stream_id.user_defined %}
+    m_{{ packet.stream_id.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.stream_id.name }}"));
+{% endif %}
+{% if packet.controllee_id.enabled and not type_helper.is_scalar(packet.controllee_id) %}
+    m_{{ packet.controllee_id.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.controllee_id.name }}"));
+{% endif %}
+{% if packet.controller_id.enabled and not type_helper.is_scalar(packet.controller_id) %}
+    m_{{ packet.controller_id.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.controller_id.name }}"));
+{% endif %}
+{% if packet.cif0.enabled %}
+    {{ sync_cifs(packet, type_helper) | indent(4) | trim }}
+{% endif %}
+{% if packet.is_data and packet.trailer.enabled %}
+    m_{{ packet.trailer.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.trailer.name }}"));
+{% endif %}
+}
+{% endmacro %}
+
+{%- macro packet_functions(packet, type_helper) %}
+/**
+ * {{ packet.name }} class functions
+ */
+{{ constructors.constructor(packet, type_helper) | trim }}
+
+{{ constructors.unpack_constructor(packet, type_helper) | trim }}
+
+auto {{ packet.name }}::name() const -> std::string
+{
+    return m_name;
+}
+
+{{ match(packet, type_helper) | trim }}
+
+{{ function_defs.prologue(packet, type_helper) | trim }}
+
+{% if packet.is_command %}
+{{ function_defs.command(packet, type_helper) | trim }}
+
+{% endif %}
+{% if packet.is_context or packet.is_command %}
+{{ function_defs.cif(packet, packet.name, type_helper) | trim }}
+
+{% endif %}
+{% if packet.is_data %}
+{{ function_defs.data(packet, type_helper) | trim }}
+
+{% endif %}
+auto {{ packet.name }}::data() -> std::span<const uint8_t>
+{
+    sync();
+    return { m_data.data(), m_data.size() };
+}
+
+auto {{ packet.name }}::size() -> std::size_t
+{
+    return data().size();
+}
+
+auto {{ packet.name }}::update_packet_size() -> void
+{
+    m_header.packet_size(static_cast<uint16_t>((m_data.size() + 3) / 4));
+    m_header.pack_into(m_data.data());
+}
+
+{{ update_positions(packet, type_helper) | trim }}
+
+{{ bytes_required(packet, type_helper) | trim}}
+
+{{ sync(packet, type_helper) | trim }}
+{% endmacro %}
+
+{%- macro define_source() %}
 #include "{{ header }}"
+{% if namespace_ %}
 
-{% for packet in packets %}
-using {{namespace}}::packing::{{packet.helper}};
+namespace {{ namespace_ }}::packets {
+{% endif %}
+{% for packet in packets if packet.enums or packet.structs or packet.cif7.enabled %}
+{%   if packet.structs %}
 
-{{ define_match(packet, type_helper) | trim }}
+namespace {{ packet.name | to_snake }}::structs {
 
-{{ define_bytes_required(packet, type_helper) | trim }}
+{%     for struct in packet.structs if not struct.is_template %}
+{{ user_class.def(struct, type_helper) | trim }}
 
-{{ define_pack(packet, type_helper) | trim }}
-
-{{ define_unpack(packet, type_helper) | trim }}
-
+{%     endfor %}
+} // end namespace {{ packet.name | to_snake }}::structs
+{%   endif %}
 {% endfor %}
+{% for packet in packets %}
+
+{%   if packet.is_ack %}
+{{ ack.packet_functions(packet, type_helper) | trim}}
+{%   else %}
+{{ packet_functions(packet, type_helper) | trim }}
+{%   endif %}
+{% endfor %}
+{% if namespace_ %}
+
+} // end namespace {{ namespace_ }}::packets
+{% endif %}
+{% endmacro %}
+{{ define_source() }}

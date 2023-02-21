@@ -19,7 +19,9 @@ import enum
 import inspect
 from vrtgen.parser.model.types import *
 from vrtgen.parser.model.command import ControlIdentifier, WarningErrorFields
+from vrtgen.parser.model.data import Trailer
 from vrtgen.parser.model.cif1 import DiscreteIO
+from vrtgen.parser.model.cif7 import CIF7, CIF7Attributes
 from vrtgen.parser.model.aor import ArrayOfRecords
 
 """
@@ -47,16 +49,16 @@ def enum_type(field, namespace=PACKING_NAMESPACE):
         return namespace + field.type_.__name__
     return namespace + type(field.type_).__name__
 
-def enum_value(field):
-    return enum_type(field) + '::' + field.value.name
+def enum_value(field, namespace=PACKING_NAMESPACE):
+    return enum_type(field, namespace) + '::' + field.value.name
 
 def float_type(field):
     """
     Returns the C++ floating point type for a given bit width.
     """
     if field.bits >= 32:
-        return 'double'
-    return 'float'
+        return 'long double'
+    return 'double'
 
 def name_to_identifier(name):
     """
@@ -95,10 +97,19 @@ def format_enum(enum):
 class TypeHelper:
     def value_type(self, field):
         if isinstance(field, CIFEnableType):
-            if field.type_:
+            if field.template_type:
+                return 'T'
+            elif field.type_ and field.type_ != type(None).__name__:
                 return self.value_type(field.type_)
             else:
                 return 'bool'
+        elif isinstance(field, EnableIndicatorType):
+            if field.type_ and field.type_ != type(None).__name__:
+                return self.value_type(field.type_)
+            else:
+                return 'bool'
+        elif field.type_ == 'StreamIdentifier' and field.user_defined:
+            return '{}::structs::{}'.format(field.packet_name, field.type_)
         elif isinstance(field, BooleanType):
             return 'bool'
         elif isinstance(field, OUI):
@@ -114,7 +125,9 @@ class TypeHelper:
         elif isinstance(field, IntegerType):
             return int_type(field)
         elif isinstance(field, EnumType):
-            if field.user_defined:
+            if field.user_defined and field.packet_name:
+                return enum_type(field, namespace=field.packet_name+'::enums::')
+            elif field.user_defined:
                 return enum_type(field, namespace='enums::')
             else:
                 return enum_type(field)
@@ -129,23 +142,41 @@ class TypeHelper:
                 return 'uint{}_t'.format(field.bits)
         elif isinstance(field, ArrayOfRecords):
             return PACKING_NAMESPACE + field.type_ + '<{}::structs::{}Record>'.format(field.packet_name, field.type_)
+        elif isinstance(field, CIF7Attributes):
+            return '{}::structs::{}'.format(field.packet_name, field.type_)
+        elif isinstance(field, CIF7):
+            return PACKING_NAMESPACE + field.type_
         elif isinstance(field, TemplateArrayStruct):
             return PACKING_NAMESPACE + field.type_ + '<{}>'.format(field.template_type)
+        elif isinstance(field, Trailer) and field.is_user_defined:
+            return '{}::structs::{}'.format(field.packet_name, field.type_)
         elif isinstance(field, Field):
             return PACKING_NAMESPACE + field.type_
         else:
             raise TypeError(field)
 
+    def debug(self, var):
+        import pdb; pdb.set_trace()
+
     def member_type(self, field):
         if isinstance(field, CIFEnableType):
-            if field.type_:
+            if field.template_type:
+                return 'T'
+            elif field.type_:
                 return self.member_type(field.type_)
         elif isinstance(field, FixedPointType):
             return int_type(field)
         elif isinstance(field, ControlIdentifier) and (field.format == IdentifierFormat.UUID):
             return VRTGEN_NAMESPACE + 'UUID'
+        elif isinstance(field, Trailer) and field.is_user_defined:
+            return '{}::structs::{}'.format(field.packet_name, field.type_)
+        # elif field.type_ == 'StreamIdentifier' and field.user_defined:
+        #     return '{}::structs::{}'.format(field.packet_name, field.type_)
         else:
             return self.value_type(field)
+
+    def requires_get_set(self, field):
+        return False
 
     def fixed_template(self, field):
         if isinstance(field, CIFEnableType):
@@ -158,10 +189,18 @@ class TypeHelper:
     def literal_value(self, field):
         if isinstance(field, CIFEnableType):
             return self.literal_value(field.type_)
+        elif isinstance(field, EnableIndicatorType):
+            if field.type_ and field.type_ != type(None).__name__:
+                return self.literal_value(field.type_)
+            else:
+                return str(field.value).lower()
         elif isinstance(field, BooleanType):
             return str(field.value).lower()
         elif isinstance(field, EnumType):
-            return enum_value(field)
+            if field.user_defined and field.packet_name:
+                return enum_value(field, namespace=field.packet_name+"::enums::")
+            else:
+                return enum_value(field)
         elif isinstance(field, IntegerType):
             if field.value:
                 return '0x{}'.format(str(hex(field.value)[2:]).upper())
@@ -190,13 +229,4 @@ class TypeHelper:
         elif isinstance(field, CIFEnableType):
             if field.type_:
                 return self.is_scalar(field.type_)
-        return False
-
-    def requires_get_set(self, field):
-        if isinstance(field, CIFEnableType):
-            return self.requires_get_set(field.type_)
-        if isinstance(field, OUI):
-            return True
-        # elif isinstance(field, ControlIdentifier) and (field.format == IdentifierFormat.UUID):
-        #     return True
         return False

@@ -1,0 +1,113 @@
+/*#
+ * Copyright (C) 2023 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- macro optional_functions(packet_name, field, type_helper) %}
+auto {{ packet_name }}::has_{{ field.name }}() const noexcept -> bool
+{
+{% if not field.is_optional %}
+    return true; // required
+}
+{% else %}
+    return m_{{ field.name }}.has_value();
+}
+
+auto {{ packet_name }}::reset_{{ field.name }}() noexcept -> void
+{
+    m_{{ field.name }}.reset();
+}
+{% endif %}
+{% endmacro %}
+
+{%- macro ref_getter(packet_name, field, is_const, type_helper) %}
+{% if field.is_optional %}
+auto {{ packet_name }}::{{ field.name }}(){{ ' const' if is_const }} -> {{ 'const ' if is_const }}std::optional<{{ type_helper.member_type(field) }}>&
+{% else %}
+auto {{ packet_name }}::{{ field.name }}(){{ ' const' if is_const }} -> {{ 'const ' if is_const }}{{ type_helper.member_type(field) }}&
+{% endif %}
+{
+    return m_{{ field.name }};
+}
+{% endmacro %}
+
+{%- macro const_ref_getter(packet_name, field, type_helper) %}
+{{ ref_getter(packet_name, field, true, type_helper) }}
+{% endmacro %}
+
+{%- macro value_getter(packet_name, field, type_helper) %}
+auto {{ packet_name }}::{{ field.name }}() const -> {{ type_helper.value_type(field) }}
+{
+{% if field.packed_tag.packed_int is not none %}
+{%   if field.is_enum and field.is_enable %}
+    if (m_packed.get<{{ field.packed_tag.position }}, {{ field.packed_tag.bits }}, uint8_t>() == (static_cast<uint8_t>(1 << {{ field.packed_tag.bits }}) - 1)) {
+        return true;
+    }
+    return false;
+{%   elif not field.is_enum and field.packed_tag.bits == 1 %}
+    return m_packed.get<{{ field.packed_tag.position }}>();
+{%   else %}
+    return m_packed.get<{{ field.packed_tag.position }}, {{ field.packed_tag.bits }}, {{ type_helper.member_type(field) }}>();
+{%   endif %}
+{% elif field.is_fixed_point or field.type_.is_fixed_point %}
+    return vrtgen::fixed::to_fp{{ type_helper.fixed_template(field) }}(vrtgen::swap::from_be(m_{{ field.name }}{{ '.value()' if field.is_optional }}));
+{% elif field.is_integer_type or field.type_.is_integer_type %}
+    return vrtgen::swap::from_be(m_{{ field.name }}{{ '.value()' if field.is_optional }});
+{% else %}
+    return m_{{ field.name }}{{ '.value()' if field.is_optional }};
+{% endif %}
+}
+{% endmacro %}
+
+{%- macro getters(packet_name, field, type_helper) %}
+{% if not type_helper.is_scalar(field) %}
+{{ ref_getter(packet_name, field, false, type_helper) | trim }}
+{% else %}
+{{ value_getter(packet_name, field, type_helper) | trim }}
+{% endif %}
+{% endmacro %}
+
+{%- macro setters(packet_name, field, type_helper) %}
+auto {{ packet_name }}::{{ field.name }}(const {{ type_helper.value_type(field) }}{{ '&' if not type_helper.is_scalar(field) }} value) -> void
+{
+{% if field.packed_tag.packed_int is not none %}
+{%   if field.is_enum and field.is_enable %}
+    if (value) {
+        m_packed.set<{{ field.packed_tag.position }}, {{ field.packed_tag.bits }}, uint8_t>((static_cast<uint8_t>(1 << {{ field.packed_tag.bits }}) - 1));
+    } else {
+        m_packed.set<{{ field.packed_tag.position }}, {{ field.packed_tag.bits }}, uint8_t>(0);
+    }
+{%   elif not field.is_enum and field.packed_tag.bits == 1 %}
+    m_packed.set<{{ field.packed_tag.position }}>(value);
+{%   else %}
+    m_packed.set<{{ field.packed_tag.position }}, {{ field.packed_tag.bits }}, {{ type_helper.member_type(field) }}>(value);
+{%   endif %}
+{% elif field.is_fixed_point %}
+    m_{{ field.name }} = vrtgen::swap::to_be(vrtgen::fixed::to_int{{ type_helper.fixed_template(field) }}(value));
+{% elif field.is_integer_type %}
+    m_{{ field.name }} = vrtgen::swap::to_be(value);
+{% else %}
+    m_{{ field.name }} = value;
+{% endif %}
+}
+{% endmacro %}
+
+{%- macro getters_and_setters(packet_name, field, type_helper) %}
+{{ getters(packet_name, field, type_helper) | trim }}
+
+{{ setters(packet_name, field, type_helper) | trim }}
+{% endmacro %}

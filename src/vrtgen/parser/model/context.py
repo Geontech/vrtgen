@@ -6,6 +6,7 @@ from vrtgen.parser.model.prologue import ClassIdentifier, Timestamp
 from vrtgen.parser.model.cif0 import CIF0
 from vrtgen.parser.model.cif1 import CIF1
 from vrtgen.parser.model.cif2 import CIF2
+from vrtgen.parser.model.cif7 import CIF7
 from vrtgen.parser.value import parse_tsm
 
 @dataclass
@@ -22,45 +23,48 @@ class ContextHeader(Header):
         self.packet_type.value = PacketType.CONTEXT
 
 @dataclass
-class ExtensionContextHeader(ContextHeader):
-    """
-    VRT Packet Header with Extension Context Packet-Specific Indicator Bits (5.1.1.1)
-    """
-    def __post_init__(self):
-        super().__post_init__()
-        self.type_ = type(self).__name__
-        self.packet_type.value = PacketType.EXTENSION_CONTEXT
-
-@dataclass
 class ContextPacket(Packet):
     header : ContextHeader = field(default_factory=lambda: ContextHeader(enabled=True, required=True))
-    stream_id : StreamIdentifier = field(default_factory=lambda: StreamIdentifier(enabled=True, required=True))
-    class_id  : ClassIdentifier = field(default_factory=ClassIdentifier)
-    timestamp : Timestamp = field(default_factory=Timestamp)
     cif_0 : CIF0 = field(default_factory=lambda: CIF0(enabled=True, required=True))
     cif_1 : CIF1 = field(default_factory=CIF1)
     cif_2 : CIF2 = field(default_factory=CIF2)
+    cif_7 : CIF7 = field(default_factory=CIF7)
 
-    def validate_and_parse_mapping(self, **mapping):
-        self._validate(mapping)
-        self._parse_mapping(mapping)
+    def __post_init__(self):
+        super().__post_init__()
+        self.stream_id.enabled = True
+        self.stream_id.required = True
+
+    def _validate(self, mapping):
+        for field in mapping:
+            if not field in [f.name for f in (self.fields + self.header.fields)]:
+                raise ValueError('invalid field provided: ' + field)
 
     def _parse_mapping(self, mapping):
         for key,val in mapping.items():
             if key == 'tsm':
                 try:
+                    self.header.tsm.enabled = True
+                    self.header.tsm.required = True
                     self.header.tsm.value = parse_tsm(val)
                 except:
                     raise
             else:
                 self.__dict__[key] = val
 
+    def _update_header(self):
+        if self.cif_1.enabled or self.cif_2.enabled or self.cif_7.enabled:
+            self.header.not_v49d0.enabled = True
+            self.header.not_v49d0.required = True
+            self.header.not_v49d0.value = True
+        super()._update_header()
+
 @dataclass
-class ExtensionContextPacket(Packet):
+class ExtensionContextPacket(ContextPacket):
     """
     Extension Context Packet
     """
-    header : ExtensionContextHeader = field(default_factory=lambda: ExtensionContextHeader(enabled=True, required=True))
-    stream_id : StreamIdentifier = field(default_factory=lambda: StreamIdentifier(enabled=True, required=True))
-    class_id  : ClassIdentifier = field(default_factory=ClassIdentifier)
-    timestamp : Timestamp = field(default_factory=Timestamp)
+    
+    def __post_init__(self):
+        super().__post_init__()
+        self.header.packet_type.value = PacketType.EXTENSION_CONTEXT

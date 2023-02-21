@@ -1,0 +1,729 @@
+/*#
+ * Copyright (C) 2023 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- macro prologue(packet, type_helper) %}
+m_data.resize(min_bytes());
+auto curr_pos = std::size_t{};
+{% for field in packet.header.fields if field.enabled and field.value %}
+m_{{ packet.header.name }}.{{ field.name }}({{ type_helper.literal_value(field) }});
+{%   if loop.last %}
+m_{{ packet.header.name }}.pack_into(m_data.data());
+{%   endif %}
+{% endfor %}
+curr_pos += m_{{ packet.header.name }}.size();
+{% if packet.stream_id.enabled %}
+m_positions["{{ packet.stream_id.name }}"] = curr_pos;
+{%   if packet.stream_id.value %}
+{{ packet.stream_id.name }}({{ type_helper.literal_value(packet.stream_id) }});
+{%   endif %}
+curr_pos += sizeof({{ type_helper.member_type(packet.stream_id) }}); // {{ packet.stream_id.name }}
+{% endif %}
+{% if packet.class_id.enabled %}
+m_positions["{{ packet.class_id.name }}"] = curr_pos;
+{%   for field in packet.class_id.fields if field.enabled and field.value %}
+m_{{ packet.class_id.name }}.{{ field.name }}({{ type_helper.literal_value(field) }});
+{%   endfor %}
+m_{{ packet.class_id.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.class_id.name }}"));
+curr_pos += m_{{ packet.class_id.name }}.size();
+{% endif %}
+{% if packet.timestamp.enabled %}
+{%   if packet.timestamp.integer.enabled %}
+m_positions["{{ packet.timestamp.integer.name }}"] = curr_pos;
+curr_pos += sizeof({{ type_helper.member_type(packet.timestamp.integer) }}); // {{ packet.timestamp.integer.name }}
+{%   endif %}
+{%   if packet.timestamp.fractional.enabled %}
+m_positions["{{ packet.timestamp.fractional.name }}"] = curr_pos;
+curr_pos += sizeof({{ type_helper.member_type(packet.timestamp.fractional) }}); // {{ packet.timestamp.fractional.name }}
+{%   endif %}
+{% endif %}
+{% if packet.cam.enabled %}
+m_positions["{{ packet.cam.name }}"] = curr_pos;
+{%   for field in packet.cam.fields if field.enabled and not field.is_optional %}
+m_{{ packet.cam.name }}.{{ field.name }}({{ type_helper.literal_value(field) }});
+{%     if loop.last %}
+m_{{ packet.cam.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cam.name }}"));
+{%     endif %}
+{%   endfor %}
+curr_pos += m_{{ packet.cam.name }}.size();
+{% endif %}
+{% if packet.message_id.enabled %}
+m_positions["{{ packet.message_id.name }}"] = curr_pos;
+curr_pos += sizeof({{ type_helper.member_type(packet.message_id) }}); // {{ packet.message_id.name }}
+{% endif %}
+{% if packet.controllee_id.enabled %}
+m_positions["{{ packet.controllee_id.name }}"] = curr_pos;
+{%   if type_helper.is_scalar(packet.controllee_id) %}
+curr_pos += sizeof({{ type_helper.member_type(packet.controllee_id) }}); // {{ packet.controllee_id.name }}
+{%   else %}
+curr_pos += m_{{ packet.controllee_id.name }}.size();
+{%  endif %}
+{% endif %}
+{% if packet.controller_id.enabled %}
+m_positions["{{ packet.controller_id.name }}"] = curr_pos;
+{%   if type_helper.is_scalar(packet.controller_id) %}
+curr_pos += sizeof({{ type_helper.member_type(packet.controller_id) }}); // {{ packet.controller_id.name }}
+{%   else %}
+curr_pos += m_{{ packet.controller_id.name }}.size();
+{%  endif %}
+{% endif %}
+{% endmacro %}
+
+{%- macro construct_cifs(packet, type_helper) %}
+{% set ns = namespace(has_cif0_field=false,has_cif1_field=false,has_cif2_field=false) %}
+{% if packet.cif0.enabled %}
+m_positions["{{ packet.cif0.name }}"] = curr_pos;
+curr_pos += m_{{ packet.cif0.name }}.size();
+{% endif %}
+{% if packet.cif1.enabled %}
+m_positions["{{ packet.cif1.name }}"] = curr_pos;
+{%   if not packet.cif1.all_optional_fields %}
+m_{{ packet.cif0.name }}.cif1_enable(true);
+m_{{ packet.cif0.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cif0.name }}"));
+curr_pos += m_{{ packet.cif1.name }}.size();
+{%   endif %}
+{% endif %}
+{% if packet.cif2.enabled %}
+m_positions["{{ packet.cif2.name }}"] = curr_pos;
+{%   if not packet.cif2.all_optional_fields %}
+m_{{ packet.cif0.name }}.cif2_enable(true);
+m_{{ packet.cif0.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cif0.name }}"));
+curr_pos += m_{{ packet.cif2.name }}.size();
+{%   endif %}
+{% endif %}
+{% if packet.cif7.enabled %}
+m_positions["{{ packet.cif7.name }}"] = curr_pos;
+{%   if not packet.cif7.all_optional_fields %}
+m_{{ packet.cif0.name }}.cif7_enable(true);
+m_{{ packet.cif0.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cif0.name }}"));
+{%   for field in packet.cif7.fields if field.enabled and field.required %}
+m_{{ packet.cif7.name }}.{{ field.name }}(true);
+{%     if loop.last %}
+m_{{ packet.cif7.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cif7.name }}"));
+{%     endif %}
+{%   endfor %}
+curr_pos += m_{{ packet.cif7.name }}.size();
+{%   endif %}
+{% endif %}
+{% if packet.cif0.enabled and packet.requires_cif_functions %}
+{%   for field in packet.cif0.fields if field.enabled and not field.indicator_only %}
+{%     if field.required %}
+m_{{ packet.cif0.name }}.{{ field.name }}(true);
+{%       set ns.has_cif0_field = true %}
+{%     endif %}
+m_positions["{{ field.name }}"] = curr_pos;
+{%     if not field.is_optional %}
+{%       if type_helper.is_scalar(field) %}
+{%         if field.type_.reserved_bits > 0 %}
+curr_pos += sizeof(int{{field.type_.reserved_bits }}_t); // reserved
+{%         endif %}
+curr_pos += sizeof({{ type_helper.member_type(field) }});
+{%       else %}
+curr_pos += m_{{ field.name }}.size();
+{%       endif %}
+{%     endif %}
+{%     if packet.cif7.enabled %}
+m_positions["{{ field.name }}_attributes"] = curr_pos;
+{%       if not field.is_optional %}
+curr_pos += m_{{ field.name }}_attributes.size();
+{%       endif %}
+{%     endif %}
+{%     if loop.last and ns.has_cif0_field %}
+m_{{ packet.cif0.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cif0.name }}"));
+{%     endif %}
+{%   endfor %}
+{% elif packet.cif0.enabled and packet.requires_cif_enable_functions %}
+{%   for field in packet.cif0.fields if field.enabled and not field.indicator_only %}
+{%     if field.required %}
+m_{{ packet.cif0.name }}.{{ field.name }}(true);
+{%       set ns.has_cif0_field = true %}
+{%     endif %}
+{%     if loop.last and ns.has_cif0_field %}
+m_{{ packet.cif0.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cif0.name }}"));
+{%     endif %}
+{%   endfor %}
+{% endif %}
+{% if packet.cif1.enabled and packet.requires_cif_functions %}
+{%   for field in packet.cif1.fields if field.enabled and not field.indicator_only %}
+{%     if field.required %}
+m_{{ packet.cif1.name }}.{{ field.name }}(true);
+{%       set ns.has_cif1_field = true %}
+{%     endif %}
+m_positions["{{ field.name }}"] = curr_pos;
+{%     if loop.last and ns.has_cif1_field %}
+m_{{ packet.cif1.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cif1.name }}"));
+{%     endif %}
+{%     if not field.is_optional %}
+{%       if type_helper.is_scalar(field) %}
+{%         if field.type_.reserved_bits > 0 %}
+curr_pos += sizeof(int{{field.type_.reserved_bits }}_t); // reserved
+{%         endif %}
+curr_pos += sizeof({{ type_helper.member_type(field) }}); // {{ field.name }}
+{%       else %}
+curr_pos += m_{{ field.name }}.size();
+{%       endif %}
+{%     endif %}
+{%   endfor %}
+{% elif packet.cif1.enabled and packet.requires_cif_enable_functions %}
+{%   for field in packet.cif1.fields if field.enabled and not field.indicator_only %}
+{%     if field.required %}
+m_{{ packet.cif1.name }}.{{ field.name }}(true);
+{%       set ns.has_cif1_field = true %}
+{%     endif %}
+{%     if loop.last and ns.has_cif1_field %}
+m_{{ packet.cif1.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cif1.name }}"));
+{%     endif %}
+{%   endfor %}
+{% endif %}
+{% if packet.cif2.enabled and packet.requires_cif_functions %}
+{%   for field in packet.cif2.fields if field.enabled and not field.indicator_only %}
+{%     if field.required %}
+m_{{ packet.cif2.name }}.{{ field.name }}(true);
+{%       set ns.has_cif2_field = true %}
+{%     endif %}
+m_positions["{{ field.name }}"] = curr_pos;
+{%     if loop.last and ns.has_cif2_field %}
+m_{{ packet.cif2.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cif2.name }}"));
+{%     endif %}
+{%     if not field.is_optional %}
+{%       if type_helper.is_scalar(field) %}
+{%         if field.type_.reserved_bits > 0 %}
+curr_pos += sizeof(int{{field.type_.reserved_bits }}_t); // reserved
+{%         endif %}
+curr_pos += sizeof({{ type_helper.member_type(field) }}); // {{ field.name }}
+{%       else %}
+curr_pos += m_{{ field.name }}.size();
+{%       endif %}
+{%     endif %}
+{%   endfor %}
+{% elif packet.cif2.enabled and packet.requires_cif_enable_functions %}
+{%   for field in packet.cif2.fields if field.enabled and not field.indicator_only %}
+{%     if field.required %}
+m_{{ packet.cif2.name }}.{{ field.name }}(true);
+{%       set ns.has_cif2_field = true %}
+{%     endif %}
+{%     if loop.last and ns.has_cif2_field %}
+m_{{ packet.cif2.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cif2.name }}"));
+{%     endif %}
+{%   endfor %}
+{% endif %}
+{% endmacro %}
+
+{%- macro constructor(packet, type_helper) %}
+{{ packet.name }}::{{ packet.name }}()
+{
+    {{ prologue(packet, type_helper) | indent(4) | trim }}
+{% if packet.is_data %}
+    m_positions["payload"] = curr_pos;
+{%   if packet.trailer.enabled %}
+    m_positions["{{ packet.trailer.name }}"] = curr_pos;
+{%   endif %}
+{% endif %}
+{% if packet.cif0.enabled %}
+    {{ construct_cifs(packet, type_helper) | indent(4) | trim }}
+{% endif %}
+    update_packet_size();
+}
+{% endmacro %}
+
+{%- macro unpack_prologue(packet, type_helper) %}
+m_{{ packet.header.name }}.unpack_from(data.data());
+m_data.resize(m_{{ packet.header.name }}.packet_size() * sizeof(uint32_t));
+std::memcpy(m_data.data(), data.data(), m_data.size());
+auto curr_pos = m_{{ packet.header.name }}.size();
+{% if packet.stream_id.enabled %}
+m_positions["{{ packet.stream_id.name }}"] = curr_pos;
+{%   if packet.stream_id.user_defined %}
+m_{{ packet.stream_id.name }}.unpack_from(m_data.data() + curr_pos);
+curr_pos += m_{{ packet.stream_id.name }}.size();
+{%   else %}
+curr_pos += sizeof({{ type_helper.member_type(packet.stream_id) }}); // {{ packet.stream_id.name }}
+{%   endif %}
+{% endif %}
+{% if packet.class_id.enabled %}
+m_positions["{{ packet.class_id.name }}"] = curr_pos;
+m_{{ packet.class_id.name }}.unpack_from(m_data.data() + m_positions.at("{{ packet.class_id.name }}"));
+curr_pos += m_{{ packet.class_id.name }}.size();
+{% endif %}
+{% if packet.timestamp.enabled %}
+{%   if packet.timestamp.integer.enabled %}
+m_positions["{{ packet.timestamp.integer.name }}"] = curr_pos;
+curr_pos += sizeof({{ type_helper.member_type(packet.timestamp.integer) }}); // {{ packet.timestamp.integer.name }}
+{%   endif %}
+{%   if packet.timestamp.fractional.enabled %}
+m_positions["{{ packet.timestamp.fractional.name }}"] = curr_pos;
+curr_pos += sizeof({{ type_helper.member_type(packet.timestamp.fractional) }}); // {{ packet.timestamp.fractional.name }}
+{%   endif %}
+{% endif %}
+{% if packet.cam.enabled %}
+m_positions["{{ packet.cam.name }}"] = curr_pos;
+curr_pos += m_{{ packet.cam.name }}.size();
+m_{{ packet.cam.name }}.unpack_from(m_data.data() + m_positions.at("{{ packet.cam.name }}"));
+{% endif %}
+{% if packet.message_id.enabled %}
+m_positions["{{ packet.message_id.name }}"] = curr_pos;
+curr_pos += sizeof({{ type_helper.member_type(packet.message_id) }}); // {{ packet.message_id.name }}
+{% endif %}
+{% if packet.controllee_id.enabled %}
+m_positions["{{ packet.controllee_id.name }}"] = curr_pos;
+{%   if type_helper.is_scalar(packet.controllee_id) %}
+curr_pos += sizeof({{ type_helper.member_type(packet.controllee_id) }}); // {{ packet.controllee_id.name }}
+{%   else %}
+m_{{ packet.controllee_id.name }}.unpack_from(m_data.data() + m_positions.at("{{ packet.controllee_id.name }}"));
+curr_pos += m_{{ packet.controllee_id.name }}.size();
+{%   endif %}
+{% endif %}
+{% if packet.controller_id.enabled %}
+m_positions["{{ packet.controller_id.name }}"] = curr_pos;
+{%   if type_helper.is_scalar(packet.controller_id) %}
+curr_pos += sizeof({{ type_helper.member_type(packet.controller_id) }}); // {{ packet.controller_id.name }}
+{%   else %}
+m_{{ packet.controller_id.name }}.unpack_from(m_data.data() + m_positions.at("{{ packet.controller_id.name }}"));
+curr_pos += m_{{ packet.controller_id.name }}.size();
+{%   endif %}
+{% endif %}
+{% endmacro%}
+
+{%- macro unpack_cifs(packet, type_helper) %}
+{% if packet.cif0.enabled %}
+m_positions["{{ packet.cif0.name }}"] = curr_pos;
+m_{{ packet.cif0.name }}.unpack_from(m_data.data() + m_positions.at("{{ packet.cif0.name }}"));
+curr_pos += m_{{ packet.cif0.name }}.size();
+{% endif %}
+{% if packet.cif1.enabled %}
+m_positions["{{ packet.cif1.name }}"] = curr_pos;
+{%   if packet.cif1.all_optional_fields %}
+if (m_{{ packet.cif0.name}}.cif1_enable()) {
+    m_{{ packet.cif1.name }} = {{ type_helper.member_type(packet.cif1) }}{};
+    m_{{ packet.cif1.name }}->unpack_from(m_data.data() + m_positions.at("{{ packet.cif1.name }}"));
+    curr_pos += m_{{ packet.cif1.name }}->size();
+}
+{%   else %}
+m_{{ packet.cif1.name }}.unpack_from(m_data.data() + m_positions.at("{{ packet.cif1.name }}"));
+curr_pos += m_{{ packet.cif1.name }}.size();
+{%   endif %}
+{% endif %}
+{% if packet.cif2.enabled %}
+m_positions["{{ packet.cif2.name }}"] = curr_pos;
+{%   if packet.cif2.all_optional_fields %}
+if (m_{{ packet.cif0.name}}.cif2_enable()) {
+    m_{{ packet.cif2.name }} = {{ type_helper.member_type(packet.cif2) }}{};
+    m_{{ packet.cif2.name }}->unpack_from(m_data.data() + m_positions.at("{{ packet.cif2.name }}"));
+    curr_pos += m_{{ packet.cif2.name }}->size();
+}
+{%   else %}
+m_{{ packet.cif2.name }}.unpack_from(m_data.data() + m_positions.at("{{ packet.cif2.name }}"));
+curr_pos += m_{{ packet.cif2.name }}.size();
+{%   endif %}
+{% endif %}
+{% if packet.cif7.enabled %}
+m_positions["{{ packet.cif7.name }}"] = curr_pos;
+{%   if packet.cif7.all_optional_fields %}
+if (m_{{ packet.cif7.name}}.cif7_enable()) {
+    m_{{ packet.cif7.name }} = {{ type_helper.member_type(packet.cif7) }}{};
+    m_{{ packet.cif7.name }}->unpack_from(m_data.data() + m_positions.at("{{ packet.cif7.name }}"));
+    curr_pos += m_{{ packet.cif7.name }}->size();
+}
+{%   else %}
+m_{{ packet.cif7.name }}.unpack_from(m_data.data() + m_positions.at("{{ packet.cif7.name }}"));
+curr_pos += m_{{ packet.cif7.name }}.size();
+{%   endif %}
+{% endif %}
+{% if packet.cif0.enabled and packet.requires_cif_functions %}
+{%   for field in packet.cif0.fields if field.enabled and not field.indicator_only %}
+m_positions["{{ field.name }}"] = curr_pos;
+{%     if field.is_optional %}
+{%       if packet.cif7.enabled %}
+m_positions["{{ field.name }}_attributes"] = curr_pos;
+{%       endif %}
+if (m_{{ packet.cif0.name }}.{{ field.name }}()) {
+{%       if type_helper.is_scalar(field) %}
+{%         if field.type_.reserved_bits > 0 %}
+    curr_pos += sizeof(int{{field.type_.reserved_bits }}_t); // reserved
+{%         endif %}
+    curr_pos += sizeof({{ type_helper.member_type(field) }});
+{%       else %}
+    m_{{ field.name }} = {{ type_helper.member_type(field) }}{};
+    m_{{ field.name }}->unpack_from(m_data.data() + m_positions.at("{{ field.name }}"));
+    curr_pos += m_{{ field.name }}->size();
+{%       endif %}
+{%       if packet.cif7.enabled %}
+{%         set ns = namespace(member_type=type_helper.member_type(field), value_type=type_helper.value_type(field)) %}
+    m_positions.at("{{ field.name }}_attributes") = curr_pos;
+{%         if field.is_fixed_point %}
+    m_{{ field.name }}_attributes = {{ type_helper.member_type(packet.cif7.attributes) }}<{{ ns.member_type }},{{ ns.value_type }},{{ field.type_.bits }},{{ field.type_.radix }}>{};
+{%         else %}
+    m_{{ field.name }}_attributes = {{ type_helper.member_type(packet.cif7.attributes) }}<{{ ns.member_type }}>{};
+{%         endif %}
+    m_{{ field.name }}_attributes->unpack_from(m_data.data() + m_positions.at("{{ field.name }}"));
+    curr_pos += m_{{ field.name }}_attributes->size();
+{%       endif %}
+}
+{%     else %}
+{%       if type_helper.is_scalar(field) %}
+{%         if field.type_.reserved_bits > 0 %}
+curr_pos += sizeof(int{{field.type_.reserved_bits }}_t); // reserved
+{%         endif %}
+curr_pos += sizeof({{ type_helper.member_type(field) }}); // {{ field.name }}
+{%       else %}
+m_{{ field.name }}.unpack_from(m_data.data() + m_positions.at("{{ field.name }}"));
+curr_pos += m_{{ field.name }}.size();
+{%       endif %}
+{%       if packet.cif7.enabled %}
+m_positions["{{ field.name }}_attributes"] = curr_pos;
+m_{{ field.name }}_attributes.unpack_from(m_data.data() + m_positions.at("{{ field.name }}_attributes"));
+curr_pos += m_{{ field.name }}_attributes.size();
+{%       endif %}
+{%     endif %}
+{%   endfor %}
+{% endif %}
+{% if packet.cif1.enabled and packet.requires_cif_functions %}
+{%   for field in packet.cif1.fields if field.enabled and not field.indicator_only %}
+m_positions["{{ field.name }}"] = curr_pos;
+{%     if field.is_optional %}
+{%       if packet.cif1.all_optional_fields %}
+if (m_{{ packet.cif1.name }}.has_value() && m_{{ packet.cif1.name }}->{{ field.name }}()) {
+{%       else %}
+if (m_{{ packet.cif1.name }}.{{ field.name }}()) {
+{%       endif %}
+{%       if type_helper.is_scalar(field) %}
+{%         if field.type_.reserved_bits > 0 %}
+    curr_pos += sizeof(int{{ field.type_.reserved_bits }}_t); // reserved
+{%         endif %}
+    curr_pos += sizeof({{ type_helper.member_type(field) }});
+{%       else %}
+    m_{{ field.name }} = {{ type_helper.member_type(field) }}{};
+    m_{{ field.name }}->unpack_from(m_data.data() + m_positions.at("{{ field.name }}"));
+    curr_pos += m_{{ field.name }}->size();
+{%       endif %}
+}
+{%     else %}
+{%       if type_helper.is_scalar(field) %}
+{%         if field.type_.reserved_bits > 0 %}
+curr_pos += sizeof(int{{ field.type_.reserved_bits }}_t); // reserved
+{%         endif %}
+curr_pos += sizeof({{ type_helper.member_type(field) }}); // {{ field.name }}
+{%       else %}
+m_{{ field.name }}.unpack_from(m_data.data() + m_positions.at("{{ field.name }}"));
+curr_pos += m_{{ field.name }}.size();
+{%       endif %}
+{%     endif %}
+{%   endfor %}
+{% endif %}
+{% if packet.cif2.enabled and packet.requires_cif_functions %}
+{%   for field in packet.cif2.fields if field.enabled and not field.indicator_only %}
+m_positions["{{ field.name }}"] = curr_pos;
+{%     if field.is_optional %}
+{%       if packet.cif2.all_optional_fields %}
+if (m_{{ packet.cif2.name }}.has_value() && m_{{ packet.cif2.name }}->{{ field.name }}()) {
+{%       else %}
+if (m_{{ packet.cif2.name }}.{{ field.name }}()) {
+{%       endif %}
+{%       if type_helper.is_scalar(field) %}
+{%         if field.type_.reserved_bits > 0 %}
+    curr_pos += sizeof(int{{ field.type_.reserved_bits }}_t); // reserved
+{%         endif %}
+    curr_pos += sizeof({{ type_helper.member_type(field) }});
+{%       else %}
+    m_{{ field.name }} = {{ type_helper.member_type(field) }}{};
+    m_{{ field.name }}->unpack_from(m_data.data() + m_positions.at("{{ field.name }}"));
+    curr_pos += m_{{ field.name }}->size();
+{%       endif %}
+}
+{%     else %}
+{%       if type_helper.is_scalar(field) %}
+{%         if field.type_.reserved_bits > 0 %}
+curr_pos += sizeof(int{{ field.type_.reserved_bits }}_t); // reserved
+{%         endif %}
+curr_pos += sizeof({{ type_helper.member_type(field) }}); // {{ field.name }}
+{%       else %}
+m_{{ field.name }}.unpack_from(m_data.data() + m_positions.at("{{ field.name }}"));
+curr_pos += m_{{ field.name }}.size();
+{%       endif %}
+{%     endif %}
+{%   endfor %}
+{% endif %}
+{% endmacro %}
+
+{%- macro unpack_constructor(packet, type_helper) %}
+{{ packet.name }}::{{ packet.name }}(std::span<const uint8_t> data)
+{
+    {{ unpack_prologue(packet, type_helper) | indent(4) | trim }}
+{% if packet.cif0.enabled %}
+    {{ unpack_cifs(packet, type_helper) | indent(4) | trim }}
+{% endif %}
+{% if packet.is_data %}
+    m_positions["payload"] = curr_pos;
+{%   if packet.trailer.enabled %}
+    m_positions["{{ packet.trailer.name }}"] = m_data.size() - m_{{ packet.trailer.name }}.size();
+    m_{{ packet.trailer.name }}.unpack_from(m_data.data() + m_positions.at("{{ packet.trailer.name }}"));
+{%   endif %}
+{% endif %}
+}
+{% endmacro %}
+
+{%- macro base_ack_constructor(packet, type_helper) %}
+{% set ns = namespace(curr_pos=0,has_cif0_field=false,has_cif1_field=false,has_cif2_field=false) %}
+{{ packet.name }}::{{ packet.name }}()
+{
+    {{ prologue(packet, type_helper) | indent(4) | trim }}
+    update_packet_size();
+}
+{% endmacro %}
+
+{%- macro base_ack_unpack_constructor(packet, type_helper) %}
+{% set ns = namespace(curr_pos=0,has_cif0_field=false,has_cif1_field=false,has_cif2_field=false) %}
+{{ packet.name }}::{{ packet.name }}(std::span<const uint8_t> data)
+{
+    {{ unpack_prologue(packet, type_helper) | indent(4) | trim }}
+}
+{% endmacro %}
+
+{%- macro ackvx_constructor(packet, packet_name, type_helper) %}
+{{ packet_name }}::{{ packet_name }}()
+{
+    m_name = "{{ packet_name }}";
+{% set last_field = packet.last_prologue_field %}
+    [[maybe_unused]]
+{% if type_helper.is_scalar(last_field) %}
+    auto curr_pos = m_positions.at("{{ last_field.name }}") + sizeof({{ type_helper.member_type(last_field) }});
+{% else %}
+    auto curr_pos = m_positions.at("{{ last_field.name }}") + m_{{ last_field.name }}.size();
+{% endif %}
+{% if packet.warnings_enabled %}
+    m_positions["{{ packet.wif0.name }}"] = curr_pos;
+{%   if packet.wif1.enabled %}
+    m_positions["{{ packet.wif1.name }}"] = curr_pos;
+{%   endif %}
+{%   if packet.wif2.enabled %}
+    m_positions["{{ packet.wif2.name }}"] = curr_pos;
+{%   endif %}
+{% endif %}
+{% if packet.errors_enabled %}
+    m_positions["{{ packet.eif0.name }}"] = curr_pos;
+{%   if packet.eif1.enabled %}
+    m_positions["{{ packet.eif1.name }}"] = curr_pos;
+{%   endif %}
+{%   if packet.eif2.enabled %}
+    m_positions["{{ packet.eif2.name }}"] = curr_pos;
+{%   endif %}
+{% endif %}
+{% if packet.warnings_enabled %}
+{%   for field in packet.wif0.fields if field.enabled %}
+    m_positions["{{ field.name }}_warnings"] = curr_pos;
+{%   endfor %}
+{%   if packet.wif1.enabled %}
+{%     for field in packet.wif1.fields if field.enabled %}
+    m_positions["{{ field.name }}_warnings"] = curr_pos;
+{%     endfor %}
+{%   endif %}
+{%   if packet.wif2.enabled %}
+{%     for field in packet.wif2.fields if field.enabled %}
+    m_positions["{{ field.name }}_warnings"] = curr_pos;
+{%     endfor %}
+{%   endif %}
+{% endif %}
+{% if packet.errors_enabled %}
+{%   for field in packet.eif0.fields if field.enabled %}
+    m_positions["{{ field.name }}_errors"] = curr_pos;
+{%   endfor %}
+{%   if packet.eif1.enabled %}
+{%     for field in packet.eif1.fields if field.enabled %}
+    m_positions["{{ field.name }}_errors"] = curr_pos;
+{%     endfor %}
+{%   endif %}
+{%   if packet.eif2.enabled %}
+{%     for field in packet.eif2.fields if field.enabled %}
+    m_positions["{{ field.name }}_errors"] = curr_pos;
+{%     endfor %}
+{%   endif %}
+{% endif %}
+}
+{% endmacro %}
+
+{%- macro ackvx_unpack_constructor(packet, packet_name, type_helper) %}
+{{ packet_name }}::{{ packet_name }}(std::span<const uint8_t> data) :
+    {{ packet.name }}(data)
+{
+    m_name = "{{ packet_name }}";
+{% set last_field = packet.last_prologue_field %}
+    [[maybe_unused]]
+{% if type_helper.is_scalar(last_field) %}
+    auto curr_pos = m_positions.at("{{ last_field.name }}") + sizeof({{ type_helper.member_type(last_field) }});
+{% else %}
+    auto curr_pos = m_positions.at("{{ last_field.name }}") + m_{{ last_field.name }}.size();
+{% endif %}
+{% if packet.warnings_enabled %}
+    if (m_{{ packet.cam.name }}.ack_w()) {
+        m_positions["{{ packet.wif0.name }}"] = curr_pos;
+        m_{{ packet.wif0.name }} = {{ type_helper.member_type(packet.wif0) }}{};
+        m_{{ packet.wif0.name }}->unpack_from(m_data.data() + curr_pos);
+        curr_pos += m_{{ packet.wif0.name }}->size();
+{%   if packet.wif1.enabled %}
+        if (m_{{ packet.wif0.name }}->wif1_enable()) {
+            m_positions["{{ packet.wif1.name }}"] = curr_pos;
+            m_{{ packet.wif1.name }} = {{ type_helper.member_type(packet.wif1) }}{};
+            m_{{ packet.wif1.name }}->unpack_from(m_data.data() + curr_pos);
+            curr_pos += m_{{ packet.wif1.name }}->size();
+        }
+{%   endif %}
+{%   if packet.wif2.enabled %}
+        if (m_{{ packet.wif0.name }}->wif2_enable()) {
+            m_positions["{{ packet.wif2.name }}"] = curr_pos;
+            m_{{ packet.wif2.name }} = {{ type_helper.member_type(packet.wif2) }}{};
+            m_{{ packet.wif2.name }}->unpack_from(m_data.data() + curr_pos);
+            curr_pos += m_{{ packet.wif2.name }}->size();
+        }
+{%   endif %}
+    }
+{% endif %}
+{% if packet.errors_enabled %}
+    if (m_{{ packet.cam.name }}.ack_er()) {
+        m_positions["{{ packet.eif0.name }}"] = curr_pos;
+        m_{{ packet.eif0.name }} = {{ type_helper.member_type(packet.eif0) }}{};
+        m_{{ packet.eif0.name }}->unpack_from(m_data.data() + curr_pos);
+        curr_pos += m_{{ packet.eif0.name }}->size();
+{%   if packet.eif1.enabled %}
+        if (m_{{ packet.eif0.name }}->eif1_enable()) {
+            m_positions["{{ packet.eif1.name }}"] = curr_pos;
+            m_{{ packet.eif1.name }} = {{ type_helper.member_type(packet.eif1) }}{};
+            m_{{ packet.eif1.name }}->unpack_from(m_data.data() + curr_pos);
+            curr_pos += m_{{ packet.eif1.name }}->size();
+        }
+{%   endif %}
+{%   if packet.eif2.enabled %}
+        if (m_{{ packet.eif0.name }}->eif2_enable()) {
+            m_positions["{{ packet.eif2.name }}"] = curr_pos;
+            m_{{ packet.eif2.name }} = {{ type_helper.member_type(packet.eif2) }}{};
+            m_{{ packet.eif2.name }}->unpack_from(m_data.data() + curr_pos);
+            curr_pos += m_{{ packet.eif2.name }}->size();
+        }
+{%   endif %}
+    }
+{% endif %}
+{% if packet.warnings_enabled %}
+    if (m_{{ packet.wif0.name }}.has_value()) {
+{%   for field in packet.wif0.fields if field.enabled %}
+        if (m_{{ packet.wif0.name }}->{{ field.name }}()) {
+            m_positions["{{ field.name }}_warnings"] = curr_pos;
+            m_{{ field.name }}_warnings = {{ type_helper.member_type(field) }}{};
+            m_{{ field.name }}_warnings->unpack_from(m_data.data() + curr_pos);
+            curr_pos += m_{{ field.name }}_warnings->size();
+        }
+{%   endfor %}
+    }
+{%   if packet.wif1.enabled %}
+    if (m_{{ packet.wif1.name }}.has_value()) {
+{%     for field in packet.wif1.fields if field.enabled %}
+        if (m_{{ packet.wif1.name }}->{{ field.name }}()) {
+            m_positions["{{ field.name }}_warnings"] = curr_pos;
+            m_{{ field.name }}_warnings = {{ type_helper.member_type(field) }}{};
+            m_{{ field.name }}_warnings->unpack_from(m_data.data() + curr_pos);
+            curr_pos += m_{{ field.name }}_warnings->size();
+        }
+{%     endfor %}
+    }
+{%   endif %}
+{%   if packet.wif2.enabled %}
+    if (m_{{ packet.wif2.name }}.has_value()) {
+{%     for field in packet.wif2.fields if field.enabled %}
+        if (m_{{ packet.wif2.name }}->{{ field.name }}()) {
+            m_positions["{{ field.name }}_warnings"] = curr_pos;
+            m_{{ field.name }}_warnings = {{ type_helper.member_type(field) }}{};
+            m_{{ field.name }}_warnings->unpack_from(m_data.data() + curr_pos);
+            curr_pos += m_{{ field.name }}_warnings->size();
+        }
+{%     endfor %}
+    }
+{%   endif %}
+{% endif %}
+{% if packet.errors_enabled %}
+    if (m_{{ packet.eif0.name }}.has_value()) {
+{%   for field in packet.eif0.fields if field.enabled %}
+        if (m_{{ packet.eif0.name }}->{{ field.name }}()) {
+            m_positions["{{ field.name }}_errors"] = curr_pos;
+            m_{{ field.name }}_errors = {{ type_helper.member_type(field) }}{};
+            m_{{ field.name }}_errors->unpack_from(m_data.data() + curr_pos);
+            curr_pos += m_{{ field.name }}_errors->size();
+        }
+{%   endfor %}
+    }
+{%   if packet.eif1.enabled %}
+    if (m_{{ packet.eif1.name }}.has_value()) {
+{%     for field in packet.eif1.fields if field.enabled %}
+        if (m_{{ packet.eif1.name }}->{{ field.name }}()) {
+            m_positions["{{ field.name }}_errors"] = curr_pos;
+            m_{{ field.name }}_errors = {{ type_helper.member_type(field) }}{};
+            m_{{ field.name }}_errors->unpack_from(m_data.data() + curr_pos);
+            curr_pos += m_{{ field.name }}_errors->size();
+        }
+{%     endfor %}
+    }
+{%   endif %}
+{%   if packet.eif2.enabled %}
+    if (m_{{ packet.eif2.name }}.has_value()) {
+{%     for field in packet.eif2.fields if field.enabled %}
+        if (m_{{ packet.eif2.name }}->{{ field.name }}()) {
+            m_positions["{{ field.name }}_errors"] = curr_pos;
+            m_{{ field.name }}_errors = {{ type_helper.member_type(field) }}{};
+            m_{{ field.name }}_errors->unpack_from(m_data.data() + curr_pos);
+            curr_pos += m_{{ field.name }}_errors->size();
+        }
+{%     endfor %}
+    }
+{%   endif %}
+{% endif %}
+}
+{% endmacro %}
+
+{%- macro acks_constructor(packet, packet_name, type_helper) %}
+{{ packet_name }}::{{ packet_name }}()
+{
+    m_name = "{{ packet_name }}";
+    m_data.resize(this->min_bytes());
+    m_{{ packet.cam.name }}.{{ packet.cam.ack_s.name }}(true);
+{% set last_field = packet.last_prologue_field %}
+    [[maybe_unused]]
+{% if type_helper.is_scalar(last_field) %}
+    auto curr_pos = m_positions.at("{{ last_field.name }}") + sizeof({{ type_helper.member_type(last_field) }});
+{% else %}
+    auto curr_pos = m_positions.at("{{ last_field.name }}") + m_{{ last_field.name }}.size();
+{% endif %}
+{% if packet.cif0.enabled %}
+    {{ construct_cifs(packet, type_helper) | indent(4) | trim }}
+{% endif %}
+}
+{% endmacro %}
+
+{%- macro acks_unpack_constructor(packet, packet_name, type_helper) %}
+{{ packet_name }}::{{ packet_name }}(std::span<const uint8_t> data) :
+    {{ packet.name }}(data)
+{
+    m_name = "{{ packet_name }}";
+{% set last_field = packet.last_prologue_field %}
+    [[maybe_unused]]
+{% if type_helper.is_scalar(last_field) %}
+    auto curr_pos = m_positions.at("{{ last_field.name }}") + sizeof({{ type_helper.member_type(last_field) }});
+{% else %}
+    auto curr_pos = m_positions.at("{{ last_field.name }}") + m_{{ last_field.name }}.size();
+{% endif %}
+{% if packet.cif0.enabled %}
+    {{ unpack_cifs(packet, type_helper) | indent(4) | trim }}
+{% endif %}
+}
+{% endmacro %}

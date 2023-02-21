@@ -22,7 +22,7 @@ class CIF2(CIF):
     information_source : CIFEnableType = field(default_factory=lambda: CIFEnableType('information_source', type_=Identifier32(), packed_tag=PackedTag(21,1,0,0)))
     track_id : CIFEnableType = field(default_factory=lambda: CIFEnableType('track_id', type_=Identifier32(), packed_tag=PackedTag(20,1,0,0)))
     country_code : CIFEnableType = field(default_factory=lambda: CIFEnableType('country_code', type_=Identifier32(), packed_tag=PackedTag(19,1,0,0)))
-    operator_ : CIFEnableType = field(default_factory=lambda: CIFEnableType('operator_', type_=Identifier32(), packed_tag=PackedTag(18,1,0,0)))
+    operator_id : CIFEnableType = field(default_factory=lambda: CIFEnableType('operator_id', type_=Identifier32(), packed_tag=PackedTag(18,1,0,0)))
     platform_class : CIFEnableType = field(default_factory=lambda: CIFEnableType('platform_class', type_=Identifier32(), packed_tag=PackedTag(17,1,0,0)))
     platform_instance : CIFEnableType = field(default_factory=lambda: CIFEnableType('platform_instance', type_=Identifier32(), packed_tag=PackedTag(16,1,0,0)))
     platform_display : CIFEnableType = field(default_factory=lambda: CIFEnableType('platform_display', type_=Identifier32(), packed_tag=PackedTag(15,1,0,0)))

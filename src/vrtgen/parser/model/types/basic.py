@@ -52,16 +52,16 @@ class IntegerType(Field):
     def is_integer_type(self):
         return True
 
-@dataclass
-class NonZeroIntegerType(IntegerType):
-    """
-    Base class for non-zero size fields, in which the binary representation is
-    one less than the actual value.
-    """
-    converter : str = 'size_converter'
+    def parse_mapping(self, **mapping):
+        for key,val in mapping.items():
+            if key == "bits":
+                self.bits = int(val)
+            if key == "value":
+                self.value = val
+
 
     @property
-    def is_nonzero_integer_type(self):
+    def is_integer_type(self):
         return True
 
 @dataclass
@@ -71,6 +71,14 @@ class SignedIntegerType(IntegerType):
     def __post_init__(self):
         super().__post_init__()
         self.signed = True
+
+@dataclass
+class Unsigned8(IntegerType):
+    name : str = 'unsigned_8_t'
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.bits = 8
 
 @dataclass
 class Unsigned16(IntegerType):
@@ -181,6 +189,7 @@ class CIFEnableType(Field):
 class EnableIndicatorType(BooleanType):
     bits : int = 2
     is_enable : bool = False
+    is_enum : bool = False
 
 @dataclass
 class ListType(Field):

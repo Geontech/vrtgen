@@ -19,25 +19,33 @@
 
 {%- macro literal_value(field, type_helper) %}
 {% if type_helper.literal_value(field) is not none %}
+{%    if field.is_integer_type and type_helper.literal_value(field) != '0' %}
+{ vrtgen::swap::to_be( {{ type_helper.literal_value(field) }} ) }
+{%    else %}
 { {{ type_helper.literal_value(field) }} }
+{%    endif %}
 {% endif %}
 {% endmacro %}
 
 {%- macro member(field, type_helper) %}
 {%   if field.is_optional %}
 std::optional<{{ type_helper.member_type(field) }}> _{{ field.name }};
+{%   elif field.is_packed_type %}
+{{ type_helper.member_type(field) }} {{ field.name }}{{ literal_value(field, type_helper) | trim }};
+
 {%   else %}
 {{ type_helper.member_type(field) }} _{{ field.name }}{{ literal_value(field, type_helper) | trim }};
+
 {%   endif %}
 {% endmacro %}
 
-{%- macro optional_functions(field, type_helper, cif) %}
+{%- macro optional_functions(field, type_helper, cif, cif7) %}
 {% if not field.is_optional %}
 /**
  * @brief Check if {{ field.name }} contains a value
  * @return true, {{ field.name }} is a required field
  */
-constexpr bool has_{{ field.name }}() const noexcept
+auto has_{{ field.name }}() const noexcept -> constexpr bool
 {
     return true; // required
 }
@@ -46,7 +54,7 @@ constexpr bool has_{{ field.name }}() const noexcept
  * @brief Check if optional {{ field.name }} contains a value
  * @return true if {{ field.name }} contains a value, otherwise false
  */
-constexpr bool has_{{ field.name }}() const noexcept
+auto has_{{ field.name }}() const noexcept -> constexpr bool
 {
     return _{{ field.name }}.has_value();
 }
@@ -54,7 +62,7 @@ constexpr bool has_{{ field.name }}() const noexcept
 /**
  * @brief If {{ field.name }} contains a value, destroy it
  */
-void reset_{{ field.name }}() noexcept
+auto reset_{{ field.name }}() noexcept -> void
 {
 {% if cif is not none %}
     _{{ field.name }}.reset();
@@ -63,75 +71,168 @@ void reset_{{ field.name }}() noexcept
 {% endif %}
 }
 {% endif %}
+{% if cif7 is defined and cif7 is not none %}
+{%   if cif7.enabled and not field.indicator_only %}
+{%      if not field.is_optional %}
+/**
+ * @brief Check if {{ field.name }}_attributes contains a value
+ * @return true, {{ field.name }}_attributes is a required field
+ */
+auto has_{{ field.name }}_attributes() const noexcept -> constexpr bool
+{
+    return true; // required
+}
+{%      else %}
+/**
+ * @brief Check if optional {{ field.name }}_attributes contains a value
+ * @return true if {{ field.name }}_attributes contains a value, otherwise false
+ */
+auto has_{{ field.name }}_attributes() const noexcept -> constexpr bool
+{
+    return _{{ field.name }}_attributes.has_value();
+}
+
+/**
+ * @brief If {{ field.name }}_attributes contains a value, destroy it
+ */
+auto reset_{{ field.name }}_attributes() noexcept -> void
+{
+{% if cif is not none %}
+    _{{ field.name }}_attributes.reset();
+{% else %}
+    return _{{ field.name }}_attributes.reset();
+{% endif %}
+}
+{%      endif %}
+{%   endif %}
+{% endif %}
 {% endmacro %}
 
-{%- macro ref_getter(field, type_helper) %}
+{%- macro ref_getter(field, type_helper, cif7) %}
+{% set field_name = field.name %}
+{% set field_getter = field.name %}
+{% set field_type = type_helper.member_type(field) %}
+{% if cif7 is defined and cif7 is not none %}
+{%   if cif7.enabled and not field.indicator_only %}
+{% set field_name = field.name + "_attributes" %}
+{% set field_getter = field.name + "_attributes" %}
+{% set field_type = type_helper.member_type(cif7.attributes) + "<" + type_helper.value_type(field.type_) + ">" %}
+{%   endif %}
+{% endif %}
 /**
  * @brief Returns a reference to {{ field.name }}
  * @return A reference to {{ field.name }}
 {% if field.is_optional %}
- * @exception std::bad_optional_access if {{ field.name }} does not contain a value
+ * @exception std::bad_optional_access if {{ field_name }} does not contain a value
 {% endif %}
  */
-constexpr {{ type_helper.member_type(field) }}& {{ field.getter }}(){{ ' noexcept' if not field.is_optional }}
+auto {{ field_getter }}(){{ ' noexcept' if not field.is_optional }} constexpr {{ field_type }}& 
 {
-    return _{{ field.name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
+    return _{{ field_name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
 }
 {% endmacro %}
 
-{%- macro const_ref_getter(field, type_helper) %}
+{%- macro const_ref_getter(field, type_helper, cif7) %}
+{% set field_name = field.name %}
+{% set field_getter = field.name %}
+{% set field_type = type_helper.member_type(field) %}
+{% if cif7 is defined and cif7 is not none %}
+{%   if cif7.enabled and not field.indicator_only %}
+{% set field_name = field.name + "_attributes" %}
+{% set field_getter = field.name + "_attributes" %}
+{% set field_type = type_helper.member_type(cif7.attributes) + "<" + type_helper.value_type(field.type_) + ">" %}
+{% endif %}
+{% endif %}
 /**
- * @brief Returns a const reference to {{ field.name }}
- * @return A const reference to {{ field.name }}
+ * @brief Returns a const reference to {{ field_name }}
+ * @return A const reference to {{ field_name }}
 {% if field.is_optional %}
- * @exception std::bad_optional_access if {{ field.name }} does not contain a value
+ * @exception std::bad_optional_access if {{ field_name }} does not contain a value
 {% endif %}
  */
-constexpr const {{ type_helper.member_type(field) }}& {{ field.getter }}() const{{ ' noexcept' if not field.is_optional }}
+auto {{ field_getter }}() const{{ ' noexcept' if not field.is_optional }} -> constexpr const {{ field_type }}&
 {
-    return _{{ field.name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
+    return _{{ field_name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
 }
 {% endmacro %}
 
-{%- macro value_getter(field, type_helper) %}
+{%- macro value_getter(field, type_helper, cif7, packed) %}
+{% set field_name = field.name %}
+{% set field_getter = field.name %}
+{% set field_type = type_helper.value_type(field) %}
+{% if cif7 is defined and cif7 is not none %}
+{%   if cif7.enabled and not field.indicator_only %}
+{% set field_name = field.name + "_attributes" %}
+{% set field_getter = field.name + "_attributes" %}
+{% set field_type = type_helper.member_type(cif7.attributes) + "<" + type_helper.value_type(field.type_) + ">" %}
+{%   endif %}
+{% endif %}
 /**
- * @brief Returns the value of {{ field.name }}
- * @return {{ field.name }}'s value
+ * @brief Returns the value of {{ field_name }}
+ * @return {{ field_name }}'s value
 {% if field.is_optional %}
- * @exception std::bad_optional_access if {{ field.name }} does not contain a value
+ * @exception std::bad_optional_access if {{ field_name }} does not contain a value
 {% endif %}
  */
-{{ type_helper.value_type(field) }} {{ field.getter }}() const{{ ' noexcept' if not field.is_optional }}
+{{ field_type }} {{ field_getter }}() const{{ ' noexcept' if not field.is_optional }}
 {
-{% if field.is_fixed_point or field.type_.is_fixed_point %}
-    return vrtgen::fixed::to_fp{{ type_helper.fixed_template(field) }}(vrtgen::swap::from_be(_{{ field.name }}{{ '.value()' if field.is_optional }}));
+{% if cif7 is defined and cif7 is not none %}
+{%   if cif7.enabled and not field.indicator_only %}
+    return _{{ field_name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
+{%   endif %}
+{% elif packed %}
+{%   if field.is_enum and field.is_enable %}
+    if (m_packed.get<{{ field.packed_tag.position }}, {{ field.packed_tag.bits }}, uint8_t>() == (static_cast<uint8_t>(1 << {{ field.packed_tag.bits }}) - 1)) {
+        return true;
+    }
+    return false;
+{%   elif not field.is_enum and field.packed_tag.bits == 1 %}
+    return m_packed.get<{{ field.packed_tag.position }}>();
+{%   else %}
+    return m_packed.get<{{ field.packed_tag.position }}, {{ field.packed_tag.bits }}, {{ type_helper.member_type(field) }}>();
+{%   endif %}
+{% elif field.is_fixed_point or field.type_.is_fixed_point %}
+    return vrtgen::fixed::to_fp{{ type_helper.fixed_template(field) }}(vrtgen::swap::from_be(_{{ field_name }}{{ '.value()' if field.is_optional }}));
 {% elif field.is_integer_type or field.type_.is_integer_type %}
-    return vrtgen::swap::from_be(_{{ field.name }}{{ '.value()' if field.is_optional }});
+    return vrtgen::swap::from_be(_{{ field_name }}{{ '.value()' if field.is_optional }});
 {% else %}
-    return _{{ field.name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
+    return _{{ field_name }}{{ '.value()' if field.is_optional }}{{ '.get()' }}; //if type_helper.requires_get_set(field);
 {% endif %}
 }
 {% endmacro %}
 
-{%- macro getters(field, type_helper) %}
+{%- macro getters(field, type_helper, cif7, packed) %}
 {% if not type_helper.is_scalar(field) %}
 {{ ref_getter(field, type_helper) | trim }}
 
 {{ const_ref_getter(field, type_helper) | trim }}
 {% else %}
-{{ value_getter(field, type_helper) | trim }}
+{{ value_getter(field, type_helper, none, packed) | trim }}
+{% endif %}
+{% if cif7 is defined and cif7 is not none %}
+{%   if cif7.enabled and not field.indicator_only %}
+{%     if not type_helper.is_scalar(field) %}
+{{ ref_getter(field, type_helper, cif7) | trim }}
+
+{{ const_ref_getter(field, type_helper, cif7) | trim }}
+{%     else %}
+{{ value_getter(field, type_helper, cif7, packed) | trim }}
+{%     endif %}
+{%   endif %}
 {% endif %}
 {% endmacro %}
 
-{%- macro setters(field, type_helper, cif) %}
+{%- macro setters(field, type_helper, cif, cif7, packed) %}
 /**
  * @brief Set the value of {{ field.name }}
  * @param value Value to assign to {{ field.name }}
  */
-{% if not type_helper.is_scalar(field) %}
-void {{ field.setter }}(const {{ type_helper.value_type(field) }}& value)
+{% if field.user_defined %}
+void {{ field.name }}(const {{ type_helper.value_type(field) }}& value)
+{% elif not type_helper.is_scalar(field) %}
+void {{ field.name }}(const {{ type_helper.value_type(field) }}& value)
 {% else %}
-void {{ field.setter }}({{ type_helper.value_type(field) }} value)
+void {{ field.name }}({{ type_helper.value_type(field) }} value)
 {% endif %}
 {
 {% if type_helper.requires_get_set(field)  %}
@@ -141,6 +242,19 @@ void {{ field.setter }}({{ type_helper.value_type(field) }} value)
     }
 {%   endif %}
     _{{ field.name }}{{ '.value()' if field.is_optional }}.set(value);
+{% elif packed %}
+{%   if field.is_enum and field.is_enable %}
+    if (value) {
+        m_packed.set<{{ field.packed_tag.position }}, {{ field.packed_tag.bits }}, uint8_t>((static_cast<uint8_t>(1 << {{ field.packed_tag.bits }}) - 1));
+    }
+    else {
+        m_packed.set<{{ field.packed_tag.position }}, {{ field.packed_tag.bits }}, uint8_t>(0);
+    }
+{%   elif not field.is_enum and field.packed_tag.bits == 1 %}
+    m_packed.set<{{ field.packed_tag.position }}>(value);
+{%   else %}
+    m_packed.set<{{ field.packed_tag.position }}, {{ field.packed_tag.bits }}, {{ type_helper.member_type(field) }}>(value);
+{%   endif %}
 {% elif field.is_fixed_point %}
     _{{ field.name }} = vrtgen::swap::to_be(vrtgen::fixed::to_int{{ type_helper.fixed_template(field) }}(value));
 {% elif field.type_.is_fixed_point %}
@@ -151,10 +265,28 @@ void {{ field.setter }}({{ type_helper.value_type(field) }} value)
     _{{ field.name }} = value;
 {% endif %}
 }
+
+{% if cif7 is defined and cif7 is not none %}
+{%   if cif7.enabled and not field.indicator_only %}
+/**
+ * @brief Set the value of {{ field.name }}
+ * @param value Value to assign to {{ field.name }}
+ */
+{% if not type_helper.is_scalar(field) %}
+void {{ field.setter }}_attributes(const {{ type_helper.value_type(cif7.attributes) }}<{{ type_helper.value_type(field) }}>& value)
+{% else %}
+void {{ field.setter }}_attributes({{ type_helper.value_type(cif7.attributes) }}<{{ type_helper.value_type(field) }}> value)
+{% endif %}
+{
+    _{{ field.name }}_attributes = value;
+}
+
+{%   endif %}
+{% endif %}
 {% endmacro %}
 
-{%- macro getters_and_setters(field, type_helper, cif) %}
-{{ getters(field, type_helper) | trim }}
+{%- macro getters_and_setters(field, type_helper, packed, cif, cif7) %}
+{{ getters(field, type_helper, cif7, packed) | trim }}
 
-{{ setters(field, type_helper, cif) | trim }}
+{{ setters(field, type_helper, cif, cif7, packed) | trim }}
 {% endmacro %}

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -432,6 +432,24 @@ TEST_CASE("CIF0", "[cif0]")
         CHECK(unpack_cif0.ephemeris_ref_id() == true);
     }
 
+    SECTION("GPS ASCII")
+    {
+        // Verify zero on construction
+        CHECK(cif0.gps_ascii() == false);
+        // Setter
+        cif0.gps_ascii(true);
+        // Getter check set value
+        CHECK(cif0.gps_ascii() == true);
+        // Pack
+        cif0.pack_into(packed_bytes.data());
+        // Verify packed bits
+        CHECK(packed_bytes[2] == 0x02);
+        // Unpack
+        unpack_cif0.unpack_from(packed_bytes.data());
+        // Verify unpacked value
+        CHECK(unpack_cif0.gps_ascii() == true);
+    }
+
     SECTION("Context Association Lists")
     {
         // Verify zero on construction
@@ -523,11 +541,107 @@ TEST_CASE("CIF0", "[cif0]")
     }
 }
 
+TEST_CASE("GPS ASCII") {
+    GPS_ASCII gps_ascii;
+    GPS_ASCII unpack_gps_ascii;
+    bytes packed_bytes{ 
+        0xFF, 0xFF, 0xFF, 0xFF, // OUI
+        0xFF, 0xFF, 0xFF, 0xFF, // Number of words
+        0xFF, 0xFF, 0xFF, 0xFF, // Sentence
+    };
+
+    SECTION("Rule 9.4.7-1") {
+        CHECK(true);
+    }
+
+    SECTION("Rule 9.4.7-2") {
+        // Verify Size
+        CHECK(gps_ascii.size() == 8); // oui and num of words
+        // Setters
+        uint32_t OUI = 0x123456;
+        gps_ascii.manufacturer_oui(OUI);
+        // Getters check set value
+        CHECK(gps_ascii.manufacturer_oui() == OUI);
+        // Pack
+        gps_ascii.pack_into(packed_bytes.data());
+        // Verify packed bits
+        CHECK(packed_bytes == bytes{ 
+                0x00, 0x12, 0x34, 0x56, // OUI
+                0x00, 0x00, 0x00, 0x00, // Number of words
+                0xFF, 0xFF, 0xFF, 0xFF, // Sentence
+        });
+        // Unpack
+        unpack_gps_ascii.unpack_from(packed_bytes.data());
+        // Verify unpacked values
+        CHECK(unpack_gps_ascii.size() == 8); // oui and num of words
+        CHECK(unpack_gps_ascii.manufacturer_oui() == OUI);
+        CHECK(unpack_gps_ascii.number_of_words() == 0);
+    }
+
+    SECTION("Rule 9.4.7-3") {
+        // Verify Size and Number of Words
+        CHECK(gps_ascii.size() == 8);
+        CHECK(gps_ascii.number_of_words() == 0);
+        // Setters
+        std::vector<uint8_t> ascii_sentences { 0xDE, 0xAD, 0xBE, 0xEF};
+        gps_ascii.ascii_sentences(ascii_sentences);
+        // Getters check set value
+        CHECK(gps_ascii.number_of_words() == 1);
+        // Pack
+        gps_ascii.pack_into(packed_bytes.data());
+        // Verify packed bits
+        CHECK(packed_bytes == bytes{ 
+                0x00, 0x00, 0x00, 0x00, // OUI
+                0x00, 0x00, 0x00, 0x01, // Number of words
+                0xDE, 0xAD, 0xBE, 0xEF  // ASCII WORD
+        });
+        // Unpack
+        unpack_gps_ascii.unpack_from(packed_bytes.data());
+        // Verify unpacked values
+        CHECK(unpack_gps_ascii.size() == 12);
+        CHECK(unpack_gps_ascii.number_of_words() == 1);
+        CHECK(unpack_gps_ascii.ascii_sentences() == ascii_sentences);
+    }
+
+    SECTION("Rule 9.4.7-4") {
+        /*
+         * Developer's note: Rule does not apply to tool
+         */
+        CHECK(true);
+    }
+
+    SECTION("Rule 9.4.7-5"){
+        // Verify Size and Number of Words
+        CHECK(gps_ascii.size() == 8);
+        CHECK(gps_ascii.number_of_words() == 0);
+        // Setters
+        std::vector<uint8_t> ascii_sentences { 0xBE, 0xEF};
+        gps_ascii.ascii_sentences(ascii_sentences);
+        // Getters check set value
+        CHECK(gps_ascii.number_of_words() == 1);
+        // Pack
+        gps_ascii.pack_into(packed_bytes.data());
+        // Verify packed bits
+        CHECK(packed_bytes == bytes{ 
+                0x00, 0x00, 0x00, 0x00, // OUI
+                0x00, 0x00, 0x00, 0x01, // Number of words
+                0xBE, 0xEF, 0x00, 0x00  // ACII WORD
+        });
+        // Unpack
+        unpack_gps_ascii.unpack_from(packed_bytes.data());
+        // Verify unpacked values
+        CHECK(unpack_gps_ascii.size() == 12);
+        CHECK(unpack_gps_ascii.number_of_words() == 1);
+        CHECK(unpack_gps_ascii.ascii_sentences() == bytes { 0xBE, 0xEF, 0x00, 0x00});
+    }
+}
+
 TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
 {
     Gain gain;
     Gain unpack_gain;
-    bytes packed_bytes{ 0xFF, 0xFF, 0xFF, 0xFF };
+    constexpr std::size_t NUM_BYTES{ 4 };
+    auto packed_bytes = bytes(NUM_BYTES, 0xFF);
 
     SECTION("Zero on construction")
     {
@@ -537,48 +651,21 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
 
     SECTION("Rule 9.5.3-1")
     {
-        /*
-         * Rule 9.5.3-1: The Gain field shall express the gain from the
-         * Reference Point to the Described Signal. When the Reference Point
-         * and the Described Signal are both digitized signals, the gain shall
-         * becalculated with respect to the Unit-Scale Sinusoids at the two
-         * points.
-         * 
-         * Developer's note: Rule does not apply to tool
-         */
+        // Developer's note: Rule does not apply to tool
         CHECK(true);
     }
 
     SECTION("Rule 9.5.3-2")
     {
-        /*
-         * Rule 9.5.3-2: The Gain field shall only be used when the Reference
-         * Point and the Described Signal are either both analog signals or
-         * both digitized signals. A digital Described Signal with an analog
-         * Reference Point is more properly described using the Reference Level
-         * field.
-         * 
-         * Developer's note: Rule does not apply to tool
-         */
+        // Developer's note: Rule does not apply to tool
         CHECK(true);
     }
 
     SECTION("Rule 9.5.3-3")
     {
-        /*
-         * Rule 9.5.3-3: The Gain field shall use the 32-bit format shown in
-         * Figure 9.5.3-1, containing two gain subfields.
-         * 
-         * --------------------------------------------------------------------------------------------------------
-         * | Word |31|30|29|28|27|26|25|24|23|22|21|20|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00|
-         * | 1    |       Stage 2 Gain (15..0), dB (Optional)     |            Stage 1 Gain (15..0), dB           |
-         * --------------------------------------------------------------------------------------------------------
-         *                                   ^                                               ^
-         *                                   |                                               |
-         *                              Radix Point                                     Radix Point
-         */
+        // See Figure 9.5.3-1
         // Verify size
-        CHECK(gain.size() == 4/*bytes*/);
+        CHECK(gain.size() == NUM_BYTES);
         // Setters
         gain.stage_1(1.0);
         gain.stage_2(1.0);
@@ -598,24 +685,8 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
 
     SECTION("Rule 9.5.3-4")
     {
-        /*
-         * Rule 9.5.3-4: The Stage 1 Gain subfield shall be expressed in units
-         * of decibels (dB). The Stage 1 Gain value shall be expressed in
-         * two’s-complement format in the lower 16 bits of the Gain field. This
-         * subfield has an integer and a fractional part, with the radix point
-         * to the right of bit 7 of the subfield.
-         * 
-         * Observation 9.5.3-3: The values of the Gain subfields have a
-         * range of near +/-256 dB with a resolution of 1/128 dB
-         * (0.0078125 dB).
-         * 
-         * Observation 9.5.3-4: A Gain field value of 0x0000 0080
-         * represents a gain of +1 dB. A Gain field value of
-         * 0x0000 FF80 represents a gain of -1 dB. A Gain field value of
-         * 0x0000 0001 represents a gain of +0.0078125 dB. A Gain field
-         * value of 0x0000 FFFF represents a gain of -0.0078125 dB.
-         */
-        SECTION ("Gain Value 1")
+        // See Observations 9.5.3-3 and 9.5.3-4 for values
+        SECTION("Gain Value 1")
         {
             // Setter
             gain.stage_1(1.0);
@@ -630,7 +701,7 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
             // Verify unpacked value
             CHECK(unpack_gain.stage_1() == 1.0);
         }
-        SECTION ("Gain Value 2")
+        SECTION("Gain Value 2")
         {
             // Setter
             gain.stage_1(-1.0);
@@ -645,7 +716,7 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
             // Verify unpacked value
             CHECK(unpack_gain.stage_1() == -1.0);
         }
-        SECTION ("Gain Value 3")
+        SECTION("Gain Value 3")
         {
             // Setter
             gain.stage_1(0.0078125);
@@ -660,7 +731,7 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
             // Verify unpacked value
             CHECK(unpack_gain.stage_1() == 0.0078125);
         }
-        SECTION ("Gain Value 4")
+        SECTION("Gain Value 4")
         {
             // Setter
             gain.stage_1(-0.0078125);
@@ -677,56 +748,10 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
         }
     }
 
-    SECTION("Rule 9.5.3-3")
-    {
-        /*
-         * Rule 9.5.3-3: The Gain field shall use the 32-bit format shown in
-         * Figure 9.5.3-1, containing two gain subfields.
-         * 
-         * --------------------------------------------------------------------------------------------------------
-         * | Word |31|30|29|28|27|26|25|24|23|22|21|20|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00|
-         * | 1    |       Stage 2 Gain (15..0), dB (Optional)     |            Stage 1 Gain (15..0), dB           |
-         * --------------------------------------------------------------------------------------------------------
-         *                                   ^                                               ^
-         *                                   |                                               |
-         *                              Radix Point                                     Radix Point
-         */
-        // Verify size
-        CHECK(gain.size() == 4/*bytes*/);
-        // Setters
-        gain.stage_1(1.0);
-        gain.stage_2(1.0);
-        // Getters check set value
-        CHECK(gain.stage_1() == 1.0);
-        CHECK(gain.stage_2() == 1.0);
-        // Pack
-        gain.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0x80, 0, 0x80 });
-        // Unpack
-        unpack_gain.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_gain.stage_1() == 1.0);
-        CHECK(unpack_gain.stage_2() == 1.0);
-    }
-
     SECTION("Rule 9.5.3-5")
     {
-        /*
-         * Rule 9.5.3-4: The Stage 1 Gain subfield shall be expressed in units
-         * of decibels (dB). The Stage 1 Gain value shall be expressed in
-         * two’s-complement format in the lower 16 bits of the Gain field. This
-         * subfield has an integer and a fractional part, with the radix point
-         * to the right of bit 7 of the subfield.
-         * 
-         * Observation 9.5.3-5: A Gain field value of 0x0080 0080
-         * represents front and back-end gains of +1 dB. A Gain field
-         * value of 0xFF80 FF80 represents front and back-end gains of -1
-         * dB. A Gain field value of 0x0001 0001 represents front and
-         * back-end gains of +0.0078125 dB. A Gain field value of 0xFFFF FFFF
-         * represents front and back-end gains of -0.0078125 dB.
-         */
-        SECTION ("Gain Value 1")
+        // See Observations 9.5.3-3, 9.5.3-4, 9.5.3-5 for values
+        SECTION("Gain Value 1")
         {
             // Setters
             gain.stage_1(1.0);
@@ -744,7 +769,7 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
             CHECK(unpack_gain.stage_1() == 1.0);
             CHECK(unpack_gain.stage_2() == 1.0);
         }
-        SECTION ("Gain Value 2")
+        SECTION("Gain Value 2")
         {
             // Setters
             gain.stage_1(-1.0);
@@ -762,7 +787,7 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
             CHECK(unpack_gain.stage_1() == -1.0);
             CHECK(unpack_gain.stage_2() == -1.0);
         }
-        SECTION ("Gain Value 3")
+        SECTION("Gain Value 3")
         {
             // Setters
             gain.stage_1(0.0078125);
@@ -780,7 +805,7 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
             CHECK(unpack_gain.stage_1() == 0.0078125);
             CHECK(unpack_gain.stage_2() == 0.0078125);
         }
-        SECTION ("Gain Value 4")
+        SECTION("Gain Value 4")
         {
             // Setters
             gain.stage_1(-0.0078125);
@@ -802,11 +827,6 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
 
     SECTION("Rule 9.5.3-6")
     {
-        /*
-         * Rule 9.5.3-6: Equipment whose gain can be described with a single
-         * number shall use the Stage 1 Gain subfield with the Stage 2 Gain
-         * subfield set to zero.
-         */
         // Setter
         gain.stage_1(1.0);
         // Getter check set value
@@ -825,26 +845,13 @@ TEST_CASE("Gain/Attenuation Field (9.5.3)", "[cif0][gain]")
 
     SECTION("Rule 9.5.3-7")
     {
-        /*
-         * Rule 9.5.3-7: Equipment whose composite gain can be described with
-         * two numbers shall use the Stage 1 Gain subfield to describe the
-         * front-end or RF gain and the Stage 2 Gain subfield to describe the
-         * backend or IF gain.
-         * 
-         * Developer's note: Rule does not apply to tool
-         */
+        // Developer's note: Rule does not apply to tool
         CHECK(true);
     }
 
     SECTION("Rule 9.5.3-8")
     {
-        /*
-         * Rule 9.5.3-8: The sum of the Stage 1 and Stage 2 Gain subfields
-         * shall equal the total gain of the device being described by the
-         * Context packet.
-         * 
-         * Developer's note: Rule does not apply to tool
-         */
+        // Developer's note: Rule does not apply to tool
         CHECK(true);
     }
 }
@@ -853,7 +860,8 @@ TEST_CASE("Device Identifier", "[cif0][device_id]")
 {
     DeviceIdentifier device_id;
     DeviceIdentifier unpack_device_id;
-    bytes packed_bytes{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+    constexpr std::size_t NUM_BYTES{ 8 };
+    auto packed_bytes = bytes(NUM_BYTES, 0xFF);
 
     SECTION("Zero on construction")
     {
@@ -863,18 +871,9 @@ TEST_CASE("Device Identifier", "[cif0][device_id]")
 
     SECTION("Rule 9.10.1-1")
     {
-        /*
-         * Rule 9.10.1-1: The Device Identifier field shall use the format
-         * shown in Figure 9.10.1-1.
-         * 
-         * --------------------------------------------------------------------------------------------------------
-         * | Word |31|30|29|28|27|26|25|24|23|22|21|20|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00|
-         * | 1    |       Reserved        |                       Manufacturer OUI (23..0)                        |
-         * | 2    |                    Reserved                   |              Device Code (15..0)              |
-         * --------------------------------------------------------------------------------------------------------
-         */
+        // See Figure 9.10.1-1
         // Verify size
-        CHECK(device_id.size() == 8/*bytes*/);
+        CHECK(device_id.size() == NUM_BYTES);
         // Setters
         device_id.manufacturer_oui(0xABCDEF);
         device_id.device_code(0x123);
@@ -894,12 +893,6 @@ TEST_CASE("Device Identifier", "[cif0][device_id]")
 
     SECTION("Rule 9.10.1-2")
     {
-        /*
-         * Rule 9.10.1-2: The Manufacturer OUI subfield shall contain the
-         * 24-bit, IEEE-registered, Organizationally Unique Identifier (company
-         * identifier) in the range 00-00-00 to FF-FE-FF (inclusive) of the
-         * manufacturer of the device that generated the Context Packet.
-         */
         // Setter
         device_id.manufacturer_oui(0x12AB34);
         // Getter check set value
@@ -916,12 +909,6 @@ TEST_CASE("Device Identifier", "[cif0][device_id]")
 
     SECTION("Rule 9.10.1-3")
     {
-        /*
-         * Rule 9.10.1-3: The Device Code subfield shall contain a 16-bit
-         * number to identify the model of the device emitting the Control
-         * Packet Stream. For each manufacturer the Device Code shall be unique
-         * for each device model that emits VRT Packet Streams.
-         */
         // Setter
         device_id.device_code(0xABC);
         // Getter check set value
@@ -949,292 +936,164 @@ TEST_CASE("State/Event Indicators", "[cif0][state_event_indicators]")
         CHECK(packed_bytes == bytes{ 0, 0, 0, 0 });
     }
 
-    SECTION("Calibrated Time Enable")
+    SECTION("Calibrated Time")
     {
         // Verify zero on construction
-        CHECK(state_event_ind.calibrated_time_enable() == false);
-        // Setter
-        state_event_ind.calibrated_time_enable(true);
-        // Getter check set value
-        CHECK(state_event_ind.calibrated_time_enable() == true);
-        // Pack
-        state_event_ind.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0x80, 0, 0, 0 });
-        // Unpack
-        unpack_state_event_ind.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_state_event_ind.calibrated_time_enable() == true);
-    }
-
-    SECTION("Valid Data Enable")
-    {
-        // Verify zero on construction
-        CHECK(state_event_ind.valid_data_enable() == false);
-        // Setter
-        state_event_ind.valid_data_enable(true);
-        // Getter check set value
-        CHECK(state_event_ind.valid_data_enable() == true);
-        // Pack
-        state_event_ind.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0x40, 0, 0, 0 });
-        // Unpack
-        unpack_state_event_ind.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_state_event_ind.valid_data_enable() == true);
-    }
-
-    SECTION("Reference Lock Enable")
-    {
-        // Verify zero on construction
-        CHECK(state_event_ind.reference_lock_enable() == false);
-        // Setter
-        state_event_ind.reference_lock_enable(true);
-        // Getter check set value
-        CHECK(state_event_ind.reference_lock_enable() == true);
-        // Pack
-        state_event_ind.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0x20, 0, 0, 0 });
-        // Unpack
-        unpack_state_event_ind.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_state_event_ind.reference_lock_enable() == true);
-    }
-
-    SECTION("AGC/MGC Enable")
-    {
-        // Verify zero on construction
-        CHECK(state_event_ind.agc_mgc_enable() == false);
-        // Setter
-        state_event_ind.agc_mgc_enable(true);
-        // Getter check set value
-        CHECK(state_event_ind.agc_mgc_enable() == true);
-        // Pack
-        state_event_ind.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0x10, 0, 0, 0 });
-        // Unpack
-        unpack_state_event_ind.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_state_event_ind.agc_mgc_enable() == true);
-    }
-
-    SECTION("Detected Signal Enable")
-    {
-        // Verify zero on construction
-        CHECK(state_event_ind.detected_signal_enable() == false);
-        // Setter
-        state_event_ind.detected_signal_enable(true);
-        // Getter check set value
-        CHECK(state_event_ind.detected_signal_enable() == true);
-        // Pack
-        state_event_ind.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0x08, 0, 0, 0 });
-        // Unpack
-        unpack_state_event_ind.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_state_event_ind.detected_signal_enable() == true);
-    }
-
-    SECTION("Spectral Inversion Enable")
-    {
-        // Verify zero on construction
-        CHECK(state_event_ind.spectral_inversion_enable() == false);
-        // Setter
-        state_event_ind.spectral_inversion_enable(true);
-        // Getter check set value
-        CHECK(state_event_ind.spectral_inversion_enable() == true);
-        // Pack
-        state_event_ind.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0x04, 0, 0, 0 });
-        // Unpack
-        unpack_state_event_ind.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_state_event_ind.spectral_inversion_enable() == true);
-    }
-
-    SECTION("Over-Range Enable")
-    {
-        // Verify zero on construction
-        CHECK(state_event_ind.over_range_enable() == false);
-        // Setter
-        state_event_ind.over_range_enable(true);
-        // Getter check set value
-        CHECK(state_event_ind.over_range_enable() == true);
-        // Pack
-        state_event_ind.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0x2, 0, 0, 0 });
-        // Unpack
-        unpack_state_event_ind.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_state_event_ind.over_range_enable() == true);
-    }
-
-    SECTION("Sample Loss Enable")
-    {
-        // Verify zero on construction
-        CHECK(state_event_ind.sample_loss_enable() == false);
-        // Setter
-        state_event_ind.sample_loss_enable(true);
-        // Getter check set value
-        CHECK(state_event_ind.sample_loss_enable() == true);
-        // Pack
-        state_event_ind.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0x01, 0, 0, 0 });
-        // Unpack
-        unpack_state_event_ind.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_state_event_ind.sample_loss_enable() == true);
-    }
-
-    SECTION("Calibrated Time Indicator")
-    {
-        // Verify zero on construction
-        CHECK(state_event_ind.calibrated_time() == false);
+        CHECK(state_event_ind.calibrated_time().has_value() == false);
         // Setter
         state_event_ind.calibrated_time(true);
         // Getter check set value
-        CHECK(state_event_ind.calibrated_time() == true);
+        CHECK(state_event_ind.calibrated_time().has_value());
+        CHECK(state_event_ind.calibrated_time().value() == true);
         // Pack
         state_event_ind.pack_into(packed_bytes.data());
         // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0x08, 0, 0 });
+        CHECK(packed_bytes == bytes{ 0x80, 0x08, 0, 0 });
         // Unpack
         unpack_state_event_ind.unpack_from(packed_bytes.data());
         // Verify unpacked value
+        CHECK(unpack_state_event_ind.calibrated_time().has_value());
         CHECK(unpack_state_event_ind.calibrated_time() == true);
     }
 
-    SECTION("Valid Data Indicator")
+    SECTION("Valid Data")
     {
         // Verify zero on construction
-        CHECK(state_event_ind.valid_data() == false);
+        CHECK(state_event_ind.valid_data().has_value() == false);
         // Setter
         state_event_ind.valid_data(true);
         // Getter check set value
-        CHECK(state_event_ind.valid_data() == true);
+        CHECK(state_event_ind.valid_data().has_value());
+        CHECK(state_event_ind.valid_data().value() == true);
         // Pack
         state_event_ind.pack_into(packed_bytes.data());
         // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0x04, 0, 0 });
+        CHECK(packed_bytes == bytes{ 0x40, 0x04, 0, 0 });
         // Unpack
         unpack_state_event_ind.unpack_from(packed_bytes.data());
         // Verify unpacked value
-        CHECK(unpack_state_event_ind.valid_data() == true);
+        CHECK(unpack_state_event_ind.valid_data().has_value());
+        CHECK(unpack_state_event_ind.valid_data().value() == true);
     }
 
-    SECTION("Reference Lock Indicator")
+    SECTION("Reference Lock")
     {
         // Verify zero on construction
-        CHECK(state_event_ind.reference_lock() == false);
+        CHECK(state_event_ind.reference_lock().has_value() == false);
         // Setter
         state_event_ind.reference_lock(true);
         // Getter check set value
-        CHECK(state_event_ind.reference_lock() == true);
+        CHECK(state_event_ind.reference_lock().has_value());
+        CHECK(state_event_ind.reference_lock().value() == true);
         // Pack
         state_event_ind.pack_into(packed_bytes.data());
         // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0x02, 0, 0 });
+        CHECK(packed_bytes == bytes{ 0x20, 0x02, 0, 0 });
         // Unpack
         unpack_state_event_ind.unpack_from(packed_bytes.data());
         // Verify unpacked value
+        CHECK(unpack_state_event_ind.reference_lock().has_value());
         CHECK(unpack_state_event_ind.reference_lock() == true);
     }
 
-    SECTION("AGC/MGC Indicator")
+    SECTION("AGC/MGC")
     {
         // Verify zero on construction
-        CHECK(state_event_ind.agc_mgc() == false);
+        CHECK(state_event_ind.agc_mgc().has_value() == false);
         // Setter
         state_event_ind.agc_mgc(true);
         // Getter check set value
-        CHECK(state_event_ind.agc_mgc() == true);
+        CHECK(state_event_ind.agc_mgc().has_value());
+        CHECK(state_event_ind.agc_mgc().value() == true);
         // Pack
         state_event_ind.pack_into(packed_bytes.data());
         // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0x01, 0, 0 });
+        CHECK(packed_bytes == bytes{ 0x10, 0x01, 0, 0 });
         // Unpack
         unpack_state_event_ind.unpack_from(packed_bytes.data());
         // Verify unpacked value
-        CHECK(unpack_state_event_ind.agc_mgc() == true);
+        CHECK(unpack_state_event_ind.agc_mgc().has_value());
+        CHECK(unpack_state_event_ind.agc_mgc().value() == true);
     }
 
-    SECTION("Detected Signal Indicator")
+    SECTION("Detected Signal")
     {
         // Verify zero on construction
-        CHECK(state_event_ind.detected_signal() == false);
+        CHECK(state_event_ind.detected_signal().has_value() == false);
         // Setter
         state_event_ind.detected_signal(true);
         // Getter check set value
-        CHECK(state_event_ind.detected_signal() == true);
+        CHECK(state_event_ind.detected_signal().has_value());
+        CHECK(state_event_ind.detected_signal().value() == true);
         // Pack
         state_event_ind.pack_into(packed_bytes.data());
         // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0, 0x80, 0 });
+        CHECK(packed_bytes == bytes{ 0x08, 0, 0x80, 0 });
         // Unpack
         unpack_state_event_ind.unpack_from(packed_bytes.data());
         // Verify unpacked value
-        CHECK(unpack_state_event_ind.detected_signal() == true);
+        CHECK(unpack_state_event_ind.detected_signal().has_value());
+        CHECK(unpack_state_event_ind.detected_signal().value() == true);
     }
 
-    SECTION("Spectral Inversion Indicator")
+    SECTION("Spectral Inversion")
     {
         // Verify zero on construction
-        CHECK(state_event_ind.spectral_inversion() == false);
+        CHECK(state_event_ind.spectral_inversion().has_value() == false);
         // Setter
         state_event_ind.spectral_inversion(true);
         // Getter check set value
-        CHECK(state_event_ind.spectral_inversion() == true);
+        CHECK(state_event_ind.spectral_inversion().has_value());
+        CHECK(state_event_ind.spectral_inversion().value() == true);
         // Pack
         state_event_ind.pack_into(packed_bytes.data());
         // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0, 0x40, 0 });
+        CHECK(packed_bytes == bytes{ 0x04, 0, 0x40, 0 });
         // Unpack
         unpack_state_event_ind.unpack_from(packed_bytes.data());
         // Verify unpacked value
-        CHECK(unpack_state_event_ind.spectral_inversion() == true);
+        CHECK(unpack_state_event_ind.spectral_inversion().has_value());
+        CHECK(unpack_state_event_ind.spectral_inversion().value() == true);
     }
 
-    SECTION("Over-Range Indicator")
+    SECTION("Over-Range")
     {
         // Verify zero on construction
-        CHECK(state_event_ind.over_range() == false);
+        CHECK(state_event_ind.over_range().has_value() == false);
         // Setter
         state_event_ind.over_range(true);
         // Getter check set value
-        CHECK(state_event_ind.over_range() == true);
+        CHECK(state_event_ind.over_range().has_value());
+        CHECK(state_event_ind.over_range().value() == true);
         // Pack
         state_event_ind.pack_into(packed_bytes.data());
         // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0, 0x20, 0 });
+        CHECK(packed_bytes == bytes{ 0x2, 0, 0x20, 0 });
         // Unpack
         unpack_state_event_ind.unpack_from(packed_bytes.data());
         // Verify unpacked value
-        CHECK(unpack_state_event_ind.over_range() == true);
+        CHECK(unpack_state_event_ind.over_range().has_value());
+        CHECK(unpack_state_event_ind.over_range().value() == true);
     }
 
-    SECTION("Sample Loss Indicator")
+    SECTION("Sample Loss")
     {
         // Verify zero on construction
-        CHECK(state_event_ind.sample_loss() == false);
+        CHECK(state_event_ind.sample_loss().has_value() == false);
         // Setter
         state_event_ind.sample_loss(true);
         // Getter check set value
-        CHECK(state_event_ind.sample_loss() == true);
+        CHECK(state_event_ind.sample_loss().has_value());
+        CHECK(state_event_ind.sample_loss().value() == true);
         // Pack
         state_event_ind.pack_into(packed_bytes.data());
         // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0, 0x10, 0 });
+        CHECK(packed_bytes == bytes{ 0x01, 0, 0x10, 0 });
         // Unpack
         unpack_state_event_ind.unpack_from(packed_bytes.data());
         // Verify unpacked value
-        CHECK(unpack_state_event_ind.sample_loss() == true);
+        CHECK(unpack_state_event_ind.sample_loss().has_value());
+        CHECK(unpack_state_event_ind.sample_loss().value() == true);
     }
 }
 
@@ -1242,7 +1101,8 @@ TEST_CASE("Geolocation", "[cif0][gps][ins]")
 {
     Geolocation geo;
     Geolocation unpack_geo;
-    bytes packed_bytes(44, 0xFF);
+    constexpr std::size_t NUM_BYTES{ 44 };
+    bytes packed_bytes(NUM_BYTES, 0xFF);
 
     SECTION("Default construction")
     {
@@ -1264,30 +1124,9 @@ TEST_CASE("Geolocation", "[cif0][gps][ins]")
 
     SECTION("Rule 9.4.5-1 and Rule 9.4.6-1")
     {
-        /*
-         * Rule 9.4.5-1: The Formatted GPS Geolocation field shall be formatted
-         * as shown in Figure 9.4.5-1.
-         * 
-         * Rule 9.4.6-1: The Formatted INS Geolocation field shall follow the
-         * same rules as the Formatted GPS Geolocation field.
-         * 
-         * --------------------------------------------------------------------------------------------------------
-         * | Word |31|30|29|28|27|26|25|24|23|22|21|20|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00|
-         * | 1    | Reserved  | TSI | TSF |                        GPS/INS Manufacturer OUI                       |
-         * | 2    |                       Integer-second Timestamp of Position Fix (31..0)                        |
-         * | 3    |                      Fractional-second Timestamp of Position Fix (63..32)                     |
-         * | 4    |                      Fractional-second Timestamp of Position Fix (31..0)                      |
-         * | 5    |                                   Latitude (31..0), degrees                                   |
-         * | 6    |                                  Longitude (31..0), degrees                                   |
-         * | 7    |                                   Altitude (31..0), meters                                    |
-         * | 8    |                          Speed over Ground (31..0), meters/second                             |
-         * | 9    |                              Heading Angle (31..0), degrees                                   |
-         * | 10   |                                Track Angle (31..0), degrees                                   |
-         * | 11   |                         Magnetic Variation (31..0), degrees                                   |
-         * --------------------------------------------------------------------------------------------------------
-         */
+        // See Figure 9.4.5-1
         // Verify size
-        CHECK(geo.size() == 44/*bytes*/);
+        CHECK(geo.size() == NUM_BYTES);
         // Setters
         geo.tsi(TSI::UTC);
         geo.tsf(TSF::REAL_TIME);
@@ -1349,12 +1188,6 @@ TEST_CASE("Geolocation", "[cif0][gps][ins]")
 
     SECTION("Rule 9.4.5-2 and Rule 9.4.6-1")
     {
-        /*
-         * Rule 9.4.5-2: The GPS/INS Manufacturer OUI subfield shall contain
-         * the 24-bit field for the IEEE registered, Organizationally Unique
-         * Identifier (company identifier) in the range 00-00-00 to FF-FE-FF
-         * (inclusive) of the GPS/INS manufacturer.
-         */
         // Setter
         geo.manufacturer_oui(0x12AB34);
         // Getter check set value
@@ -1383,21 +1216,7 @@ TEST_CASE("Geolocation", "[cif0][gps][ins]")
 
     SECTION("Rule 9.4.5-3 and Rule 9.4.6-1")
     {
-        /*
-         * Rule 9.4.5-3: The TSI field in the Formatted GPS Geolocation field
-         * shall accurately indicate the type of Integer-seconds Timestamp
-         * included in the packet according to the code assignments in Table
-         * 9.4.5-1.
-         * 
-         * ------------------------
-         * | TSI Code | Meaning   |
-         * | -------- | --------- |
-         * | 00       | Undefined |
-         * | 01       | UTC       |
-         * | 10       | GPS Time  |
-         * | 11       | Other     |
-         * ------------------------
-         */
+        // See Table 9.4.5-1
         SECTION("Undefined")
         {
             // Setter
@@ -1519,21 +1338,7 @@ TEST_CASE("Geolocation", "[cif0][gps][ins]")
 
     SECTION("Rule 9.4.5-4 and Rule 9.4.6-1")
     {
-        /*
-         * Rule 9.4.5-4: The TSF field in the Formatted GPS Geolocation field
-         * shall accurately indicate the type of Fractional-seconds Timestamp
-         * included in the packet according to the code assignments in Table
-         * 9.4.5-2.
-         * 
-         * --------------------------------------
-         * | TSF Code | Meaning                 |
-         * | -------- | ----------------------- |
-         * | 00       | Undefined               |
-         * | 01       | Sample Count Time       |
-         * | 10       | Real (Picoseconds) Time |
-         * | 11       | Free-Running Count Time |
-         * | ------------------------------------
-         */
+        // See Table 9.4.5-2
         SECTION("Undefined")
         {
             // Setter

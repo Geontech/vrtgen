@@ -14,8 +14,8 @@ class Polarization(PackedStruct):
     Antenna polarization [9.4.8].
     """
     name : str = 'polarization'
-    tilt_angle : FixedPointType = field(default_factory=lambda: FixedPointType('tilt_angle', bits=16, signed=True, radix=13, resolution=8, packed_tag=PackedTag(31,16,0)))
-    ellipticity_angle : FixedPointType = field(default_factory=lambda: FixedPointType('ellipticity_angle', bits=16, signed=True, radix=13, resolution=8, packed_tag=PackedTag(15,16,0)))
+    tilt_angle : FixedPointType = field(default_factory=lambda: FixedPointType('tilt_angle', bits=16, signed=True, radix=13, packed_tag=PackedTag(31,16,0)))
+    ellipticity_angle : FixedPointType = field(default_factory=lambda: FixedPointType('ellipticity_angle', bits=16, signed=True, radix=13, packed_tag=PackedTag(15,16,0)))
 
     def __post_init__(self):
         super().__post_init__()
@@ -132,11 +132,9 @@ class Time(FixedPointType):
     """
     name : str = 'Time'
     def __post_init__(self):
-        super().__post_init__()
         self.bits = 64
         self.signed = True
         self.radix = 22
-        self.resolution = 9
 
 @dataclass
 class SectorStepScanCIF(CIF):
@@ -157,6 +155,13 @@ class SectorStepScanCIF(CIF):
     time_3 : CIFEnableType = field(default_factory=lambda: CIFEnableType('time_3', type_=FractionalTimestamp('Time3', bits=32), packed_tag=PackedTag(21,1,0,0)))
     time_4 : CIFEnableType = field(default_factory=lambda: CIFEnableType('time_4', type_=FractionalTimestamp('Time4', bits=32), packed_tag=PackedTag(20,1,0,0)))
     packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
+
+    def _validate(self, mapping):
+        for key, val in mapping.items():
+            if not key in [f.name for f in self.fields]:
+                raise ValueError('invalid field provided: {}'.format(key))
+            elif key == 'sector_number' or key == 'f1_start_frequency':
+                raise ValueError('invalid field provided: {} already required by default'.format(key))
 
 @dataclass
 class SectorStepScanRecord(Record):
@@ -188,6 +193,7 @@ class SectorStepScan(ArrayOfRecords):
 
     def __post_init__(self):
         super().__post_init__()
+        # Association needed for jinja generation
         self.records.linked_size = self.num_records
 
     def _parse_mapping(self, mapping):
@@ -241,9 +247,19 @@ class DiscreteIO(PackedStruct):
     name : str = 'discrete_io'
     subfields : List[Field] = field(default_factory=list)
 
+    def __post_init__(self):
+        super().__post_init__()
+        self.user_defined = True
+
+    @property
+    def is_integer(self):
+        return len(self.subfields) == 0
+
     def _validate(self, mapping):
-        for _,val in mapping.items():
-            if val == 'bool':
+        for key,val in mapping.items():
+            if key == 'mode':
+                continue
+            elif val == 'bool':
                 continue
             elif val == 'enable_indicator':
                 continue
@@ -258,7 +274,11 @@ class DiscreteIO(PackedStruct):
         packed_tag_pos = 0
         packed_tag_word = 0
         for key,val in mapping.items():
-            if val == 'bool':
+            if key == 'mode':
+                mode = parse_enable(val)
+                self.enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
+                self.required = True if (mode == Mode.REQUIRED) else False
+            elif val == 'bool':
                 self.subfields.append(BooleanType(key, enabled=True, required=True, packed_tag=PackedTag(packed_tag_pos,1,packed_tag_word,packed_tag_word)))
                 packed_tag_pos += 1
             elif val == 'enable_indicator':
@@ -282,6 +302,7 @@ class DiscreteIO(PackedStruct):
                 pos = packed_tag_pos + bits - 1
                 self.subfields.append(EnumType(key, enabled=True, required=True, user_defined=True, type_=discrete_io_enum, packed_tag=PackedTag(pos,bits,packed_tag_word,packed_tag_word)))
                 packed_tag_pos += bits
+                
             if packed_tag_pos > self.bits:
                 raise ValueError('too many subfield bits for discrete io field')
             packed_tag_word = packed_tag_pos // 32
@@ -297,7 +318,7 @@ class DiscreteIO32(DiscreteIO):
     """
     name : str = 'discrete_io_32'
     subfields : List[Field] = field(default_factory=list)
-    packed_0 : PackedType = PackedType('packed_0', bits=32, enabled=True, required=True, packed_tag=PackedTag(0,32,1))
+    packed : PackedType = PackedType('packed', bits=32, enabled=True, required=True, packed_tag=PackedTag(0,32,1))
 
     def __post_init__(self):
         super().__post_init__()
@@ -305,7 +326,7 @@ class DiscreteIO32(DiscreteIO):
 
     @property
     def fields(self):
-        return [field for field in self.subfields] + [self.packed_0]
+        return [field for field in self.subfields] + [self.packed]
 
 @dataclass
 class DiscreteIO64(DiscreteIO):
@@ -314,8 +335,7 @@ class DiscreteIO64(DiscreteIO):
     """
     name : str = 'discrete_io_64'
     subfields : List[Field] = field(default_factory=list)
-    packed_0 : PackedType = PackedType('packed_0', bits=32, enabled=True, required=True, packed_tag=PackedTag(0,32,1))
-    packed_1 : PackedType = PackedType('packed_1', bits=32, enabled=True, required=True, packed_tag=PackedTag(0,32,2))
+    packed : PackedType = PackedType('packed', bits=64, enabled=True, required=True, packed_tag=PackedTag(0,64,1))
 
     def __post_init__(self):
         super().__post_init__()
@@ -323,7 +343,7 @@ class DiscreteIO64(DiscreteIO):
 
     @property
     def fields(self):
-        return ([field for field in self.subfields] + [self.packed_0, self.packed_1])
+        return ([field for field in self.subfields] + [self.packed])
 
 @dataclass
 class CIF1(CIF):
@@ -358,6 +378,15 @@ class CIF1(CIF):
     version_build_code : CIFEnableType = field(default_factory=lambda: CIFEnableType('version_build_code', type_=Identifier32(), packed_tag=PackedTag(2,1,0,0)))
     buffer_size : CIFEnableType = field(default_factory=lambda: CIFEnableType('buffer_size', type_=FixedPoint64r20(), packed_tag=PackedTag(1,1,0,0)))
     packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
+
+    def _validate(self, mapping):
+        for key, val in mapping.items():
+            if not key in [f.name for f in self.fields]:
+                raise ValueError('invalid field provided: ' + key)
+            elif key == 'sector_step_scan' and not isinstance(val, SectorStepScan):
+                raise ValueError('Sector Step Scan not of the correct type')
+            elif key == 'index_list' and not isinstance(val, IndexList):
+                raise ValueError('Index list not of the correct type')
 
     def _parse_mapping(self, mapping):
         for key,val in mapping.items():

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.15)
 project(vrtgen-cpp VERSION 0.5.0 LANGUAGES CXX)
 include(GNUInstallDirs)
 
@@ -22,47 +22,9 @@ if(NOT import_vrtgen_error_code EQUAL 0)
     message(FATAL_ERROR "vrtgen Python module not found")
 endif()
 
-# Head files
-set(header_files
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/buffer.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/cif0.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/cif1.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/cif2.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/command.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/enums.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/header.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/indicator_fields.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/prologue.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing/trailer.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/packing.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/socket_base.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/socket_endpoint.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/tcp.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket/udp.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/socket.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/fixed.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/oui.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/packed.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/size.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/swap.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types/uuid.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/types.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/utils.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/version.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen/vrtgen.hpp
-)
+add_subdirectory(include)
 
-add_library(vrtgen INTERFACE)
-target_sources(vrtgen INTERFACE ${header_files})
-target_include_directories(vrtgen INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-install(TARGETS vrtgen)
-install(
-    DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/include/vrtgen
-    TYPE INCLUDE
-    FILES_MATCHING PATTERN "*.hpp"
-)
-
+if (BUILD_TESTS)
 # Create an empty "check" target to hang tests off of
 add_custom_target(check)
 
@@ -79,13 +41,13 @@ target_include_directories(testutils PUBLIC tests/cpp/include)
 
 # libvrtgen testing
 add_executable(test_libvrtgen
-    tests/libvrtgen/header.cpp
-    tests/libvrtgen/prologue.cpp
-    tests/libvrtgen/command.cpp
     tests/libvrtgen/cif0.cpp
-#     tests/libvrtgen/socket.cpp
+    tests/libvrtgen/cif1.cpp
+    tests/libvrtgen/command.cpp
+    tests/libvrtgen/header.cpp
+    tests/libvrtgen/class_id.cpp
     tests/libvrtgen/types.cpp
-#     tests/libvrtgen/utils.cpp
+    tests/libvrtgen/trailer.cpp
 )
 target_link_libraries(test_libvrtgen vrtgen)
 target_link_libraries(test_libvrtgen Catch2)
@@ -106,38 +68,54 @@ add_custom_target(check-libvrtgen
 add_dependencies(check check-libvrtgen)
 
 # Helper function to generate C++ source from a YAML file using vrtpktgen
-function(add_codegen_file TARGET YAML_FILE)
+function(add_codegen_file TARGET YAML_FILE FILE_LIST)
     set(TEST_DIRNAME tests/codegen/cpp)
     get_filename_component(TEST_BASENAME "${YAML_FILE}" NAME_WE)
+    set(hpp_list ${FILE_LIST})
+    set(cpp_list ${FILE_LIST})
+    list(TRANSFORM hpp_list APPEND ".hpp")
+    list(TRANSFORM cpp_list APPEND ".cpp")
     add_custom_command(
         OUTPUT
-        ${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME}/${TEST_BASENAME}.cpp
-        ${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME}/${TEST_BASENAME}.hpp
+        ${hpp_list}
+        ${cpp_list}
         COMMAND
-        ${Python3_EXECUTABLE} -m vrtgen.main cpp --dir ${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME} ${YAML_FILE}
+        ${Python3_EXECUTABLE} -m vrtgen.main cpp --dir ${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME}/${TEST_BASENAME} --namespace ${TEST_BASENAME}_ns ${YAML_FILE}
         WORKING_DIRECTORY
             ${CMAKE_CURRENT_SOURCE_DIR}
         DEPENDS
             ${YAML_FILE}
     )
-    target_sources(${TARGET} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/${TEST_DIRNAME}/${TEST_BASENAME}.cpp)
+    target_sources(${TARGET} PRIVATE ${cpp_list})
 endfunction()
 
 add_executable(test_codegen
+    tests/codegen/cpp/test_header.cpp
+    tests/codegen/cpp/test_stream_id.cpp
+    tests/codegen/cpp/test_class_id.cpp
+    tests/codegen/cpp/test_timestamp.cpp
     tests/codegen/cpp/test_basic.cpp
     tests/codegen/cpp/test_data.cpp
+    tests/codegen/cpp/test_trailer.cpp
     tests/codegen/cpp/test_context.cpp
-    # tests/codegen/cpp/test_command.cpp
-#     tests/codegen/test_cif0.cpp
-#     tests/codegen/test_control_ids.cpp
-#     tests/codegen/test_timestamp.cpp
-#     tests/codegen/test_structs.cpp
-#     tests/codegen/test_user.cpp
+    tests/codegen/cpp/test_command.cpp
+    # tests/codegen/test_cif0.cpp
+    # tests/codegen/test_control_ids.cpp
+    # tests/codegen/test_structs.cpp
+    # tests/codegen/test_user.cpp
 )
-add_codegen_file(test_codegen tests/codegen/yamls/basic.yaml)
-add_codegen_file(test_codegen tests/codegen/yamls/data.yaml)
-add_codegen_file(test_codegen tests/codegen/yamls/context.yaml)
-# add_codegen_file(test_codegen tests/codegen/yamls/command.yaml)
+
+add_subdirectory(tests/codegen/cpp)
+
+add_codegen_file(test_codegen tests/codegen/yamls/header.yaml "${header_gen_list}")
+add_codegen_file(test_codegen tests/codegen/yamls/stream_id.yaml "${stream_id_gen_list}")
+add_codegen_file(test_codegen tests/codegen/yamls/class_id.yaml "${class_id_gen_list}")
+add_codegen_file(test_codegen tests/codegen/yamls/timestamp.yaml "${timestamp_gen_list}")
+add_codegen_file(test_codegen tests/codegen/yamls/basic.yaml "${basic_gen_list}")
+add_codegen_file(test_codegen tests/codegen/yamls/data.yaml "${data_gen_list}")
+add_codegen_file(test_codegen tests/codegen/yamls/trailer.yaml "${trailer_gen_list}")
+add_codegen_file(test_codegen tests/codegen/yamls/context.yaml "${context_gen_list}")
+add_codegen_file(test_codegen tests/codegen/yamls/command.yaml "${command_gen_list}")
 # add_codegen_file(test_codegen tests/codegen/yamls/cif0.yaml)
 # add_codegen_file(test_codegen tests/codegen/yamls/control_ids.yaml)
 # add_codegen_file(test_codegen tests/codegen/yamls/timestamp.yaml)
@@ -147,7 +125,7 @@ add_codegen_file(test_codegen tests/codegen/yamls/context.yaml)
 target_link_libraries(test_codegen vrtgen)
 target_link_libraries(test_codegen Catch2)
 target_link_libraries(test_codegen testutils)
-target_compile_options(test_codegen PRIVATE)
+target_compile_options(test_codegen PRIVATE -g)
 target_include_directories(test_codegen PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}/tests/codegen/cpp
     # Explicitly add the build "vrtgen" include directory so that the relative
@@ -167,6 +145,30 @@ add_custom_target(check-codegen
     COMMAND test_codegen ${CODEGEN_TEST_OPTIONS} $(TEST_OPTIONS)
 )
 add_dependencies(check check-codegen)
+endif()
+
+# Create an empty "docs" target to hang doxygen off of
+add_custom_target(docs)
+find_package(Doxygen)
+if (DOXYGEN_FOUND)
+    # set input and output files
+    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/docs/doxygen.conf)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+
+    # request to configure the file
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+    message("Doxygen build started")
+
+    # note the option ALL which allows to build the docs together with the application
+    add_custom_target( doc_doxygen
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM )
+    add_dependencies(docs doc_doxygen)
+else (DOXYGEN_FOUND)
+    message("Doxygen needs to be installed to generate the doxygen documentation")
+endif (DOXYGEN_FOUND)
 
 # Packaging options
 set(CPACK_PACKAGE_NAME libvrtgen)

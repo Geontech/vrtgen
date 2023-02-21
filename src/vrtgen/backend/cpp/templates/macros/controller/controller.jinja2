@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -18,55 +18,91 @@
 #*/
 
 {%- macro controller_id_functions(packet, type_helper) %}
-{{ type_helper.value_type(packet.controller_id) }} {{ packet.controller_id.name }}() const
+/**
+ * @brief Return the value of {{ packet.controller_id.name }}
+ * @return {{ packet.controller_id.name }}'s value
+ */
+auto {{ packet.controller_id.name }}() const -> {{ type_helper.value_type(packet.controller_id) }}
 {
-    return _{{ packet.controller_id.name }};
+    return m_{{ packet.controller_id.name }};
 }
 
-void {{ packet.controller_id.name }}({{ type_helper.value_type(packet.controller_id) }} id)
+/**
+ * @brief Set the value of {{ packet.controller_id.name }}
+ * @param id Value to assign to {{ packet.controller_id.name }}
+ */
+auto {{ packet.controller_id.name }}({{ type_helper.value_type(packet.controller_id) }} id) -> void
 {
-    _{{ packet.controller_id.name }} = id;
+    m_{{ packet.controller_id.name }} = id;
 }
 {% endmacro %}
 
 {%- macro handle_control(packet, type_helper) %}
+/**
+ * @brief Send command packet {{ packet.name }}
+ * @param packet Packet to be sent
+ */
 auto send_{{ packet.name | to_snake }}({{ packet.name }}& packet)
 {
-    packet.message_id(_next_message_id());
+    packet.message_id(next_message_id());
 {% if packet.controller_id.enabled %}
-    packet.controller_id(_{{ packet.controller_id.name }});
+    packet.controller_id(m_{{ packet.controller_id.name }});
 {% endif %}
+{% set req_list = [] %}
 {% set ack_list = [] %}
 {% if packet.cam.enabled %}
-{%   if (packet.cam.req_v.enabled and (packet.cam.req_v.value is true)) %}
-{%     do ack_list.append('ackv') %}
+{%   if packet.cam.req_v.enabled %}
+{%     do req_list.append('req_v') %}
+{%     do ack_list.append('ack_v') %}
 {%   endif %}
-{%   if (packet.cam.req_x.enabled and (packet.cam.req_x.value is true)) %}
-{%     do ack_list.append('ackx') %}
+{%   if packet.cam.req_x.enabled %}
+{%     do req_list.append('req_x') %}
+{%     do ack_list.append('ack_x') %}
 {%   endif %}
-{%   if (packet.cam.req_s.enabled and (packet.cam.req_s.value is true)) %}
-{%     do ack_list.append('acks') %}
+{%   if packet.cam.req_s.enabled %}
+{%     do req_list.append('req_s') %}
+{%     do ack_list.append('ack_s') %}
 {%   endif %}
 {% endif %}
 {% for ack_t in ack_list %}
-    {{ packet.name }}Ack {{ ack_t }};
-{% endfor %}
-{% for ack_t in ack_list %}
 {%   if loop.first %}
-    vrtgen::send_packet(
-        _cmd_socket,
-        packet,
+    auto acks = std::tuple<
 {%   endif %}
-        {{ ack_t }}{{ ',' if not loop.last }}
+{%   if ack_t == 'ack_v'%}
+        std::optional<{{ packet.name }}AckVX>{{ ',' if not loop.last }}
+{%   elif ack_t == 'ack_x' %}
+        std::optional<{{ packet.name }}AckVX>{{ ',' if not loop.last }}
+{%   elif ack_t == 'ack_s' %}
+        std::optional<{{ packet.name }}AckS>
+{%   endif %}
 {%   if loop.last %}
-    );
+    >{};
 {%   endif %}
 {% endfor %}
-{% for ack_t in ack_list %}
-    return std::make_tuple(
-        {{ ack_t }}{{ ',' if not loop.last }}
-    );
+{% if ack_list %}
+{% set ns = namespace(ack_tup_str='') %}
+{%   for ack_t in ack_list %}
+{%     if not loop.last %}
+{%     set ns.ack_tup_str = ns.ack_tup_str + ack_t + ', '%}
+{%     else %}
+{%     set ns.ack_tup_str = ns.ack_tup_str + ack_t %}
+{%     endif %}
+{%   endfor %}
+    auto& [{{ ns.ack_tup_str }}] = acks;
+{% endif %}
+{% for req_t in req_list %}
+    if (packet.{{ req_t }}()) {
+{%   if req_t == 'req_v' %}
+        ack_v = {{ packet.name }}AckVX{};
+{%   elif req_t == 'req_x' %}
+        ack_x = {{ packet.name }}AckVX{};
+{%   elif req_t == 'req_s' %}
+        ack_s = {{ packet.name }}AckVX{};
+{%   endif %}
+    }
 {% endfor %}
+    vrtgen::send_packet(m_cmd_socket, packet, {{ ns.ack_tup_str }});
+    return acks;
 }
 
 {% endmacro %}
@@ -77,7 +113,7 @@ auto send_{{ packet.name | to_snake }}({{ packet.name }}& packet)
  */
 void register_{{ packet.name | to_snake }}_listener(const std::function<void({{ packet.name }}&)>&& func)
 {
-    _{{ packet.name | to_snake }}_listener = std::move(func);
+    m_{{ packet.name | to_snake }}_listener = std::move(func);
 }
 {% endmacro %}
 
@@ -85,10 +121,10 @@ void register_{{ packet.name | to_snake }}_listener(const std::function<void({{ 
 /**
  * @brief Send a {{ packet.name }} packet
  */
-void send_{{ packet.name | to_snake }}(const {{ packet.name }}& packet)
+void send_{{ packet.name | to_snake }}({{ packet.name }}& packet)
 {
-    auto packed_data = {{ packet.name }}::helper::pack(packet);
-    _data_ctxt_send_socket.send_to(packed_data.data(), packed_data.size(), _data_ctxt_send_socket.dst());
+    auto packed_data = packet.data();
+    m_data_ctxt_send_socket.send_to(packed_data.data(), packed_data.size(), m_data_ctxt_send_socket.dst());
 }
 {% endmacro %}
 
@@ -119,9 +155,9 @@ void send_{{ packet.name | to_snake }}(const {{ packet.name }}& packet)
  */
 void enable_receive()
 {
-    if (!_receiving) {
-        _receiving = true;
-        _recv_thread = std::thread(&{{ class_name }}::_receiver_func, this);
+    if (!m_receiving) {
+        m_receiving = true;
+        m_recv_thread = std::thread(&{{ class_name }}::m_receiver_func, this);
     }
 }
 
@@ -130,9 +166,9 @@ void enable_receive()
  */
 void disable_receive()
 {
-    _receiving = false;
-    if (_recv_thread.joinable()) {
-        _recv_thread.join();
+    m_receiving = false;
+    if (m_recv_thread.joinable()) {
+        m_recv_thread.join();
     }
 }
 
@@ -143,23 +179,23 @@ void disable_receive()
 {%- macro members(packets, type_helper) %}
 {% for packet in packets if (packet.is_control and packet.controller_id.enabled) %}
 {%   if loop.first %}
-cmd_socket_type _cmd_socket;
-uint32_t _message_id{ 1 };
+cmd_socket_type m_cmd_socket;
+uint32_t m_message_id{ 1 };
 {%   endif %}
 {% endfor %}
 {% for packet in packets if (packet.is_control and packet.controller_id.enabled) %}
 {%   if loop.first %}
-{{ type_helper.value_type(packet.controller_id) }} _{{ packet.controller_id.name }};
+{{ type_helper.value_type(packet.controller_id) }} m_{{ packet.controller_id.name }}{{ '{ 0 }' if type_helper.is_scalar(packet.controller_id) }};
 {%   endif %}
 {% endfor %}
 {% for packet in packets if (packet.is_data or packet.is_context) %}
 {%   if loop.first %}
-data_ctxt_socket_type _data_ctxt_recv_socket;
-data_ctxt_socket_type _data_ctxt_send_socket;
-std::thread _recv_thread;
-std::atomic_bool _receiving{ false };
+data_ctxt_socket_type m_data_ctxt_recv_socket;
+data_ctxt_socket_type m_data_ctxt_send_socket;
+std::thread m_recv_thread;
+std::atomic_bool m_receiving{ false };
 {%   endif %}
-std::function<void({{ packet.name }}&)> _{{ packet.name | to_snake }}_listener;
+std::function<void({{ packet.name }}&)> m_{{ packet.name | to_snake }}_listener;
 {% endfor %}
 {% endmacro %}
 
@@ -168,32 +204,35 @@ std::function<void({{ packet.name }}&)> _{{ packet.name | to_snake }}_listener;
 {%   if loop.first %}
 /**
  * @brief Set the destination endpoint of the controllee to send control packets to
+ * @param endpoint Desired controllee endpoint
  */
-void controllee_endpoint(const cmd_endpoint_type& endpoint)
+auto controllee_endpoint(const cmd_endpoint_type& endpoint) -> void
 {
 {% if cmd_socket == 'tcp' %}
-    if (!_cmd_socket.connect(endpoint)) {
+    if (!m_cmd_socket.connect(endpoint)) {
         throw std::runtime_error("Failed to connect command socket to " + endpoint.to_string());
     }
 {% else %}
-    _cmd_socket.dst(endpoint);
+    m_cmd_socket.dst(endpoint);
 {% endif %}
 }
 
 /**
- * @brief Get the destination endpoint of the controllee to send control packets to
+ * @brief Get the destination endpoint of the controllee to which control packets are sent
+ * @return The controllee endpoint to which control packets are sent
  */
-const cmd_endpoint_type& controllee_endpoint() const
+auto controllee_endpoint() const -> const cmd_endpoint_type&
 {
-    return _cmd_socket.dst();
+    return m_cmd_socket.dst();
 }
 
 /**
  * @brief Return a reference to the command socket for sending control packets
+ * @return Reference to the command socket
  */
-cmd_socket_type& cmd_socket() noexcept
+auto cmd_socket() -> cmd_socket_type&
 {
-    return _cmd_socket;
+    return m_cmd_socket;
 }
 
 {%   endif %}
@@ -205,7 +244,7 @@ cmd_socket_type& cmd_socket() noexcept
  */
 void data_ctxt_src_endpoint(const data_ctxt_endpoint_type& endpoint)
 {
-    if (!_data_ctxt_recv_socket.bind(endpoint)) {
+    if (!m_data_ctxt_recv_socket.bind(endpoint)) {
         throw std::runtime_error("Failed to bind data/context receive socket to " + endpoint.to_string());
     }
 }
@@ -215,7 +254,7 @@ void data_ctxt_src_endpoint(const data_ctxt_endpoint_type& endpoint)
  */
 const data_ctxt_endpoint_type& data_ctxt_src_endpoint() const
 {
-    return _data_ctxt_recv_socket.src();
+    return m_data_ctxt_recv_socket.src();
 }
 
 /**
@@ -223,7 +262,7 @@ const data_ctxt_endpoint_type& data_ctxt_src_endpoint() const
  */
 data_ctxt_socket_type& data_ctxt_recv_socket() noexcept
 {
-    return _data_ctxt_recv_socket;
+    return m_data_ctxt_recv_socket;
 }
 
 /**
@@ -231,7 +270,7 @@ data_ctxt_socket_type& data_ctxt_recv_socket() noexcept
  */
 void data_ctxt_dst_endpoint(const data_ctxt_endpoint_type& endpoint)
 {
-    _data_ctxt_send_socket.dst(endpoint);
+    m_data_ctxt_send_socket.dst(endpoint);
 }
 
 /**
@@ -239,7 +278,7 @@ void data_ctxt_dst_endpoint(const data_ctxt_endpoint_type& endpoint)
  */
 const data_ctxt_endpoint_type& data_ctxt_dst_endpoint() const
 {
-    return _data_ctxt_send_socket.dst();
+    return m_data_ctxt_send_socket.dst();
 }
 
 /**
@@ -247,7 +286,7 @@ const data_ctxt_endpoint_type& data_ctxt_dst_endpoint() const
  */
 data_ctxt_socket_type& data_ctxt_send_socket() noexcept
 {
-    return _data_ctxt_send_socket;
+    return m_data_ctxt_send_socket;
 }
 {%   endif %}
 {% endfor %}

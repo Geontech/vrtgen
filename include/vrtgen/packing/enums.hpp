@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -17,8 +17,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
 
-#ifndef _VRTGEN_PACKING_ENUMS_HPP
-#define _VRTGEN_PACKING_ENUMS_HPP
+#pragma once
 
 #include <cstdint>
 
@@ -29,7 +28,7 @@ namespace vrtgen::packing {
  * @brief Packet Type field in the VRT Packet Header
  * 
  * Constants for the 4-bit Packet Type field in the VRT Packet Header.
- * Refer to VITA 49.2 Table 5.1.1-1.
+ * Refer to VITA 49.2-2017 Table 5.1.1-1.
  */
 enum class PacketType : uint8_t
 {
@@ -58,7 +57,7 @@ enum class PacketType : uint8_t
  * @brief TimeStamp-Integer (TSI) field in the VRT Packet Header
  * 
  * Constants for the 2-bit TimeStamp-Integer (TSI) field in the VRT Packet Header.
- * Refer to VITA 49.2 Table 5.1.1-2.
+ * Refer to VITA 49.2-2017 Table 5.1.1-2.
  */
 enum class TSI : uint8_t
 {
@@ -73,7 +72,7 @@ enum class TSI : uint8_t
  * @brief TimeStamp-Fractional (TSF) field in the VRT Packet Header
  * 
  * Constants for the 2-bit TimeStamp-Fractional (TSF) field in the VRT Packet Header.
- * Refer to VITA 49.2 Table 5.1.1-3.
+ * Refer to VITA 49.2-2017 Table 5.1.1-3.
  */
 enum class TSF : uint8_t
 {
@@ -88,7 +87,7 @@ enum class TSF : uint8_t
  * @brief Timestamp Mode (TSM) field in the VRT Context Packet Header specific bits
  * 
  * Constants for the 1-bit Timestamp Mode (TSM) field in the VRT Packet Header.
- * Refer to VITA 49.2 Table 5.1.1.1-1, rules 7.1.1-3, 7.1.1-4, 7.1.1-5.
+ * Refer to VITA 49.2-2017 Table 5.1.1.1-1, rules 7.1.1-3, 7.1.1-4, 7.1.1-5.
  */
 enum class TSM : bool
 {
@@ -97,11 +96,24 @@ enum class TSM : bool
 }; // end enum class TSM
 
 /**
+ * @enum SPECTRUM_OR_TIME
+ * @brief S Bit (SPECTRUM_OR_TIME) field in the VRT Context Packet Header specific bits
+ * 
+ * Constants for the 1-bit S Bit (SPECTRUM_OR_TIME) field in the VRT Packet Header.
+ * Refer to VITA 49.2-2017 Table 5.1.1.1-1, rules 7.1.1-3, 7.1.1-4, 7.1.1-5.
+ */
+enum class SPECTRUM_OR_TIME : bool
+{
+    TIME = 0b0, //!< Conveys that the vector contains spectrum data
+    SPECTRUM = 0b1, //!< Conveys that the vector contains time data
+}; // end enum class SPECTRUM_OR_TIME
+
+/**
  * @enum IdentifierFormat
  * @brief Controllee/Controller Identifier Format field in the ControlAcknowledgeMode
  * 
  * Constants for the 1-bit IdentifierFormat field in the ControlAcknowledgeMode.
- * Refer to VITA 49.2 Table 8.3.1-1.
+ * Refer to VITA 49.2-2017 Table 8.3.1-1.
  */
 enum class IdentifierFormat
 {
@@ -114,7 +126,7 @@ enum class IdentifierFormat
  * @brief Control Action Mode field in the ControlAcknowledgeMode
  * 
  * Constants for the 2-bit Control Action Mode field in the ControlAcknowledgeMode.
- * Refer to VITA 49.2 Table 8.3.1.3-1.
+ * Refer to VITA 49.2-2017 Table 8.3.1.3-1.
  */
 enum class ActionMode
 {
@@ -129,7 +141,7 @@ enum class ActionMode
  * @brief Timestamp Control Mode field in the ControlAcknowledgeMode
  * 
  * Constants for the 3-bit Timestamp Control Mode field in the ControlAcknowledgeMode.
- * Refer to VITA 49.2 Table 8.3.1.3-1 and Table 8.3.1.7-1.
+ * Refer to VITA 49.2-2017 Table 8.3.1.3-1 and Table 8.3.1.7-1.
  */
 enum class TimestampControlMode
 {
@@ -296,5 +308,3 @@ enum class V49StandardCompliance
 }; // end enum class V49StandardCompliance
 
 } // end namespace vrtgen::packing
-
-#endif // _VRTGEN_PACKING_ENUMS_HPP

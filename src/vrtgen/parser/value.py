@@ -50,9 +50,26 @@ def parse_tsm(value):
     Valid values are 'fine' and 'coarse'. Case is ignored.
     """
     try:
-        return _TSF_VALUES[value.casefold()]
+        return _TSM_VALUES[value.casefold()]
     except KeyError:
         raise ValueError('invalid TSM value: ' + value)
+
+_S_BIT_VALUES = {
+    'spectrum' : enums.SPECTRUM_OR_TIME.SPECTRUM,
+    'time' :  enums.SPECTRUM_OR_TIME.TIME
+}
+
+def parse_spectrum_or_time(value):
+    """
+    Parses a S Bit (S_BIT) literal.
+
+    Valid values are 'spectrum' and 'time'. Case is ignored.
+    """
+    try:
+        return _S_BIT_VALUES[value.casefold()]
+    except KeyError:
+        raise ValueError('invalid Spectrum or Time value: ' + value)
+
 
 _ENABLE_VALUES = {
     'required': enums.Mode.REQUIRED,
@@ -77,6 +94,8 @@ def parse_oui(value):
     OUIs are specified as hex literals in the form 'XX-XX-XX', where each
     octet is separated by a dash. Case is ignored.
     """
+    if str(value) == '00-12-A2':
+        raise ValueError('The 00-12-A2 OUI is reserved for VITA49.2-2017 Extension Classes. This is not currently supported')
     match = _OUI_RE.match(str(value))
     if not match:
         raise ValueError('OUI format must be XX-XX-XX')

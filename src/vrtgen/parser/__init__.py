@@ -38,6 +38,7 @@ def parse_stream(stream, loader):
     """
     parsed = yaml.load(stream, Loader=loader)
     parsed_packets = {}
+    parsed_files = []
     has_information_class = False
     for name, value in parsed.items():
         if isinstance(value, InformationClass):
@@ -50,6 +51,7 @@ def parse_stream(stream, loader):
             if not isinstance(value, list):
                 raise TypeError('include must be a list')
             for filename in value:
+                parsed_files.append(filename)
                 for inc_name, inc_value in parse_file(filename, loader):
                     parsed_packets[inc_name] = inc_value
         elif isinstance(value, InformationClass):
@@ -72,3 +74,4 @@ def parse_stream(stream, loader):
                 value.update_from_control(ctrl_packet)
             if not has_information_class:
                 yield name,value
+    yield 'files',parsed_files

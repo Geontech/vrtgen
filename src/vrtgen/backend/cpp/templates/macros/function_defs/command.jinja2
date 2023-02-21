@@ -1,0 +1,100 @@
+/*#
+ * Copyright (C) 2023 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- macro message_id_defs(packet, type_helper) %}
+auto {{ packet.name }}::{{ packet.message_id.name }}() const -> {{ type_helper.value_type(packet.message_id) }}
+{
+    {{ type_helper.value_type(packet.message_id) }} retval{};
+    memcpy(&retval, m_data.data() + m_positions.at("{{ packet.message_id.name }}"), sizeof(retval));
+    return vrtgen::swap::from_be(retval);
+}
+
+auto {{ packet.name }}::{{ packet.message_id.name }}(const {{ type_helper.value_type(packet.message_id) }} value) -> void
+{
+    auto swapped{ vrtgen::swap::to_be(value) };
+    memcpy(m_data.data() + m_positions.at("{{ packet.message_id.name }}"), &swapped, sizeof(swapped));
+}
+{% endmacro %}
+
+{%- macro controllee_id_defs(packet, type_helper) %}
+{% if type_helper.is_scalar(packet.controllee_id) %}
+auto {{ packet.name }}::{{ packet.controllee_id.name }}() const -> {{ type_helper.value_type(packet.controllee_id) }}
+{
+    {{ type_helper.value_type(packet.controllee_id) }} retval{};
+    memcpy(&retval, m_data.data() + m_positions.at("{{ packet.controllee_id.name }}"), sizeof(retval));
+    return vrtgen::swap::from_be(retval);
+}
+
+auto {{ packet.name }}::{{ packet.controllee_id.name }}(const {{ type_helper.value_type(packet.controllee_id) }} value) -> void
+{
+    auto swapped{ vrtgen::swap::to_be(value) };
+    memcpy(m_data.data() + m_positions.at("{{ packet.controllee_id.name }}"), &swapped, sizeof(swapped));
+}
+{% else %}
+auto {{ packet.name }}::{{ packet.controllee_id.name }}() -> {{ type_helper.value_type(packet.controllee_id) }}&
+{
+    return m_{{ packet.controllee_id.name }};
+}
+
+auto {{ packet.name }}::{{ packet.controllee_id.name }}(const {{ type_helper.value_type(packet.controllee_id) }}& value) -> void
+{
+    m_{{ packet.controllee_id.name }} = value;
+}
+{% endif %}
+{% endmacro %}
+
+{%- macro controller_id_defs(packet, type_helper) %}
+{% if type_helper.is_scalar(packet.controller_id) %}
+auto {{ packet.name }}::{{ packet.controller_id.name }}() const -> {{ type_helper.value_type(packet.controller_id) }}
+{
+    {{ type_helper.value_type(packet.controller_id) }} retval{};
+    memcpy(&retval, m_data.data() + m_positions.at("{{ packet.controller_id.name }}"), sizeof(retval));
+    return vrtgen::swap::from_be(retval);
+}
+
+auto {{ packet.name }}::{{ packet.controller_id.name }}(const {{ type_helper.value_type(packet.controller_id) }} value) -> void
+{
+    auto swapped{ vrtgen::swap::to_be(value) };
+    memcpy(m_data.data() + m_positions.at("{{ packet.controller_id.name }}"), &swapped, sizeof(swapped));
+}
+{% else %}
+auto {{ packet.name }}::{{ packet.controller_id.name }}() -> {{ type_helper.value_type(packet.controller_id) }}&
+{
+    return m_{{ packet.controller_id.name }};
+}
+
+auto {{ packet.name }}::{{ packet.controller_id.name }}(const {{ type_helper.value_type(packet.controller_id) }}& value) -> void
+{
+    m_{{ packet.controller_id.name }} = value;
+}
+{% endif %}
+{% endmacro %}
+
+{%- macro req_defs(packet, packet_name, req, type_helper) %}
+auto {{ packet_name }}::{{ req.name }}() const -> {{ type_helper.value_type(req) }}
+{
+    return m_{{ packet.cam.name }}.{{ req.name }}();
+}
+
+auto {{ packet_name }}::{{ req.name }}(const {{ type_helper.value_type(req) }} value) -> void
+{
+    m_{{ packet.cam.name }}.{{ req.name }}(value);
+    m_{{ packet.cam.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cam.name }}"));
+}
+{%  endmacro %}

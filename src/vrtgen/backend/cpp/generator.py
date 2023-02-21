@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
-import os, jinja2
+import os, shutil, jinja2
 from vrtgen.backend.generator import Generator, GeneratorOption
 from vrtgen.parser.model.information import InformationClass
 from vrtgen.parser.model.types import *
@@ -24,6 +24,7 @@ from vrtgen.parser.model.command import AcknowledgePacket
 from vrtgen.parser.loader import get_loader
 from .type_helpers import TypeHelper, format_enum
 from .jinja import *
+import copy
 
 def name_to_identifier(name):
     """
@@ -172,11 +173,42 @@ class CppPacket:
             return None
 
     @property
+    def cif7(self):
+        try:
+            return self.config.cif_7
+        except:
+            return None
+
+    @property
     def trailer(self):
         try:
             return self.config.trailer
         except:
             return None
+
+    @property
+    def last_prologue_field(self):
+        try:
+            if self.controller_id and self.controller_id.enabled:
+                return self.controller_id
+            elif self.controllee_id and self.controllee_id.enabled:
+                return self.controllee_id
+            elif self.message_id is not None:
+                return self.message_id
+            elif self.cam is not None:
+                return self.cam
+            elif self.timestamp.fractional.enabled:
+                return self.timestamp.fractional
+            elif self.timestamp.integer.enabled:
+                return self.timestamp.integer
+            elif self.class_id.enabled:
+                return self.class_id
+            elif self.stream_id.enabled:
+                return self.stream_id
+            else:
+                return self.header
+        except:
+            return self.header
 
     @property
     def warnings_enabled(self):
@@ -236,25 +268,35 @@ class CppPacket:
 
     @property
     def structs(self):
-        retval = []
-        if self.cif1 and self.cif1.enabled and (self.is_context or self.is_control or self.is_query):
-            if self.cif1.sector_step_scan.enabled:
-                sector_step_scan = self.cif1.sector_step_scan.type_
-                sector_step_scan.packet_name = name_to_snake(self.name)
-                record = sector_step_scan.records.type_
-                record.packet_name = name_to_snake(self.name)
-                for field in sector_step_scan.subfield_cif.fields:
-                    if field.enabled:
-                        record.__dict__[field.name].enabled = True
-                        record.__dict__[field.name].required = True
-                retval.append(record)
-            if self.cif1.discrete_io_32.enabled and len(self.cif1.discrete_io_32.type_.subfields) > 0:
-                self.cif1.discrete_io_32.type_.packet_name = name_to_snake(self.name)
-                retval.append(self.cif1.discrete_io_32.type_)
-            if self.cif1.discrete_io_64.enabled and len(self.cif1.discrete_io_64.type_.subfields) > 0:
-                self.cif1.discrete_io_64.type_.packet_name = name_to_snake(self.name)
-                retval.append(self.cif1.discrete_io_64.type_)
-        return retval
+        return_value = []
+        if self.requires_cif_functions:
+            if self.cif1 and self.cif1.enabled:#(self.is_context or self.is_control or (self.is_ack and self.config.is_ack_s)):
+                if self.cif1.sector_step_scan.enabled:
+                    sector_step_scan = self.cif1.sector_step_scan.type_
+                    sector_step_scan.packet_name = name_to_snake(self.name)
+                    record = sector_step_scan.records.type_
+                    record.packet_name = name_to_snake(self.name)
+                    for field in sector_step_scan.subfield_cif.fields:
+                        if field.enabled:
+                            record.__dict__[field.name].enabled = True
+                            record.__dict__[field.name].required = True
+                    return_value.append(record)
+                if self.cif1.discrete_io_32.enabled and len(self.cif1.discrete_io_32.type_.subfields) > 0:
+                    self.cif1.discrete_io_32.type_.packet_name = name_to_snake(self.name)
+                    return_value.append(self.cif1.discrete_io_32.type_)
+                if self.cif1.discrete_io_64.enabled and len(self.cif1.discrete_io_64.type_.subfields) > 0:
+                    self.cif1.discrete_io_64.type_.packet_name = name_to_snake(self.name)
+                    return_value.append(self.cif1.discrete_io_64.type_)
+            if self.cif7 and self.cif7.enabled:
+                self.cif7.attributes.packet_name = name_to_snake(self.name)
+                return_value.append(self.cif7.attributes)
+        if self.trailer and self.trailer.enabled and self.trailer.is_user_defined:
+            self.trailer.packet_name = name_to_snake(self.name)
+            return_value.append(self.trailer)
+        if self.stream_id and self.stream_id.user_defined:
+            self.stream_id.packet_name = name_to_snake(self.name)
+            return_value.append(self.stream_id)
+        return return_value
 
     @property
     def enums(self):
@@ -263,17 +305,18 @@ class CppPacket:
             if self.cif1.discrete_io_32.enabled:
                 for field in self.cif1.discrete_io_32.type_.fields:
                     if isinstance(field, EnumType):
+                        field.packet_name = name_to_snake(self.name)
                         retval.append(format_enum(field.type_))
             if self.cif1.discrete_io_64.enabled:
                 for field in self.cif1.discrete_io_64.type_.fields:
                     if isinstance(field, EnumType):
+                        field.packet_name = name_to_snake(self.name)
                         retval.append(format_enum(field.type_))
+        if self.trailer and len(self.trailer.enums) > 0:
+            for enum in self.trailer.enums:
+                enum.packet_name = name_to_snake(self.name)
+                retval.append(format_enum(enum.type_))
         return retval
-
-    @property
-    def is_variable_length(self):
-        return ((self.cif0 and self.cif0.enabled and self.cif0.has_optional) or
-               (self.cif1 and self.cif1.enabled and self.cif1.has_optional))
 
 class CppGenerator(Generator):
     """
@@ -289,17 +332,20 @@ class CppGenerator(Generator):
             'format_docstring' : format_docstring,
             'to_snake' : name_to_snake
         })
+        self.filename = None
+        self.basename = None
         self.output_dir = os.getcwd()
         self.header = None
         self.implfile = None
         self.packets = []
-        self.namespace = ''
         self.loader = get_loader()
         self.type_helper = TypeHelper()
         self.information_class = None
         self.controller_file = None
         self.controllee_base_file = None
         self.controllee_file = None
+        self.project = False
+        self.yamls = []
 
     output_dir = GeneratorOption(
         '--dir',
@@ -319,6 +365,13 @@ class CppGenerator(Generator):
         doc="file extension for headers [.hpp]",
         dtype=str,
         defval='hpp'
+    )
+
+    namespace_ = GeneratorOption(
+        '--namespace',
+        doc='namespace for generated classes',
+        dtype=str,
+        defval=''
     )
 
     # capability = GeneratorOption(
@@ -341,48 +394,105 @@ class CppGenerator(Generator):
         return self.loader
 
     def start_file(self, filename):
-        basename, _ = os.path.splitext(os.path.basename(filename))
-        self.header_name = name_to_identifier(basename)
+        self.filename = filename
+        self.basename, _ = os.path.splitext(os.path.basename(filename))
+        self.header_name = name_to_identifier(self.basename)
         self.header_file = self.header_name + '.' + self.header_ext
-        self.implfile = name_to_identifier(basename) + '.' + self.source_ext
+        self.implfile = name_to_identifier(self.basename) + '.' + self.source_ext
 
     def end_file(self):
         os.makedirs(self.output_dir, exist_ok=True)
-        context = {
+        main_context = {
             'packets': self.packets,
-            'namespace': self.namespace,
-            'type_helper': self.type_helper
+            'type_helper': self.type_helper,
+            'namespace_': self.namespace_,
+            'project_name': self.output_dir,
+            'project_version': '0.1.0'
         }
-        context['header'] = self.header_file
-        context['header_name'] = self.header_name
-        template = self.env.get_template('packet.hpp.jinja2')
-        with open(os.path.join(self.output_dir, self.header_file), 'w') as fp:
-            fp.write(template.render(context))
 
-        template = self.env.get_template('packet.cpp.jinja2')
-        with open(os.path.join(self.output_dir, self.implfile), 'w') as fp:
-            fp.write(template.render(context))
+        self.include_dir = self.output_dir
+        self.src_dir = self.output_dir
+        self.yaml_dir = f'{self.output_dir}/yaml'
+        if self.project:
+            self.include_dir = f'{self.output_dir}/include'
+            self.src_dir = f'{self.output_dir}/src'
+            os.makedirs(self.include_dir, exist_ok=True)
+            os.makedirs(f'{self.include_dir}/packets', exist_ok=True)
+            os.makedirs(self.src_dir, exist_ok=True)
+            os.makedirs(f'{self.src_dir}/bin', exist_ok=True)
+            os.makedirs(f'{self.src_dir}/packets', exist_ok=True)
+            os.makedirs(self.yaml_dir, exist_ok=True)
+
+            self.yamls.append(self.filename)
+            for yaml in self.yamls:
+                shutil.copy2(yaml, self.yaml_dir)
+
+            template = self.env.get_template('main.cpp.jinja2')
+            with open(os.path.join(f'{self.src_dir}/bin', 'main.cpp'), 'w') as fp:
+                fp.write(template.render(main_context))
+
+            template = self.env.get_template('CMakeLists.txt.jinja2')
+            with open(os.path.join(self.output_dir, 'CMakeLists.txt'), 'w') as fp:
+                fp.write(template.render(main_context))
+
+            template = self.env.get_template('CMakeLists.src.jinja2')
+            with open(os.path.join(self.src_dir, 'CMakeLists.txt'), 'w') as fp:
+                fp.write(template.render(main_context))
+
+            template = self.env.get_template('CMakeLists.src.bin.jinja2')
+            with open(os.path.join(f'{self.src_dir}/bin', 'CMakeLists.txt'), 'w') as fp:
+                fp.write(template.render(main_context))
+
+            template = self.env.get_template('CMakeLists.packets.jinja2')
+            with open(os.path.join(f'{self.src_dir}/packets', 'CMakeLists.txt'), 'w') as fp:
+                fp.write(template.render(main_context))
+
+        for packet in self.packets:
+            context = {
+                'packets': [packet],
+                'type_helper': self.type_helper,
+                'namespace_' : self.namespace_
+            }
+            header_file = name_to_snake(packet.name) + '.' + self.header_ext
+            implfile = name_to_snake(packet.name) + '.' + self.source_ext
+            context['header'] = header_file
+            context['header_name'] = self.header_name + '_' + name_to_snake(packet.name).upper()
+
+            template = self.env.get_template('packet.hpp.jinja2')
+            file_path = self.include_dir
+            if self.project:
+                file_path += '/packets'
+            with open(os.path.join(file_path, header_file), 'w') as fp:
+                fp.write(template.render(context))
+
+            template = self.env.get_template('packet.cpp.jinja2')
+            file_path = self.src_dir
+            if self.project:
+                file_path += '/packets'
+            with open(os.path.join(file_path, implfile), 'w') as fp:
+                fp.write(template.render(context))
 
         if self.information_class:
+            context['packets'] = self.packets
+            context['namespace_'] = self.namespace_
             context['information_class'] = self.information_class[1]
-            context['controller_name'] = self.information_class[0] + 'Controller'
-            # context['capability'] = self.capability
+            context['controller_name'] = 'Controller' # self.information_class[0] + 'Controller'
             context['cmd_socket'] = self.cmd_socket
             template = self.env.get_template('controller.hpp.jinja2')
             self.controller_file = '{}.{}'.format(context['controller_name'], self.header_ext)
-            with open(os.path.join(self.output_dir, self.controller_file), 'w') as fp:
+            with open(os.path.join(self.include_dir, self.controller_file), 'w') as fp:
                 fp.write(template.render(context))
 
-            context['controllee_base_name'] = self.information_class[0] + 'Controllee_base'
+            context['controllee_base_name'] = 'Controllee_base' # self.information_class[0] + 'Controllee_base'
             template = self.env.get_template('controllee_base.hpp.jinja2')
             self.controllee_base_file = '{}.{}'.format(context['controllee_base_name'], self.header_ext)
-            with open(os.path.join(self.output_dir, self.controllee_base_file), 'w') as fp:
+            with open(os.path.join(self.include_dir, self.controllee_base_file), 'w') as fp:
                 fp.write(template.render(context))
 
-            context['controllee_name'] = self.information_class[0] + 'Controllee'
+            context['controllee_name'] = 'Controllee' # self.information_class[0] + 'Controllee'
             template = self.env.get_template('controllee.hpp.jinja2')
             self.controllee_file = '{}.{}'.format(context['controllee_name'], self.header_ext)
-            with open(os.path.join(self.output_dir, self.controllee_file), 'w') as fp:
+            with open(os.path.join(self.include_dir, self.controllee_file), 'w') as fp:
                 fp.write(template.render(context))
 
 

@@ -42,6 +42,13 @@ def main():
         default=False,
         help='display debug messages'
     )
+    common_parser.add_argument(
+        '-p',
+        '--project',
+        action='store_true',
+        default=False,
+        help='create project with directory structure'
+    )
 
     arg_parser = argparse.ArgumentParser(
         description='Generate VITA 49.2 packet classes.',
@@ -100,6 +107,12 @@ def main():
     except KeyError:
         raise SystemExit("invalid backend '"+args.backend+"'")
 
+    if args.project:
+        if hasattr(generator, 'project'):
+            setattr(generator, 'project', args.project)
+        else:
+            raise SystemExit("generator {} does not have a project option".format(generator.__class__.__name__))
+
     for attr, _ in generator.get_options():
         value = getattr(args, attr, None)
         if value is not None:
@@ -108,11 +121,14 @@ def main():
     for filename in args.filename:
         logging.debug('Parsing %s', filename)
         generator.start_file(filename)
-        for name,packet in parser.parse_file(filename, generator.get_loader()):
-            try:
-                generator.generate(name, packet)
-            except RuntimeError as exc:
-                logging.error('Generator error: %s', exc)
+        for name,value in parser.parse_file(filename, generator.get_loader()):
+            if name == 'files':
+                generator.yamls = value
+            else:
+                try:
+                    generator.generate(name, value)
+                except RuntimeError as exc:
+                    logging.error('Generator error: %s', exc)
         generator.end_file()
 
 # Support running via "python -m vrtgen.main", used for C++ build

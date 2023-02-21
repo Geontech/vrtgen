@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -19,7 +19,7 @@
 
 {%- import "macros/types/basic.jinja2" as basic %}
 
-{%- macro cif_functions(cif, type_helper) %}
+{%- macro cif_functions(cif, cif7, packet_name, type_helper) %}
 {% if cif.all_optional_fields %}
 bool has_{{ cif.name }}_fields() const noexcept
 {
@@ -30,10 +30,9 @@ bool has_{{ cif.name }}_fields() const noexcept
 
 {% endif %}
 {% for field in cif.fields if field.enabled %}
-{{ basic.optional_functions(field, type_helper, cif) | trim }}
+{{ basic.optional_functions(field, type_helper, cif, cif7) | trim }}
 
-{{ basic.getters_and_setters(field, type_helper, cif) | trim }}
-
+{{ basic.getters_and_setters(field, type_helper, false, cif, cif7) | trim }}
 {% endfor %}
 {% endmacro %}
 
@@ -69,9 +68,32 @@ void {{ field.name }}_enabled(bool value) noexcept
 {% endfor %}
 {% endmacro %}
 
-{%- macro cif_members(cif, type_helper) %}
+{%- macro cif7_struct(cif, cif7, type_helper) %}
+{% for field in cif.fields if field.enabled and not field.indicator_only %}
+class {{ field.name }}_attributes {
+private:
+{%   for cif7_field in cif7.fields if cif7_field.enabled %}
+{%      if cif7_field.type_.is_probability_type or cif7_field.type_.is_belief_type %}
+    {{ type_helper.member_type(cif7_field) }} {{ cif7_field.name }};
+{%      else %}
+    {{ type_helper.member_type(field) }} {{ cif7_field.name }};
+{%      endif %}
+{%   endfor %}
+};
+
+{% endfor %}
+{% endmacro %}
+
+{%- macro cif_members(cif, cif7, packet_name, type_helper) %}
 {% for field in cif.fields if field.enabled %}
 {{ basic.member(field, type_helper) | trim }}
+{%   if cif7.enabled and not field.indicator_only %}
+{%      if field.is_optional %}
+std::optional<{{ type_helper.member_type(cif7.attributes) }}<{{ type_helper.value_type(field) }}> > _{{ field.name }}_attributes;
+{%      else %}
+{{ type_helper.member_type(cif7.attributes) }}<{{ type_helper.value_type(field) }}> _{{ field.name }}_attributes;
+{%      endif %}
+{%   endif %}
 {% endfor %}
 {% endmacro %}
 
@@ -80,7 +102,7 @@ void {{ field.name }}_enabled(bool value) noexcept
 {{ basic.const_ref_getter(packet.cif0, type_helper) | trim }}
 
 {%   if packet.requires_cif_functions %}
-{{ cif_functions(packet.cif0, type_helper) | trim }}
+{{ cif_functions(packet.cif0, packet.cif7, packet.name, type_helper) | trim }}
 
 {%   elif packet.requires_cif_enable_functions %}
 {{ cif_enable_functions(packet.cif0, type_helper) | trim }}
@@ -91,7 +113,7 @@ void {{ field.name }}_enabled(bool value) noexcept
 {{ basic.const_ref_getter(packet.cif1, type_helper) | trim }}
 
 {%   if packet.requires_cif_functions %}
-{{ cif_functions(packet.cif1, type_helper) | trim }}
+{{ cif_functions(packet.cif1, packet.cif7, packet.name, type_helper) | trim }}
 
 {%   elif packet.requires_cif_enable_functions %}
 {{ cif_enable_functions(packet.cif1, type_helper) | trim }}
@@ -102,32 +124,38 @@ void {{ field.name }}_enabled(bool value) noexcept
 {{ basic.const_ref_getter(packet.cif2, type_helper) | trim }}
 
 {%   if packet.requires_cif_functions %}
-{{ cif_functions(packet.cif2, type_helper) | trim }}
+{{ cif_functions(packet.cif2, packet.cif7, packet.name, type_helper) | trim }}
 
 {%   elif packet.requires_cif_enable_functions %}
 {{ cif_enable_functions(packet.cif2, type_helper) | trim }}
 
 {%   endif %}
 {% endif %}
+{% if packet.cif7.enabled %}
+{{ basic.const_ref_getter(packet.cif7, type_helper) | trim }}
+{%   endif %}
 {% endmacro %}
 
 {%- macro members(packet, type_helper) %}
 {% if packet.cif0.enabled %}
 {{ basic.member(packet.cif0, type_helper) | trim }}
 {%   if packet.requires_cif_functions %}
-{{ cif_members(packet.cif0, type_helper) | trim }}
+{{ cif_members(packet.cif0, packet.cif7, packet.name, type_helper) | trim }}
 {%   endif %}
 {% endif %}
 {% if packet.cif1.enabled %}
 {{ basic.member(packet.cif1, type_helper) | trim }}
 {%   if packet.requires_cif_functions %}
-{{ cif_members(packet.cif1, type_helper) | trim }}
+{{ cif_members(packet.cif1, packet.cif7, packet.name, type_helper) | trim }}
 {%   endif %}
 {% endif %}
 {% if packet.cif2.enabled %}
 {{ basic.member(packet.cif2, type_helper) | trim }}
 {%   if packet.requires_cif_functions %}
-{{ cif_members(packet.cif2, type_helper) | trim }}
+{{ cif_members(packet.cif2, packet.cif7, packet.name, type_helper) | trim }}
 {%   endif %}
+{% endif %}
+{% if packet.cif7.enabled %}
+{{ basic.member(packet.cif7, type_helper) | trim }}
 {% endif %}
 {% endmacro %}

@@ -1,0 +1,111 @@
+/*#
+ * Copyright (C) 2023 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- macro match(packet, type_helper) %}
+auto {{ packet.name }}::match(std::span<const uint8_t> data) -> std::optional<std::string>
+{
+    auto header = {{ type_helper.value_type(packet.header) }}{};
+    {{ packet.header.name }}.unpack_from(data.data());
+{% if packet.class_id.enabled or packet.timestamp.enabled or packet.cam.enabled or (packet.trailer.enabled and packet.trailer.user_defined) %}
+    [[maybe_unused]]
+    auto curr_pos = {{ packet.header.name }}.size();
+{% endif %}
+{% for field in packet.header.fields %}
+{%   if field.name == 'packet_count' or field.name == 'packet_size' %}
+{%     continue %}
+{%   endif %}
+    if (header.{{ field.name }}() != {{ type_helper.literal_value(field) }}) {
+        std::ostringstream msg;
+        msg << "Failed to match header field {{ field.name }}."
+{%   if field.is_enum %}
+            << " Expected " << std::to_string(static_cast<int>({{ type_helper.literal_value(field) }}))
+            << " but got " << std::to_string(static_cast<int>({{ packet.header.name }}.{{ field.name }}()));
+{%   else %}
+            << " Expected " << std::to_string({{ type_helper.literal_value(field) }})
+            << " but got " << std::to_string({{ packet.header.name }}.{{ field.name }}());
+{%   endif %}
+        return { msg.str() };
+    }
+{% endfor %}
+{% if packet.stream_id.enabled and (packet.class_id.enabled or packet.cam.enabled) %}
+    curr_pos += sizeof({{ type_helper.value_type(packet.stream_id) }}); // {{ packet.stream_id.name }}
+{% endif %}
+{% if packet.class_id.enabled %}
+    auto {{ packet.class_id.name }} = {{ type_helper.value_type(packet.class_id) }}{};
+    {{ packet.class_id.name }}.unpack_from(data.data() + curr_pos);
+{%     for field in packet.class_id.fields if not field.is_packed_type %}
+    if ({{ packet.class_id.name }}.{{ field.name }}() != {{ type_helper.literal_value(field) }}) {
+        std::ostringstream msg;
+        msg << "Failed to match class_id field {{ field.name }}."
+{%   if field.is_enum %}
+            << " Expected " << std::to_string(static_cast<int>({{ type_helper.literal_value(field) }}))
+            << " but got " << std::to_string(static_cast<int>({{ packet.class_id.name }}.{{ field.name }}()));
+{%   else %}
+            << " Expected " << std::to_string({{ type_helper.literal_value(field) }})
+            << " but got " << std::to_string({{ packet.class_id.name }}.{{ field.name }}());
+{%   endif %}
+        return { msg.str() };
+    }
+{%     endfor %}
+{% endif %}
+{% if packet.timestamp.enabled and packet.cam.enabled %}
+{%   if packet.timestamp.integer.enabled %}
+    curr_pos += sizeof({{ type_helper.value_type(packet.timestamp.integer) }}); // {{ packet.timestamp.integer.name }}
+{%   endif %}
+{%   if packet.timestamp.fractional.enabled %}
+    curr_pos += sizeof({{ type_helper.value_type(packet.timestamp.fractional) }}); // {{ packet.timestamp.fractional.name }}
+{%   endif %}
+{% endif %}
+{% if packet.cam.enabled %}
+    auto {{ packet.cam.name }} = {{ type_helper.value_type(packet.cam) }}{};
+    {{ packet.cam.name }}.unpack_from(data.data() + curr_pos);
+{%   for field in packet.cam.fields if (field.enabled and not field.is_optional) %}
+{%     if (field.name == 'ack_w' or field.name == 'ack_er') %}
+{%       continue %}
+{%     endif %}
+    if ({{ packet.cam.name }}.{{ field.name }}() != {{ type_helper.literal_value(field) }}) {
+        std::ostringstream msg;
+        msg << "Failed to match cam field {{ field.name }}."
+{%   if field.is_enum %}
+            << " Expected " << std::to_string(static_cast<int>({{ type_helper.literal_value(field) }}))
+            << " but got " << std::to_string(static_cast<int>({{ packet.cam.name }}.{{ field.name }}()));
+{%   else %}
+            << " Expected " << std::to_string({{ type_helper.literal_value(field) }})
+            << " but got " << std::to_string({{ packet.cam.name }}.{{ field.name }}());
+{%   endif %}
+        return { msg.str() };
+    }
+{%   endfor %}
+{% endif %}
+{% if packet.trailer.enabled and packet.trailer.user_defined %}
+    auto {{ packet.trailer.name }} = {{ type_helper.value_type(packet.trailer) }}{};
+    {{ packet.trailer.name }}.unpack_from(data.data() + (header.packet_size() * sizeof(uint32_t)) - {{ packet.trailer.name }}.size());
+{%   for field in packet.trailer.fields if field.enabled and not field.is_optional %}
+    if ({{ packet.trailer.name }}.{{ field.name }}_enable() != true) {
+        std::ostringstream msg;
+        msg << "Failed to match trailer field {{ field.name }}_enable."
+            << " Expected " << std::to_string(true)
+            << " but got " << std::to_string({{ packet.trailer.name }}.{{ field.name }}_enable());
+        return { msg.str() };
+    }
+{%    endfor %}
+{% endif %}
+    return std::nullopt;
+}
+{% endmacro %}

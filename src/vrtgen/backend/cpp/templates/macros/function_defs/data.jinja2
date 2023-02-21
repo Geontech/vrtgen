@@ -1,0 +1,60 @@
+/*#
+ * Copyright (C) 2022 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- macro function_defs(packet, type_helper) %}
+auto {{ packet.name }}::payload() const -> std::span<const uint8_t>
+{
+    return { m_data.data() + m_positions.at("payload"), payload_size() };
+}
+
+auto {{ packet.name }}::payload(std::span<const uint8_t> data) -> void
+{
+    const auto pos{ m_positions.at("payload") };
+{% if packet.trailer.enabled %}
+    m_data.resize(pos + data.size_bytes() + m_{{ packet.trailer.name }}.size());
+    if (!data.empty()) {
+        std::memcpy(m_data.data() + pos, data.data(), data.size_bytes());
+    }
+    m_positions.at("{{ packet.trailer.name }}") = m_data.size() - m_{{ packet.trailer.name }}.size();
+{% else %}
+    m_data.resize(pos + data.size_bytes());
+    if (!data.empty()) {
+        std::memcpy(m_data.data() + pos, data.data(), data.size_bytes());
+    }
+{% endif %}
+    update_packet_size();
+}
+
+auto {{ packet.name }}::payload_size() const -> std::size_t
+{
+{% if packet.trailer.enabled %}
+    return m_positions.at("{{ packet.trailer.name }}") - m_positions.at("payload");
+{% else %}
+    return m_data.size() - m_positions.at("payload");
+{% endif %}
+}
+
+{% if packet.trailer.enabled %}
+auto {{ packet.name }}::{{ packet.trailer.name }}() -> {{ type_helper.value_type(packet.trailer) }}&
+{
+    return m_{{ packet.trailer.name }};
+}
+
+{% endif %}
+{% endmacro %}

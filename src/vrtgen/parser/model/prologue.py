@@ -29,8 +29,7 @@ class ClassIdentifier(PackedStruct):
                 else:
                     raise KeyError(val)
             except:
-                raise  
-        self.enabled = True
+                raise
 
 @dataclass
 class Timestamp(Field):
@@ -38,28 +37,23 @@ class Timestamp(Field):
     tsi        : EnumType = field(default_factory=lambda: EnumType('tsi', type_=TSI))
     tsf        : EnumType = field(default_factory=lambda: EnumType('tsf', type_=TSF))
     integer    : IntegerTimestamp = field(default_factory=IntegerTimestamp)
-    fractional : FractionalTimestamp =field(default_factory=FractionalTimestamp)
+    fractional : FractionalTimestamp = field(default_factory=FractionalTimestamp)
 
     def __post_init__(self):
-        super().__post_init__()
         self.type_ = type(self).__name__
-        self.bits = self.integer.bits + self.fractional.bits
+        self.bits = 0
 
     def parse_mapping(self, **mapping):
-        self.bits = 0
         for key,val in mapping.items():
-            try:
-                if key == 'integer':
-                    self.tsi.value = value.parse_tsi(val)
-                    self.integer.enabled = True
-                    self.integer.required = True
-                    self.bits += self.integer.bits
-                elif key == 'fractional':
-                    self.tsf.value = value.parse_tsf(val)
-                    self.fractional.enabled = True
-                    self.fractional.required = True
-                    self.bits += self.fractional.bits
-                else:
-                    raise KeyError(val)
-            except:
-                raise
+            if key == 'integer':
+                self.tsi.value = value.parse_tsi(val)
+                self.integer.enabled = True
+                self.integer.required = True
+                self.bits += self.integer.bits
+            elif key == 'fractional':
+                self.tsf.value = value.parse_tsf(val)
+                self.fractional.enabled = True
+                self.fractional.required = True
+                self.bits += self.fractional.bits
+            else:
+                raise KeyError(val)

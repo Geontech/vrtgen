@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -17,14 +17,9 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
 
-#ifndef _VRTGEN_TYPES_HPP
-#define _VRTGEN_TYPES_HPP
+#pragma once
 
 #include "types/fixed.hpp"
-#include "types/oui.hpp"
 #include "types/packed.hpp"
-#include "types/size.hpp"
 #include "types/swap.hpp"
 #include "types/uuid.hpp"
-
-#endif // _VRTGEN_TYPES_HPP
