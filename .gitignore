@@ -6,6 +6,7 @@ __pycache__/
 .eggs/
 .pytest_cache/
 examples/*/*pp
+examples/app/example_project
 **/venv/**
 .coverage
 **/docs/html/**

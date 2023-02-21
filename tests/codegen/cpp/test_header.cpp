@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -18,14 +18,34 @@
  */
 
 #include "catch.hpp"
-#include "packetheader.hpp"
-#include "classid.hpp"
-#include "streamid.hpp"
-#include "data.hpp"
-#include "packettrailer.hpp"
+#include "header/test_header_ack_packet.hpp"
+#include "header/test_header_ack_t_s_packet.hpp"
+#include "header/test_header_context_not_v49d0_packet.hpp"
+#include "header/test_header_context_packet.hpp"
+#include "header/test_header_context_t_s_packet.hpp"
+#include "header/test_header_control_packet.hpp"
+#include "header/test_header_control_t_s_packet.hpp"
+#include "header/test_header_data_packet.hpp"
+#include "header/test_header_data_t_s_packet.hpp"
+#include "header/test_header_tsm_context8.hpp"
+#include "stream_id/without_stream_id_data.hpp"
+#include "stream_id/with_stream_id_data.hpp"
+#include "stream_id/with_stream_id_context.hpp"
+#include "stream_id/with_stream_id_control.hpp"
+#include "class_id/test_data_class_id1.hpp"
+#include "class_id/test_context_class_id1.hpp"
+#include "class_id/test_control_class_id1.hpp"
+#include "trailer/trailer_data1.hpp"
+#include "trailer/trailer_data5.hpp"
+#include "trailer/trailer_data6.hpp"
 #include <bytes.hpp>
 #include <vrtgen/packing/enums.hpp>
 #include "constants.hpp"
+
+using namespace header_ns::packets;
+using namespace stream_id_ns::packets;
+using namespace class_id_ns::packets;
+using namespace trailer_ns::packets;
 
 TEST_CASE("VRT Packet Header", "[header]")
 {
@@ -120,7 +140,7 @@ TEST_CASE("VRT Packet Header", "[header]")
 
         SECTION("Ack")
         {
-            TestHeaderAckPacket packet_in;
+            TestHeaderAckPacketVX packet_in;
 
             // Check bytes required
             const size_t EXPECTED_SIZE = BASIC_ACK_BYTES;
@@ -306,7 +326,7 @@ TEST_CASE("VRT Packet Header", "[header]")
         SECTION("Ack")
         {
             // Show that all fields are there in the order of Figure 5.1.1-1
-            TestHeaderAckTSPacket packet_in;
+            TestHeaderAckTSPacketVX packet_in;
 
             // Check bytes required
             const size_t EXPECTED_SIZE = BASIC_ACK_BYTES + INTEGER_TS_BYTES + FRACTIONAL_TS_BYTES;
@@ -377,7 +397,7 @@ TEST_CASE("VRT Packet Header", "[header]")
         SECTION("Ack")
         {
             // Show that all fields are there in the order of Figure 5.1.1-1
-            TestHeaderAckTSPacket packet_in;
+            TestHeaderAckTSPacketVX packet_in;
 
             // Check bytes required
             const size_t EXPECTED_SIZE = BASIC_ACK_BYTES + INTEGER_TS_BYTES + FRACTIONAL_TS_BYTES;
@@ -425,15 +445,12 @@ TEST_CASE("Indicator Bits 5.1.1.1", "[header][indicator_bits]")
         {
             SECTION("Trailer Included")
             {
-                TrailerData5 packet_in;
+                TrailerData6 packet_in;
                 auto data = packet_in.data();
-                // FIXME #43
-                // CHECK(packet_in.header().trailer_included() == true);
-
+                CHECK(packet_in.header().trailer_included() == true);
                 CHECK((data[0] & 0b100) >> 2 == 1);
 
-
-                TrailerData5 packet_out(data);
+                TrailerData6 packet_out(data);
                 CHECK(packet_out.header().trailer_included() == true);
             }
             
@@ -462,15 +479,10 @@ TEST_CASE("Indicator Bits 5.1.1.1", "[header][indicator_bits]")
         {
             SECTION("Not V49.0")
             {
-                // Use a context packet that uses CIF1 (for example) and then check that 'not V49.0' is true
-                // FIXME #57
                 TestHeaderContextNotV49d0Packet packet_in;
                 auto data = packet_in.data();
-                // FIXME #43
-                // CHECK(packet_in.header().not_v49d0() == true);
-
+                CHECK(packet_in.header().not_v49d0() == true);
                 CHECK((data[0] & 0b010) >> 1 == 1);
-
                 TestHeaderContextNotV49d0Packet packet_out(data);
                 CHECK(packet_out.header().not_v49d0() == true);
             }
@@ -479,12 +491,8 @@ TEST_CASE("Indicator Bits 5.1.1.1", "[header][indicator_bits]")
             {
                 TestHeaderTsmContext8 packet_in;
                 auto data = packet_in.data();
-                // FIXME #43
-                // CHECK(packet_in.header().tsm() == vrtgen::packing::TSM::COARSE);
-
+                CHECK(packet_in.header().tsm() == vrtgen::packing::TSM::COARSE);
                 CHECK((data[0] & 0b001)  == 1);
-
-
                 TestHeaderTsmContext8 packet_out(data);
                 CHECK(packet_out.header().tsm() == vrtgen::packing::TSM::COARSE);
             }
@@ -494,15 +502,11 @@ TEST_CASE("Indicator Bits 5.1.1.1", "[header][indicator_bits]")
         {
             SECTION("Acknowledge Packet")
             {
-                TestHeaderAckPacket packet_in;
+                TestHeaderAckPacketVX packet_in;
                 auto data = packet_in.data();
-                // FIXME #43
-                // CHECK(packet_in.header().acknowledge_packet() == true);
-
+                CHECK(packet_in.header().acknowledge_packet() == true);
                 CHECK((data[0] & 0b100) >> 2  == 1);
-
-
-                TestHeaderAckPacket packet_out(data);
+                TestHeaderAckPacketVX packet_out(data);
                 CHECK(packet_out.header().acknowledge_packet() == true);
             }
 

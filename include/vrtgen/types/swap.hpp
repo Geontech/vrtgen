@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -17,8 +17,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
 
-#ifndef _VRTGEN_TYPES_SWAP_HPP
-#define _VRTGEN_TYPES_SWAP_HPP
+#pragma once
 
 #include <concepts>
 #include <bit>
@@ -71,5 +70,3 @@ inline constexpr T from_be(T value) noexcept
 }
 
 } // end namespace vrtgen::swap
-
-#endif // _VRTGEN_TYPES_SWAP_HPP

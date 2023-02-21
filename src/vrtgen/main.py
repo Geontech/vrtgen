@@ -121,11 +121,14 @@ def main():
     for filename in args.filename:
         logging.debug('Parsing %s', filename)
         generator.start_file(filename)
-        for name,packet in parser.parse_file(filename, generator.get_loader()):
-            try:
-                generator.generate(name, packet)
-            except RuntimeError as exc:
-                logging.error('Generator error: %s', exc)
+        for name,value in parser.parse_file(filename, generator.get_loader()):
+            if name == 'files':
+                generator.yamls = value
+            else:
+                try:
+                    generator.generate(name, value)
+                except RuntimeError as exc:
+                    logging.error('Generator error: %s', exc)
         generator.end_file()
 
 # Support running via "python -m vrtgen.main", used for C++ build

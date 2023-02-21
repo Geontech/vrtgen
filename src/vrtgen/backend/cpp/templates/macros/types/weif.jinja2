@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -16,132 +16,106 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
+{%- import "macros/function_defs/common.jinja2" as common %}
 
-{%- import "macros/types/basic.jinja2" as basic %}
+{%- macro weif_functions(packet, packet_name, weif, is_warning, type_helper) %}
+{{ common.const_ref_getter(packet_name, weif, type_helper) | trim }}
 
-{%- macro wif_functions(wif, type_helper) %}
-{{ basic.const_ref_getter(wif, type_helper) | trim }}
-
-/**
- * @brief Check if {{ wif.name }} contains warning indicators
- * @return true if {{ wif.name }} contains warning indicators, otherwise false
- */
-bool has_{{ wif.name }}_warnings() const noexcept
+auto {{ packet_name }}::reset_{{ weif.name }}() -> void
 {
-{% for field in wif.fields if field.enabled %}
-    {{ 'return ' if loop.first else '       ' }}has_{{ field.name }}_warnings(){{ ' ||' if not loop.last else ';' }}
+{% if weif.name == packet.wif0.name %}
+{%   if packet.wif1.enabled %}
+    reset_{{ packet.wif1.name }}();
+{%   endif %}
+{%   if packet.wif2.enabled %}
+    reset_{{ packet.wif2.name }}();
+{%   endif %}
+{% elif weif.name == packet.eif0.name %}
+{%   if packet.eif1.enabled %}
+    reset_{{ packet.eif1.name }}();
+{%   endif %}
+{%   if packet.eif2.enabled %}
+    reset_{{ packet.eif2.name }}();
+{%   endif %}
+{% endif %}
+    if (m_{{ weif.name }}.has_value()) {
+{% for field in weif.fields if field.enabled %}
+        if (m_{{ weif.name }}->{{ field.name }}()) {
+            reset_{{ field.name }}{{ '_warnings' if is_warning else '_errors' }}();
+        }
 {% endfor %}
+        const auto pos{ m_positions.at("{{ weif.name }}") };
+        m_data.erase(m_data.begin() + pos, m_data.begin() + pos + m_{{ weif.name }}->size());
+        m_{{ weif.name }}.reset();
+{% if not weif.name == packet.wif0.name and is_warning %}
+        if (m_{{ packet.wif0.name }}.has_value()) {
+{%   if weif.name == packet.wif1.name %}
+            m_{{ packet.wif0.name }}->wif1_enable(false);
+{%   elif weif.name == packet.wif1.name %}
+            m_{{ packet.wif0.name }}->wif2_enable(false);
+{%   endif %}
+        }
+{% else %}
+        if (m_{{ packet.eif0.name }}.has_value()) {
+{%   if weif.name == packet.eif1.name %}
+            m_{{ packet.eif0.name }}->eif1_enable(false);
+{%   elif weif.name == packet.eif1.name %}
+            m_{{ packet.eif0.name }}->eif2_enable(false);
+{%   endif %}
+        }
+{% endif %}
+        update_positions();
+        update_packet_size();
+    }
 }
 
-{% for field in wif.fields if field.enabled %}
+{% for field in weif.fields if field.enabled %}
+{%   set func_name = field.name + ('_warnings' if is_warning else '_errors') %}
 /**
- * @brief Check if optional {{ field.name }}_warnings contains a value
- * @return true if {{ field.name }}_warnings contains a value, otherwise false
+ * @brief Returns the value of {{ func_name }}
+ * @return {{ func_name }}'s value
  */
-constexpr bool has_{{ field.name }}_warnings() const noexcept
+auto {{ packet_name }}::{{ func_name }}() -> std::optional<{{ type_helper.member_type(field) }}>&
 {
-    return m_{{ field.name }}_warnings.has_value();
-}
-
-/**
- * @brief If {{ field.name }}_warnings contains a value, destroy it
- */
-void reset_{{ field.name }}_warnings() noexcept
-{
-    return m_{{ field.name }}_warnings.reset();
-}
-
-/**
- * @brief Get a reference to {{ field.name }}_warnings
- * @return A reference to {{ field.name }}_warnings
- * @exception std::bad_optional_access if {{ field.name }}_warnings does not contain a value
- */
-constexpr {{ type_helper.value_type(field) }}& {{ field.getter }}_warnings()
-{
-    return m_{{ field.name }}_warnings.value();
-}
-
-/**
- * @brief Get a const reference to {{ field.name }}_warnings
- * @return A const reference to {{ field.name }}_warnings
- * @exception std::bad_optional_access if {{ field.name }}_warnings does not contain a value
- */
-constexpr const {{ type_helper.value_type(field) }}& {{ field.getter }}_warnings() const
-{
-    return m_{{ field.name }}_warnings.value();
+    return m_{{ func_name }};
 }
 
 /**
- * @brief Set the value of {{ field.name }}_warnings
- * @param value Value to assign to {{ field.name }}_warnings
+ * @brief Sets the value of {{ func_name }}
+ * @param value Value to assign to {{ func_name }}
  */
-void {{ field.setter }}_warnings(const {{ type_helper.value_type(field) }}& value)
+auto {{ packet_name }}::{{ func_name }}(const {{ type_helper.member_type(field) }}& value) -> void
 {
-    m_{{ field.name }}_warnings = value;
-}
-
-{% endfor %}
-{% endmacro %}
-
-{%- macro eif_functions(eif, type_helper) %}
-{{ basic.const_ref_getter(eif, type_helper) | trim }}
-
-/**
- * @brief Check if {{ eif.name }} contains error indicators
- * @return true if {{ eif.name }} contains error indicators, otherwise false
- */
-bool has_{{ eif.name }}_errors() const
-{
-{% for field in eif.fields if field.enabled %}
-    {{ 'return ' if loop.first else '       ' }}has_{{ field.name }}_errors(){{ ' ||' if not loop.last else ';' }}
-{% endfor %}
-}
-
-{% for field in eif.fields if field.enabled %}
-/**
- * @brief Check if optional {{ field.name }}_errors contains a value
- * @return true if {{ field.name }}_errors contains a value, otherwise false
- */
-constexpr bool has_{{ field.name }}_errors() const noexcept
-{
-    return m_{{ field.name }}_errors.has_value();
+    m_{{ func_name }} = value;
+    if (!m_{{ weif.name }}.has_value()) {
+        m_{{ weif.name }} = {{ type_helper.member_type(weif) }}{};
+        m_data.insert(m_data.begin() + m_positions.at("{{ weif.name }}"), m_{{ weif.name }}->size(), 0);
+        update_positions();
+        update_packet_size();
+    }
+    if (!m_{{ weif.name }}->{{ field.name }}()) {
+        m_data.insert(m_data.begin() + m_positions.at("{{ func_name }}"), m_{{ func_name }}->size(), 0);
+        m_{{ weif.name }}->{{ field.name }}(true);
+        m_{{ weif.name }}->pack_into(m_data.data() + m_positions.at("{{ weif.name }}"));
+        update_positions();
+        update_packet_size();
+    }
+    m_{{ func_name }}->pack_into(m_data.data() + m_positions.at("{{ func_name }}"));
+    m_{{ packet.cam.name }}.ack_w(true);
+    m_cam.pack_into(m_data.data() + m_positions.at("{{ packet.cam.name }}"));
 }
 
 /**
- * @brief If {{ field.name }}_errors contains a value, destroy it
+ * @brief If {{ func_name }} contains a value, destroy it
  */
-void reset_{{ field.name }}_errors() noexcept
+auto {{ packet_name }}::reset_{{ func_name }}() -> void
 {
-    return m_{{ field.name }}_errors.reset();
-}
-
-/**
- * @brief Get a reference to {{ field.name }}_errors
- * @return A reference to {{ field.name }}_errors
- * @exception std::bad_optional_access if {{ field.name }}_errors does not contain a value
- */
-constexpr {{ type_helper.value_type(field) }}& {{ field.getter }}_errors()
-{
-    return m_{{ field.name }}_errors.value();
-}
-
-/**
- * @brief Get a const reference to {{ field.name }}_errors
- * @return A const reference to {{ field.name }}_errors
- * @exception std::bad_optional_access if {{ field.name }}_errors does not contain a value
- */
-constexpr const {{ type_helper.value_type(field) }}& {{ field.getter }}_errors() const
-{
-    return m_{{ field.name }}_errors.value();
-}
-
-/**
- * @brief Set the value of {{ field.name }}_errors
- * @param value Value to assign to {{ field.name }}_errors
- */
-void {{ field.setter }}_errors(const {{ type_helper.value_type(field) }}& value)
-{
-    m_{{ field.name }}_errors = value;
+    m_{{ weif.name }}->{{ field.name }}(false);
+    const auto pos{ m_positions.at("{{ func_name }}") };
+    m_data.erase(m_data.begin() + pos, m_data.begin() + pos + m_{{ func_name }}->size());
+    m_{{ func_name }}.reset();
+    update_positions();
+    update_packet_size();
 }
 
 {% endfor %}

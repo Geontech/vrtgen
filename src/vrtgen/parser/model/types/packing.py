@@ -203,6 +203,12 @@ class CIFEnableType(Field):
     indicator_only : bool = False
 
     @property
+    def is_enum(self):
+        if self.type_:
+            return self.type_.is_enum
+        return False
+
+    @property
     def is_integer(self):
         if self.type_:
             return self.type_.is_integer

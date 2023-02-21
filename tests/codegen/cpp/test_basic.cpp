@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -19,8 +19,13 @@
 
 #include "catch.hpp"
 #include "bytes.hpp"
-#include "basic.hpp"
+#include "basic/basic_data_packet.hpp"
+#include "basic/basic_context_packet.hpp"
+#include "basic/basic_control_packet.hpp"
+#include "basic/basic_control_packet_ack.hpp"
 #include "constants.hpp"
+
+using namespace basic_ns::packets;
 
 TEST_CASE("Basic Data Packet")
 {
@@ -224,76 +229,3 @@ TEST_CASE("Basic Control Packet")
     CHECK(packet_out.message_id() == MESSAGE_ID);
 
 } // end TEST_CASE("Basic Control Packet")
-/*
-TEST_CASE("Basic Acknowledge Packet")
-{
-    using packet_type = BasicControlPacketAck;
-    using helper = BasicControlPacketAck::helper;
-    packet_type packet_in;
-
-    // Stream ID is required field. Set value to check
-    const uint32_t STREAM_ID = 0x12345678;
-    packet_in.stream_id(STREAM_ID);
-
-    // Message ID is required field. Set value to check
-    const uint32_t MESSAGE_ID = 0xABCDEF;
-    packet_in.message_id(MESSAGE_ID);
-
-    // Check bytes required
-    const size_t PACKED_SIZE = packet_in.size();
-    CHECK(PACKED_SIZE == 16);
-
-    // Get buffer from pack
-    auto data = packet_in.data();
-    CHECK(data.size() == PACKED_SIZE);
-    auto* check_ptr = data.data();
-
-    // Examine and check packed header
-    const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
-    
-    const bytes packed_header(check_ptr, check_ptr + HEADER_BYTES);
-    check_ptr += HEADER_BYTES;
-
-    // Examine and check packed Stream ID. Value shall be in big-endian format.
-    const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
-    const bytes packed_stream_id(check_ptr, check_ptr + STREAM_ID_BYTES);
-    check_ptr += STREAM_ID_BYTES;
-    CHECK(packed_stream_id == STREAM_ID_BE);
-
-    // Examine and check packed CAM
-    const bytes CAM_BE{ 0, 0, 0, 0 };
-    const bytes packed_cam(check_ptr, check_ptr + CAM_BYTES);
-    check_ptr += CAM_BYTES;
-    CHECK(packed_cam == CAM_BE);
-
-    // Examine and check packed Message ID. Value shall be in big-endian format.
-    const bytes MESSAGE_ID_BE{ 0x00, 0xAB, 0xCD, 0xEF };
-    const bytes packed_message_id(check_ptr, check_ptr + MESSAGE_ID_BYTES);
-    check_ptr += MESSAGE_ID_BYTES;
-    CHECK(packed_message_id == MESSAGE_ID_BE);
-
-    // Check match
-    CHECK_FALSE(packet_in.match(data));
-
-    // Unpack verifed packed data
-    packet_type packet_out(data);
-    packet_type packet_out(data);
-
-    // Examine and check unpacked packet header
-    const auto& header = packet_out.header();
-    CHECK(header.packet_type() == vrtgen::packing::PacketType::COMMAND);
-    CHECK_FALSE(header.class_id_enable());
-    CHECK(header.acknowledge_packet());
-    CHECK_FALSE(header.cancellation_packet());
-    CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
-    CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
-    CHECK(header.packet_size() == PACKET_SIZE);
-
-    // Examine and check unpacked Stream ID
-    CHECK(packet_out.stream_id() == STREAM_ID);
-
-    // Examine and check unpacked Message ID
-    CHECK(packet_out.message_id() == MESSAGE_ID);
-
-} // end TEST_CASE("Basic Acknowledge Packet")
-*/

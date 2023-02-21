@@ -2,60 +2,107 @@
 
 This example is meant to be a simple demonstration of various packet classes
 being aggregated together to form a transactional interface for VITA 49.2. The
-following instructions assume that `vrtgen` has been previously built from
-the top level of the repository.
+following instructions assume that `vrtpktgen` utility and the `vrtgen` header
+has been installed.
 
 ## Generating VITA 49.2 Code
 
-If you attempted to build the example straight away, you may have noticed that
-there were files missing and that `make` failed. The included YAML file
-contains an Information Class specification that needs to be passed to the
+To get started, we need to generate some V49.2 source code. The included YAML
+file contains an Information Class specification that needs to be passed to the
 `vrtpktgen` command line tool in order to generate the code required to build
 the application.
 
 To do this, execute the provided script:
 
 ```
-./generate.sh
+$ ./generate.sh
 ```
 
-Once this script has been run five new files will have been generated that
-include the VITA 49.2 code that was specified by the packets included in the
-YAML. These packet specifications can be found one directory back at 
-`examples/packets/`.
+Once this script has been run, a new folder `example_project` will have been
+generated that includes the VITA 49.2 code that was specified by the packets
+included in the YAML. These packet specifications can be found one directory
+back at `examples/packets/`.
+
+This project structure comes with a CMake build structure that can be executed
+with the following:
+
+```sh
+$ cd example_project
+$ cmake -B build
+$ cmake --build build
+```
 
 ## Implement Stub Functions
 
-At this point, running `make` will succeed, but the code isn't quite ready to
-be executed. If the code were to be executed, there would be an exception thrown
-by the Controllee application because the control packet callback handler would
-not have been implemented yet. Examining the `ExampleInfoControllee.hpp`
-file we can see why:
+At this point, we have successfully built our project, but the application code
+is not yet in place. Run the following commands to copy the test files into the
+project directory.
+
+```sh
+$ cp ../example_controllee.cpp ./src/bin/.
+$ cp ../example_controller.cpp ./src/bin/.
+```
+
+Edit the src/bin/CMakeLists.txt file to look like the following:
 
 ```
-virtual void handle_example_control(const ExampleControl& packet)
+add_executable(example_project main.cpp)
+target_link_libraries(example_project PUBLIC packetlib)
+target_include_directories(example_project PUBLIC
+    "${CMAKE_SOURCE_DIR}/include/packets"
+)
+
+add_executable(example_controllee example_controllee.cpp)
+target_link_libraries(example_controllee PUBLIC packetlib pthread)
+target_include_directories(example_controllee PUBLIC
+    "${CMAKE_SOURCE_DIR}/include"
+    "${CMAKE_SOURCE_DIR}/include/packets"
+)
+
+add_executable(example_controller example_controller.cpp)
+target_link_libraries(example_controller PUBLIC packetlib pthread)
+target_include_directories(example_controller PUBLIC
+    "${CMAKE_SOURCE_DIR}/include"
+    "${CMAKE_SOURCE_DIR}/include/packets"
+)
+```
+
+Re-run the CMake build to incorporate these new executables:
+
+```sh
+$ cmake --build build
+```
+
+Taking a closer look at the Controllee.hpp file in `include/` folder we can see
+that there is a function stub that needs to be implemented to handle the
+incoming control packet. This function is stubbed out for a Controllee
+developer to implement with the necessary functionality for thier frontend. The
+execution of this function is automatically handled by the base class and is
+not something that the Controllee developer needs to manage themselves.
+
+```
+auto execute_example_control(ExampleControl& packet) -> ExampleControlAckVX override
 {
+    auto ack = ExampleControlAckVX{};
     // AUTO-GENERATED FUNCTION STUB
     // IMPLEMENT PACKET HANDLING FUNCTIONALITY HERE
-    throw std::runtime_error("handle_example_control not implemented");
+    return ack;
 }
 ```
 
-All packet handlers in this file get stubbed out to throw a
-`std::runtime_error` by default. The functions in this file are left as stubs
-to be implemented with the specific functionality that is required for the
-user's application.
-
-To add in some functionality to the Controllee interface, run the following:
+To add in some functionality to the Controllee interface, run the following
+from the top level of `example_project`:
 
 ```
-cp .ExampleInfoControllee.hpp ExampleInfoControllee.hpp
+cp ../.Controllee.hpp include/Controllee.hpp
 ```
 
 ## Build
 
+Rebuild the project to incorporate these new changes.
+
 ```
-make
+cmake --build build
 ```
 
 ## Run
@@ -64,7 +111,7 @@ In a terminal window first launch the Controllee interface to act as the mock
 application waiting for VRT commands.
 
 ```
-./test_controllee
+./build/src/bin/example_controllee
 ```
 
 In another terminal window the Controller program can now be run to start
@@ -72,5 +119,5 @@ sending commands to the Controllee and receiving Acknowledge, Data, and Context
 packets.
 
 ```
-./test_controller
+./build/src/bin/example_controller
 ```

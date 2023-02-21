@@ -67,7 +67,7 @@ class CIF7Attributes(TemplateArrayStruct):
         for key,val in mapping.items():
             mode = parse_enable(val)
             if (mode == Mode.OPTIONAL):
-                raise TypeError('invalid mode "optional" for {}'.format(key))
+                raise TypeError(f'invalid mode "optional" for {key}')
             self.__dict__[key].enabled = True
             self.__dict__[key].required = True
 
@@ -97,7 +97,7 @@ class CIF7(CIF):
 
     @property
     def fields(self):
-        return [self.attributes]
+        return [attr_field for attr_field in self.attributes.fields]
 
     def _validate(self, mapping):
         for field in mapping:

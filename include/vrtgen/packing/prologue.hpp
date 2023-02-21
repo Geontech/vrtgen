@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -16,8 +16,17 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-#ifndef _VRTGEN_PACKING_PROLOGUE_HPP
-#define _VRTGEN_PACKING_PROLOGUE_HPP
+
+/**
+ * @file vrtgen/packing/prologue.hpp
+ * @brief Packing structures for VRT Prologue types.
+ */
+
+#pragma once
+
+#include <cstdint>
+
+#include <vrtgen/types/packed.hpp>
 
 namespace vrtgen::packing {
 
@@ -33,7 +42,7 @@ public:
      * @return Number of pad bits
      * 
      * Pad Bit Count is 5 bits long at bit position 31 in word 1
-     * See VITA 49.2 Figure 5.1.3-1 and Rule 5.1.3-4
+     * See VITA 49.2-2017 Figure 5.1.3-1 and Rule 5.1.3-4
      */
     uint8_t pad_bits() const noexcept
     {
@@ -45,7 +54,7 @@ public:
      * @param value Number of pad bits to set
      * 
      * Pad Bit Count is 5 bits long at bit position 31 in word 1
-     * See VITA 49.2 Figure 5.1.3-1 and Rule 5.1.3-4
+     * See VITA 49.2-2017 Figure 5.1.3-1 and Rule 5.1.3-4
      */
     void pad_bits(uint8_t value) noexcept
     {
@@ -57,7 +66,7 @@ public:
      * @return Organizationally Unique Identifier (OUI)
      * 
      * Organizationally Unique Identifier (OUI) is 24 bits long at bit position 23 in word 1
-     * See VITA 49.2 Figure 5.1.3-1 and Table 5.1.3-2
+     * See VITA 49.2-2017 Figure 5.1.3-1 and Table 5.1.3-2
      */
     uint32_t oui() const noexcept
     {
@@ -69,7 +78,7 @@ public:
      * @param value Organizationally Unique Identifier (OUI) value to set
      * 
      * Organizationally Unique Identifier (OUI) is 24 bits long at bit position 23 in word 1
-     * See VITA 49.2 Figure 5.1.3-1 and Table 5.1.3-2
+     * See VITA 49.2-2017 Figure 5.1.3-1 and Table 5.1.3-2
      */
     void oui(uint32_t value) noexcept
     {
@@ -81,7 +90,7 @@ public:
      * @return Information Class Code
      * 
      * Information Class Code is 16 bits long at bit position 31 in word 2
-     * See VITA 49.2 Figure 5.1.3-1
+     * See VITA 49.2-2017 Figure 5.1.3-1
      */
     uint16_t information_code() const noexcept
     {
@@ -93,7 +102,7 @@ public:
      * @param value Information Class Code to set
      * 
      * Information Class Code is 16 bits long at bit position 31 in word 2
-     * See VITA 49.2 Figure 5.1.3-1
+     * See VITA 49.2-2017 Figure 5.1.3-1
      */
     void information_code(uint16_t value) noexcept
     {
@@ -105,7 +114,7 @@ public:
      * @return Packet Class Code
      * 
      * Packet Class Code is 16 bits long at bit position 15 in word 2
-     * See VITA 49.2 Figure 5.1.3-1
+     * See VITA 49.2-2017 Figure 5.1.3-1
      */
     uint16_t packet_code() const noexcept
     {
@@ -117,7 +126,7 @@ public:
      * @param value Packet Class Code to set
      * 
      * Packet Class Code is 16 bits long at bit position 15 in word 2
-     * See VITA 49.2 Figure 5.1.3-1
+     * See VITA 49.2-2017 Figure 5.1.3-1
      */
     void packet_code(uint16_t value) noexcept
     {
@@ -157,5 +166,3 @@ private:
 }; // end class ClassIdentifier
 
 } // end namespace vrtgen::packing
-
-#endif // _VRTGEN_PACKING_PROLOGUE_HPP

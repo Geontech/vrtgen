@@ -4,6 +4,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2023-02-20
+### Added
+- User-defined stream id and trailer classes via YAML
+- Discrete IO user-defined fields
+- Doxygen support
+- Increased test coverage driven by VITA 49.2-2017 specification rules
+### Changed
+- **The schema for YAML files has changed**.
+  Individual trailer fields have been removed.
+  - Only user-defined bits are settable in YAML.
+- **The packet class structure has changed**.
+  Generated packet classes no longer use the `helper` construct.
+  - The packet helper `pack` function was replaced with internal data management and the `data` function.
+  - The packet helper `unpack` function was replaced with a new constructor that unpacks from a `std::span` of bytes.
+  - Packet members that are a class type (e.g. `vrtgen::packing::Gain`) can be updated with a reference getter function.
+    The internal data however will not be updated until the `data` function is called which will sync the internal
+    management of these classes.
+## [0.5.2] - 2022-06-07
+#### Fixed
+- Template for creating a UDP command socket.
+## [0.5.1] - 2022-05-31
+#### Fixed
+- Setting number of bits for `PayloadFormat` model class
+- `version_build_code` field type
+- Setting number of bits `ControlIdentifier` model class
+## [0.5.0] - 2022-03-17
+### Added
+- `cpp` backend as default installation
+### Changed
+- **The schema for YAML files has changed**.
+  Mappings are now marked with specific YAML tags for ingest by the new loader.
+- Migrated the backend parser model classes to Python `dataclass`.
+- Changed parser loader to utilize built-in `SafeLoader` from PyYAML
+- Removed generation of backend library. Now available as source in `include/vrtgen`
+- Updated templates.
 ## [0.4.0] - 2021-06-03
 ### Added
 - Support for including other YAML files containing packet definitions
@@ -14,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **The schema for YAML files has changed**.
   All mappings in YAML configurations are now lowercase separated with dashes. See doc/yaml-guide.md for details.
-  **Existing YAML files must be updated to work with version 0.3.**
+  **Existing YAML files must be updated to work with version 0.4.**
 ## [0.3.1] - 2020-04-20
 ### Changed
 - Fixed copy and move semantics for C++ `vrtgen::optional<T>` class.

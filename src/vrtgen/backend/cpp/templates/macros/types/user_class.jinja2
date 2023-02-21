@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -16,72 +16,312 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
-{% import "macros/types/basic.jinja2" as basic %}
+{% import "macros/members.jinja2" as members %}
 {% import "macros/function_decls.jinja2" as common %}
+{% import "macros/function_defs/common.jinja2" as common_def %}
 
-{%- macro define_class(class, type_helper) %}
+{%- macro trailer_class(class, type_helper) %}
+class {{ class.type_ }} : public vrtgen::packing::Trailer
+{
+public:
+{% for field in class.fields if field.enabled and field.user_defined and not field.is_packed_type and not field.is_enable %}
+    /**
+     * @brief Returns the {{ field.name }} indicator value
+     * @return {{ field.name }} indicator value
+     */
+    auto {{ field.name }}() const -> std::optional<{{ type_helper.value_type(field) }}>;
+
+    /**
+     * @brief Sets the {{ field.name }} indicator value
+     * @param value {{ field.name }} indicator value to set
+     */
+    auto {{ field.name }}(const {{ type_helper.value_type(field) }} value) -> void;
+
+    /**
+     * @brief Reset {{ field.name }} enable and indicator values to false
+     */
+    auto reset_{{ field.name }}() -> void;
+
+{% endfor %}
+{% for field in class.fields if not field.enabled and not field.is_packed_type %}
+{%   if loop.first %}
+    // Disabled functions
+{%   endif %}
+    auto {{ field.name }}_enable() const -> bool = delete;
+    auto {{ field.name }}_enable(bool value) noexcept -> void = delete;
+    auto {{ field.name }}() const -> bool = delete;
+    auto {{ field.name }}(bool value) noexcept -> void = delete;
+{% endfor %}
+
+private:
+{% for field in class.fields if field.enabled and field.user_defined and not field.is_packed_type and field.is_enable %}
+    /**
+     * @brief Returns the {{ field.name }} enable value
+     * @return {{ field.name }} enable value
+     */
+    auto {{ field.name }}() const -> bool;
+
+    /**
+     * @brief Sets the {{ field.name }} enable value
+     * @param value {{ field.name }} enable value to set
+     */
+    auto {{ field.name }}(const bool value) -> void;
+
+{% endfor %}
+}; // end class {{ class.type_ }} 
+{% endmacro %}
+
+{%- macro trailer_class_def(class, type_helper) %}
+{% for field in class.fields if field.enabled and field.user_defined and not field.is_enable %}
+{%   set value_type = type_helper.value_type(field) %}
+auto {{ class.type_ }}::{{ field.name }}() const -> std::optional<{{ value_type }}>
+{
+    if ({{ field.name }}_enable()) {
+{%   if field.is_enum and field.packed_tag.bits > 1 %}
+        return {{ value_type }}{ m_packed.get<{{ field.packed_tag.position }},{{ field.packed_tag.bits }},int>() };
+{%   else %}
+        return m_packed.get<{{ field.packed_tag.position }}>();
+{%   endif %}
+    }
+    return std::nullopt;
+}
+
+auto {{ class.type_ }}::{{ field.name }}(const {{ value_type }} value) -> void
+{
+    {{ field.name }}_enable(true);
+{%   if field.is_enum and field.packed_tag.bits > 1 %}
+    m_packed.set<{{ field.packed_tag.position }},{{ field.packed_tag.bits }},int>(static_cast<int>(value));
+{%   else %}
+    m_packed.set<{{ field.packed_tag.position }}>(value);
+{%   endif %}
+}
+
+auto {{ class.type_ }}::reset_{{ field.name }}() -> void
+{
+{% if field.is_enum %}
+    {{ field.name }}(static_cast<{{ value_type }}>(0));
+{% else %}
+    {{ field.name }}(false);
+{% endif %}
+    {{ field.name }}_enable(false);
+}
+
+{% endfor %}
+{% for field in class.fields if field.enabled and field.user_defined and field.is_enable %}
+auto {{ class.type_ }}::{{ field.name }}() const -> bool
+{
+{%   if field.is_enum and field.packed_tag.bits > 1 %}
+    return m_packed.get<{{ field.packed_tag.position }},{{ field.packed_tag.bits }},int>() == (static_cast<int>(1 << {{ field.packed_tag.bits }}) - 1);
+{%   else %}
+    return m_packed.get<{{ field.packed_tag.position}}>();
+{%   endif %}
+}
+
+auto {{ class.type_ }}::{{ field.name }}(const bool value) -> void
+{
+{%   if field.is_enum and field.packed_tag.bits > 1%}
+    if (value) {
+        m_packed.set<{{ field.packed_tag.position }},{{ field.packed_tag.bits }},int>((static_cast<int>(1 << {{ field.packed_tag.bits }}) - 1));
+    } else {
+        m_packed.set<{{ field.packed_tag.position }},{{ field.packed_tag.bits }},int>(0);
+    }
+{%   else %}
+    m_packed.set<{{ field.packed_tag.position}}>(value);
+{%   endif %}
+}
+
+{% endfor %}
+{% endmacro %}
+
+{%- macro template_class(class, type_helper) %}
+template <typename T, typename V=T, std::size_t N=0, std::size_t R=0>
+class {{ class.type_ }}
+{
+public:
+{% for field in class.fields if field.enabled and not field.name == 'current_value' %}
+    auto {{ field.name }}() -> V
+    requires vrtgen::packing::cif7::is_scalar<T,V,N,R>
+    {
+        auto swapped{ vrtgen::swap::from_be(m_{{ field.name }}) };
+        if constexpr (std::is_floating_point_v<V>) {
+            return vrtgen::fixed::to_fp<N,R>(swapped);
+        }
+        return swapped;
+    }
+
+    [[nodiscard]]
+    auto {{ field.name }}() -> T&
+    requires std::is_class_v<V> && std::same_as<T,V>
+    {
+        return m_{{ field.name }};
+    }
+
+    auto {{ field.name }}(V value) -> void
+    requires vrtgen::packing::cif7::is_scalar<T,V,N,R>
+    {
+        if constexpr (std::is_floating_point_v<V>) {
+            m_{{ field.name }} = vrtgen::swap::to_be(static_cast<T>(vrtgen::fixed::to_int<N,R>(value)));
+        } else {
+            m_{{ field.name }} = vrtgen::swap::to_be(value);
+        }
+    }
+
+    auto {{ field.name }}(const V& value) -> void
+    requires std::is_class_v<V> && std::same_as<T,V>
+    {
+        m_{{ field.name }} = value;
+    }
+
+{% endfor %}
+    /**
+     * @brief Returns the number of {{ class.type_ }} bytes
+     * @return Number of {{ class.type_ }} bytes
+     */
+    auto size() const -> size_t
+    {
+        std::size_t retval{ 0 };
+        if constexpr (std::is_integral_v<T>) {
+{% for field in class.fields if field.enabled and not field.name == 'current_value' %}
+            retval += sizeof(m_{{ field.name }});
+{% endfor %}
+        } else {
+{% for field in class.fields if field.enabled and not field.name == 'current_value' %}
+            retval += m_{{ field.name }}.size();
+{% endfor %}
+        }
+        return retval;
+    }
+
+    /**
+     * @brief Pack {{ class.type_ }} as bytes into the buffer
+     * @param buffer_ptr Pointer to buffer location to add {{ class.type_ }} bytes
+     */
+    auto pack_into(uint8_t* buffer_ptr) const -> void
+    {
+        if constexpr (std::is_integral_v<T>) {
+{% for field in class.fields if field.enabled and not field.name == 'current_value' %}
+            std::memcpy(buffer_ptr, &m_{{ field.name }}, sizeof(m_{{ field.name }}));
+            buffer_ptr += sizeof({{ type_helper.member_type(field) }});
+{% endfor %}
+        } else {
+{% for field in class.fields if field.enabled and not field.name == 'current_value' %}
+            m_{{ field.name }}.pack_into(buffer_ptr);
+            buffer_ptr += m_{{ field.name }}.size();
+{% endfor %}
+        }
+    }
+
+    /**
+     * @brief Unpack buffer bytes into {{ class.type_ }}
+     * @param buffer_ptr Pointer to beginning of {{ class.type_ }} bytes in the buffer
+     */
+    auto unpack_from(uint8_t* buffer_ptr) -> void
+    {
+        if constexpr (std::is_integral_v<T>) {
+{% for field in class.fields if field.enabled and not field.name == 'current_value' %}
+            std::memcpy(&m_{{ field.name }}, buffer_ptr, sizeof(m_{{ field.name }}));
+            buffer_ptr += sizeof({{ type_helper.member_type(field) }});
+{% endfor %}
+        } else {
+{% for field in class.fields if field.enabled and not field.name == 'current_value' %}
+            m_{{ field.name }}.unpack_from(buffer_ptr);
+            buffer_ptr += m_{{ field.name }}.size();
+{% endfor %}
+        }
+    }
+
+private:
+{% for field in class.fields if field.enabled and not field.name == 'current_value' %}
+    T m_{{ field.name }};
+{% endfor %}
+
+}; // end class {{ class.type_ }}
+{% endmacro %}
+
+{%- macro decl(class, type_helper) %}
 {% set fields = (class.fields | sort_packed_tags) %}
 /**
 {% for line in (class.__doc__ | format_docstring) %}
  * {{ line | trim }}
 {% endfor %}
  */
- {% if class.is_template %}
-template < typename {{ class.template_name }} >
- {% endif %}
-class {{ class.type_ }} {% if class.child_of %} : public vrtgen::packing::{{ class.child_of }} {% endif %}
+{% if class.is_template %}
+{{ template_class(class, type_helper) | trim }}
+{% elif class.type_ == 'Trailer' %}
+{{ trailer_class(class, type_helper) | trim }}
+{% else %}
+class {{ class.type_ }}{{ ' : public vrtgen::packing::' + class.child_of if class.child_of }}
 {
 public:
 {% for field in fields if field.enabled and not field.is_packed_type %}
 {% set packed = field.packed_tag.packed_int is not none and field.user_defined %}
 {% if class.child_of or field.is_extension_type %}
 {%   if field.packed_tag.packed_int is not none and field.user_defined %}
-    {{ basic.getters_and_setters(field, type_helper, true) | indent(4) | trim }}
+    {{ common.getters_and_setters(field, type_helper) | indent(4) | trim }}
 {%   endif %}
 {% else %}
-    {{ basic.getters_and_setters(field, type_helper) | indent(4) | trim }}
+    {{ common.getters_and_setters(field, type_helper) | indent(4) | trim }}
 {% endif %}
+
 {% endfor %}
 {% if not class.child_of %}
-    size_t size() const
-    {
-        return m_packed.size();
-    }
+    /**
+     * @brief Returns the number of {{ class.type_ }} bytes
+     * @return Number of {{ class.type_ }} bytes
+     */
+    auto size() const -> size_t;
 
-    void pack_into(uint8_t* buffer_ptr) const
-    {
-        m_packed.pack_into(buffer_ptr);
-    }
+    /**
+     * @brief Pack {{ class.type_ }} as bytes into the buffer
+     * @param buffer_ptr Pointer to buffer location to add {{ class.type_ }} bytes
+     */
+    auto pack_into(uint8_t* buffer_ptr) const -> void;
 
-    void unpack_from(const uint8_t* data)
-    {
-        m_packed.unpack_from(data);
-    }
+    /**
+     * @brief Unpack buffer bytes into {{ class.type_ }}
+     * @param buffer_ptr Pointer to beginning of {{ class.type_ }} bytes in the buffer
+     */
+    auto unpack_from(uint8_t* buffer_ptr) -> void;
 {% endif %}
 
 private:
-{% for field in fields if field.enabled and not field.is_packed_type %}
-{%     if loop.first %}
-    /*
-{%     endif %}
-     * {{ field.name }} {{ field.packed_tag.field_word }}/{{ field.packed_tag.position }} 
-{%     if loop.last %}
-     */
-{%     endif %}
-{% endfor %}
 {% for field in fields if field.enabled %}
-{%     set tag = field.packed_tag %}
-{%     if class.is_template %}
-{%         if field.type_.is_packed_struct %}
-    {{ type_helper.member_type(field) }} _{{ field.name }};
-{%         else %}
-    T _{{field.name}};
-{%         endif %}
-{%     elif tag.packed_int is none %}
-    {{ basic.member(field, type_helper) | indent(4) | trim }}
+{%     if field.packed_tag.packed_int is none %}
+    {{ members.member(field, type_helper) | indent(4) | trim }}
 {%     endif %}
 {% endfor %}
 
 }; // end class {{ class.type_ }}
-
+{% endif %}
 {%- endmacro %}
+
+{%- macro def(class, type_helper) %}
+{% if class.type_ == 'Trailer' %}
+{{ trailer_class_def(class, type_helper) | trim }}
+{% else %}
+/**
+ * {{ class.type_ }} class functions
+ */
+{%   set fields = (class.fields | sort_packed_tags) %}
+{%   for field in fields if field.enabled and not field.is_packed_type %}
+{{ common_def.getters_and_setters(class.type_, field, type_helper) | trim }}
+
+{%   endfor %}
+{%   if not class.child_of %}
+auto {{ class.type_ }}::size() const -> size_t
+{
+    return m_packed.size();
+}
+
+auto {{ class.type_ }}::pack_into(uint8_t* buffer_ptr) const -> void
+{
+    m_packed.pack_into(buffer_ptr);
+}
+
+auto {{ class.type_ }}::unpack_from(uint8_t* buffer_ptr) -> void
+{
+    m_packed.unpack_from(buffer_ptr);
+}
+{%   endif %}
+{% endif %}
+{% endmacro %}

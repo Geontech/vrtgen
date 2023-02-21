@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -19,7 +19,9 @@
 
 #include <iostream>
 
-#include "ExampleInfoControllee.hpp"
+#include "Controllee.hpp"
+
+using namespace example::controllee;
 
 int main()
 {
@@ -27,7 +29,7 @@ int main()
     unsigned short port = 5000;
 
     // Create a controllee instance
-    ExampleInfoControllee controllee({ ip, port });
+    Controllee controllee({ ip, port });
     std::cout << "Successfully bound controllee socket to: " << controllee.cmd_socket().src().to_string() << std::endl;
 
     // Enable TCP accept
@@ -36,7 +38,7 @@ int main()
         return 1;
     }
     std::cout << "Listening for connections..." << std::endl;
-    controllee.cmd_socket().timeout(10);
+    controllee.cmd_socket().timeout(30);
     if (!controllee.cmd_socket().accept()) {
         std::cout << "Socket failed to accept incoming connections. Exiting..." << std::endl;
         return 1;

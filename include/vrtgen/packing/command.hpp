@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-#ifndef _VRTGEN_PACKING_COMMAND_HPP
-#define _VRTGEN_PACKING_COMMAND_HPP
+
+#pragma once
 
 #include <vrtgen/types/packed.hpp>
 #include "enums.hpp"
@@ -916,7 +916,7 @@ public:
      * Erroneous Field is 1 bit long at bit position 29
      * See VITA 49.2-2017 Table 8.4.1.2.1-1
      */
-    bool erroneuous_field() const noexcept
+    bool erroneous_field() const noexcept
     {
         return m_packed.get<29>();
     }
@@ -928,7 +928,7 @@ public:
      * Erroneous Field is 1 bit long at bit position 29
      * See VITA 49.2-2017 Table 8.4.1.2.1-1
      */
-    void erroneuous_field(bool value) noexcept
+    void erroneous_field(bool value) noexcept
     {
         m_packed.set<29>(value);
     }
@@ -1176,5 +1176,3 @@ public:
 }; // end class WarningErrorFields
 
 } // end namespace vrtgen::packing
-
-#endif // _VRTGEN_PACKING_COMMAND_HPP

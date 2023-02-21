@@ -1,19 +1,19 @@
 TrailerData1: !Data
   trailer: !Trailer
-    associated_context_packets_count: required
+    # associated_context_packets_count: required
 
 TrailerData2: !Data
   trailer: !Trailer
-    associated_context_packets_count: optional
+    # associated_context_packets_count: optional
 
 TrailerData3: !Data
   trailer: !Trailer
-    user_defined1: enable_indicator
-    user_defined2: enable_indicator
+    user_defined_1: enable_indicator
+    user_defined_2: enable_indicator
 
 TrailerData4: !Data
   trailer: !Trailer
-    user_defined1: !!seq
+    user_defined_1: !!seq
       - zero
       - one
       - two
@@ -38,7 +38,7 @@ TrailerData5: !Data
 TrailerData6: !Data
   trailer: !Trailer
     sample_frame: required
-    user_defined1: !!seq
+    user_defined_1: !!seq
       - zero
       - one
       - two

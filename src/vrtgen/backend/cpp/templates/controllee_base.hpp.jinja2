@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -142,8 +142,7 @@ if ({{ packet.name }}::helper::match(m_message.data(), recv_length)) {
 {% endmacro %}
 
 {%- macro define_controllee_base(class_name) %}
-#ifndef {{ class_name.upper() }}_HPP
-#define {{ class_name.upper() }}_HPP
+#pragma once
 
 #include <array>
 #include <thread>
@@ -152,55 +151,82 @@ if ({{ packet.name }}::helper::match(m_message.data(), recv_length)) {
 #include <memory>
 #include <optional>
 #include <tuple>
-#include <variant>
 #include <vrtgen/vrtgen.hpp>
 #include <vrtgen/socket.hpp>
 
-#include "{{ header }}"
+{% for packet in packets if packet.is_command %}
+#include <{{ packet.name | to_snake }}.hpp>
+{% endfor %}
+{% if namespace_ %}
 
+namespace {{ namespace_ }}::controllee {
+
+using namespace {{ namespace_ }}::packets;
+{% endif %}
+
+/**
+ * @class {{ class_name }}
+ */
 class {{ class_name }}
 {
-{% for packet in packets if packet.is_control %}
-{%   if loop.first %}
-    using cmd_socket_type = vrtgen::socket::{{ cmd_socket }}::v4;
-    using message_buffer = std::array<char, 65536>;
+{% set ns = namespace(has_datactxt=false,has_control=false) %}
+{% for packet in packets %}
+{%   if packet.is_data or packet.is_context %}
+{%     set ns.has_datactxt = true %}
+{%   endif %}
+{%   if packet.is_control %}
+{%     set ns.has_control = true %}
 {%   endif %}
 {% endfor %}
-{% for packet in packets if (packet.is_data or packet.is_context) %}
-{%  if loop.first %}
+{% if ns.has_control %}
+    using cmd_socket_type = vrtgen::socket::{{ cmd_socket }}::v4;
+    using message_buffer = std::array<uint8_t, 65536>;
+{% endif %}
+{% if ns.has_datactxt %}
     using data_ctxt_socket_type = vrtgen::socket::udp::v4;
     using data_ctxt_endpoint_type = typename data_ctxt_socket_type::endpoint_type;
-{%   endif %}
-{% endfor %}
-{% for packet in packets if packet.is_control %}
-{%   if loop.first %}
+{% endif %}
+{% if ns.has_control %}
 protected:
     using cmd_endpoint_type = typename cmd_socket_type::endpoint_type;
-{%   endif %}
-{% endfor %}
+{% endif %}
 
 public:
+    /**
+     * @brief Deleted default constructor
+     */
     {{ class_name }}() = default;
+
+    /**
+     * @brief Endpoint constructor
+     */
+    explicit {{ class_name }}(const cmd_endpoint_type& endpoint)
+    {
+        if (!m_cmd_socket.bind(endpoint)) {
+            throw std::runtime_error("Failed to bind socket during Controllee construction");
+        }
+    }
+
+    /**
+     * @brief Deconstructor
+     */
     virtual ~{{ class_name }}()
     {
-{% for packet in packets if packet.is_control %}
-{%   if loop.first %}
-        _listening = false;
-        if (_recv_thread.joinable()) {
-            _recv_thread.join();
+{% if ns.has_control %}
+        m_listening = false;
+        if (m_recv_thread.joinable()) {
+            m_recv_thread.join();
         }
-{%   endif %}
-{% endfor %}
+{% endif %}
     }
-{% for packet in packets if (packet.is_data or packet.is_context) %}
-{%   if loop.first %}
+{% if ns.has_datactxt %}
 
     /**
     * @brief Bind the data/context recv socket to the desired endpoint for receiving data/context packets
     */
     void data_ctxt_src_endpoint(const data_ctxt_endpoint_type& endpoint)
     {
-        if (!_data_ctxt_recv_socket.bind(endpoint)) {
+        if (!m_data_ctxt_recv_socket.bind(endpoint)) {
             throw std::runtime_error("Failed to bind data/context receive socket to " + endpoint.to_string());
         }
     }
@@ -210,7 +236,7 @@ public:
     */
     const data_ctxt_endpoint_type& data_ctxt_src_endpoint() const
     {
-        return _data_ctxt_recv_socket.src();
+        return m_data_ctxt_recv_socket.src();
     }
 
     /**
@@ -218,7 +244,7 @@ public:
     */
     data_ctxt_socket_type& data_ctxt_recv_socket() noexcept
     {
-        return _data_ctxt_recv_socket;
+        return m_data_ctxt_recv_socket;
     }
 
     /**
@@ -226,7 +252,7 @@ public:
     */
     void data_ctxt_dst_endpoint(const data_ctxt_endpoint_type& endpoint)
     {
-        _data_ctxt_send_socket.dst(endpoint);
+        m_data_ctxt_send_socket.dst(endpoint);
     }
 
     /**
@@ -234,7 +260,7 @@ public:
     */
     const data_ctxt_endpoint_type& data_ctxt_dst_endpoint() const
     {
-        return _data_ctxt_send_socket.dst();
+        return m_data_ctxt_send_socket.dst();
     }
 
     /**
@@ -242,28 +268,39 @@ public:
     */
     data_ctxt_socket_type& data_ctxt_send_socket() noexcept
     {
-        return _data_ctxt_send_socket;
+        return m_data_ctxt_send_socket;
     }
-{%   endif %}
-{% endfor %}
+{% endif %}
 
 {% for packet in packets if packet.is_control %}
 {%   if loop.first %}
     cmd_socket_type& cmd_socket() noexcept
     {
-        return _cmd_socket;
+        return m_cmd_socket;
     }
 
-    void vrt_listen()
+    auto vrt_listen() -> void
     {
-        if (!_listening) {
-            _listening = true;
-            _recv_thread = std::thread(&{{ class_name }}::_listener_func, this);
+        if (!m_listening) {
+            m_listening = true;
+            m_recv_thread = std::thread(&{{ class_name }}::m_listener_func, this);
         }
     }
 
 {%   endif %}
-    virtual void handle_{{ packet.name | to_snake }}(const {{ packet.name }}& packet) = 0;
+{%   if packet.cam.req_v.enabled %}
+    virtual auto validate_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> {{ packet.name }}AckVX = 0;
+{%   endif %}
+{%   if packet.cam.req_x.enabled %}
+{%     if packet.cam.req_s.enabled %}
+    virtual auto execute_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> std::tuple<{{ packet.name }}AckVX {{ packet.name }}AckS> = 0;
+{%     else %}
+    virtual auto execute_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> {{ packet.name }}AckVX = 0;
+{%     endif %}
+{%   endif %}
+{%   if packet.cam.req_s.enabled and not packet.cam.req_x.enabled %}
+    virtual auto execute_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> {{ packet.name }}AckS = 0;
+{%   endif %}
 {% if loop.last %}
 
 {% endif %}
@@ -271,45 +308,106 @@ public:
 protected:
 {% for packet in packets if (packet.is_control and packet.controller_id.enabled) %}
 {%   if loop.first %}
-    cmd_socket_type _cmd_socket;
+    cmd_socket_type m_cmd_socket;
 {%   endif %}
 {% endfor %}
 {% for packet in packets if (packet.is_data or packet.is_context) %}
 {%   if loop.first %}
-    data_ctxt_socket_type _data_ctxt_recv_socket;
-    data_ctxt_socket_type _data_ctxt_send_socket;
+    data_ctxt_socket_type m_data_ctxt_recv_socket;
+    data_ctxt_socket_type m_data_ctxt_send_socket;
 {%   endif %}
 {% endfor %}
 
-{% for packet in packets if packet.is_control %}
-{%   if loop.first %}
+{% if ns.has_control %}
 private:
-    std::thread _recv_thread;
-    std::atomic_bool _listening{ false };
-{%   endif %}
-{% endfor %}
+    std::thread m_recv_thread;
+    std::atomic_bool m_listening{ false };
+{% endif %}
 {% for packet in packets if packet.is_control %}
 {%   if loop.first %}
 
-    void _listener_func()
+    auto m_listener_func() -> void
     {
-        while(_listening) {
-            message_buffer message;
+        while (m_listening) {
+            auto message = message_buffer{};
 {%     if cmd_socket == 'tcp' %}
-            auto recv_length = _cmd_socket.read_some(message.data(), message.size());
+            auto recv_length = m_cmd_socket.read_some(message.data(), message.size());
 {%     elif cmd_socket == 'udp' %}
             cmd_endpoint_type endpoint;
-            auto recv_length = _cmd_socket.receive_from(message.data(), m_message.size(), endpoint);
+            auto recv_length = m_cmd_socket.receive_from(message.data(), m_message.size(), endpoint);
 {%     endif %}
             if (recv_length <= 0) {
                 continue;
             }
 
 {%   endif %}
-            if (!packing::{{ packet.helper }}::match(message.data(), recv_length)) {
-                {{ packet.name }} packet;
-                {{ packet.name }}::helper::unpack(packet, message.data(), recv_length);
-                this->handle_{{ packet.name | to_snake }}(packet);
+            if (auto err = {{ packet.name }}::match(message); !err.has_value()) {
+                auto packet = {{ packet.name }}{ message };
+{%   if packet.cam.req_v.enabled %}
+                if (packet.req_v()) {
+                    auto ack_v = this->validate_{{ packet.name | to_snake }}(packet);
+                    ack_v.ack_v(true);
+                    ack_v.stream_id(packet.stream_id());
+                    ack_v.message_id(packet.message_id());
+{%     if packet.controllee_id.enabled %}
+                    ack_v.controllee_id(packet.controllee_id());
+{%     endif %}
+{%     if packet.controller_id.enabled %}
+                    ack_v.controller_id(packet.controller_id());
+{%     endif %}
+                    auto packed_data = ack_v.data();
+                    m_cmd_socket.write_some(packed_data.data(), packed_data.size());
+                }
+{%   endif %}
+{%   if packet.cam.req_x.enabled %}
+                if (packet.req_x()) {
+{%     if packet.cam.req_s.enabled %}
+                    auto [ack_x, ack_s] = this->execute_{{ packet.name | to_snake }}(packet);
+{%     else %}
+                    auto ack_x = this->execute_{{ packet.name | to_snake }}(packet);
+{%     endif %}
+                    ack_x.ack_x(true);
+                    ack_x.stream_id(packet.stream_id());
+                    ack_x.message_id(packet.message_id());
+{%     if packet.controllee_id.enabled %}
+                    ack_x.controllee_id(packet.controllee_id());
+{%     endif %}
+{%     if packet.controller_id.enabled %}
+                    ack_x.controller_id(packet.controller_id());
+{%     endif %}
+                    auto packed_data = ack_x.data();
+                    m_cmd_socket.write_some(packed_data.data(), packed_data.size());
+{%     if packet.cam.req_s.enabled %}
+                    if (packet.req_s()) {
+                        ack_s.stream_id(packet.stream_id());
+                        ack_s.message_id(packet.message_id());
+{%     if packet.controllee_id.enabled %}
+                        ack_s.controllee_id(packet.controllee_id());
+{%     endif %}
+{%     if packet.controller_id.enabled %}
+                        ack_s.controller_id(packet.controller_id());
+{%     endif %}
+                        auto packed_data = ack_s.data();
+                        m_cmd_socket.write_some(packed_data.data(), packed_data.size());        
+                    }
+{%     endif %}
+                }
+{%   endif %}
+{%   if packet.cam.req_s.enabled and not packet.cam.req_x.enabled %}
+                if (packet.req_s()) {
+                    auto ack_s = this->execute_{{ packet.name | to_snake }}(packet);
+                    ack_s.stream_id(packet.stream_id());
+                    ack_s.message_id(packet.message_id());
+{%     if packet.controllee_id.enabled %}
+                    ack_s.controllee_id(packet.controllee_id());
+{%     endif %}
+{%     if packet.controller_id.enabled %}
+                    ack_s.controller_id(packet.controller_id());
+{%     endif %}
+                    auto packed_data = ack_s.data();
+                    m_cmd_socket.write_some(packed_data.data(), packed_data.size());
+                }
+{%   endif %}
             }
 {%   if loop.last %}
         }
@@ -318,7 +416,9 @@ private:
 {% endfor %}
 
 }; // end class {{ class_name }}
+{% if namespace_ %}
 
-#endif // {{ class_name.upper() }}_HPP
+} // end namespace {{ namespace_ }}::controllee
+{% endif %}
 {% endmacro %}
 {{ define_controllee_base(controllee_base_name) }}

@@ -22,8 +22,7 @@
  * @brief Packing structures for VRT Indicator Field words.
  */
 
-#ifndef _VRTGEN_PACKING_INDICATOR_FIELDS_HPP
-#define _VRTGEN_PACKING_INDICATOR_FIELDS_HPP
+#pragma once
 
 #include <vrtgen/types/packed.hpp>
 
@@ -1408,291 +1407,697 @@ public:
 class IndicatorField2 : public IndicatorField
 {
 public:
+    /**
+     * @brief Returns the Bind enable flag
+     * @return true if packet contains Bind field, otherwise false
+     * 
+     * Bind is 1 bit long at bit position 31
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool bind() const noexcept
     {
         return m_packed.get<31>();
     }
 
+    /**
+     * @brief Sets the Bind enable flag
+     * @param value Bind enable flag value to set
+     * 
+     * Bind is 1 bit long at bit position 31
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void bind(bool value) noexcept
     {
         m_packed.set<31>(value);
     }
 
+    /**
+     * @brief Returns the Cited SID enable flag
+     * @return true if packet contains Cited SID field, otherwise false
+     * 
+     * Cited SID is 1 bit long at bit position 30
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool cited_sid() const noexcept
     {
         return m_packed.get<30>();
     }
 
+    /**
+     * @brief Sets the Cited SID  enable flag
+     * @param value Cited SID  enable flag value to set
+     * 
+     * Cited SID is 1 bit long at bit position 30
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void cited_sid(bool value) noexcept
     {
         m_packed.set<30>(value);
     }
 
+    /**
+     * @brief Returns the Sibling SID enable flag
+     * @return true if packet contains Sibling SID field, otherwise false
+     * 
+     * Sibling SID is 1 bit long at bit position 29
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool sibling_sid() const noexcept
     {
         return m_packed.get<29>();
     }
 
+    /**
+     * @brief Sets the Sibling SID enable flag
+     * @param value Sibling SID enable flag value to set
+     * 
+     * Sibling SID is 1 bit long at bit position 29
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void sibling_sid(bool value) noexcept
     {
         m_packed.set<29>(value);
     }
 
+    /**
+     * @brief Returns the Parent SID enable flag
+     * @return true if packet contains Parent SID field, otherwise false
+     * 
+     * Parent SID is 1 bit long at bit position 28
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool parent_sid() const noexcept
     {
         return m_packed.get<28>();
     }
 
+    /**
+     * @brief Sets the Parent SID enable flag
+     * @param value Parent SID enable flag value to set
+     * 
+     * Parent SID is 1 bit long at bit position 28
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void parent_sid(bool value) noexcept
     {
         m_packed.set<28>(value);
     }
 
+    /**
+     * @brief Returns the Child SID enable flag
+     * @return true if packet contains Child SID field, otherwise false
+     * 
+     * Child SID is 1 bit long at bit position 27
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool child_sid() const noexcept
     {
         return m_packed.get<27>();
     }
 
+    /**
+     * @brief Sets the Child SID enable flag
+     * @param value Child SID enable flag value to set
+     * 
+     * Child SID is 1 bit long at bit position 27
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void child_sid(bool value) noexcept
     {
         m_packed.set<27>(value);
     }
 
+    /**
+     * @brief Returns the Cited Message ID enable flag
+     * @return true if packet contains Cited Message ID field, otherwise false
+     * 
+     * Cited Message ID is 1 bit long at bit position 26
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool cited_message_id() const noexcept
     {
         return m_packed.get<26>();
     }
 
+    /**
+     * @brief Sets the Cited Message ID enable flag
+     * @param value Cited Message ID enable flag value to set
+     * 
+     * Cited Message ID is 1 bit long at bit position 26
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void cited_message_id(bool value) noexcept
     {
         m_packed.set<26>(value);
     }
 
+    /**
+     * @brief Returns the Controllee ID enable flag
+     * @return true if packet contains Controllee ID field, otherwise false
+     * 
+     * Controllee ID is 1 bit long at bit position 25
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool controllee_id() const noexcept
     {
         return m_packed.get<25>();
     }
 
+    /**
+     * @brief Sets the Controllee ID enable flag
+     * @param value Controllee ID enable flag value to set
+     * 
+     * Controllee ID is 1 bit long at bit position 25
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void controllee_id(bool value) noexcept
     {
         m_packed.set<25>(value);
     }
 
+    /**
+     * @brief Returns the Controllee UUID enable flag
+     * @return true if packet contains Controllee UUID field, otherwise false
+     * 
+     * Controllee UUID is 1 bit long at bit position 24
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool controllee_uuid() const noexcept
     {
         return m_packed.get<24>();
     }
 
+    /**
+     * @brief Sets the Controllee UUID enable flag
+     * @param value Controllee UUID enable flag value to set
+     * 
+     * Controllee UUID is 1 bit long at bit position 24
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void controllee_uuid(bool value) noexcept
     {
         m_packed.set<24>(value);
     }
 
+    /**
+     * @brief Returns the Controller ID enable flag
+     * @return true if packet contains Controller ID field, otherwise false
+     * 
+     * Controller ID is 1 bit long at bit position 23
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool controller_id() const noexcept
     {
         return m_packed.get<23>();
     }
 
+    /**
+     * @brief Sets the Controller ID enable flag
+     * @param value Controller ID enable flag value to set
+     * 
+     * Controller ID is 1 bit long at bit position 23
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void controller_id(bool value) noexcept
     {
         m_packed.set<23>(value);
     }
 
+    /**
+     * @brief Returns the Controller UUID enable flag
+     * @return true if packet contains Controller UUID field, otherwise false
+     * 
+     * Controller UUID is 1 bit long at bit position 22
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool controller_uuid() const noexcept
     {
         return m_packed.get<22>();
     }
 
+    /**
+     * @brief Sets the Controller UUID enable flag
+     * @param value Controller UUID enable flag value to set
+     * 
+     * Controller UUID is 1 bit long at bit position 22
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void controller_uuid(bool value) noexcept
     {
         m_packed.set<22>(value);
     }
 
+    /**
+     * @brief Returns the Information Source enable flag
+     * @return true if packet contains Information Source field, otherwise false
+     * 
+     * Information Source is 1 bit long at bit position 21
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool information_source() const noexcept
     {
         return m_packed.get<21>();
     }
 
+    /**
+     * @brief Sets the Information Source enable flag
+     * @param value Information Source enable flag value to set
+     * 
+     * Information Source is 1 bit long at bit position 21
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void information_source(bool value) noexcept
     {
         m_packed.set<21>(value);
     }
 
+    /**
+     * @brief Returns the Track ID enable flag
+     * @return true if packet contains Track ID field, otherwise false
+     * 
+     * Track ID is 1 bit long at bit position 20
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool track_id() const noexcept
     {
         return m_packed.get<20>();
     }
 
+    /**
+     * @brief Sets the Track ID enable flag
+     * @param value Track ID enable flag value to set
+     * 
+     * Track ID is 1 bit long at bit position 20
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void track_id(bool value) noexcept
     {
         m_packed.set<20>(value);
     }
 
+    /**
+     * @brief Returns the Country Code enable flag
+     * @return true if packet contains Country Code field, otherwise false
+     * 
+     * Country Code is 1 bit long at bit position 19
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool country_code() const noexcept
     {
         return m_packed.get<19>();
     }
 
+    /**
+     * @brief Sets the Country Code enable flag
+     * @param value Country Code enable flag value to set
+     * 
+     * Country Code is 1 bit long at bit position 19
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void country_code(bool value) noexcept
     {
         m_packed.set<19>(value);
     }
 
-    bool operator_() const noexcept
+    /**
+     * @brief Returns the Operator ID enable flag
+     * @return true if packet contains Operator ID field, otherwise false
+     * 
+     * Operator ID is 1 bit long at bit position 18
+     * See VITA 49.2-2017 Table 9.1-1
+     */
+    bool operator_id() const noexcept
     {
         return m_packed.get<18>();
     }
 
-    void operator_(bool value) noexcept
+    /**
+     * @brief Sets the Operator ID enable flag
+     * @param value Operator ID enable flag value to set
+     * 
+     * Operator ID is 1 bit long at bit position 18
+     * See VITA 49.2-2017 Table 9.1-1
+     */
+    void operator_id(bool value) noexcept
     {
         m_packed.set<18>(value);
     }
 
+    /**
+     * @brief Returns the Platform Class enable flag
+     * @return true if packet contains Platform Class field, otherwise false
+     * 
+     * Platform Class is 1 bit long at bit position 17
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool platform_class() const noexcept
     {
         return m_packed.get<17>();
     }
 
+    /**
+     * @brief Sets the Platform Class enable flag
+     * @param value Platform Class enable flag value to set
+     * 
+     * Platform Class is 1 bit long at bit position 17
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void platform_class(bool value) noexcept
     {
         m_packed.set<17>(value);
     }
 
+    /**
+     * @brief Returns the Platform Instance enable flag
+     * @return true if packet contains Platform Instance field, otherwise false
+     * 
+     * Platform Instance is 1 bit long at bit position 16
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool platform_instance() const noexcept
     {
         return m_packed.get<16>();
     }
 
+    /**
+     * @brief Sets the Platform Instance enable flag
+     * @param value Platform Instance enable flag value to set
+     * 
+     * Platform Instance is 1 bit long at bit position 16
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void platform_instance(bool value) noexcept
     {
         m_packed.set<16>(value);
     }
 
+    /**
+     * @brief Returns the Platform Display enable flag
+     * @return true if packet contains Platform Display field, otherwise false
+     * 
+     * Platform Display is 1 bit long at bit position 15
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool platform_display() const noexcept
     {
         return m_packed.get<15>();
     }
 
+    /**
+     * @brief Sets the Platform Display enable flag
+     * @param value Platform Display enable flag value to set
+     * 
+     * Platform Display is 1 bit long at bit position 15
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void platform_display(bool value) noexcept
     {
         m_packed.set<15>(value);
     }
 
+    /**
+     * @brief Returns the EMS Device Class flag
+     * @return true if packet contains EMS Device Class field, otherwise false
+     * 
+     * EMS Device Class is 1 bit long at bit position 14
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool ems_device_class() const noexcept
     {
         return m_packed.get<14>();
     }
 
+    /**
+     * @brief Sets the EMS Device Class enable flag
+     * @param value EMS Device Class enable flag value to set
+     * 
+     * EMS Device Class is 1 bit long at bit position 14
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void ems_device_class(bool value) noexcept
     {
         m_packed.set<14>(value);
     }
 
+    /**
+     * @brief Returns the EMS Device Type enable flag
+     * @return true if packet contains EMS Device Type field, otherwise false
+     * 
+     * EMS Device Type is 1 bit long at bit position 13
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool ems_device_type() const noexcept
     {
         return m_packed.get<13>();
     }
 
+    /**
+     * @brief Sets the EMS Device Type enable flag
+     * @param value EMS Device Type enable flag value to set
+     * 
+     * EMS Device Type is 1 bit long at bit position 13
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void ems_device_type(bool value) noexcept
     {
         m_packed.set<13>(value);
     }
 
+    /**
+     * @brief Returns the EMS Device Instance enable flag
+     * @return true if packet contains EMS Device Instance field, otherwise false
+     * 
+     * EMS Device Instance is 1 bit long at bit position 12
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool ems_device_instance() const noexcept
     {
         return m_packed.get<12>();
     }
 
+    /**
+     * @brief Sets the EMS Device Instance enable flag
+     * @param value EMS Device Instance enable flag value to set
+     * 
+     * EMS Device Instance is 1 bit long at bit position 12
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void ems_device_instance(bool value) noexcept
     {
         m_packed.set<12>(value);
     }
 
+    /**
+     * @brief Returns the Modulation Class enable flag
+     * @return true if packet contains Modulation Class field, otherwise false
+     * 
+     * Modulation Class is 1 bit long at bit position 11
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool modulation_class() const noexcept
     {
         return m_packed.get<11>();
     }
 
+    /**
+     * @brief Sets the Modulation Class enable flag
+     * @param value Modulation Class enable flag value to set
+     * 
+     * Modulation Class is 1 bit long at bit position 11
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void modulation_class(bool value) noexcept
     {
         m_packed.set<11>(value);
     }
 
+    /**
+     * @brief Returns the Modulation Type enable flag
+     * @return true if packet contains Modulation Type field, otherwise false
+     * 
+     * Modulation Type is 1 bit long at bit position 10
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool modulation_type() const noexcept
     {
         return m_packed.get<10>();
     }
 
+    /**
+     * @brief Sets the Modulation Type enable flag
+     * @param value Modulation Type enable flag value to set
+     * 
+     * Modulation Type is 1 bit long at bit position 10
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void modulation_type(bool value) noexcept
     {
         m_packed.set<10>(value);
     }
 
+    /**
+     * @brief Returns the Function ID enable flag
+     * @return true if packet contains Function ID field, otherwise false
+     * 
+     * Function ID is 1 bit long at bit position 9
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool function_id() const noexcept
     {
         return m_packed.get<9>();
     }
 
+    /**
+     * @brief Sets the Function ID enable flag
+     * @param value Function ID enable flag value to set
+     * 
+     * Function ID is 1 bit long at bit position 9
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void function_id(bool value) noexcept
     {
         m_packed.set<9>(value);
     }
 
+    /**
+     * @brief Returns the Mode ID enable flag
+     * @return true if packet contains Mode ID field, otherwise false
+     * 
+     * Mode ID is 1 bit long at bit position 8
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool mode_id() const noexcept
     {
         return m_packed.get<8>();
     }
 
+    /**
+     * @brief Sets the Mode ID enable flag
+     * @param value Mode ID enable flag value to set
+     * 
+     * Mode ID is 1 bit long at bit position 8
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void mode_id(bool value) noexcept
     {
         m_packed.set<8>(value);
     }
 
+    /**
+     * @brief Returns the Event ID enable flag
+     * @return true if packet contains Event ID field, otherwise false
+     * 
+     * Event ID is 1 bit long at bit position 7
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool event_id() const noexcept
     {
         return m_packed.get<7>();
     }
 
+    /**
+     * @brief Sets the Event ID enable flag
+     * @param value Event ID enable flag value to set
+     * 
+     * Event ID is 1 bit long at bit position 7
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void event_id(bool value) noexcept
     {
         m_packed.set<7>(value);
     }
 
+    /**
+     * @brief Returns the Function Priority ID enable flag
+     * @return true if packet contains Function Priority ID field, otherwise false
+     * 
+     * Function Priority ID is 1 bit long at bit position 6
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool function_priority_id() const noexcept
     {
         return m_packed.get<6>();
     }
 
+    /**
+     * @brief Sets the Function Priority ID enable flag
+     * @param value Function Priority ID enable flag value to set
+     * 
+     * Function Priority ID is 1 bit long at bit position 6
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void function_priority_id(bool value) noexcept
     {
         m_packed.set<6>(value);
     }
 
+    /**
+     * @brief Returns the Communication Priority ID enable flag
+     * @return true if packet contains Communication Priority ID field, otherwise false
+     * 
+     * Communication Priority ID is 1 bit long at bit position 5
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool communication_priority_id() const noexcept
     {
         return m_packed.get<5>();
     }
 
+    /**
+     * @brief Sets the Communication Priority ID enable flag
+     * @param value Communication Priority ID enable flag value to set
+     * 
+     * Communication Priority ID is 1 bit long at bit position 5
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void communication_priority_id(bool value) noexcept
     {
         m_packed.set<5>(value);
     }
 
+    /**
+     * @brief Returns the RF Footprint enable flag
+     * @return true if packet contains RF Footprint field, otherwise false
+     * 
+     * RF Footprint is 1 bit long at bit position 4
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool rf_footprint() const noexcept
     {
         return m_packed.get<4>();
     }
 
+    /**
+     * @brief Sets the RF Footprint enable flag
+     * @param value RF Footprint enable flag value to set
+     * 
+     * RF Footprint is 1 bit long at bit position 4
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void rf_footprint(bool value) noexcept
     {
         m_packed.set<4>(value);
     }
 
+    /**
+     * @brief Returns the RF Footprint Range enable flag
+     * @return true if packet contains RF Footprint Range field, otherwise false
+     * 
+     * RF Footprint Range is 1 bit long at bit position 3
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool rf_footprint_range() const noexcept
     {
         return m_packed.get<3>();
     }
 
+    /**
+     * @brief Sets the RF Footprint Range enable flag
+     * @param value RF Footprint Range enable flag value to set
+     * 
+     * RF Footprint Range is 1 bit long at bit position 3
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void rf_footprint_range(bool value) noexcept
     {
         m_packed.set<3>(value);
@@ -1707,191 +2112,457 @@ public:
 class IndicatorField3 : public IndicatorField
 {
 public:
+    /**
+     * @brief Returns the Timestamp Details enable flag
+     * @return true if packet contains Timestamp Details field, otherwise false
+     * 
+     * Timestamp Details is 1 bit long at bit position 31
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool timestamp_details() const noexcept
     {
         return m_packed.get<31>();
     }
 
+    /**
+     * @brief Sets the Timestamp Details enable flag
+     * @param value Timestamp Details enable flag value to set
+     * 
+     * Timestamp Details is 1 bit long at bit position 31
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void timestamp_details(bool value) noexcept
     {
         m_packed.set<31>(value);
     }
 
+    /**
+     * @brief Returns the Timestamp Skew enable flag
+     * @return true if packet contains Timestamp Skew field, otherwise false
+     * 
+     * Timestamp Skew is 1 bit long at bit position 30
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool timestamp_skew() const noexcept
     {
         return m_packed.get<30>();
     }
 
+    /**
+     * @brief Sets the Timestamp Skew enable flag
+     * @param value Timestamp Skew enable flag value to set
+     * 
+     * Timestamp Skew is 1 bit long at bit position 30
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void timestamp_skew(bool value) noexcept
     {
         m_packed.set<30>(value);
     }
 
+    /**
+     * @brief Returns the Rise Time enable flag
+     * @return true if packet contains Rise Time field, otherwise false
+     * 
+     * Rise Time is 1 bit long at bit position 27
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool rise_time() const noexcept
     {
         return m_packed.get<27>();
     }
 
+    /**
+     * @brief Sets the Rise Time enable flag
+     * @param value Rise Time enable flag value to set
+     * 
+     * Rise Time is 1 bit long at bit position 27
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void rise_time(bool value) noexcept
     {
         m_packed.set<27>(value);
     }
 
+    /**
+     * @brief Returns the Fall Time enable flag
+     * @return true if packet contains Fall Time field, otherwise false
+     * 
+     * Fall Time is 1 bit long at bit position 26
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool fall_time() const noexcept
     {
         return m_packed.get<26>();
     }
 
+    /**
+     * @brief Sets the Fall Time enable flag
+     * @param value Fall Time enable flag value to set
+     * 
+     * Fall Time is 1 bit long at bit position 26
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void fall_time(bool value) noexcept
     {
         m_packed.set<26>(value);
     }
 
+    /**
+     * @brief Returns the Offset Time enable flag
+     * @return true if packet contains Offset Time field, otherwise false
+     * 
+     * Offset Time is 1 bit long at bit position 25
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool offset_time() const noexcept
     {
         return m_packed.get<25>();
     }
 
+    /**
+     * @brief Sets the Offset Time enable flag
+     * @param value Offset Time enable flag value to set
+     * 
+     * Offset Time is 1 bit long at bit position 25
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void offset_time(bool value) noexcept
     {
         m_packed.set<25>(value);
     }
 
+    /**
+     * @brief Returns the Pulse Width enable flag
+     * @return true if packet contains Pulse Width field, otherwise false
+     * 
+     * Pulse Width is 1 bit long at bit position 24
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool pulse_width() const noexcept
     {
         return m_packed.get<24>();
     }
 
+    /**
+     * @brief Sets the Pulse Width enable flag
+     * @param value Pulse Width enable flag value to set
+     * 
+     * Pulse Width is 1 bit long at bit position 24
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void pulse_width(bool value) noexcept
     {
         m_packed.set<24>(value);
     }
 
+    /**
+     * @brief Returns the Period enable flag
+     * @return true if packet contains Period field, otherwise false
+     * 
+     * Period is 1 bit long at bit position 23
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool period() const noexcept
     {
         return m_packed.get<23>();
     }
 
+    /**
+     * @brief Sets the Period enable flag
+     * @param value Period enable flag value to set
+     * 
+     * Period is 1 bit long at bit position 23
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void period(bool value) noexcept
     {
         m_packed.set<23>(value);
     }
 
+    /**
+     * @brief Returns the Duration enable flag
+     * @return true if packet contains Duration field, otherwise false
+     * 
+     * Duration is 1 bit long at bit position 22
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool duration() const noexcept
     {
         return m_packed.get<22>();
     }
 
+    /**
+     * @brief Sets the Duration enable flag
+     * @param value Duration enable flag value to set
+     * 
+     * Duration is 1 bit long at bit position 22
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void duration(bool value) noexcept
     {
         m_packed.set<22>(value);
     }
 
+    /**
+     * @brief Returns the Dwell enable flag
+     * @return true if packet contains Dwell field, otherwise false
+     * 
+     * Dwell is 1 bit long at bit position 21
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool dwell() const noexcept
     {
         return m_packed.get<21>();
     }
 
+    /**
+     * @brief Sets the Dwell enable flag
+     * @param value Dwell enable flag value to set
+     * 
+     * Dwell is 1 bit long at bit position 21
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void dwell(bool value) noexcept
     {
         m_packed.set<21>(value);
     }
 
+    /**
+     * @brief Returns the Jitter enable flag
+     * @return true if packet contains Jitter field, otherwise false
+     * 
+     * Jitter is 1 bit long at bit position 20
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool jitter() const noexcept
     {
         return m_packed.get<20>();
     }
 
+    /**
+     * @brief Sets the Jitter enable flag
+     * @param value Jitter enable flag value to set
+     * 
+     * Jitter is 1 bit long at bit position 20
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void jitter(bool value) noexcept
     {
         m_packed.set<20>(value);
     }
 
+    /**
+     * @brief Returns the Age enable flag
+     * @return true if packet contains Age field, otherwise false
+     * 
+     * Age is 1 bit long at bit position 17
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool age() const noexcept
     {
         return m_packed.get<17>();
     }
 
+    /**
+     * @brief Sets the Age enable flag
+     * @param value Age enable flag value to set
+     * 
+     * Age is 1 bit long at bit position 17
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void age(bool value) noexcept
     {
         m_packed.set<17>(value);
     }
 
+    /**
+     * @brief Returns the Shelf Life enable flag
+     * @return true if packet contains Shelf Life field, otherwise false
+     * 
+     * Shelf Life is 1 bit long at bit position 16
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool shelf_life() const noexcept
     {
         return m_packed.get<16>();
     }
 
+    /**
+     * @brief Sets the Shelf Life enable flag
+     * @param value Shelf Life enable flag value to set
+     * 
+     * Shelf Life is 1 bit long at bit position 16
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void shelf_life(bool value) noexcept
     {
         m_packed.set<16>(value);
     }
 
+    /**
+     * @brief Returns the Air Temperature enable flag
+     * @return true if packet contains Air Temperature field, otherwise false
+     * 
+     * Air Temperature is 1 bit long at bit position 7
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool air_temperature() const noexcept
     {
         return m_packed.get<7>();
     }
 
+    /**
+     * @brief Sets the Air Temperature enable flag
+     * @param value Air Temperature enable flag value to set
+     * 
+     * Air Temperature is 1 bit long at bit position 7
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void air_temperature(bool value) noexcept
     {
         m_packed.set<7>(value);
     }
 
+    /**
+     * @brief Returns the Sea Ground Temperature enable flag
+     * @return true if packet contains Sea Ground Temperature field, otherwise false
+     * 
+     * Sea Ground Temperature is 1 bit long at bit position 6
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool sea_ground_temperature() const noexcept
     {
         return m_packed.get<6>();
     }
 
+    /**
+     * @brief Sets the Sea Ground Temperature enable flag
+     * @param value Sea Ground Temperature enable flag value to set
+     * 
+     * Sea Ground Temperature is 1 bit long at bit position 6
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void sea_ground_temperature(bool value) noexcept
     {
         m_packed.set<6>(value);
     }
 
+    /**
+     * @brief Returns the Humidity enable flag
+     * @return true if packet contains Humidity field, otherwise false
+     * 
+     * Humidity is 1 bit long at bit position 5
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool humidity() const noexcept
     {
         return m_packed.get<5>();
     }
 
+    /**
+     * @brief Sets the Humidity enable flag
+     * @param value Humidity enable flag value to set
+     * 
+     * Humidity is 1 bit long at bit position 5
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void humidity(bool value) noexcept
     {
         m_packed.set<5>(value);
     }
 
+    /**
+     * @brief Returns the Barometric Pressure enable flag
+     * @return true if packet contains Barometric Pressure field, otherwise false
+     * 
+     * Barometric Pressure is 1 bit long at bit position 4
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool barometric_pressure() const noexcept
     {
         return m_packed.get<4>();
     }
 
+    /**
+     * @brief Sets the Barometric Pressure enable flag
+     * @param value Barometric Pressure enable flag value to set
+     * 
+     * Barometric Pressure is 1 bit long at bit position 4
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void barometric_pressure(bool value) noexcept
     {
         m_packed.set<4>(value);
     }
 
+    /**
+     * @brief Returns the Sea Swell State enable flag
+     * @return true if packet contains Sea Swell State field, otherwise false
+     * 
+     * Sea Swell State is 1 bit long at bit position 3
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool sea_swell_state() const noexcept
     {
         return m_packed.get<3>();
     }
 
+    /**
+     * @brief Sets the Sea Swell State enable flag
+     * @param value Sea Swell State enable flag value to set
+     * 
+     * Sea Swell State is 1 bit long at bit position 3
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void sea_swell_state(bool value) noexcept
     {
         m_packed.set<3>(value);
     }
 
+    /**
+     * @brief Returns the Tropospheric State enable flag
+     * @return true if packet contains Tropospheric State field, otherwise false
+     * 
+     * Tropospheric State is 1 bit long at bit position 2
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool tropospheric_state() const noexcept
     {
         return m_packed.get<2>();
     }
 
+    /**
+     * @brief Sets the Tropospheric State enable flag
+     * @param value Tropospheric State enable flag value to set
+     * 
+     * Tropospheric State is 1 bit long at bit position 2
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void tropospheric_state(bool value) noexcept
     {
         m_packed.set<2>(value);
     }
 
+    /**
+     * @brief Returns the Network ID enable flag
+     * @return true if packet contains Network ID field, otherwise false
+     * 
+     * Network ID is 1 bit long at bit position 1
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     bool network_id() const noexcept
     {
         return m_packed.get<1>();
     }
 
+    /**
+     * @brief Sets the Network ID enable flag
+     * @param value Network ID enable flag value to set
+     * 
+     * Network ID is 1 bit long at bit position 1
+     * See VITA 49.2-2017 Table 9.1-1
+     */
     void network_id(bool value) noexcept
     {
         m_packed.set<1>(value);
@@ -2221,5 +2892,3 @@ public:
 }; // end class IndicatorField7
 
 } // end namespace vrtgen::packing
-
-#endif // _VRTGEN_PACKING_INDICATOR_FIELDS_HPP

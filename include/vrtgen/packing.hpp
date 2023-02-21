@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -17,8 +17,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
 
-#ifndef _VRTGEN_PACKING_HPP
-#define _VRTGEN_PACKING_HPP
+#pragma once
 
 #include <vrtgen/packing/cif0.hpp>
 #include <vrtgen/packing/cif1.hpp>
@@ -30,5 +29,3 @@
 #include <vrtgen/packing/indicator_fields.hpp>
 #include <vrtgen/packing/prologue.hpp>
 #include <vrtgen/packing/trailer.hpp>
-
-#endif // _VRTGEN_PACKING_HPP

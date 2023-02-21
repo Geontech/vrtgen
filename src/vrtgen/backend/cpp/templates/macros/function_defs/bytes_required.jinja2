@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -18,76 +18,62 @@
 #*/
 
 {%- macro define_cif_bytes_required(cif, cif7, type_helper) %}
-{% for field in cif.fields if field.enabled and not field.indicator_only %}
-{%   if not field.is_optional %}
-{{ define_field_bytes_required(field, cif7, type_helper ) | trim }}
-{%   endif %}
-{% endfor %}
+
 {%- endmacro %}
 
 {%- macro define_field_bytes_required(field, cif7, type_helper ) %}
-{%     if field.type_.reserved_bits != 0 %}
-    bytes += sizeof(int{{ field.type_.reserved_bits }}_t); // {{ field.name }} reserved bits
-{%     endif %}
-{%     if type_helper.is_scalar(field) %}
-    bytes += sizeof({{ type_helper.member_type(field) }}); {{ '// ' + field.name if not field.is_optional }}
-{%     else %}
-    bytes += m_{{ field.name }}.size();
-{%     endif %}
-{%- endmacro %}
-
-{%- macro define_cif7_attribute_size(attribute_fields, field, type_helper)%}
-{%     for attribute_field in attribute_fields if attribute_field.enabled and not attribute_field.indicator_only %}
-{%        if attribute_field.type_.is_packed_struct %}
-bytes += packet.{{ field.getter }}_attributes().{{ attribute_field.getter }}().size();  // {{ attribute_field.name }}
-{%        else %}
-{%           if field.type_.reserved_bits != 0 %}
-bytes += sizeof(int{{ field.type_.reserved_bits }}_t); // {{ attribute_field.name }} reserved bits
-{%           endif %}
-{%           if type_helper.is_scalar(field) %}
-bytes += sizeof({{ type_helper.member_type(field) }}); // {{ attribute_field.name }}
-{%           else %}
-bytes += sizeof(int{{ field.type_.bits }}_t);  // {{ attribute_field.name }}
-{%           endif %}
-{%        endif %}
-{%     endfor%}
+{% if field.type_.reserved_bits != 0 %}
+bytes += sizeof(int{{ field.type_.reserved_bits }}_t); // {{ field.name }} reserved bits
+{% endif %}
+{% if type_helper.is_scalar(field) %}
+bytes += sizeof({{ type_helper.member_type(field) }});{{ ' // ' + field.name if not field.is_optional }}
+{% else %}
+bytes += m_{{ field.name }}.size();
+{% endif %}
+{% if cif7.enabled %}
+bytes += m_{{ field.name }}_attributes.size();
+{% endif %}
 {%- endmacro %}
 
 {%- macro bytes_required(packet, type_helper) %}
-std::size_t {{ packet.name }}::min_bytes() const
+auto {{ packet.name }}::min_bytes() const -> std::size_t
 {
     std::size_t bytes{};
     bytes += m_{{ packet.header.name }}.size();
 {% if packet.stream_id.enabled %}
-    bytes += sizeof({{ type_helper.member_type(packet.stream_id) }}); // stream id
+{%   if packet.stream_id.user_defined %}
+    bytes += m_{{ packet.stream_id.name }}.size();
+{%   else %}
+    bytes += sizeof({{ type_helper.member_type(packet.stream_id) }}); // {{ packet.stream_id.name }}
+{%   endif %}
 {% endif %}
 {% if packet.class_id.enabled %}
     bytes += m_{{ packet.class_id.name }}.size();
 {% endif %}
 {% if packet.timestamp.enabled %}
 {%     if packet.timestamp.integer.enabled %}
-    bytes += sizeof({{ type_helper.value_type( packet.timestamp.integer) }}); // integer timestamp
+    bytes += sizeof({{ type_helper.value_type(packet.timestamp.integer) }}); // {{ packet.timestamp.integer.name }}
 {%     endif %}
 {%     if packet.timestamp.fractional.enabled %}
-    bytes += sizeof({{ type_helper.value_type(packet.timestamp.fractional) }}); // fractional timestamp
+    bytes += sizeof({{ type_helper.value_type(packet.timestamp.fractional) }}); // {{ packet.timestamp.fractional.name }}
 {%     endif %}
 {% endif %}
 {% if packet.cam.enabled %}
     bytes += m_{{ packet.cam.name }}.size();
 {% endif %}
 {% if packet.message_id.enabled %}
-    bytes += sizeof({{ type_helper.value_type(packet.message_id) }}); // message id
+    bytes += sizeof({{ type_helper.value_type(packet.message_id) }}); // {{ packet.message_id.name }}
 {% endif %}
 {% if packet.controllee_id.enabled %}
 {%   if type_helper.is_scalar(packet.controllee_id) %}
-    bytes += sizeof({{ type_helper.member_type(packet.controllee_id) }}); // controllee id
+    bytes += sizeof({{ type_helper.member_type(packet.controllee_id) }}); // {{ packet.controllee_id.name }}
 {%   else %}
     bytes += m_{{ packet.controllee_id.name }}.size();
 {%   endif %}
 {% endif %}
 {% if packet.controller_id.enabled %}
 {%   if type_helper.is_scalar(packet.controller_id) %}
-    bytes += sizeof({{ type_helper.value_type(packet.controller_id) }}); // controller id
+    bytes += sizeof({{ type_helper.value_type(packet.controller_id) }}); // {{ packet.controller_id.name }}
 {%   else %}
     bytes += m_{{ packet.controller_id.name }}.size();
 {%   endif %}
@@ -95,105 +81,107 @@ std::size_t {{ packet.name }}::min_bytes() const
 {% if packet.cif0.enabled %}
     bytes += m_{{ packet.cif0.name }}.size();
 {%   if packet.requires_cif_functions %}
-    {{ define_cif_bytes_required(packet.cif0, packet.cif7, type_helper) | indent(4) | trim }}
+{%     for field in packet.cif0.fields if field.enabled and not field.is_optional and not field.indicator_only %}
+    {{ define_field_bytes_required(field, packet.cif7, type_helper ) | indent(4) | trim }}
+{%     endfor %}
 {%   endif %}
 {% endif %}
-{% if packet.cif1.enabled  %}
-    if (m_{{ packet.cif1.name }}.any()) {
-        bytes += m_{{ packet.cif1.name }}.size();
-    }
+{% if packet.cif1.enabled and not packet.cif1.is_optional %}
+    bytes += m_{{ packet.cif1.name }}.size();
 {%   if packet.requires_cif_functions %}
-    {{ define_cif_bytes_required(packet.cif1, packet.cif7, type_helper) | indent(4) | trim }}
+{%     for field in packet.cif1.fields if field.enabled and not field.is_optional and not field.indicator_only %}
+    {{ define_field_bytes_required(field, packet.cif7, type_helper ) | indent(4) | trim }}
+{%     endfor %}
 {%   endif %}
 {% endif %}
-{% if packet.cif2.enabled  %}
-    if (m_{{ packet.cif2.name }}.any()) {
-        bytes += m_{{ packet.cif2.name }}.size();
-    }
+{% if packet.cif2.enabled and not packet.cif2.is_optional %}
+    bytes += m_{{ packet.cif2.name }}.size();
 {%   if packet.requires_cif_functions %}
-    {{ define_cif_bytes_required(packet.cif2, packet.cif7, type_helper) | indent(4) | trim }}
+{%     for field in packet.cif2.fields if field.enabled and not field.is_optional and not field.indicator_only %}
+    {{ define_field_bytes_required(field, packet.cif7, type_helper ) | indent(4) | trim }}
+{%     endfor %}
 {%   endif %}
 {% endif %}
 {% if packet.cif7.enabled  %}
     bytes += m_{{ packet.cif7.name }}.size();
-{%   if packet.requires_cif_functions %}
-    {{ define_cif_bytes_required(packet.cif7, packet.cif7, type_helper) | indent(4) | trim }}
-{%   endif %}
-{% endif %}
-{% if packet.wif0.enabled and packet.warnings_enabled %}
-    if (m_{{ packet.wif0.name }}.any()) {
-        bytes += m_{{ packet.wif0.name }}().size();
-{%   for field in packet.wif0.fields if field.enabled %}
-        if (packet.has_{{ field.name }}_warnings()) {
-            bytes += m_{{ field.name }}_warnings.size();
-        }
-{%   endfor %}
-    }
-{% endif %}
-{% if packet.wif1.enabled and packet.warnings_enabled %}
-    if (packet.has_{{ packet.wif1.name }}_warnings()) {
-        if (!packet.has_{{ packet.wif0.name }}_warnings()) {
-            bytes += packet.{{ packet.wif0.name }}().size();
-        }
-        bytes += packet.{{ packet.wif1.name }}().size();
-{%   for field in packet.wif1.fields if field.enabled %}
-        if (packet.has_{{ field.name }}_warnings()) {
-            bytes += packet.{{ field.name }}_warnings().size();
-        }
-{%   endfor %}
-    }
-{% endif %}
-{% if packet.wif2.enabled and packet.warnings_enabled %}
-    if (packet.has_{{ packet.wif2.name }}_warnings()) {
-        if (!packet.has_{{ packet.wif0.name }}_warnings() && !packet.has_{{ packet.wif1.name }}_warnings()) {
-            bytes += packet.{{ packet.wif0.name }}().size();
-        }
-        bytes += packet.{{ packet.wif2.name }}().size();
-{%   for field in packet.wif2.fields if field.enabled %}
-        if (packet.has_{{ field.name }}_warnings()) {
-            bytes += packet.{{ field.name }}_warnings().size();
-        }
-{%   endfor %}
-    }
-{% endif %}
-{% if packet.eif0.enabled and packet.errors_enabled %}
-    if (packet.has_{{ packet.eif0.name }}_errors()) {
-        bytes += packet.{{ packet.eif0.name }}().size();
-{%   for field in packet.eif0.fields if field.enabled %}
-        if (packet.has_{{ field.name }}_errors()) {
-            bytes += packet.{{ field.name }}_errors().size();
-        }
-{%   endfor %}
-    }
-{% endif %}
-{% if packet.eif1.enabled and packet.errors_enabled %}
-    if (packet.has_{{ packet.eif1.name }}_errors()) {
-        if (!packet.has_{{ packet.eif0.name }}_errors()) {
-            bytes += packet.{{ packet.eif0.name }}().size();
-        }
-        bytes += packet.{{ packet.eif1.name }}().size();
-{%   for field in packet.eif1.fields if field.enabled %}
-        if (packet.has_{{ field.name }}_errors()) {
-            bytes += packet.{{ field.name }}_errors().size();
-        }
-{%   endfor %}
-    }
-{% endif %}
-{% if packet.eif2.enabled and packet.errors_enabled %}
-    if (packet.has_{{ packet.eif2.name }}_errors()) {
-        if (!packet.has_{{ packet.eif0.name }}_errors() && !packet.has_{{ packet.eif0.name }}_errors()) {
-            bytes += packet.{{ packet.eif0.name }}().size();
-        }
-        bytes += packet.{{ packet.eif2.name }}().size();
-{%   for field in packet.eif2.fields if field.enabled %}
-        if (packet.has_{{ field.name }}_errors()) {
-            bytes += packet.{{ field.name }}_errors().size();
-        }
-{%   endfor %}
-    }
 {% endif %}
 {% if packet.is_data and packet.trailer.enabled %}
     bytes += m_{{ packet.trailer.name }}.size();
+{% endif %}
+    return bytes;
+}
+{% endmacro %}
+
+{%- macro base_ack_bytes_required(packet, type_helper) %}
+auto {{ packet.name }}::min_bytes() const -> std::size_t
+{
+    std::size_t bytes{};
+    bytes += m_{{ packet.header.name }}.size();
+{% if packet.stream_id.enabled %}
+    bytes += sizeof({{ type_helper.member_type(packet.stream_id) }}); // {{ packet.stream_id.name }}
+{% endif %}
+{% if packet.class_id.enabled %}
+    bytes += m_{{ packet.class_id.name }}.size();
+{% endif %}
+{% if packet.timestamp.enabled %}
+{%     if packet.timestamp.integer.enabled %}
+    bytes += sizeof({{ type_helper.value_type(packet.timestamp.integer) }}); // {{ packet.timestamp.integer.name }}
+{%     endif %}
+{%     if packet.timestamp.fractional.enabled %}
+    bytes += sizeof({{ type_helper.value_type(packet.timestamp.fractional) }}); // {{ packet.timestamp.fractional.name }}
+{%     endif %}
+{% endif %}
+{% if packet.cam.enabled %}
+    bytes += m_{{ packet.cam.name }}.size();
+{% endif %}
+{% if packet.message_id.enabled %}
+    bytes += sizeof({{ type_helper.value_type(packet.message_id) }}); // {{ packet.message_id.name }}
+{% endif %}
+{% if packet.controllee_id.enabled %}
+{%   if type_helper.is_scalar(packet.controllee_id) %}
+    bytes += sizeof({{ type_helper.member_type(packet.controllee_id) }}); // {{ packet.controllee_id.name }}
+{%   else %}
+    bytes += m_{{ packet.controllee_id.name }}.size();
+{%   endif %}
+{% endif %}
+{% if packet.controller_id.enabled %}
+{%   if type_helper.is_scalar(packet.controller_id) %}
+    bytes += sizeof({{ type_helper.value_type(packet.controller_id) }}); // {{ packet.controller_id.name }}
+{%   else %}
+    bytes += m_{{ packet.controller_id.name }}.size();
+{%   endif %}
+{% endif %}
+    return bytes;
+}
+{% endmacro %}
+
+{%- macro acks_bytes_required(packet, packet_name, type_helper) %}
+auto {{ packet_name }}::min_bytes() const -> std::size_t
+{
+    auto bytes = {{ packet.name }}::min_bytes();
+{% if packet.cif0.enabled %}
+    bytes += m_{{ packet.cif0.name }}.size();
+{%   if packet.requires_cif_functions %}
+{%     for field in packet.cif0.fields if field.enabled and not field.is_optional and not field.indicator_only %}
+    {{ define_field_bytes_required(field, cif7, type_helper ) | indent(4) | trim }}
+{%     endfor %}
+{%   endif %}
+{% endif %}
+{% if packet.cif1.enabled and not packet.cif1.is_optional %}
+    bytes += m_{{ packet.cif1.name }}.size();
+{%   if packet.requires_cif_functions %}
+{%     for field in packet.cif1.fields if field.enabled and not field.is_optional and not field.indicator_only %}
+    {{ define_field_bytes_required(field, cif7, type_helper ) | indent(4) | trim }}
+{%     endfor %}
+{%   endif %}
+{% endif %}
+{% if packet.cif2.enabled and not packet.cif2.is_optional %}
+    bytes += m_{{ packet.cif2.name }}.size();
+{%   if packet.requires_cif_functions %}
+{%     for field in packet.cif2.fields if field.enabled and not field.is_optional and not field.indicator_only %}
+    {{ define_field_bytes_required(field, cif7, type_helper ) | indent(4) | trim }}
+{%     endfor %}
+{%   endif %}
 {% endif %}
     return bytes;
 }

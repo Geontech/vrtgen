@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -18,10 +18,17 @@
  */
 
 #include "catch.hpp"
-#include "classid.hpp"
+#include "class_id/test_context_class_id1.hpp"
+#include "class_id/test_context_class_id2.hpp"
+#include "class_id/test_control_class_id1.hpp"
+#include "class_id/test_control_class_id2.hpp"
+#include "class_id/test_data_class_id1.hpp"
+#include "class_id/test_data_class_id2.hpp"
 #include <bytes.hpp>
 #include <vrtgen/packing/enums.hpp>
 #include "constants.hpp"
+
+using namespace class_id_ns::packets;
 
 TEST_CASE("ClassID 5.1.3", "[class_id]")
 {
@@ -122,7 +129,7 @@ TEST_CASE("ClassID 5.1.3", "[class_id]")
             CHECK(packet_out.class_id().oui() == 0xAABBCC);
             auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
-            check_ptr += CIF_BYTES;
+            check_ptr += STREAM_ID_BYTES;
 
             // Examine and check packed Class ID. Value shall be in big-endian format.
             const bytes packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
@@ -141,7 +148,7 @@ TEST_CASE("ClassID 5.1.3", "[class_id]")
             CHECK(packet_out.class_id().packet_code() == 0x1234);
             auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
-            check_ptr += CIF_BYTES;
+            check_ptr += STREAM_ID_BYTES;
 
             // Examine and check packed Class ID. Value shall be in big-endian format.
             const bytes packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
@@ -160,7 +167,7 @@ TEST_CASE("ClassID 5.1.3", "[class_id]")
             CHECK(packet_out.class_id().oui() == 0xAABBCC);
             auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
-            check_ptr += CIF_BYTES;
+            check_ptr += STREAM_ID_BYTES;
 
             // Examine and check packed Class ID. Value shall be in big-endian format.
             const bytes packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
@@ -179,7 +186,7 @@ TEST_CASE("ClassID 5.1.3", "[class_id]")
             CHECK(packet_out.class_id().packet_code() == 0x1234);
             auto* check_ptr = data.data();
             check_ptr += HEADER_BYTES;
-            check_ptr += CIF_BYTES;
+            check_ptr += STREAM_ID_BYTES;
 
             // Examine and check packed Class ID. Value shall be in big-endian format.
             const bytes packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);

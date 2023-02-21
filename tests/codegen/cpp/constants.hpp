@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -17,17 +17,19 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
 
+#include <cuchar>
+
 const size_t CLASS_ID_BYTES = 8;
 const size_t HEADER_BYTES = 4;
 const size_t STREAM_ID_BYTES = 4;
 const size_t CAM_BYTES = 4;
-const size_t CIF_BYTES = 4;
 const size_t MESSAGE_ID_BYTES = 4;
 const size_t INTEGER_TS_BYTES = 4;
 const size_t FRACTIONAL_TS_BYTES = 8;
 const size_t TRAILER_BYTES = 4;
 const size_t CIF0_BYTES = 4;
 const size_t CIF1_BYTES = 4;
+const size_t CIF2_BYTES = 4;
 const size_t CIF7_BYTES = 4;
 const size_t REF_POINT_ID_BYTES = 4;
 const size_t BANDWIDTH_BYTES = 8;
@@ -46,10 +48,26 @@ const size_t DEVICE_ID_BYTES = 8;
 const size_t STATE_EVENT_INDICATOR_BYTES = 4;
 const size_t PAYLOAD_FORMAT_BYTES = 8;
 const size_t EPHEM_REF_ID_BYTES = 4;
+
+// CIF1
 const size_t PHASE_OFFSET_BYTES = 4;
 const size_t POLARIZATION_BYTES = 4;
+const size_t DISCRETE_IO_32_BYTES = 4;
+const size_t DISCRETE_IO_64_BYTES = 8;
+const size_t CONTROLLEE_ID_32_BYTES =  4;
+const size_t CONTROLLEE_ID_128_BYTES = 16;
+const size_t CONTROLLER_ID_32_BYTES = 4;
+const size_t CONTROLLER_ID_128_BYTES = 16;
+const size_t WIF_BYTES = 4;
+const size_t EIF_BYTES = 4;
+const size_t WARNING_FIELDS_BYTES = 4;
+const size_t ERROR_FIELDS_BYTES = 4;
+const size_t CITED_SID_BYTES = 4;
+const size_t PROBABILITY_BYTES = 4;
+const size_t BELIEF_BYTES = 4;
 
 const size_t BASIC_DATA_BYTES = HEADER_BYTES;
-const size_t BASIC_CONTEXT_BYTES = HEADER_BYTES + STREAM_ID_BYTES + CIF_BYTES;
-const size_t BASIC_CONTROL_BYTES = HEADER_BYTES + STREAM_ID_BYTES + CIF_BYTES + CAM_BYTES + MESSAGE_ID_BYTES;
+const size_t BASIC_CONTEXT_BYTES = HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES;
+const size_t BASIC_CONTROL_BYTES = HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CAM_BYTES + MESSAGE_ID_BYTES;
 const size_t BASIC_ACK_BYTES = HEADER_BYTES + STREAM_ID_BYTES + CAM_BYTES + MESSAGE_ID_BYTES;
+

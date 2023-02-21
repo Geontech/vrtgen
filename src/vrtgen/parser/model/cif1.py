@@ -247,13 +247,17 @@ class DiscreteIO(PackedStruct):
     name : str = 'discrete_io'
     subfields : List[Field] = field(default_factory=list)
 
+    def __post_init__(self):
+        super().__post_init__()
+        self.user_defined = True
+
     @property
     def is_integer(self):
         return len(self.subfields) == 0
 
     def _validate(self, mapping):
         for key,val in mapping.items():
-            if key == "mode":
+            if key == 'mode':
                 continue
             elif val == 'bool':
                 continue
@@ -270,7 +274,7 @@ class DiscreteIO(PackedStruct):
         packed_tag_pos = 0
         packed_tag_word = 0
         for key,val in mapping.items():
-            if key == "mode":
+            if key == 'mode':
                 mode = parse_enable(val)
                 self.enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
                 self.required = True if (mode == Mode.REQUIRED) else False
@@ -314,7 +318,7 @@ class DiscreteIO32(DiscreteIO):
     """
     name : str = 'discrete_io_32'
     subfields : List[Field] = field(default_factory=list)
-    packed_0 : PackedType = PackedType('packed_0', bits=32, enabled=True, required=True, packed_tag=PackedTag(0,32,1))
+    packed : PackedType = PackedType('packed', bits=32, enabled=True, required=True, packed_tag=PackedTag(0,32,1))
 
     def __post_init__(self):
         super().__post_init__()
@@ -322,7 +326,7 @@ class DiscreteIO32(DiscreteIO):
 
     @property
     def fields(self):
-        return [field for field in self.subfields] + [self.packed_0]
+        return [field for field in self.subfields] + [self.packed]
 
 @dataclass
 class DiscreteIO64(DiscreteIO):
@@ -331,8 +335,7 @@ class DiscreteIO64(DiscreteIO):
     """
     name : str = 'discrete_io_64'
     subfields : List[Field] = field(default_factory=list)
-    packed_0 : PackedType = PackedType('packed_0', bits=32, enabled=True, required=True, packed_tag=PackedTag(0,32,1))
-    packed_1 : PackedType = PackedType('packed_1', bits=32, enabled=True, required=True, packed_tag=PackedTag(0,32,2))
+    packed : PackedType = PackedType('packed', bits=64, enabled=True, required=True, packed_tag=PackedTag(0,64,1))
 
     def __post_init__(self):
         super().__post_init__()
@@ -340,7 +343,7 @@ class DiscreteIO64(DiscreteIO):
 
     @property
     def fields(self):
-        return ([field for field in self.subfields] + [self.packed_0, self.packed_1])
+        return ([field for field in self.subfields] + [self.packed])
 
 @dataclass
 class CIF1(CIF):

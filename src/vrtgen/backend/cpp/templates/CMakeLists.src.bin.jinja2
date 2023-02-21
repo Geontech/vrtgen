@@ -1,0 +1,5 @@
+add_executable({{ project_name }} main.cpp)
+target_link_libraries({{ project_name }} PUBLIC packetlib)
+target_include_directories({{ project_name }} PUBLIC
+    "${CMAKE_SOURCE_DIR}/include/packets"
+)

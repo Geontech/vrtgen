@@ -44,6 +44,6 @@ WORKDIR /root/vrtgen
 RUN python3.8 -m pip install --upgrade pip \
     && python3.8 -m pip install pytest pylint \
     && python3.8 -m pip install . \
-    && cmake -B build -DJUNIT_OUTPUT=yes . \
+    && cmake -B build -DJUNIT_OUTPUT=yes -DBUILD_TESTS=ON . \
     && make -C build \
     && make -C build install

@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -50,30 +50,39 @@
 {%- macro command(packet, type_helper) %}
 {% if packet.cam.enabled %}
 {{ common.const_ref_getter(packet.name, packet.cam, type_helper) | trim }}
+{%   if packet.cam.is_control and packet.cam.req_v.is_optional %}
 
-{%   if packet.is_control and packet.cam.req_v.optional %}
-{{ common.getters_and_setters(packet.name, packet.cam.req_v, type_helper) | trim }}
+{{ command_.req_defs(packet, packet.name, packet.cam.req_v, type_helper ) | trim }}
+{%   elif packet.cam.is_ack and packet.cam.ack_v.is_optional %}
 
+{{ command_.req_defs(packet, packet.name, packet.cam.ack_v, type_helper ) | trim }}
 {%   endif %}
-{%   if packet.is_control and packet.cam.req_x.optional %}
-{{ common.getters_and_setters(packet.name, packet.cam.req_x, type_helper) | trim }}
+{%   if packet.cam.is_control and packet.cam.req_x.is_optional %}
 
+{{ command_.req_defs(packet, packet.name, packet.cam.req_x, type_helper ) | trim }}
+{%   elif packet.cam.is_ack and packet.cam.ack_x.is_optional %}
+
+{{ command_.req_defs(packet, packet.name, packet.cam.ack_x, type_helper ) | trim }}
 {%   endif %}
+{%   if packet.cam.is_control and packet.cam.req_s.is_optional %}
+
+{{ command_.req_defs(packet, packet.name, packet.cam.req_s, type_helper ) | trim }}
+{%   elif packet.cam.is_ack and packet.cam.ack_s.is_optional %}
+
+{{ command_.req_defs(packet, packet.name, packet.cam.ack_s, type_helper ) | trim }}
+{%   endif %}
+
 {% endif %}
 {% if packet.message_id.enabled %}
 {{ command_.message_id_defs(packet, type_helper) | trim }}
 
 {% endif %}
 {% if packet.controllee_id.enabled %}
-{{ common.value_getter(packet.name, packet.controllee_id, type_helper) | trim }}
-
-{{ common.setters(packet.name, packet.controllee_id, type_helper) | trim }}
+{{ command_.controllee_id_defs(packet, type_helper) | trim }}
 
 {% endif %}
 {% if packet.controller_id.enabled %}
-{{ common.value_getter(packet.name, packet.controller_id, type_helper) | trim }}
-
-{{ common.setters(packet.name, packet.controller_id, type_helper) | trim }}
+{{ command_.controller_id_defs(packet, type_helper) | trim }}
 
 {% endif %}
 {% endmacro %}
@@ -81,24 +90,50 @@
 /*#
  * CIF function definitions
 #*/
-{%- macro cif(packet, type_helper) %}
+{%- macro cif(packet, packet_name, type_helper) %}
 {% if packet.cif0.enabled %}
-{{ common.const_ref_getter(packet.name, packet.cif0, type_helper) | trim }}
+{{ common.const_ref_getter(packet_name, packet.cif0, type_helper) | trim }}
 
 {%   if packet.requires_cif_functions %}
-{{ cif_.function_defs(packet.name, packet.cif0, type_helper) | trim }}
+{{ cif_.function_defs(packet_name, packet.cif0, type_helper, packet.cif7) | trim }}
 {%   elif packet.requires_cif_enable_functions %}
-{{ cif_.enable_function_defs(packet.cif0, type_helper) | trim }}
+{{ cif_.enable_function_defs(packet_name, packet.cif0, type_helper) | trim }}
 {%   endif %}
 
 {% endif %}
 {% if packet.cif1.enabled %}
-{{ common.const_ref_getter(packet.name, packet.cif1, type_helper) | trim }}
+{{ common.const_ref_getter(packet_name, packet.cif1, type_helper) | trim }}
+{%   if packet.cif1.is_optional %}
+
+{{ cif_.reset_cif(packet, packet_name, packet.cif1, type_helper) | trim }}
+{%   endif %}
 
 {%   if packet.requires_cif_functions %}
-{{ cif_.function_defs(packet.name, packet.cif1, type_helper) | trim }}
+{{ cif_.function_defs(packet_name, packet.cif1, type_helper, packet.cif7) | trim }}
 {%   elif packet.requires_cif_enable_functions %}
-{{ cif_.enable_function_defs(packet.cif1, type_helper) | trim }}
+{{ cif_.enable_function_defs(packet_name, packet.cif1, type_helper) | trim }}
+{%   endif %}
+
+{% endif %}
+{% if packet.cif2.enabled %}
+{{ common.const_ref_getter(packet_name, packet.cif2, type_helper) | trim }}
+{%   if packet.cif2.is_optional %}
+
+{{ cif_.reset_cif(packet, packet_name, packet.cif2, type_helper) | trim }}
+{%   endif %}
+
+{%   if packet.requires_cif_functions %}
+{{ cif_.function_defs(packet_name, packet.cif2, type_helper, packet.cif7) | trim }}
+{%   elif packet.requires_cif_enable_functions %}
+{{ cif_.enable_function_defs(packet_name, packet.cif2, type_helper) | trim }}
+{%   endif %}
+
+{% endif %}
+{% if packet.cif7.enabled %}
+{{ common.const_ref_getter(packet_name, packet.cif7, type_helper) | trim }}
+{%   if packet.cif7.is_optional %}
+
+{{ cif_.reset_cif(packet, packet_name, packet.cif7, type_helper) | trim }}
 {%   endif %}
 
 {% endif %}

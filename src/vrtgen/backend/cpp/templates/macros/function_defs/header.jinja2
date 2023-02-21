@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -19,7 +19,7 @@
 
 {%- macro header_def(packet, type_helper) %}
 {% set field = packet.header %}
-const {{ type_helper.value_type(field) }}& {{ packet.name }}::{{ field.name }}() const
+auto {{ packet.name }}::{{ field.name }}() const -> const {{ type_helper.value_type(field) }}&
 {
     return m_{{ field.name }};
 }
@@ -27,12 +27,12 @@ const {{ type_helper.value_type(field) }}& {{ packet.name }}::{{ field.name }}()
 
 {%- macro packet_count_def(packet, type_helper) %}
 {% set field = packet.header.packet_count %}
-{{ type_helper.value_type(field) }} {{ packet.name }}::{{ field.name }}() const
+auto {{ packet.name }}::{{ field.name }}() const -> {{ type_helper.value_type(field) }}
 {
     return m_header.packet_count();
 }
 
-void {{ packet.name }}::{{ field.name }}(const {{ type_helper.value_type(field) }} value)
+auto {{ packet.name }}::{{ field.name }}(const {{ type_helper.value_type(field) }} value) -> void
 {
     m_header.packet_count(value);
     m_header.pack_into(m_data.data());  

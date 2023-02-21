@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -16,13 +16,25 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-#ifndef _VRTGEN_PACKING_CIF7_HPP
-#define _VRTGEN_PACKING_CIF7_HPP
+
+#pragma once
+
+#include <concepts>
+#include <type_traits>
 
 #include <vrtgen/types.hpp>
 #include "indicator_fields.hpp"
 
 namespace vrtgen::packing {
+
+namespace cif7 {
+
+template <typename T, typename V, std::size_t N, std::size_t R>
+concept is_scalar =
+    (std::is_integral_v<V> && std::same_as<T,V>) ||
+    (std::is_floating_point_v<V> && (N>0) && (N>R));
+
+} // end namespace cif7
 
 /**
  * @class CIF7
@@ -42,7 +54,7 @@ public:
      * @return Belief Percent subfield value
      * 
      * Belief Percent is 8 bits long at bit position 7
-     * See VITA 49.2 Figure 9.12-3
+     * See VITA 49.2-2017 Figure 9.12-3
      */
     int belief_percent() const noexcept
     {
@@ -54,7 +66,7 @@ public:
      * @param value Belief Percent subfield value
      * 
      * Belief Percent is 8 bits long at bit position 7
-     * See VITA 49.2 Figure 9.12-3
+     * See VITA 49.2-2017 Figure 9.12-3
      */
     void belief_percent(int value) noexcept
     {
@@ -105,9 +117,7 @@ public:
      * @return Probability Function subfield value
      * 
      * Probability Function subfield is 8 bits long at bit position 15
-     * with a value of 0 meaning Uniform Distribution, 1 meaning Normal
-     * Distribution, and 2-255 are user defined
-     * See VITA 49.2 Rule 9.12-9 and 9.12-10
+     * See VITA 49.2-2017 Rule 9.12-9 and 9.12-10
      */
     uint8_t probability_function() const noexcept
     {
@@ -119,9 +129,7 @@ public:
      * @return Probability Function subfield value
      * 
      * Probability Function subfield is 8 bits long at bit position 15
-     * with a value of 0 meaning Uniform Distribution, 1 meaning Normal
-     * Distribution, and 2-255 are user defined
-     * See VITA 49.2 Rule 9.12-9 and 9.12-10
+     * See VITA 49.2-2017 Rule 9.12-9 and 9.12-10
      */
     void probability_function(uint8_t value) noexcept
     {
@@ -133,8 +141,7 @@ public:
      * @return Probability Percent subfield value
      * 
      * Probability Percent subfield is 8 bits long at bit position 7
-     * with a value of 1-255 representing a X/255 percentage
-     * See VITA 49.2 Figure 9.12-9
+     * See VITA 49.2-2017 Figure 9.12-9
      */
     uint8_t probability_percent() const noexcept
     {
@@ -146,8 +153,7 @@ public:
      * @param value Probability Percent subfield value
      * 
      * Probability Percent subfield is 8 bits long at bit position 7
-     * with a value of 1-255 representing a X/255 percentage
-     * See VITA 49.2 Figure 9.12-9
+     * See VITA 49.2-2017 Figure 9.12-9
      */
     void probability_percent(uint8_t value) noexcept
     {
@@ -186,7 +192,4 @@ private:
 
 }; // end class Probability
 
-
 } // end namespace vrtgen::packing
-
-#endif // _VRTGEN_PACKING_CIF7_HPP

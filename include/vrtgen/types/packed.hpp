@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -17,8 +17,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
 
-#ifndef _VRTGEN_TYPES_PACKED_HPP
-#define _VRTGEN_TYPES_PACKED_HPP
+#pragma once
 
 #include <inttypes.h>
 #include <cstring>
@@ -37,8 +36,8 @@ constexpr bool valid_position = P < B;
  * @class field_traits
  * @brief Bitwise traits related to a packed subfield
  * @tparam T Value of packed integer
- * @tparam P Bit position
- * @tparam B Number of bits
+ * @tparam pos Bit position
+ * @tparam bits Number of bits
  */
 template <typename T, std::size_t pos, std::size_t bits>
 struct field_traits
@@ -53,11 +52,20 @@ struct field_traits
 template <std::unsigned_integral T>
 struct packed
 {
+    static constexpr std::size_t BITS = sizeof(T) * 8;
+
 public:
     using value_type = T;
 
+    /**
+     * @brief Returns the subfield value at specified bit position
+     * @tparam Pos Subfield bit position
+     * @tparam Bits Number of subfield bits
+     * @tparam Tout Returned value type
+     * @return Subield value at specified bit position
+     */
     template <std::size_t Pos, std::size_t Bits=1, typename Tout=bool>
-    requires (detail::valid_position<Pos, packed::BITS>)
+    requires detail::valid_position<Pos,packed::BITS>
     inline constexpr Tout get() const
     {
         using traits = detail::field_traits<T,Pos,Bits>;
@@ -65,8 +73,15 @@ public:
         return static_cast<Tout>((vrtgen::swap::from_be(m_value) & traits::mask) >> traits::shift);
     }
 
+    /**
+     * @brief Sets the subfield value at specified bit position
+     * @tparam Pos Subfield bit position
+     * @tparam Bits Number of subfield bits
+     * @tparam Tin Incoming value type
+     * @param value Subfield value to set
+     */
     template <std::size_t Pos, std::size_t Bits=1, typename Tin>
-    requires (detail::valid_position<Pos, packed::BITS>)
+    requires detail::valid_position<Pos,packed::BITS>
     inline constexpr void set(Tin value)
     {
         using traits = detail::field_traits<T,Pos,Bits>;
@@ -123,8 +138,6 @@ public:
     }
 
 private:
-    static constexpr std::size_t BITS = sizeof(value_type) * 8;
-
     value_type m_value{ 0 };
 
 }; // end class packed
@@ -207,5 +220,3 @@ protected:
 }; // end class Packed32_Fixed16R
 
 } // end namespace vrtgen
-
-#endif // _VRTGEN_TYPES_PACKED_HPP

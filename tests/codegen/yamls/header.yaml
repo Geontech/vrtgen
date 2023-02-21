@@ -3,6 +3,8 @@ TestHeaderDataPacket: !Data
 TestHeaderContextPacket: !Context
 
 TestHeaderControlPacket: !Control
+  cam: !ControlAcknowledgeMode
+    req_v: required
 
 TestHeaderAckPacket: !Ack
   responds_to: TestHeaderControlPacket
@@ -21,6 +23,8 @@ TestHeaderControlTSPacket: !Control
   timestamp: !Timestamp
     integer: utc
     fractional: picoseconds
+  cam: !ControlAcknowledgeMode
+    req_v: required
 
 TestHeaderAckTSPacket: !Ack
   responds_to: TestHeaderControlTSPacket

@@ -60,11 +60,11 @@ class ContextPacket(Packet):
         super()._update_header()
 
 @dataclass
-class ExtensionContextPacket(Packet):
+class ExtensionContextPacket(ContextPacket):
     """
     Extension Context Packet
     """
     
     def __post_init__(self):
         super().__post_init__()
-        self.header.packet_type = PacketType.EXTENSION_CONTEXT
+        self.header.packet_type.value = PacketType.EXTENSION_CONTEXT

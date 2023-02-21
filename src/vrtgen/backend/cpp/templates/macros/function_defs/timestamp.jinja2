@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -19,7 +19,7 @@
 
 {%- macro function_defs(packet, type_helper) %}
 {% if packet.timestamp.integer.enabled %}
-{{ type_helper.value_type(packet.timestamp.integer) }} {{ packet.name }}::{{ packet.timestamp.integer.name }}() const
+auto {{ packet.name }}::{{ packet.timestamp.integer.name }}() const -> {{ type_helper.value_type(packet.timestamp.integer) }}
 {
     const auto pos{ m_positions.at("{{ packet.timestamp.integer.name }}") };
     {{ type_helper.value_type(packet.timestamp.integer) }} retval{};
@@ -27,7 +27,7 @@
     return vrtgen::swap::from_be(retval);
 }
 
-void {{ packet.name }}::{{ packet.timestamp.integer.name }}(const {{ type_helper.value_type(packet.timestamp.integer) }} value)
+auto {{ packet.name }}::{{ packet.timestamp.integer.name }}(const {{ type_helper.value_type(packet.timestamp.integer) }} value) -> void
 {
     auto swapped{ vrtgen::swap::to_be(value) };
     const auto pos{ m_positions.at("{{ packet.timestamp.integer.name }}") };
@@ -38,7 +38,7 @@ void {{ packet.name }}::{{ packet.timestamp.integer.name }}(const {{ type_helper
 {%   if packet.timestamp.integer.enabled %}
 
 {%   endif %}
-{{ type_helper.value_type(packet.timestamp.fractional) }} {{ packet.name }}::{{ packet.timestamp.fractional.name }}() const
+auto {{ packet.name }}::{{ packet.timestamp.fractional.name }}() const -> {{ type_helper.value_type(packet.timestamp.fractional) }}
 {
     const auto pos{ m_positions.at("{{ packet.timestamp.fractional.name }}") };
     {{ type_helper.value_type(packet.timestamp.fractional) }} retval{};
@@ -46,7 +46,7 @@ void {{ packet.name }}::{{ packet.timestamp.integer.name }}(const {{ type_helper
     return vrtgen::swap::from_be(retval);
 }
 
-void {{ packet.name }}::{{ packet.timestamp.fractional.name }}(const {{ type_helper.value_type(packet.timestamp.fractional) }} value)
+auto {{ packet.name }}::{{ packet.timestamp.fractional.name }}(const {{ type_helper.value_type(packet.timestamp.fractional) }} value) -> void
 {
     auto swapped{ vrtgen::swap::to_be(value) };
     const auto pos{ m_positions.at("{{ packet.timestamp.fractional.name }}") };
