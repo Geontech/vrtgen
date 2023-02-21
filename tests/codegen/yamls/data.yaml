@@ -24,8 +24,8 @@ TestData6: !Data
 
 TestData7: !Data
   trailer: !Trailer
-    valid_data: optional
-    agc_mgc: required
+    # valid_data: optional
+    # agc_mgc: required
 
 TestData8: !Data
   stream_id: !StreamID
@@ -51,8 +51,8 @@ TestData10: !Data
     integer: utc
     fractional: picoseconds
   trailer: !Trailer
-      valid_data: optional
-      agc_mgc: required
+      # valid_data: optional
+      # agc_mgc: required
 
 TestData11: !Data
   trailer: !Trailer

@@ -1,9 +1,2 @@
-add_library(src
-{% for packet in packets %}
-    {{ packet.name | to_snake }}.cpp
-{% endfor %}
-)
-
-target_include_directories(src
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../include)
-target_link_libraries(src)
+add_subdirectory(bin)
+add_subdirectory(packets)

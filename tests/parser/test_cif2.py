@@ -64,8 +64,8 @@ def test_cif2_default():
     assert not cif2.track_id.required
     assert not cif2.country_code.enabled
     assert not cif2.country_code.required
-    assert not cif2.operator_.enabled
-    assert not cif2.operator_.required
+    assert not cif2.operator_id.enabled
+    assert not cif2.operator_id.required
     assert not cif2.platform_class.enabled
     assert not cif2.platform_class.required
     assert not cif2.platform_instance.enabled
@@ -124,8 +124,8 @@ field_data = [
     ('track_id', 'optional'),
     ('country_code', 'required'),
     ('country_code', 'optional'),
-    ('operator_', 'required'),
-    ('operator_', 'optional'),
+    ('operator_id', 'required'),
+    ('operator_id', 'optional'),
     ('platform_class', 'required'),
     ('platform_class', 'optional'),
     ('platform_instance', 'required'),

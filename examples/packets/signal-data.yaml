@@ -7,4 +7,3 @@ SignalData: !Data
     integer: utc
     fractional: picoseconds
   trailer: !Trailer
-    valid_data: required

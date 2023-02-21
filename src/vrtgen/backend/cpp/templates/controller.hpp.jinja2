@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -17,45 +17,60 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
 {%- import "macros/controller/controller.jinja2" as controller %}
-#include <vrtgen/socket.hpp>
-#include "{{ header }}"
+#pragma once 
 
+#include <vrtgen/socket.hpp>
+{% for packet in packets %}
+#include <{{ packet.name | to_snake }}.hpp>
+{% endfor %}
+{% if namespace_ %}
+
+namespace {{ namespace_ }} {
+
+using namespace {{ namespace_ }}::packets;
+{% endif %}
+
+/**
+ * @class {{ controller_name }}
+ */
 class {{ controller_name }}
 {
-{% for packet in packets if packet.is_control %}
-{%   if loop.first %}
-    using cmd_socket_type = vrtgen::socket::{{ cmd_socket }}::v4;
-    using cmd_endpoint_type = typename cmd_socket_type::endpoint_type;
-{%   endif %}
-{% endfor %}
-{% for packet in packets if (packet.is_data or packet.is_context) %}
-{%  if loop.first %}
-    using data_ctxt_socket_type = vrtgen::socket::udp::v4;
-    using data_ctxt_endpoint_type = typename data_ctxt_socket_type::endpoint_type;
-    using message_buffer = std::array<char, 65536>;
-{%   endif %}
-{% endfor %}
-
-public:
-{% set has_datactxt = [] %}
-{% set has_ctrl = [] %}
+{% set ns = namespace(has_datactxt=false,has_control=false) %}
 {% for packet in packets %}
-{%   if packet.is_data or packet.is_control %}
-{%     do has_datactxt.append(packet.name) %}
+{%   if packet.is_data or packet.is_context %}
+{%     set ns.has_datactxt = true %}
 {%   endif %}
 {%   if packet.is_control %}
-{%     do has_ctrl.append(packet.name) %}
+{%     set ns.has_control = true %}
 {%   endif %}
 {% endfor %}
-{% if has_ctrl %}
+{% if ns.has_control %}
+    using cmd_socket_type = vrtgen::socket::{{ cmd_socket }}::v4;
+    using cmd_endpoint_type = typename cmd_socket_type::endpoint_type;
+{% endif %}
+{% if ns.has_datactxt %}
+    using data_ctxt_socket_type = vrtgen::socket::udp::v4;
+    using data_ctxt_endpoint_type = typename data_ctxt_socket_type::endpoint_type;
+    using message_buffer = std::array<uint8_t, 65536>;
+{% endif %}
+
+public:
+    /**
+     * @brief Default constructor
+     */
+    {{ controller_name }}() = default;
+{% if ns.has_control %}
+
+    /**
+     * @brief Endpoint constructor
+     * @param endpoint Desired endpoint to use for sending command packets
+     */
     explicit {{ controller_name }}(const cmd_endpoint_type& endpoint)
     {
-        if (!_cmd_socket.bind(endpoint)) {
+        if (!m_cmd_socket.bind(endpoint)) {
             throw std::runtime_error("Failed to bind socket during {{ controller_name }} construction");
         }
     }
-{% else %}
-    {{ controller_name }}() = default;
 {% endif %}
 
     {{ controller.socket_functions(packets, cmd_socket) | indent(4) | trim }}
@@ -67,31 +82,30 @@ private:
 
 {% for packet in packets if packet.is_control %}
 {%   if loop.first %}
-    uint32_t _next_message_id()
+    auto next_message_id() -> uint32_t
     {
-        return _message_id++;
+        return m_message_id++;
     }
 
 {%   endif %}
 {% endfor %}
 {% for packet in packets if (packet.is_data or packet.is_context) %}
 {%  if loop.first %}
-    void _receiver_func()
+    void m_receiver_func()
     {
         message_buffer message;
-        while(_receiving) {
+        while(m_receiving) {
             data_ctxt_endpoint_type endpoint;
-            auto recv_length = _data_ctxt_recv_socket.receive_from(message.data(), message.size(), endpoint);
+            auto recv_length = m_data_ctxt_recv_socket.receive_from(message.data(), message.size(), endpoint);
             if (recv_length <= 0) {
                 continue;
             }
 
 {%   endif %}
-            if (!packing::{{ packet.helper }}::match(message.data(), recv_length)) {
-                {{ packet.name }} packet;
-                {{ packet.name }}::helper::unpack(packet, message.data(), recv_length);
-                if (_{{ packet.name | to_snake }}_listener) {
-                    _{{ packet.name | to_snake }}_listener(packet);
+            if (!{{ packet.name }}::match(message)) {
+                auto packet = {{ packet.name }}{ message };
+                if (m_{{ packet.name | to_snake }}_listener) {
+                    m_{{ packet.name | to_snake }}_listener(packet);
                 }
             }
 {%   if loop.last %}
@@ -101,3 +115,7 @@ private:
 {%   endif %}
 {% endfor %}
 }; // end class {{ controller_name }}
+
+{% if namespace_ %}
+} // end namespace {{ namespace_ }}
+{% endif %}

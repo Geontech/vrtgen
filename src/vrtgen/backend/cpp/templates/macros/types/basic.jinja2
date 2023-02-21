@@ -45,7 +45,7 @@ std::optional<{{ type_helper.member_type(field) }}> _{{ field.name }};
  * @brief Check if {{ field.name }} contains a value
  * @return true, {{ field.name }} is a required field
  */
-constexpr bool has_{{ field.name }}() const noexcept
+auto has_{{ field.name }}() const noexcept -> constexpr bool
 {
     return true; // required
 }
@@ -54,7 +54,7 @@ constexpr bool has_{{ field.name }}() const noexcept
  * @brief Check if optional {{ field.name }} contains a value
  * @return true if {{ field.name }} contains a value, otherwise false
  */
-constexpr bool has_{{ field.name }}() const noexcept
+auto has_{{ field.name }}() const noexcept -> constexpr bool
 {
     return _{{ field.name }}.has_value();
 }
@@ -62,7 +62,7 @@ constexpr bool has_{{ field.name }}() const noexcept
 /**
  * @brief If {{ field.name }} contains a value, destroy it
  */
-void reset_{{ field.name }}() noexcept
+auto reset_{{ field.name }}() noexcept -> void
 {
 {% if cif is not none %}
     _{{ field.name }}.reset();
@@ -78,7 +78,7 @@ void reset_{{ field.name }}() noexcept
  * @brief Check if {{ field.name }}_attributes contains a value
  * @return true, {{ field.name }}_attributes is a required field
  */
-constexpr bool has_{{ field.name }}_attributes() const noexcept
+auto has_{{ field.name }}_attributes() const noexcept -> constexpr bool
 {
     return true; // required
 }
@@ -87,7 +87,7 @@ constexpr bool has_{{ field.name }}_attributes() const noexcept
  * @brief Check if optional {{ field.name }}_attributes contains a value
  * @return true if {{ field.name }}_attributes contains a value, otherwise false
  */
-constexpr bool has_{{ field.name }}_attributes() const noexcept
+auto has_{{ field.name }}_attributes() const noexcept -> constexpr bool
 {
     return _{{ field.name }}_attributes.has_value();
 }
@@ -95,7 +95,7 @@ constexpr bool has_{{ field.name }}_attributes() const noexcept
 /**
  * @brief If {{ field.name }}_attributes contains a value, destroy it
  */
-void reset_{{ field.name }}_attributes() noexcept
+auto reset_{{ field.name }}_attributes() noexcept -> void
 {
 {% if cif is not none %}
     _{{ field.name }}_attributes.reset();
@@ -126,7 +126,7 @@ void reset_{{ field.name }}_attributes() noexcept
  * @exception std::bad_optional_access if {{ field_name }} does not contain a value
 {% endif %}
  */
-constexpr {{ field_type }}& {{ field_getter }}(){{ ' noexcept' if not field.is_optional }}
+auto {{ field_getter }}(){{ ' noexcept' if not field.is_optional }} constexpr {{ field_type }}& 
 {
     return _{{ field_name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
 }
@@ -150,7 +150,7 @@ constexpr {{ field_type }}& {{ field_getter }}(){{ ' noexcept' if not field.is_o
  * @exception std::bad_optional_access if {{ field_name }} does not contain a value
 {% endif %}
  */
-constexpr const {{ field_type }}& {{ field_getter }}() const{{ ' noexcept' if not field.is_optional }}
+auto {{ field_getter }}() const{{ ' noexcept' if not field.is_optional }} -> constexpr const {{ field_type }}&
 {
     return _{{ field_name }}{{ '.value()' if field.is_optional }}{{ '.get()' if type_helper.requires_get_set(field) }};
 }

@@ -28,6 +28,103 @@ BandwidthOptional: !Context
   cif_0: !CIF0
     bandwidth: optional
 
+TestReqAndOpt: !Context
+  cif_0: !CIF0
+    reference_point_id: optional
+    bandwidth: required
+    over_range_count: optional
+
+TestBasicCif1: !Context
+  cif_1: !CIF1
+    phase_offset: required
+
+TestBasicCif2: !Context
+  cif_2: !CIF2
+    cited_sid: required
+
+TestBasicCif7: !Context
+  cif_7: !CIF7
+    mean_value: required
+
+TestCif7Attributes: !Context
+  cif_0: !CIF0
+    bandwidth: required
+  cif_7: !CIF7
+    current_value: required
+    mean_value: required
+
+TestCif7AllAttributes: !Context
+  cif_0: !CIF0
+    gain: optional
+  cif_1: !CIF1
+    phase_offset: optional
+  cif_2: !CIF2
+    event_id: optional
+  cif_7: !CIF7
+    current_value: required
+    # mean_value: required
+    median_value: required
+    standard_deviation: required
+    max_value: required
+    min_value: required
+    # precision: required
+    # accuracy: required
+    # first_derivative: required
+    # second_derivative: required
+    # third_derivative: required
+    # probability: required
+    # belief: required
+
+UserDefinedDiscreteIo: !Context
+  cif_1: !CIF1
+    phase_offset: optional
+    polarization: optional
+    discrete_io_32: !DiscreteIO32
+      mode: optional
+      switchfield: bool
+      stream_enable: enable_indicator
+      test_enum32: !!seq
+        - zero
+        - one
+        - two
+      anint: !!int 8
+    discrete_io_64: !DiscreteIO64
+      mode: optional
+      switchfield: bool
+      stream_enable: enable_indicator
+      test_enum64: !!seq
+        - zero
+        - one
+        - two
+      anint: !!int 32
+
+RequiredDiscreteIo: !Context
+  cif_1: !CIF1
+    discrete_io_32: !DiscreteIO32
+      mode: required
+      switchfield: bool
+    discrete_io_64: !DiscreteIO64
+      mode: required
+      switchfield: !!int 32
+
+NotUserDefinedDiscreteIo: !Context
+  cif_1: !CIF1
+    discrete_io_32: required
+    discrete_io_64: required
+
+TestAllGenerateParams: !Context
+  cif_0: !CIF0
+    reference_level: optional
+    rf_ref_frequency: optional
+    rf_ref_frequency_offset: optional
+    sample_rate: optional
+  cif_1: !CIF1
+    phase_offset: optional
+    aux_frequency: optional
+    aux_bandwidth: optional
+    health_status: optional
+    v49_spec_compliance: optional
+
 TestContext4: !Context
   cif_0: !CIF0
 #     gps_ascii: optional
@@ -99,8 +196,8 @@ TestContext4: !Context
 #     probability: required
 #     belief: required
 
-# TestContext8: !Context
-#   tsm: coarse
+TestContext8: !Context
+  tsm: coarse
      
 
 # TestContextIndexList: !Context

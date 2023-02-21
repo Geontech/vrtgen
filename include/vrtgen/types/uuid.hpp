@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -17,8 +17,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
 
-#ifndef _VRTGEN_TYPES_UUID_HPP
-#define _VRTGEN_TYPES_UUID_HPP
+#pragma once
 
 #include <bitset>
 #include <bit>
@@ -167,5 +166,3 @@ private:
 }; // end class UUID
 
 } // end namespace vrtgen
-
-#endif // _VRTGEN_TYPES_UUID_HPP

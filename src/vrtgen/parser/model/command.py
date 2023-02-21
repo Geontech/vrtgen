@@ -45,9 +45,9 @@ class ControlAcknowledgeMode(PackedStruct):
     permit_partial : BooleanType = field(default_factory=lambda: BooleanType('permit_partial', packed_tag=PackedTag(27,1,0,0)))
     permit_warnings : BooleanType = field(default_factory=lambda: BooleanType('permit_warnings', packed_tag=PackedTag(26,1,0,0)))
     permit_errors : BooleanType = field(default_factory=lambda: BooleanType('permit_errors', packed_tag=PackedTag(25,1,0,0)))
-    action_mode : EnumType = field(default_factory=lambda: EnumType('action_mode', type_=ActionMode, packed_tag=PackedTag(24,2,0,0)))
-    nack_only : BooleanType = field(default_factory=lambda: BooleanType('nack_only', packed_tag=PackedTag(22,1,0,0)))
-    timing_control : EnumType = field(default_factory=lambda: EnumType('timing_control', type_=TimestampControlMode, packed_tag=PackedTag(14,3,0,0)))
+    # action_mode : EnumType = field(default_factory=lambda: EnumType('action_mode', type_=ActionMode, packed_tag=PackedTag(24,2,0,0)))
+    # nack_only : BooleanType = field(default_factory=lambda: BooleanType('nack_only', packed_tag=PackedTag(22,1,0,0)))
+    # timing_control : EnumType = field(default_factory=lambda: EnumType('timing_control', type_=TimestampControlMode, packed_tag=PackedTag(14,3,0,0)))
     packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
 
     def __post_init__(self):
@@ -83,21 +83,21 @@ class ControlAcknowledgeMode(PackedStruct):
                 self.__dict__[key].value = parse_identifier_format(val)
                 self.__dict__[key].enabled = True
                 self.__dict__[key].required = True
-            elif key == 'action_mode':
-                if val == 'required' or val == 'optional':
-                    mode = parse_enable(val)
-                    self.__dict__[key].enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
-                    self.__dict__[key].required = True if (mode == Mode.REQUIRED) else False
-                    if mode == Mode.REQUIRED:
-                        self.__dict__[key].value = True
-                else:
-                    self.__dict__[key].value = parse_action_mode(val)
-                    self.__dict__[key].enabled = True
-                    self.__dict__[key].required = True
-            elif key == 'timing_control':
-                self.__dict__[key].value = parse_timing_control(val)
-                self.__dict__[key].enabled = True
-                self.__dict__[key].required = True
+            # elif key == 'action_mode':
+            #     if val == 'required' or val == 'optional':
+            #         mode = parse_enable(val)
+            #         self.__dict__[key].enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
+            #         self.__dict__[key].required = True if (mode == Mode.REQUIRED) else False
+            #         if mode == Mode.REQUIRED:
+            #             self.__dict__[key].value = True
+            #     else:
+            #         self.__dict__[key].value = parse_action_mode(val)
+            #         self.__dict__[key].enabled = True
+            #         self.__dict__[key].required = True
+            # elif key == 'timing_control':
+            #     self.__dict__[key].value = parse_timing_control(val)
+            #     self.__dict__[key].enabled = True
+            #     self.__dict__[key].required = True
 
     def validate_and_parse_mapping(self, **mapping):
         self._validate(mapping)
@@ -114,6 +114,10 @@ class ControlCAM(ControlAcknowledgeMode):
     req_w : BooleanType = field(default_factory=lambda: BooleanType('req_w', packed_tag=PackedTag(17,1,0,0)))
     req_er : BooleanType = field(default_factory=lambda: BooleanType('req_er', packed_tag=PackedTag(16,1,0,0)))
 
+    @property
+    def is_control(self):
+        return True
+
 @dataclass
 class AcknowledgeCAM(ControlAcknowledgeMode):
     """
@@ -127,6 +131,10 @@ class AcknowledgeCAM(ControlAcknowledgeMode):
     partial_action : BooleanType = field(default_factory=lambda: BooleanType('partial_action', packed_tag=PackedTag(11,1,0,0)))
     scheduled_or_executed : BooleanType = field(default_factory=lambda: BooleanType('scheduled_or_executed', packed_tag=PackedTag(10,1,0,0)))
 
+    @property
+    def is_ack(self):
+        return True
+
 @dataclass
 class ControlIdentifier(Field):
     format : IdentifierFormat = field(default_factory=IdentifierFormat)
@@ -135,11 +143,15 @@ class ControlIdentifier(Field):
         self.type_ = type(self).__name__
         self.bits = 32
 
+    @property
+    def is_integer_type(self):
+        return self.format == IdentifierFormat.WORD
+
     def _parse_mapping(self, mapping):
         try:
             self.format = parse_identifier_format(mapping)
             if self.format == IdentifierFormat.UUID:
-                self.bits = 64
+                self.bits = 128
 
         except:
             raise ValueError('invalid identifier format: ' + mapping)
@@ -236,6 +248,11 @@ class ExtensionControlPacket(ControlPacket):
     """
     Extension Control Command Packet subtype
     """
+    def __post_init__(self):
+        super().__post_init__()
+        self.header.packet_type.value = PacketType.EXTENSION_COMMAND
+        self.cif_0.enabled = False
+        self.cif_0.required = False
 
 @dataclass
 class WarningErrorFields(PackedStruct):
@@ -270,8 +287,8 @@ class WEIF0(CIF):
     name : str = 'weif_0'
     reference_point_id : CIFEnableType = field(default_factory=lambda: CIFEnableType('reference_point_id', type_=WarningErrorFields(), packed_tag=PackedTag(30,1,0,0)))
     bandwidth : CIFEnableType = field(default_factory=lambda: CIFEnableType('bandwidth', type_=WarningErrorFields(), packed_tag=PackedTag(29,1,0,0)))
-    if_frequency : CIFEnableType = field(default_factory=lambda: CIFEnableType('if_frequency', type_=WarningErrorFields(), packed_tag=PackedTag(28,1,0,0)))
-    rf_frequency : CIFEnableType = field(default_factory=lambda: CIFEnableType('rf_frequency', type_=WarningErrorFields(), packed_tag=PackedTag(27,1,0,0)))
+    if_ref_frequency : CIFEnableType = field(default_factory=lambda: CIFEnableType('if_ref_frequency', type_=WarningErrorFields(), packed_tag=PackedTag(28,1,0,0)))
+    rf_ref_frequency : CIFEnableType = field(default_factory=lambda: CIFEnableType('rf_ref_frequency', type_=WarningErrorFields(), packed_tag=PackedTag(27,1,0,0)))
     rf_frequency_offset : CIFEnableType = field(default_factory=lambda: CIFEnableType('rf_frequency_offset', type_=WarningErrorFields(), packed_tag=PackedTag(26,1,0,0)))
     if_band_offset : CIFEnableType = field(default_factory=lambda: CIFEnableType('if_band_offset', type_=WarningErrorFields(), packed_tag=PackedTag(25,1,0,0)))
     reference_level : CIFEnableType = field(default_factory=lambda: CIFEnableType('reference_level', type_=WarningErrorFields(), packed_tag=PackedTag(24,1,0,0)))
@@ -289,8 +306,7 @@ class WEIF0(CIF):
     ecef_ephemeris : CIFEnableType = field(default_factory=lambda: CIFEnableType('ecef_ephemeris', type_=WarningErrorFields(), packed_tag=PackedTag(12,1,0,0)))
     relative_ephemeris : CIFEnableType = field(default_factory=lambda: CIFEnableType('relative_ephemeris', type_=WarningErrorFields(), packed_tag=PackedTag(11,1,0,0)))
     ephermis_ref_id : CIFEnableType = field(default_factory=lambda: CIFEnableType('ephermis_ref_id', type_=WarningErrorFields(), packed_tag=PackedTag(10,1,0,0)))
-    # not currently implemented
-    # gps_ascii : CIFEnableType = field(default_factory=lambda: CIFEnableType('gps_ascii', type_=WarningErrorFields(), packed_tag=PackedTag(9,1,0,0)))
+    gps_ascii : CIFEnableType = field(default_factory=lambda: CIFEnableType('gps_ascii', type_=WarningErrorFields(), packed_tag=PackedTag(9,1,0,0)))
     context_association_lists : CIFEnableType = field(default_factory=lambda: CIFEnableType('context_association_lists', type_=WarningErrorFields(), packed_tag=PackedTag(8,1,0,0)))
     packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
 
@@ -412,8 +428,9 @@ class AcknowledgePacket(CommandPacket):
         # Update Stream ID
         self.stream_id = ctrl_packet.stream_id
         # Class ID should be set in the YAML
-        if ctrl_packet.class_id.enabled and not self.class_id.enabled:
-            raise ValueError('class_id set in control packet but missing from ack YAML definition')
+        self.class_id = ctrl_packet.class_id
+        # if ctrl_packet.class_id.enabled and not self.class_id.enabled:
+        #     raise ValueError('class_id set in control packet but missing from ack YAML definition')
         # Update Timestamps
         self.timestamp = ctrl_packet.timestamp
         # Update CAM
@@ -433,7 +450,7 @@ class AcknowledgePacket(CommandPacket):
                 self.cam.__dict__[field.name] = field
             if ack_cam_field:
                 self.cam.__dict__[ack_cam_field].enabled = field.enabled
-                self.cam.__dict__[ack_cam_field].required = field.required
+                # self.cam.__dict__[ack_cam_field].required = field.required
                 self.cam.__dict__[ack_cam_field].value = field.value
         # Update Control Identifiers
         self.controllee_id = ctrl_packet.controllee_id
@@ -442,33 +459,33 @@ class AcknowledgePacket(CommandPacket):
         if ctrl_packet.cif_0.enabled:
             if self.is_ack_s:
                 self.cif_0 = ctrl_packet.cif_0
-            elif self.is_ack_v or self.is_ack_x:
+            if self.is_ack_v or self.is_ack_x:
+                self.wif_0.enabled = True
+                self.eif_0.enabled = True
                 for field in ctrl_packet.cif_0.fields:
                     if field.name in [f.name for f in self.wif_0.fields] and field.enabled:
                         self.wif_0.__dict__[field.name].enabled = True
                         self.eif_0.__dict__[field.name].enabled = True
-                        if not self.wif_0.enabled: self.wif_0.enabled = True
-                        if not self.eif_0.enabled: self.eif_0.enabled = True
         if ctrl_packet.cif_1.enabled:
             if self.is_ack_s:
                 self.cif_1 = ctrl_packet.cif_1
-            elif self.is_ack_v or self.is_ack_x:
+            if self.is_ack_v or self.is_ack_x:
+                self.wif_1.enabled = True
+                self.eif_1.enabled = True
                 for field in ctrl_packet.cif_1.fields:
                     if field.name in [f.name for f in self.wif_1.fields] and field.enabled:
                         self.wif_1.__dict__[field.name].enabled = True
                         self.eif_1.__dict__[field.name].enabled = True
-                        if not self.wif_1.enabled: self.wif_1.enabled = True
-                        if not self.eif_1.enabled: self.eif_1.enabled = True
         if ctrl_packet.cif_2.enabled:
             if self.is_ack_s:
                 self.cif_2 = ctrl_packet.cif_2
-            elif self.is_ack_v or self.is_ack_x:
+            if self.is_ack_v or self.is_ack_x:
+                self.wif_2.enabled = True
+                self.eif_2.enabled = True
                 for field in ctrl_packet.cif_2.fields:
                     if field.name in [f.name for f in self.wif_2.fields] and field.enabled:
                         self.wif_2.__dict__[field.name].enabled = True
                         self.eif_2.__dict__[field.name].enabled = True
-                        if not self.wif_2.enabled: self.wif_2.enabled = True
-                        if not self.eif_2.enabled: self.eif_2.enabled = True
 
     def _validate(self, mapping):
         for field in mapping:
@@ -502,5 +519,8 @@ class AcknowledgePacket(CommandPacket):
 @dataclass
 class ExtensionAcknowledgePacket(AcknowledgePacket):
     """
-    Extension AcknowledgePacket Packet
+    Extension Acknowledge Command Packet subtype
     """
+    def __post_init__(self):
+        super().__post_init__()
+        self.header.packet_type.value = PacketType.EXTENSION_COMMAND

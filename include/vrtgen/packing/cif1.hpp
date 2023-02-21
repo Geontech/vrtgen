@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-#ifndef _VRTGEN_PACKING_CIF1_HPP
-#define _VRTGEN_PACKING_CIF1_HPP
+
+#pragma once
 
 #include <vrtgen/types.hpp>
 #include <vrtgen/packing/enums.hpp>
@@ -840,5 +840,3 @@ private:
 }; // end class IndexList
 
 } // end namespace vrtgen::packing
-
-#endif // _VRTGEN_PACKING_CIF1_HPP

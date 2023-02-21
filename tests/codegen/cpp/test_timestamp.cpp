@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -18,10 +18,14 @@
  */
 
 #include "catch.hpp"
-#include "timestamp.hpp"
+#include "timestamp/timestamp_context1.hpp"
+#include "timestamp/timestamp_control1.hpp"
+#include "timestamp/timestamp_data1.hpp"
 #include <bytes.hpp>
 #include <vrtgen/packing/enums.hpp>
 #include "constants.hpp"
+
+using namespace timestamp_ns::packets;
 
 TEST_CASE("Timestamp", "[timestamp]")
 {

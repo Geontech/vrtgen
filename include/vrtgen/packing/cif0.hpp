@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -16,8 +16,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-#ifndef _VRTGEN_PACKING_CIF0_HPP
-#define _VRTGEN_PACKING_CIF0_HPP
+
+#pragma once
 
 #include <vrtgen/types.hpp>
 #include "indicator_fields.hpp"
@@ -38,7 +38,7 @@ public:
      * @return true if packet contains Command/Context Indicator Field 7 word, otherwise false
      * 
      * Command/Context Indicator Field 7 Enable is 1 bit long at bit position 7
-     * See VITA 49.2-2017 Table 9.1-1
+     * See VITA 49.2-2017-2017 Table 9.1-1
      */
     bool cif7_enable() const noexcept
     {
@@ -50,7 +50,7 @@ public:
      * @param value Command/Context Indicator Field 7 enable flag value to set
      * 
      * Command/Context Indicator Field 7 Enable is 1 bit long at bit position 7
-     * See VITA 49.2-2017 Table 9.1-1
+     * See VITA 49.2-2017-2017 Table 9.1-1
      */
     void cif7_enable(bool value) noexcept
     {
@@ -62,7 +62,7 @@ public:
      * @return true if packet contains Command/Context Indicator Field 3 word, otherwise false
      * 
      * Command/Context Indicator Field 3 Enable is 1 bit long at bit position 3
-     * See VITA 49.2-2017 Table 9.1-1
+     * See VITA 49.2-2017-2017 Table 9.1-1
      */
     bool cif3_enable() const noexcept
     {
@@ -74,7 +74,7 @@ public:
      * @param value Command/Context Indicator Field 3 enable flag value to set
      * 
      * Command/Context Indicator Field 3 Enable is 1 bit long at bit position 3
-     * See VITA 49.2-2017 Table 9.1-1
+     * See VITA 49.2-2017-2017 Table 9.1-1
      */
     void cif3_enable(bool value) noexcept
     {
@@ -86,7 +86,7 @@ public:
      * @return true if packet contains Command/Context Indicator Field 2 word, otherwise false
      * 
      * Command/Context Indicator Field 2 Enable is 1 bit long at bit position 2
-     * See VITA 49.2-2017 Table 9.1-1
+     * See VITA 49.2-2017-2017 Table 9.1-1
      */
     bool cif2_enable() const noexcept
     {
@@ -98,7 +98,7 @@ public:
      * @param value Command/Context Indicator Field 2 enable flag value to set
      * 
      * Command/Context Indicator Field 2 Enable is 1 bit long at bit position 2
-     * See VITA 49.2-2017 Table 9.1-1
+     * See VITA 49.2-2017-2017 Table 9.1-1
      */
     void cif2_enable(bool value) noexcept
     {
@@ -110,7 +110,7 @@ public:
      * @return true if packet contains Command/Context Indicator Field 1 word, otherwise false
      * 
      * Command/Context Indicator Field 1 Enable is 1 bit long at bit position 1
-     * See VITA 49.2-2017 Table 9.1-1
+     * See VITA 49.2-2017-2017 Table 9.1-1
      */
     bool cif1_enable() const noexcept
     {
@@ -122,7 +122,7 @@ public:
      * @param value Command/Context Indicator Field 1 enable flag value to set
      * 
      * Command/Context Indicator Field 1 Enable is 1 bit long at bit position 1
-     * See VITA 49.2-2017 Table 9.1-1
+     * See VITA 49.2-2017-2017 Table 9.1-1
      */
     void cif1_enable(bool value) noexcept
     {
@@ -144,7 +144,7 @@ public:
      * 
      * Stage 2 Gain subfield is 16 bits long at bit position 31 expressed in
      * two's-complement format with a radix point to the right of bit 7
-     * See VITA 49.2-2017 Figure 9.5.3-1
+     * See VITA 49.2-2017-2017 Figure 9.5.3-1
      */
     double stage_2() const noexcept
     {
@@ -157,7 +157,7 @@ public:
      * 
      * Stage 2 Gain subfield is 16 bits long at bit position 31 expressed in
      * two's-complement format with a radix point to the right of bit 7
-     * See VITA 49.2-2017 Figure 9.5.3-1
+     * See VITA 49.2-2017-2017 Figure 9.5.3-1
      */
     void stage_2(double value) noexcept
     {
@@ -170,7 +170,7 @@ public:
      * 
      * Stage 1 Gain subfield is 16 bits long at bit position 15 expressed in
      * two's-complement format with a radix point to the right of bit 7
-     * See VITA 49.2-2017 Figure 9.5.3-1
+     * See VITA 49.2-2017-2017 Figure 9.5.3-1
      */
     double stage_1() const noexcept
     {
@@ -183,7 +183,7 @@ public:
      * 
      * Stage 1 Gain subfield is 16 bits long at bit position 15 expressed in
      * two's-complement format with a radix point to the right of bit 7
-     * See VITA 49.2-2017 Figure 9.5.3-1
+     * See VITA 49.2-2017-2017 Figure 9.5.3-1
      */
     void stage_1(double value) noexcept
     {
@@ -204,7 +204,7 @@ public:
      * @return Manufacturer OUI subfield value
      * 
      * Manufacturer OUI subfield is 24 bits long at bit position 23 in word 1
-     * See VITA 49.2-2017 Figure 9.10.1-1
+     * See VITA 49.2-2017-2017 Figure 9.10.1-1
      */
     uint32_t manufacturer_oui() const noexcept
     {
@@ -216,7 +216,7 @@ public:
      * @param value Manufacturer OUI subfield value to set
      * 
      * Manufacturer OUI subfield is 24 bits long at bit position 23 in word 1
-     * See VITA 49.2-2017 Figure 9.10.1-1
+     * See VITA 49.2-2017-2017 Figure 9.10.1-1
      */
     void manufacturer_oui(uint32_t value) noexcept
     {
@@ -228,7 +228,7 @@ public:
      * @return Device Code subfield value
      * 
      * Device Code subfield is 16 bits long at bit position 15 in word 2
-     * See VITA 49.2-2017 Figure 9.10.1-1
+     * See VITA 49.2-2017-2017 Figure 9.10.1-1
      */
     uint16_t device_code() const noexcept
     {
@@ -240,7 +240,7 @@ public:
      * @param value Device Code subfield value to set
      * 
      * Device Code subfield is 16 bits long at bit position 15 in word 2
-     * See VITA 49.2-2017 Figure 9.10.1-1
+     * See VITA 49.2-2017-2017 Figure 9.10.1-1
      */
     void device_code(uint16_t value) noexcept
     {
@@ -291,7 +291,7 @@ public:
      * @return TimeStamp-Integer code subfield value
      * 
      * TimeStamp-Integer code subfield is 2 bits long at bit position 27 in word 1
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     TSI tsi() const noexcept
     {
@@ -303,7 +303,7 @@ public:
      * @param value TimeStamp-Integer code subfield value to set
      * 
      * TimeStamp-Integer code subfield is 2 bits long at bit position 27 in word 1
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     void tsi(TSI value) noexcept
     {
@@ -315,7 +315,7 @@ public:
      * @return TimeStamp-Fractional code subfield value
      * 
      * TimeStamp-Fractional code subfield is 2 bits long at bit position 25 in word 1
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     TSF tsf() const noexcept
     {
@@ -327,7 +327,7 @@ public:
      * @param value TimeStamp-Fractional code subfield value to set
      * 
      * TimeStamp-Fractional code subfield is 2 bits long at bit position 25 in word 1
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     void tsf(TSF value) noexcept
     {
@@ -339,7 +339,7 @@ public:
      * @return Manufacturer OUI subfield value
      * 
      * Manufacturer OUI subfield is 24 bits long at bit position 23 in word 1
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     uint32_t manufacturer_oui() const noexcept
     {
@@ -351,7 +351,7 @@ public:
      * @param value Manufacturer OUI subfield value to set
      * 
      * Manufacturer OUI subfield is 24 bits long at bit position 23 in word 1
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     void manufacturer_oui(uint32_t value) noexcept
     {
@@ -363,7 +363,7 @@ public:
      * @return Integer Timestamp subfield value
      * 
      * Integer Timestamp subfield is 32 bits long at bit position 31 in word 2
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     uint32_t integer_timestamp() const noexcept
     {
@@ -375,7 +375,7 @@ public:
      * @param value Integer Timestamp subfield value to set
      * 
      * Integer Timestamp subfield is 32 bits long at bit position 31 in word 2
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     void integer_timestamp(uint32_t value) noexcept
     {
@@ -387,7 +387,7 @@ public:
      * @return Fractional Timestamp subfield value
      * 
      * Fractional Timestamp subfield is 64 bits long at bit position 31 in word 3
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     uint64_t fractional_timestamp() const noexcept
     {
@@ -399,7 +399,7 @@ public:
      * @param value Fractional Timestamp subfield value to set
      * 
      * Fractional Timestamp subfield is 64 bits long at bit position 31 in word 3
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     void fractional_timestamp(uint64_t value) noexcept
     {
@@ -412,7 +412,7 @@ public:
      * 
      * Latitude subfield is 32 bits long at bit position 31 in word 5 expressed
      * in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     double latitude() const noexcept
     {
@@ -425,7 +425,7 @@ public:
      * 
      * Latitude subfield is 32 bits long at bit position 31 in word 5 expressed
      * in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     void latitude(double value) noexcept
     {
@@ -438,7 +438,7 @@ public:
      * 
      * Longitude subfield is 32 bits long at bit position 31 in word 5 expressed
      * in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     double longitude() const noexcept
     {
@@ -451,7 +451,7 @@ public:
      * 
      * Longitude subfield is 32 bits long at bit position 31 in word 5 expressed
      * in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     void longitude(double value) noexcept
     {
@@ -464,7 +464,7 @@ public:
      * 
      * Altitude subfield is 32 bits long at bit position 31 in word 7 expressed
      * in two's-complement format with a radix point to the right of bit 5
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     double altitude() const noexcept
     {
@@ -477,7 +477,7 @@ public:
      * 
      * Altitude subfield is 32 bits long at bit position 31 in word 7 expressed
      * in two's-complement format with a radix point to the right of bit 5
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     void altitude(double value) noexcept
     {
@@ -490,7 +490,7 @@ public:
      * 
      * Speed Over Ground subfield is 32 bits long at bit position 31 in word 8
      * expressed in two's-complement format with a radix point to the right of bit 16
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     double speed_over_ground() const noexcept
     {
@@ -503,7 +503,7 @@ public:
      * 
      * Speed Over Ground subfield is 32 bits long at bit position 31 in word 8
      * expressed in two's-complement format with a radix point to the right of bit 16
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     void speed_over_ground(double value) noexcept
     {
@@ -516,7 +516,7 @@ public:
      * 
      * Heading Angle subfield is 32 bits long at bit position 31 in word 9 expressed
      * in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     double heading_angle() const noexcept
     {
@@ -529,7 +529,7 @@ public:
      * 
      * Heading Angle subfield is 32 bits long at bit position 31 in word 9 expressed
      * in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     void heading_angle(double value) noexcept
     {
@@ -542,7 +542,7 @@ public:
      * 
      * Track Angle subfield is 32 bits long at bit position 31 in word 10 expressed
      * in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     double track_angle() const noexcept
     {
@@ -555,7 +555,7 @@ public:
      * 
      * Track Angle subfield is 32 bits long at bit position 31 in word 10 expressed
      * in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     void track_angle(double value) noexcept
     {
@@ -568,7 +568,7 @@ public:
      * 
      * Magnetic Variation subfield is 32 bits long at bit position 31 in word 11
      * expressed in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     double magnetic_variation() const noexcept
     {
@@ -581,7 +581,7 @@ public:
      * 
      * Magnetic Variation subfield is 32 bits long at bit position 31 in word 11
      * expressed in two's-complement format with a radix point to the right of bit 22
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     void magnetic_variation(double value) noexcept
     {
@@ -687,7 +687,7 @@ public:
      * @return TimeStamp-Integer code subfield value
      * 
      * TimeStamp-Integer code subfield is 2 bits long at bit position 27 in word 1
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     TSI tsi() const noexcept
     {
@@ -699,7 +699,7 @@ public:
      * @param value TimeStamp-Integer code subfield value to set
      * 
      * TimeStamp-Integer code subfield is 2 bits long at bit position 27 in word 1
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     void tsi(TSI value) noexcept
     {
@@ -711,7 +711,7 @@ public:
      * @return TimeStamp-Fractional code subfield value
      * 
      * TimeStamp-Fractional code subfield is 2 bits long at bit position 25 in word 1
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     TSF tsf() const noexcept
     {
@@ -723,7 +723,7 @@ public:
      * @param value TimeStamp-Fractional code subfield value to set
      * 
      * TimeStamp-Fractional code subfield is 2 bits long at bit position 25 in word 1
-     * See VITA 49.2-2017 Figure 9.4.5-1
+     * See VITA 49.2-2017-2017 Figure 9.4.5-1
      */
     void tsf(TSF value) noexcept
     {
@@ -735,7 +735,7 @@ public:
      * @return Manufacturer OUI subfield value
      * 
      * Manufacturer OUI subfield is 24 bits long at bit position 23 in word 1
-     * See VITA 49.2-2017 Figure 9.10.1-1
+     * See VITA 49.2-2017-2017 Figure 9.10.1-1
      */
     uint32_t manufacturer_oui() const noexcept
     {
@@ -957,7 +957,7 @@ public:
      * @return Manufacturer OUI subfield value
      * 
      * Manufacturer OUI subfield is 24 bits long at bit position 23 in word 1
-     * See VITA 49.2 Figure 9.4.7-1
+     * See VITA 49.2-2017 Figure 9.4.7-1
      */
     uint32_t manufacturer_oui() const noexcept
     {
@@ -969,7 +969,7 @@ public:
      * @param value Manufacturer OUI subfield value to set
      * 
      * Manufacturer OUI subfield is 24 bits long at bit position 23 in word 1
-     * See VITA 49.2 Figure 9.4.7-1
+     * See VITA 49.2-2017 Figure 9.4.7-1
      */
     void manufacturer_oui(uint32_t value) noexcept
     {
@@ -981,7 +981,7 @@ public:
      * @return Number of Words subfield value
      * 
      * Number of Words subfield is 32 bits long at bit position 31 in word 2
-     * See VITA 49.2 Figure 9.4.7-1
+     * See VITA 49.2-2017 Figure 9.4.7-1
      */
     uint32_t number_of_words() const noexcept
     {
@@ -994,7 +994,7 @@ public:
      * 
      * ASCII Sentences subfield is a vector of 8 bits long values packed into 32 bit words 
      * starting at word 3 and going to word N+2
-     * See VITA 49.2 Figure 9.4.7-1
+     * See VITA 49.2-2017 Figure 9.4.7-1
      */
     std::vector<uint8_t>& ascii_sentences() noexcept
     {
@@ -1007,7 +1007,7 @@ public:
      * 
      * ASCII Sentences subfield is a vector of 8 bits long values packed into 32 bit words 
      * starting at word 3 and going to word N+2
-     * See VITA 49.2 Figure 9.4.7-1
+     * See VITA 49.2-2017 Figure 9.4.7-1
      */
     const std::vector<uint8_t>& ascii_sentences() const noexcept
     {
@@ -1020,7 +1020,7 @@ public:
      * 
      * ASCII Sentences subfield is a vector of 8 bits long values packed into 32 bit words 
      * starting at word 3 and going to word N+2
-     * See VITA 49.2 Figure 9.4.7-1
+     * See VITA 49.2-2017 Figure 9.4.7-1
      */
     void ascii_sentences(const std::vector<uint8_t>& value) noexcept
     {
@@ -1069,7 +1069,7 @@ private:
      * @param value Number of Words subfield value to set
      * 
      * Number of Words subfield is 32 bits long at bit position 31 in word 2
-     * See VITA 49.2 Figure 9.4.7-1
+     * See VITA 49.2-2017 Figure 9.4.7-1
      */
     void number_of_words(uint32_t value) noexcept
     {
@@ -1469,5 +1469,3 @@ private:
 }; // end class ContextAssociationLists
 
 } // end namespace vrtgen::packing
-
-#endif // _VRTGEN_PACKING_CIF0_HPP

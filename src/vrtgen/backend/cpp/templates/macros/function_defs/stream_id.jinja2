@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -19,9 +19,9 @@
 
 {%- macro function_defs(packet, type_helper) %}
 {% if packet.stream_id.user_defined %}
-{{ type_helper.member_type(packet.stream_id) }}& {{ packet.name }}::{{ packet.stream_id.name }}()
+auto {{ packet.name }}::{{ packet.stream_id.name }}() -> {{ type_helper.member_type(packet.stream_id) }}&
 {% else %}
-{{ type_helper.member_type(packet.stream_id) }} {{ packet.name }}::{{ packet.stream_id.name }}() const
+auto {{ packet.name }}::{{ packet.stream_id.name }}() const -> {{ type_helper.member_type(packet.stream_id) }}
 {% endif %}
 {
 {% if packet.stream_id.user_defined %}
@@ -34,20 +34,12 @@
 {% endif %}
 }
 
-{% if packet.stream_id.user_defined %}
-void {{ packet.name }}::{{ packet.stream_id.name }}(const {{ type_helper.member_type(packet.stream_id) }}& value)
-{% else %}
-void {{ packet.name }}::{{ packet.stream_id.name }}(const {{ type_helper.member_type(packet.stream_id) }} value)
-{% endif %}
+{% if not packet.stream_id.user_defined %}
+auto {{ packet.name }}::{{ packet.stream_id.name }}(const {{ type_helper.member_type(packet.stream_id) }} value) -> void
 {
-{% if packet.stream_id.user_defined %}
-    m_{{ packet.stream_id.name }} = value;
-    const auto pos{ m_positions.at("{{ packet.stream_id.name }}") };
-    m_{{ packet.stream_id.name }}.pack_into(m_data.data() + pos);
-{% else %}
     auto swapped{ vrtgen::swap::to_be(value) };
     const auto pos{ m_positions.at("{{ packet.stream_id.name }}") };
     std::memcpy(m_data.data() + pos, &swapped, sizeof(swapped));
-{% endif %}
 }
+{% endif %}
 {% endmacro %}

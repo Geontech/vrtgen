@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -17,18 +17,28 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
 {% for packet in packets %}
-#include "{{packet.name | to_snake}}.hpp"
+#include <{{packet.name | to_snake}}.hpp>
 {% endfor %}
-#include <iostream>
+{% if namespace_ %}
 
-typedef std::vector<uint8_t> bytes;
+using namespace {{ namespace_}}::packets;
+{% endif %}
 
-int main() {
-{% for packet in packets %}
+int main()
 {
-    using packet_type = {{packet.name}};
-    packet_type packet_in;
-    std::cout << "Size: " << packet_in.size() << std::endl;
-}
+{% for packet in packets %}
+{%   if packet.is_ack %}
+{%     if packet.cam.ack_v.enabled %}
+    auto {{ packet.name | to_snake }}_v = {{ packet.name }}VX{};
+{%     endif %}
+{%     if packet.cam.ack_x.enabled %}
+    auto {{ packet.name | to_snake }}_x = {{ packet.name }}VX{};
+{%     endif %}
+{%     if packet.cam.ack_s.enabled %}
+    auto {{ packet.name | to_snake }}_s = {{ packet.name }}S{};
+{%     endif %}
+{%   else %}
+    auto {{ packet.name | to_snake }} = {{ packet.name }}{};
+{%   endif %}
 {% endfor %}
 }

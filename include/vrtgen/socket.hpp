@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -17,10 +17,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
 
-#ifndef _VRTGEN_SOCKET_HPP
-#define _VRTGEN_SOCKET_HPP
+#pragma once
 
 #include "socket/tcp.hpp"
 #include "socket/udp.hpp"
-
-#endif // _VRTGEN_SOCKET_HPP

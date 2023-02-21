@@ -1,0 +1,115 @@
+/*#
+ * Copyright (C) 2023 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+{%- import "macros/types/weif.jinja2" as weif %}
+{%- import "macros/types/cif.jinja2" as cif %}
+{%- import "macros/members.jinja2" as members %}
+{%- import "macros/function_decls.jinja2" as function_decls %}
+
+{%- macro packet_doc(packet) %}
+/**
+{% if not packet.doc %}
+ * @class {{ packet.name }}
+{% else %}
+{%   for line in packet.doc %}
+ * {{ line }}
+{%   endfor %}
+{% endif %}
+ */
+{% endmacro %}
+
+{%- macro constructor(packet_name, type_helper) %}
+/**
+ * @brief {{ packet_name }} constructor
+ */
+{{ packet_name }}();
+{% endmacro %}
+
+{%- macro unpack_constructor(packet_name, type_helper) %}
+/**
+ * @brief {{ packet_name }} unpack constructor
+ */
+explicit {{ packet_name }}(std::span<const uint8_t> data);
+{% endmacro %}
+
+{%- macro base_public_function_declarations(packet, type_helper) %}
+/**
+ * @brief Return the packet's name
+ * @retval Name of the packet
+ */
+auto name() const -> std::string;
+
+/**
+ * @brief Match the data span against known values for this packet
+ * @retval nullopt if packet is a match, otherwise an error string is returned
+ */
+static auto match(std::span<const uint8_t> data) -> std::optional<std::string>;
+
+{{ function_decls.prologue(packet, type_helper) | trim }}
+{% endmacro %}
+
+{%- macro public_function_declarations(packet, type_helper) %}
+{{ base_public_function_declarations(packet, type_helper) | trim }}
+
+{% if packet.is_command %}
+{{ function_decls.command(packet, type_helper) | trim }}
+
+{% endif %}
+{% if packet.is_context or packet.is_command %}
+{{ function_decls.cif(packet, type_helper) | trim }}
+
+{% endif %}
+{% if packet.is_data %}
+{{ function_decls.data(packet, type_helper) | trim }}
+
+{% endif %}
+/**
+ * @brief Return a span of the underlying packed data
+ * @retval Pointer to underlying packed data
+ */
+auto data() -> std::span<const uint8_t>;
+
+/**
+ * @brief Return the size of the packet in bytes
+ * @retval Number of packet bytes
+ */
+auto size() -> std::size_t;
+{% endmacro %}
+
+{%- macro base_class_members(packet,type_helper) %}
+std::string m_name{ "{{ packet.name }}" };
+{{ members.prologue(packet, type_helper) | trim }}
+{% endmacro %}
+
+{%- macro class_members(packet, type_helper) %}
+{{ base_class_members(packet,type_helper) | trim }}
+{% if packet.is_command %}
+{{ members.command(packet, type_helper) | trim }}
+{% endif %}
+{% if packet.is_context or packet.is_command %}
+{{ members.cif(packet, type_helper) | trim }}
+{% endif %}
+{% if packet.is_ack %}
+{{ weif.members(packet, type_helper) | trim }}
+{% endif %}
+{% if packet.is_data %}
+{{ members.data(packet, type_helper) | trim }}
+{% endif %}
+std::vector<uint8_t> m_data;
+std::map<std::string, std::size_t> m_positions;
+{% endmacro %}

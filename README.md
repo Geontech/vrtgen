@@ -2,18 +2,15 @@
 
 Generates native-language classes/structs for V49.2 packet definitons in a YAML configuration file.
 
-This is a work-in-progress and almost assuredly will break repeatedly. A stable 1.0 release will be
-available in the next few months. Feedback is welcome.
-
 ## Dependencies
 
 `vrtgen` requires Python >= 3.7 as well as `pip` for Python >= 3.7.
 
-To build the C++ header library, CMake 3.17 or later must be installed.
+To build the C++ header library, CMake 3.15 or later must be installed.
 
 Generated C++ code requires g++ >= 10 for C++20 support, including concepts.
 The only dependency is the C++ header library.
-See the testing section
+See the testing section.
 
 ## Installation
 
@@ -29,13 +26,14 @@ This will install both the `vrtgen` Python modules and the `vrtpktgen` executabl
 
 ### Backend Installation
 
-To build the C++ library tests and install the header files:
+The `vrtgen` backend library is header only and can be included directly into your build tree
+by adding the contents of the [include](include) folder to your project's build structure.
+
+To install the C++ library header files for development:
 
 ```sh
 cmake3 -B build
-cd build
-make
-sudo make install
+sudo cmake3 --build build --target install
 ```
 
 On some Linux systems, CMake 3 is the default; run `cmake` instead of `cmake3`.
@@ -52,8 +50,8 @@ To perform a "developer install" using a virtual environment:
 ```sh
 python3 -m venv venv
 . venv/bin/activate
-pip install --upgrade pip
-pip install -e .
+python -m pip install --upgrade pip
+python -m pip install -e .
 ```
 
 ## Usage
@@ -77,16 +75,15 @@ vrtpktgen --help
 
 ## Testing
 
-The codebase has been tested on the following operating systems and C++ compilers
-
-|          | CentOS 7 | rockylinux 8 | Ubuntu 18.04 | Ubuntu 20.04 |
-| -------- | -------- | ------------ | ------------ | ------------ |
-| g++ 11.2 | :heavy_check_mark: | :heavy_check_mark  | :heavy_check_mark: | :heavy_check_mark  |
-| g++ 10.2 | :heavy_check_mark: | :heavy_check_mark  | :heavy_check_mark: | :heavy_check_mark  |
-
-To execute the tests:
+To build and execute the tests:
 
 ```sh
-cd build
-make check
+cmake3 -B build -DBUILD_TESTS=ON
+cmake3 --build build --target check
+```
+
+To run the Python parser tests:
+
+```sh
+pytest
 ```

@@ -30,7 +30,7 @@ class Trailer(StateEventIndicators):
     # Can't be on at the same time as user_defined1 or user_defined2
     sample_frame : EnumType = field(default_factory=lambda: EnumType('sample_frame', type_=SSI, packed_tag=PackedTag(11,2,0,0)))
     # Associated Context Packet Count
-    associated_context_packets_count : IntegerType = field(default_factory=lambda: IntegerType('associated_context_packets_count', bits=7, packed_tag=PackedTag(6,7,0,0)))
+    # associated_context_packets_count : IntegerType = field(default_factory=lambda: IntegerType('associated_context_packets_count', bits=7, packed_tag=PackedTag(6,7,0,0)))
 
     def __post_init__(self):
         super().__post_init__()
@@ -38,19 +38,32 @@ class Trailer(StateEventIndicators):
         self.bits = 32
 
     def _validate(self, mapping):
-        for _,val in mapping.items():
-            if val == 'required' or val == 'optional':
+        for field in mapping:
+            if 'user_defined' in field:
                 continue
-            elif val == 'enable_indicator':
-                continue
-            elif isinstance(val, list):
-                continue
-            else:
-                raise ValueError('invalid discrete_io type specified: ', val)
+            if not field in [f.name for f in self.fields]:
+                raise ValueError('invalid field provided: ' + field)
+        # for _,val in mapping.items():
+        #     if val == 'required' or val == 'optional':
+        #         continue
+        #     elif val == 'enable_indicator':
+        #         continue
+        #     elif isinstance(val, list):
+        #         continue
+        #     else:
+        #         raise ValueError('invalid trailer type specified: ', val)
 
-    # @property
-    # def fields(self):
-    #     return [f for f in self.state_event_indicators.fields] + [self.__dict__[key] for key,_ in asdict(self).items() if not isinstance(self.__dict__[key], StateEventIndicators) and is_field_type(self.__dict__[key])]
+    @property
+    def none_enabled(self):
+        return not any(field.enabled for field in self.fields)
+
+    @property
+    def is_user_defined(self):
+        return super().is_user_defined or self.user_defined
+
+    @property
+    def fields(self):
+        return super().fields #[f for f in super().fields] + [self.sample_frame, self.associated_context_packets_count]
 
     def _parse_mapping(self, mapping):
         packed_tag_pos = 8
@@ -58,7 +71,7 @@ class Trailer(StateEventIndicators):
         try:
             for key,val in mapping.items():
                 if not key in [f.name for f in self.fields]:
-                    self.type_ = 'UserDefinedTrailer'
+                    # self.type_ = 'UserDefinedTrailer'
                     if val == 'enable_indicator':
                         self.subfields.append(EnableIndicatorType(key, bits=1, user_defined=True, enabled=True, required=True, packed_tag=PackedTag(packed_tag_pos,1,0,0)))
                         self.subfields.append(EnableIndicatorType(key+'_enable', user_defined=True, bits=1, enabled=True, required=True, is_enable=True, packed_tag=PackedTag(packed_tag_pos+12,1,0,0)))

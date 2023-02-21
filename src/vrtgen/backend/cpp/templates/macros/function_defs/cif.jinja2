@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -19,101 +19,160 @@
 
 {%- import "macros/function_defs/common.jinja2" as common %}
 
-{%- macro function_defs(packet_name, cif, type_helper) %}
+{%- macro function_defs(packet_name, cif, type_helper, cif7=none) %}
 {% for field in cif.fields if field.enabled %}
 {% if type_helper.is_scalar(field) %}
 {%   if field.is_optional %}
-std::optional<{{ type_helper.value_type(field) }}> {{ packet_name }}::{{ field.name }}() const
+auto {{ packet_name }}::{{ field.name }}() const -> std::optional<{{ type_helper.value_type(field) }}>
 {%   else %}
-{{ type_helper.value_type(field) }} {{ packet_name }}::{{ field.name }}() const
+auto {{ packet_name }}::{{ field.name }}() const -> {{ type_helper.value_type(field) }}
 {%   endif %}
 {
 {%   if field.is_optional %}
-    if (!m_{{ cif.name }}.{{ field.name }}()) {
+{%     if cif.is_optional %}
+    if (!m_{{ cif.name }}.has_value()) {
+        return std::nullopt;
+    }
+{%     endif %}
+    if (!m_{{ cif.name }}{{ '->' if cif.is_optional else '.' }}{{ field.name }}()) {
         return std::nullopt;
     }
 {%   endif %}
-{% if field.indicator_only %}
-    return m_{{ cif.name }}.{{ field.name }}();
-{% else %}
-    const auto pos{ m_positions.at("{{ field.name }}") };
-    {{ type_helper.member_type(field) }} retval{};
-{%   if type_helper.is_scalar(field) %}
-    std::memcpy(&retval, m_data.data() + pos, sizeof(retval));
-{%     if field.is_fixed_point %}
-    return vrtgen::fixed::to_fp{{ type_helper.fixed_template(field) }}(vrtgen::swap::from_be(retval));
-{%     elif field.is_integer %}
-    return vrtgen::swap::from_be(retval);
-{%     endif %}
+{%   if field.indicator_only %}
+    return m_{{ cif.name }}{{ '->' if cif.is_optional else '.' }}{{ field.name }}();
 {%   else %}
+{%     if type_helper.is_scalar(field) and field.type_.reserved_bits > 0 %}
+    const auto pos{ m_positions.at("{{ field.name }}") + sizeof(int{{ field.type_.reserved_bits }}_t)/*reserved*/ };
+{%     else %}
+    const auto pos{ m_positions.at("{{ field.name }}") };
+{%     endif %}
+{%     if field.is_enum %}
+    int{{ field.type_.bits}}_t retval;
+{%     else %}
+    {{ type_helper.member_type(field) }} retval{};
+{%     endif %}
+{%     if type_helper.is_scalar(field) %}
+    std::memcpy(&retval, m_data.data() + pos, sizeof(retval));
+{%       if field.is_fixed_point %}
+    return vrtgen::fixed::to_fp{{ type_helper.fixed_template(field) }}(vrtgen::swap::from_be(retval));
+{%       elif field.is_integer %}
+    return vrtgen::swap::from_be(retval);
+{%       elif field.is_enum %}
+    return {{ type_helper.value_type(field) }}{ vrtgen::swap::from_be(retval) };
+{%       endif %}
+{%     else %}
     retval.unpack_from(m_data.data() + pos);
     return retval;
+{%     endif %}
 {%   endif %}
-{% endif %}
 }
 {% else %}
 {{ common.getters(packet_name, field, type_helper) | trim }}
 {% endif %}
 
-void {{ packet_name }}::{{ field.name }}(const {{ type_helper.value_type(field) }}{{ '&' if not type_helper.is_scalar(field) }} value)
+auto {{ packet_name }}::{{ field.name }}(const {{ type_helper.value_type(field) }}{{ '&' if not type_helper.is_scalar(field) }} value) -> void
 {
 {% if not field.indicator_only %}
+{%   if cif.is_optional and cif.type_ == 'CIF1' %}
+    if (!m_{{ cif.name }}.has_value()) {
+        m_{{ cif.name }} = {{ type_helper.member_type(cif) }}{};
+        m_data.insert(m_data.begin() + m_positions.at("{{ cif.name }}"), m_{{ cif.name }}->size(), 0);
+        m_cif_0.cif1_enable(true);
+        m_cif_0.pack_into(m_data.data() + m_positions.at("cif_0"));
+        update_positions();
+        update_packet_size();
+    }
+{%   elif cif.is_optional and cif.type_ == 'CIF2' %}
+    if (!m_{{ cif.name }}.has_value()) {
+        m_{{ cif.name }} = {{ type_helper.member_type(cif) }}{};
+        m_data.insert(m_data.begin() + m_positions.at("{{ cif.name }}"), m_{{ cif.name }}->size(), 0);
+        m_cif_0.cif2_enable(true);
+        m_cif_0.pack_into(m_data.data() + m_positions.at("cif_0"));
+        update_positions();
+        update_packet_size();
+    }
+{%   endif %}
 {%   if field.is_fixed_point %}
     auto swapped{ vrtgen::swap::to_be(vrtgen::fixed::to_int{{ type_helper.fixed_template(field) }}(value)) };
 {%   elif field.is_integer %}
     auto swapped{ vrtgen::swap::to_be(value) };
+{%  elif field.is_enum %}
+    auto swapped{ vrtgen::swap::to_be(static_cast<int{{ field.type_.bits }}_t>(value)) };
 {%   else %}
     m_{{ field.name }} = value;
 {%   endif %}
-    const auto pos{ m_positions.at("{{ field.name }}") };
+    {{ 'const ' if not field.type_.reserved_bits > 0 }}auto pos{ m_positions.at("{{ field.name }}") };
 {%   if field.is_optional %}
-    if (!m_{{ cif.name }}.{{ field.name }}()) {
+    if (!m_{{ cif.name }}{{ '->' if cif.is_optional else '.' }}{{ field.name }}()) {
 {%     if type_helper.is_scalar(field) %}
-        m_data.insert(m_data.begin() + pos, sizeof(swapped), 0);
-{%     else %}
-{%       if field.is_optional %}
-        m_data.insert(m_data.begin() + pos, m_{{ field.name }}->size(), 0);
+{%       if field.type_.reserved_bits > 0 %}
+        m_data.insert(m_data.begin() + pos, sizeof(int{{ field.type_.reserved_bits }}_t)/*reserved*/ + sizeof(swapped), 0);
 {%       else %}
-        m_data.insert(m_data.begin() + pos, m_{{ field.name }}.size(), 0);
+        m_data.insert(m_data.begin() + pos, sizeof(swapped), 0);
 {%       endif %}
+{%     else %}
+        m_data.insert(m_data.begin() + pos, m_{{ field.name }}{{ '->' if field.is_optional else '.' }}size(), 0);
 {%     endif %}
+        m_{{ cif.name }}{{ '->' if cif.is_optional else '.' }}{{ field.name }}(true);
         update_positions();
         update_packet_size();
     }
 {%   endif %}
 {%   if type_helper.is_scalar(field) %}
-    std::memcpy(m_data.data() + pos, &swapped, sizeof(swapped));
-{%   else %}
-{%     if field.is_optional %}
-    m_{{ field.name }}->pack_into(m_data.data() + pos);
+{%     if field.type_.reserved_bits > 0 %}
+    std::memcpy(m_data.data() + pos + sizeof(int{{ field.type_.reserved_bits }}_t)/*reserved*/, &swapped, sizeof(swapped));
 {%     else %}
-    m_{{ field.name }}.pack_into(m_data.data() + pos);
+    std::memcpy(m_data.data() + pos, &swapped, sizeof(swapped));
 {%     endif %}
+{%   else %}
+    m_{{ field.name }}{{ '->' if field.is_optional else '.' }}pack_into(m_data.data() + pos);
 {%   endif %}
-    m_{{ cif.name }}.{{ field.name }}(true);
 {% else %}
-    m_{{ cif.name }}.{{ field.name }}(value);
+    m_{{ cif.name }}{{ '->' if cif.is_optional else '.' }}{{ field.name }}(value);
 {% endif %}
-    const auto cif_pos{ m_positions.at("{{ cif.name }}") };
-    m_{{ cif.name }}.pack_into(m_data.data() + cif_pos);
+    m_{{ cif.name }}{{ '->' if cif.is_optional else '.' }}pack_into(m_data.data() + m_positions.at("{{ cif.name }}"));
 }
 {% if field.is_optional %}
 
-void {{ packet_name }}::reset_{{ field.name }}()
+auto {{ packet_name }}::reset_{{ field.name }}() -> void
 {
-    m_{{ cif.name }}.{{ field.name }}(false);
-    const auto pos{ m_positions.at("{{ field.name }}") };
+{%   if cif.is_optional %}
+    if (m_{{ cif.name }}.has_value() && m_{{ cif.name }}->{{ field.name }}()) {
+{%   else %}
+    if (m_{{ cif.name }}{{ '->' if cif.is_optional else '.' }}{{ field.name }}()) {
+{%   endif %}
+        m_{{ cif.name }}{{ '->' if cif.is_optional else '.' }}{{ field.name }}(false);
+        m_{{ cif.name }}{{ '->' if cif.is_optional else '.' }}pack_into(m_data.data() + m_positions.at("{{ cif.name }}"));
+        const auto pos{ m_positions.at("{{ field.name }}") };
 {%   if type_helper.is_scalar(field) %}
-    m_data.erase(m_data.begin() + pos, m_data.begin() + pos + sizeof({{ type_helper.member_type(field) }}));
+{%     if field.type_.reserved_bits > 0 %}
+        m_data.erase(m_data.begin() + pos, m_data.begin() + pos + sizeof(int{{ field.type_.reserved_bits }}_t)/*reserved*/ + sizeof({{ type_helper.member_type(field) }}));
+{%     else %}
+        m_data.erase(m_data.begin() + pos, m_data.begin() + pos + sizeof({{ type_helper.member_type(field) }}));
+{%     endif %}
 {%   else %}
 {%     if field.is_optional %}
-    m_data.erase(m_data.begin() + pos, m_data.begin() + pos + m_{{ field.name }}->size());
+        m_data.erase(m_data.begin() + pos, m_data.begin() + pos + m_{{ field.name }}->size());
+        m_{{ field.name }}.reset();
 {%     else %}
-    m_data.erase(m_data.begin() + pos, m_data.begin() + pos + m_{{ field.name }}.size());
+        m_data.erase(m_data.begin() + pos, m_data.begin() + pos + m_{{ field.name }}.size());
 {%     endif %}
 {%   endif %}
-    update_positions();
-    update_packet_size();
+        update_positions();
+        update_packet_size();
+    }
+}
+{% endif %}
+{% if cif7.enabled and not field.indicator_only %}
+{%   set ns = namespace(member_type=type_helper.member_type(field), value_type=type_helper.value_type(field)) %}
+
+{%     if field.is_fixed_point %}
+auto {{ packet_name }}::{{ field.name }}_attributes() -> {{ 'std::optional<' if field.is_optional }}{{ type_helper.value_type(cif7.attributes) }}<{{ ns.member_type }},{{ ns.value_type }},{{ field.type_.bits }},{{ field.type_.radix }}>{{ '>' if field.is_optional }}&
+{%     else %}
+auto {{ packet_name }}::{{ field.name }}_attributes() -> {{ 'std::optional<' if field.is_optional }}{{ type_helper.value_type(cif7.attributes) }}<{{ ns.member_type }}>{{ '>' if field.is_optional }}&
+{%     endif %}
+{
+    return m_{{ field.name }}_attributes;
 }
 {% endif %}
 
@@ -122,22 +181,300 @@ void {{ packet_name }}::reset_{{ field.name }}()
 
 {%- macro enable_function_defs(packet_name, cif, type_helper) %}
 {% for field in cif.fields if field.enabled and not field.indicator_only %}
-/**
- * @brief Check if {{ field.name }} is enabled in {{ cif.name }}
- * @return true if {{ field.name }} is enabled in {{ cif.name }}, otherwise false
- */
-bool {{ packet_name }}::{{ field.name }}_enabled() const
+auto {{ packet_name }}::{{ field.name }}_enabled() const -> bool
 {
+{%   if cif.is_optional %}
+    return m_{{ cif.name }}.has_value() && return m_{{ cif.name }}->{{ field.name }}();
+{%   else %}
     return m_{{ cif.name }}.{{ field.name }}();
+{%   endif %}
 }
 
-/**
- * @brief Check if {{ field.name }} is enabled in {{ cif.name }}
- * @param value Value to set {{ field.name }} in {{ cif.name }}
- */
-void {{ packet_name }}::{{ field.name }}_enabled(bool value)
+auto {{ packet_name }}::{{ field.name }}_enabled(const bool value) -> void
 {
-    m_{{ cif.name }}.{{ field.name }}(value);
+{%   if cif.is_optional %}
+    if (!m_{{ cif.name }}.has_value() && value) {
+        m_{{ cif.name }} = {{ type_helper.member_type(cif) }}{};
+        m_data.insert(m_data.begin() + m_positions.at("{{ cif.name }}"), m_{{ cif.name }}->size(), 0);
+{%     if cif.type_ == 'CIF1' %}
+        m_cif_0.cif1_enable(true);
+{%     elif cif.type_ == 'CIF2' %}
+        m_cif_0.cif2_enable(true);
+{%     endif %}
+        m_cif_0.pack_into(m_data.data() + m_positions.at("cif_0"));
+        update_positions();
+        update_packet_size();
+    }
+{%   endif %}
+{%   if cif.is_optional %}
+    if (m_{{ cif.name }}.has_value()) {
+{%   endif %}
+    {{ '    ' if cif.is_optional }}m_{{ cif.name }}{{ '->' if cif.is_optional else '.' }}{{ field.name }}(value);
+    {{ '    ' if cif.is_optional }}m_{{ cif.name }}{{ '->' if cif.is_optional else '.' }}pack_into(m_data.data() + m_positions.at("{{ cif.name }}"));
+{%   if cif.is_optional %}
+    }
+{%   endif %}
 }
+{%   if field.is_optional %}
+
+auto {{ packet_name }}::reset_{{ field.name }}() -> void
+{
+    {{ field.name }}_enabled(false);
+}
+{%   endif %}
+
 {% endfor %}
 {% endmacro %}
+
+{%- macro reset_cif(packet, packet_name, cif, type_helper) %}
+auto {{ packet.name }}::reset_{{ cif.name }}() -> void
+{
+{% if cif.is_optional%}
+    if (m_{{ cif.name }}.has_value()) {
+{%   for field in cif.fields if field.is_optional %}
+        if (m_{{ cif.name }}->{{ field.name }}()) {
+            reset_{{ field.name }}();
+        }
+{%   endfor %}
+{%   if cif.name == 'cif_1' %}
+        m_{{ packet.cif0.name }}.cif1_enable(false);
+{%   elif cif.name == 'cif_2' %}
+        m_{{ packet.cif0.name }}.cif2_enable(false);
+{%   endif %}
+        m_{{ packet.cif0.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cif0.name }}"));
+        const auto pos{ m_positions.at("{{ cif.name }}") };
+        m_data.erase(m_data.begin() + pos, m_data.begin() + pos + m_{{ cif.name }}->size());
+        m_{{ cif.name }}.reset();
+        update_positions();
+        update_packet_size();
+    }
+{% endif %}
+}
+{% endmacro %}
+
+{%- macro sync_cifs(packet, type_helper) %}
+{% if packet.cif0.enabled and packet.requires_cif_functions %}
+{%   for field in packet.cif0.fields if field.enabled and not type_helper.is_scalar(field) %}
+{%     if field.is_optional %}
+if (m_{{ field.name }}.has_value()) {
+    if (!m_{{ packet.cif0.name }}.{{ field.name }}()) {
+        m_data.insert(m_data.begin() + m_positions.at("{{ field.name }}"), m_{{ field.name }}->size(), 0);
+        m_{{ packet.cif0.name }}.{{ field.name }}(true);
+        m_{{ packet.cif0.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cif0.name }}"));
+        update_positions();
+        update_packet_size();
+    }
+    m_{{ field.name }}->pack_into(m_data.data() + m_positions.at("{{ field.name }}"));
+}
+{%     else %}
+m_{{ field.name }}.pack_into(m_data.data() + m_positions.at("{{ field.name }}"));
+{%     endif %}
+{%   endfor %}
+{%   for field in packet.cif0.fields if field.enabled and packet.cif7.enabled and not field.indicator_only %}
+{%     if field.is_optional %}
+if (m_{{ field.name }}_attributes.has_value()) {
+    m_{{ field.name }}_attributes->pack_into(m_data.data() + m_positions.at("{{ field.name }}_attributes"));
+}
+{%     else %}
+m_{{ field.name }}_attributes.pack_into(m_data.data() + m_positions.at("{{ field.name }}_attributes"));
+{%     endif %}
+{%   endfor %}
+{% endif %}
+{% if packet.cif1.enabled and packet.requires_cif_functions %}
+{%   for field in packet.cif1.fields if field.enabled and not type_helper.is_scalar(field) %}
+{%     if field.is_optional %}
+if (m_{{ field.name }}.has_value()) {
+{%       if packet.cif1.is_optional %}
+    if (!m_{{ packet.cif1.name }}.has_value()) {
+        m_{{ packet.cif1.name }} = {{ type_helper.value_type(packet.cif1) }}{};
+        m_data.insert(m_data.begin() + m_positions.at("{{ packet.cif1.name }}"), m_{{ packet.cif1.name }}->size(), 0);
+        update_positions();
+        update_packet_size();
+        if (!m_{{ packet.cif0.name }}.cif1_enable()) {
+            m_{{ packet.cif0.name }}.cif1_enable(true);
+            m_{{ packet.cif0.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cif0.name }}"));
+        }
+    }
+{%       endif %}
+    if (!m_{{ packet.cif1.name }}{{ '->' if packet.cif1.is_optional else '.' }}{{ field.name }}()) {
+        m_data.insert(m_data.begin() + m_positions.at("{{ field.name }}"), m_{{ field.name }}->size(), 0);
+        m_{{ packet.cif1.name }}{{ '->' if packet.cif1.is_optional else '.' }}{{ field.name }}(true);
+        m_{{ packet.cif1.name }}{{ '->' if packet.cif1.is_optional else '.' }}pack_into(m_data.data() + m_positions.at("{{ packet.cif1.name }}"));
+        update_positions();
+        update_packet_size();
+    }
+    m_{{ field.name }}->pack_into(m_data.data() + m_positions.at("{{ field.name }}"));
+    }
+{%     else %}
+m_{{ field.name }}.pack_into(m_data.data() + m_positions.at("{{ field.name }}"));
+{%     endif %}
+{%   endfor %}
+{% endif %}
+{% if packet.cif1.enabled and packet.cif1.is_optional %}
+if (m_{{ packet.cif1.name }}.has_value() && m_{{ packet.cif1.name }}->none()) {
+    reset_{{ packet.cif1.name }}();
+}
+{% endif %}
+{% if packet.cif2.enabled and packet.requires_cif_functions %}
+{%   for field in packet.cif2.fields if field.enabled and not type_helper.is_scalar(field) %}
+{%     if field.is_optional %}
+if (m_{{ field.name }}.has_value()) {
+{%       if packet.cif2.is_optional %}
+    if (!m_{{ packet.cif2.name }}.has_value()) {
+        m_{{ packet.cif2.name }} = {{ type_helper.value_type(packet.cif2) }}{};
+        m_data.insert(m_data.begin() + m_positions.at("{{ packet.cif2.name }}"), m_{{ packet.cif2.name }}->size(), 0);
+        update_positions();
+        update_packet_size();
+        if (!m_{{ packet.cif0.name }}.cif2_enable()) {
+            m_{{ packet.cif0.name }}.cif2_enable(true);
+            m_{{ packet.cif0.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cif0.name }}"));
+        }
+    }
+{%       endif %}
+    if (!m_{{ packet.cif2.name }}{{ '->' if packet.cif2.is_optional else '.' }}{{ field.name }}()) {
+        m_data.insert(m_data.begin() + m_positions.at("{{ field.name }}"), m_{{ field.name }}->size(), 0);
+        m_{{ packet.cif2.name }}{{ '->' if packet.cif2.is_optional else '.' }}{{ field.name }}(true);
+        m_{{ packet.cif2.name }}{{ '->' if packet.cif2.is_optional else '.' }}pack_into(m_data.data() + m_positions.at("{{ packet.cif2.name }}"));
+        update_positions();
+        update_packet_size();
+    }
+    m_{{ field.name }}->pack_into(m_data.data() + m_positions.at("{{ field.name }}"));
+    }
+{%     else %}
+m_{{ field.name }}.pack_into(m_data.data() + m_positions.at("{{ field.name }}"));
+{%     endif %}
+{%   endfor %}
+{% endif %}
+{% if packet.cif2.enabled and packet.cif2.is_optional %}
+if (m_{{ packet.cif2.name }}.has_value() && m_{{ packet.cif2.name }}->none()) {
+    reset_{{ packet.cif2.name }}();
+}
+{% endif %}
+{% endmacro %}
+
+{%- macro update_cif_pos(packet, type_helper) %}
+{% if packet.cif0.enabled %}
+[[maybe_unused]]
+auto curr_pos = m_positions.at("{{ packet.cif0.name }}") + m_{{ packet.cif0.name }}.size();
+{%   if packet.cif1.enabled %}
+m_positions["{{ packet.cif1.name }}"] = curr_pos;
+{%     if packet.cif1.is_optional %}
+if (m_{{ packet.cif1.name }}.has_value()) {
+    curr_pos += m_{{ packet.cif1.name }}->size();
+}
+{%     else %}
+curr_pos += m_{{ packet.cif1.name }}.size();
+{%     endif %}
+{%   endif %}
+{%   if packet.cif2.enabled %}
+m_positions["{{ packet.cif2.name }}"] = curr_pos;
+{%     if packet.cif2.is_optional %}
+if (m_{{ packet.cif2.name }}.has_value()) {
+    curr_pos += m_{{ packet.cif2.name }}->size();
+}
+{%     else %}
+curr_pos += m_{{ packet.cif2.name }}.size();
+{%     endif %}
+{%   endif %}
+{%   if packet.cif7.enabled %}
+m_positions["{{ packet.cif7.name }}"] = curr_pos;
+{%     if packet.cif7.is_optional %}
+if (m_{{ packet.cif7.name }}.has_value()) {
+    curr_pos += m_{{ packet.cif7.name }}->size();
+}
+{%     else %}
+curr_pos += m_{{ packet.cif7.name }}.size();
+{%     endif %}
+{%   endif %}
+{% endif %}
+{% if packet.cif0.enabled and packet.requires_cif_functions %}
+{%   for field in packet.cif0.fields if field.enabled and not field.indicator_only %}
+m_positions["{{ field.name }}"] = curr_pos;
+{%     if field.is_optional %}
+if (m_{{ packet.cif0.name }}.{{ field.name }}()) {
+{%       if type_helper.is_scalar(field) %}
+{%         if field.type_.reserved_bits > 0 %}
+    curr_pos += sizeof(int{{ field.type_.reserved_bits }}_t); // reserved
+{%         endif %}
+    curr_pos += sizeof({{ type_helper.member_type(field) }});
+{%       else %}
+    curr_pos += m_{{ field.name }}->size();
+{%       endif %}
+}
+{%     else %}
+{%       if type_helper.is_scalar(field) %}
+{%         if field.type_.reserved_bits > 0 %}
+curr_pos += sizeof(int{{ field.type_.reserved_bits }}_t); // reserved
+{%         endif %}
+curr_pos += sizeof({{ type_helper.member_type(field) }}); // {{ field.name }}
+{%       else %}
+curr_pos += m_{{ field.name }}.size();
+{%       endif %}
+{%     endif %}
+{%   endfor %}
+{% endif %}
+{% if packet.cif1.enabled and packet.requires_cif_functions %}
+{%   if packet.cif1.is_optional %}
+if (m_{{ packet.cif1.name }}.has_value()) {
+{%   endif %}
+{%   for field in packet.cif1.fields if field.enabled and not field.indicator_only %}
+{{ '    ' if packet.cif1.is_optional }}m_positions["{{ field.name }}"] = curr_pos;
+{%     if field.is_optional %}
+{{ '    ' if packet.cif1.is_optional }}if (m_{{ packet.cif1.name }}{{ '->' if packet.cif1.is_optional else '.' }}{{ field.name }}()) {
+{%       if type_helper.is_scalar(field) %}
+{%         if field.type_.reserved_bits > 0 %}
+    {{ '    ' if packet.cif1.is_optional }}curr_pos += sizeof(int{{ field.type_.reserved_bits }}_t); // reserved
+{%         endif %}
+    {{ '    ' if packet.cif1.is_optional }}curr_pos += sizeof({{ type_helper.member_type(field) }});
+{%       else %}
+    {{ '    ' if packet.cif1.is_optional }}curr_pos += m_{{ field.name }}->size();
+{%       endif %}
+{{ '    ' if packet.cif1.is_optional }}}
+{%     else %}
+{%       if type_helper.is_scalar(field) %}
+{%         if field.type_.reserved_bits > 0 %}
+{{ '    ' if packet.cif1.is_optional }}curr_pos += sizeof(int{{ field.type_.reserved_bits }}_t); // reserved
+{%         endif %}
+{{ '    ' if packet.cif1.is_optional }}curr_pos += sizeof({{ type_helper.member_type(field) }}); // {{ field.name }}
+{%       else %}
+{{ '    ' if packet.cif1.is_optional }}curr_pos += m_{{ field.name }}.size();
+{%       endif %}
+{%     endif %}
+{%   endfor %}
+{%   if packet.cif1.is_optional %}
+}
+{%   endif %}
+{% endif %}
+{% if packet.cif2.enabled and packet.requires_cif_functions %}
+{%   if packet.cif2.is_optional %}
+if (m_{{ packet.cif2.name }}.has_value()) {
+{%   endif %}
+{%   for field in packet.cif2.fields if field.enabled and not field.indicator_only %}
+{{ '    ' if packet.cif2.is_optional }}m_positions["{{ field.name }}"] = curr_pos;
+{%     if field.is_optional %}
+{{ '    ' if packet.cif2.is_optional }}if (m_{{ packet.cif2.name }}{{ '->' if packet.cif2.is_optional else '.' }}{{ field.name }}()) {
+{%       if type_helper.is_scalar(field) %}
+{%         if field.type_.reserved_bits > 0 %}
+    {{ '    ' if packet.cif2.is_optional }}curr_pos += sizeof(int{{ field.type_.reserved_bits }}_t); // reserved
+{%         endif %}
+    {{ '    ' if packet.cif2.is_optional }}curr_pos += sizeof({{ type_helper.member_type(field) }});
+{%       else %}
+    {{ '    ' if packet.cif2.is_optional }}curr_pos += m_{{ field.name }}->size();
+{%       endif %}
+{{ '    ' if packet.cif2.is_optional }}}
+{%     else %}
+{%       if type_helper.is_scalar(field) %}
+{%         if field.type_.reserved_bits > 0 %}
+{{ '    ' if packet.cif2.is_optional }}curr_pos += sizeof(int{{ field.type_.reserved_bits }}_t); // reserved
+{%         endif %}
+{{ '    ' if packet.cif2.is_optional }}curr_pos += sizeof({{ type_helper.member_type(field) }}); // {{ field.name }}
+{%       else %}
+{{ '    ' if packet.cif2.is_optional }}curr_pos += m_{{ field.name }}.size();
+{%       endif %}
+{%     endif %}
+{%   endfor %}
+{%   if packet.cif2.is_optional %}
+}
+{%   endif %}
+{% endif %}
+{% endmacro%}

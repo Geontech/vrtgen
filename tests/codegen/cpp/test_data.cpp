@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -18,11 +18,26 @@
  */
 
 #include "catch.hpp"
-#include "data.hpp"
+#include "data/test_data1.hpp"
+#include "data/test_data2.hpp"
+#include "data/test_data3.hpp"
+#include "data/test_data4.hpp"
+#include "data/test_data5.hpp"
+#include "data/test_data6.hpp"
+#include "data/test_data7.hpp"
+#include "data/test_data8.hpp"
+#include "data/test_data9.hpp"
+#include "data/test_data10.hpp"
+#include "data/test_data12.hpp"
+#include "data/test_data13.hpp"
 #include <bytes.hpp>
 #include <vrtgen/packing/enums.hpp>
-#include "streamid.hpp"
+#include "stream_id/without_stream_id_data.hpp"
+#include "stream_id/with_stream_id_data.hpp"
 #include "constants.hpp"
+
+using namespace data_ns::packets;
+using namespace stream_id_ns::packets;
 
 TEST_CASE("Section 6.1", "[data_packet][6.1]")
 {
@@ -47,8 +62,8 @@ TEST_CASE("Section 6.1", "[data_packet][6.1]")
         packet_in.payload(PAYLOAD);
 
         // Trailer required. Set values to check
-        packet_in.valid_data(true);
-        packet_in.agc_mgc(true);
+        packet_in.trailer().valid_data(true);
+        packet_in.trailer().agc_mgc(true);
 
         // Check bytes required
         const size_t EXPECTED_SIZE = 4 +  // header
@@ -148,12 +163,10 @@ TEST_CASE("Section 6.1", "[data_packet][6.1]")
         // Examine and check unpacked packet trailer
         const auto& trailer = packet_out.trailer();
         
-        CHECK(packet_out.valid_data());
-        CHECK(trailer.valid_data_enable());
-        CHECK(trailer.valid_data());
-        CHECK(packet_out.agc_mgc());
-        CHECK(trailer.agc_mgc_enable());
-        CHECK(trailer.agc_mgc());
+        CHECK(trailer.valid_data().has_value());
+        CHECK(trailer.valid_data().value());
+        CHECK(trailer.agc_mgc().has_value());
+        CHECK(trailer.agc_mgc().value());
     }
 
     SECTION("Rule 6.1-3")
@@ -711,8 +724,8 @@ TEST_CASE("Data Packet Trailer Fields")
     packet_type packet_in;
 
     // Trailer required. Set values to check
-    packet_in.valid_data(true);
-    packet_in.agc_mgc(true);
+    packet_in.trailer().valid_data(true);
+    packet_in.trailer().agc_mgc(true);
 
     // Set small payload to verify
     const bytes PAYLOAD{ 0x12, 0x34, 0x56, 0x78 };
@@ -776,13 +789,10 @@ TEST_CASE("Data Packet Trailer Fields")
 
     // Examine and check unpacked packet trailer
     const auto& trailer = packet_out.trailer();
-    CHECK(packet_out.valid_data());
-    CHECK(*packet_out.valid_data());
-    CHECK(trailer.valid_data_enable());
-    CHECK(trailer.valid_data());
-    CHECK(packet_out.agc_mgc());
-    CHECK(trailer.agc_mgc_enable());
-    CHECK(trailer.agc_mgc());
+    CHECK(trailer.valid_data().has_value());
+    CHECK(trailer.valid_data().value());
+    CHECK(trailer.agc_mgc().has_value());
+    CHECK(trailer.agc_mgc().value());
 
 } // end TEST_CASE("Data Packet Trailer Fields")
 
@@ -995,8 +1005,8 @@ TEST_CASE("Data Packet All")
     packet_in.payload(PAYLOAD);
 
     // Trailer required. Set values to check
-    packet_in.valid_data(true);
-    packet_in.agc_mgc(true);
+    packet_in.trailer().valid_data(true);
+    packet_in.trailer().agc_mgc(true);
 
     // Check packet size
     const size_t EXPECTED_SIZE = 4 +  // header
@@ -1094,13 +1104,10 @@ TEST_CASE("Data Packet All")
 
     // Examine and check unpacked packet trailer
     const auto& trailer = packet_out.trailer();
-    CHECK(packet_out.valid_data());
-    CHECK(*packet_out.valid_data());
-    CHECK(trailer.valid_data_enable());
-    CHECK(trailer.valid_data());
-    CHECK(packet_out.agc_mgc());
-    CHECK(trailer.agc_mgc_enable());
-    CHECK(trailer.agc_mgc());
+    CHECK(trailer.valid_data().has_value());
+    CHECK(trailer.valid_data().value());
+    CHECK(trailer.agc_mgc().has_value());
+    CHECK(trailer.agc_mgc().value());
 
 } // end TEST_CASE("Data Packet Full Prologue")
 /*

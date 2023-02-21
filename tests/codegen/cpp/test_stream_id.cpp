@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -18,10 +18,20 @@
  */
 
 #include "catch.hpp"
-#include "streamid.hpp"
+#include "stream_id/test_stream_id_data3.hpp"
+#include "stream_id/test_stream_id_data4.hpp"
+#include "stream_id/without_stream_id_context.hpp"
+#include "stream_id/without_stream_id_control.hpp"
+#include "stream_id/without_stream_id_data.hpp"
+#include "stream_id/with_stream_id_context.hpp"
+#include "stream_id/with_stream_id_control.hpp"
+#include "stream_id/with_stream_id_data.hpp"
+
 #include <bytes.hpp>
 #include <vrtgen/packing/enums.hpp>
 #include "constants.hpp"
+
+using namespace stream_id_ns::packets;
 
 TEST_CASE("StreamID 5.1.2", "[stream_id]")
 {
@@ -33,7 +43,6 @@ TEST_CASE("StreamID 5.1.2", "[stream_id]")
         // this shows that it is a 32bit number and can be carried in ever VRT Packet
         const uint32_t STREAM_ID = 0x12345678;
         const bytes STREAM_ID_BE{ 0x12, 0x34, 0x56, 0x78 };
-        // bytes data;
         
         SECTION("Data Packet 32-bit Stream ID")
         {
@@ -224,7 +233,8 @@ TEST_CASE("Stream ID User Defined", "[stream_id][user_defined]")
     CHECK(packet_in.stream_id().thing1() == 0);
     test_stream_id_data4::structs::StreamIdentifier id;
     id.thing1(0x3FF);
-    packet_in.stream_id(id);
+    CHECK(id.thing1() == 0x3FF);
+    packet_in.stream_id() = id;
     CHECK(packet_in.stream_id().thing1() == 0x3FF);
 
     auto data = packet_in.data();

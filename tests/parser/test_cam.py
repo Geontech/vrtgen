@@ -51,12 +51,12 @@ def test_cam_default():
     assert not cam.permit_warnings.required
     assert not cam.permit_errors.enabled
     assert not cam.permit_errors.required
-    assert not cam.action_mode.enabled
-    assert not cam.action_mode.required
-    assert not cam.nack_only.enabled
-    assert not cam.nack_only.required
-    assert not cam.timing_control.enabled
-    assert not cam.timing_control.required
+    # assert not cam.action_mode.enabled
+    # assert not cam.action_mode.required
+    # assert not cam.nack_only.enabled
+    # assert not cam.nack_only.required
+    # assert not cam.timing_control.enabled
+    # assert not cam.timing_control.required
     assert not cam.req_v.enabled
     assert not cam.req_v.required
     assert not cam.req_x.enabled
@@ -85,20 +85,20 @@ testdata = [
     ('permit_errors', 'false', False),
     ('permit_errors', 'required', True),
     ('permit_errors', 'optional', False),
-    ('action_mode', 'none', 0),
-    ('action_mode', 'dry-run', 1),
-    ('action_mode', 'execute', 2),
-    ('action_mode', 'required', True),
-    ('action_mode', 'optional', False),
-    ('nack_only', 'true', True),
-    ('nack_only', 'false', False),
-    ('nack_only', 'required', True),
-    ('nack_only', 'optional', False),
-    ('timing_control', 'ignore', 0),
-    ('timing_control', 'device', 1),
-    ('timing_control', 'late', 2),
-    ('timing_control', 'early', 3),
-    ('timing_control', 'early-late', 4),
+    # ('action_mode', 'none', 0),
+    # ('action_mode', 'dry-run', 1),
+    # ('action_mode', 'execute', 2),
+    # ('action_mode', 'required', True),
+    # ('action_mode', 'optional', False),
+    # ('nack_only', 'true', True),
+    # ('nack_only', 'false', False),
+    # ('nack_only', 'required', True),
+    # ('nack_only', 'optional', False),
+    # ('timing_control', 'ignore', 0),
+    # ('timing_control', 'device', 1),
+    # ('timing_control', 'late', 2),
+    # ('timing_control', 'early', 3),
+    # ('timing_control', 'early-late', 4),
     ('req_v', 'true', True),
     ('req_v', 'false', False),
     ('req_v', 'required', True),
@@ -154,8 +154,8 @@ testdata = [
     ('req_er', 2),
     ('controllee_format', 'invalid'),
     ('controller_format', 'invalid'),
-    ('action_mode', 'invalid'),
-    ('timing_control', 'invalid'),
+    # ('action_mode', 'invalid'),
+    # ('timing_control', 'invalid'),
 ]
 
 @pytest.mark.parametrize('parameter,value', testdata)

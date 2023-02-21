@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -19,43 +19,33 @@
 {%- import "macros/function_defs.jinja2" as function_defs %}
 {%- from "macros/function_defs/bytes_required.jinja2" import bytes_required %}
 {%- from "macros/function_defs/match.jinja2" import match %}
+{%- from "macros/function_defs/cif.jinja2" import sync_cifs, update_cif_pos %}
 {%- import "macros/function_defs/constructors.jinja2" as constructors %}
+{%- import "ack_packet.cpp.jinja2" as ack %}
+{%- import "macros/types/user_class.jinja2" as user_class %}
 
 {%- macro update_positions(packet, type_helper) %}
 {% set ns = namespace(curr_pos=0) %}
-void {{ packet.name }}::update_positions()
+auto {{ packet.name }}::update_positions() -> void
 {
-{% if packet.cif0.enabled %}
-{%   for field in packet.cif0.fields if field.enabled and not field.indicator_only %}
-{%     if loop.first %}
-    std::size_t curr_pos{ m_positions["{{ packet.cif0.name }}"] + m_{{ packet.cif0.name }}.size() };
-{%     endif %}
-    m_positions["{{ field.name }}"] = curr_pos;
-{%     if field.is_optional %}
-    if (m_{{ packet.cif0.name }}.{{ field.name }}()) {
-{%       if type_helper.is_scalar(field) %}
-        curr_pos += sizeof({{ type_helper.member_type(field) }});
-{%       else %}
-        curr_pos += m_{{ field.name }}->size();
-{%       endif %}
-    }
-{%     endif %}
-{%   endfor %}
-{% endif %}
+    {{ update_cif_pos(packet, type_helper) | indent(4) | trim }}
 }
 {% endmacro %}
 
 {%- macro sync(packet, type_helper) %}
-void {{ packet.name }}::sync()
+auto {{ packet.name }}::sync() -> void
 {
+{% if packet.stream_id.enabled and packet.stream_id.user_defined %}
+    m_{{ packet.stream_id.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.stream_id.name }}"));
+{% endif %}
+{% if packet.controllee_id.enabled and not type_helper.is_scalar(packet.controllee_id) %}
+    m_{{ packet.controllee_id.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.controllee_id.name }}"));
+{% endif %}
+{% if packet.controller_id.enabled and not type_helper.is_scalar(packet.controller_id) %}
+    m_{{ packet.controller_id.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.controller_id.name }}"));
+{% endif %}
 {% if packet.cif0.enabled %}
-{%   for field in packet.cif0.fields if field.enabled and not type_helper.is_scalar(field) %}
-{%     if field.is_optional %}
-    m_{{ field.name }}->pack_into(m_data.data() + m_positions.at("{{ field.name }}"));
-{%     else %}
-    m_{{ field.name }}.pack_into(m_data.data() + m_positions.at("{{ field.name }}"));
-{%     endif %}
-{%   endfor %}
+    {{ sync_cifs(packet, type_helper) | indent(4) | trim }}
 {% endif %}
 {% if packet.is_data and packet.trailer.enabled %}
     m_{{ packet.trailer.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.trailer.name }}"));
@@ -71,7 +61,7 @@ void {{ packet.name }}::sync()
 
 {{ constructors.unpack_constructor(packet, type_helper) | trim }}
 
-std::string {{ packet.name }}::name() const
+auto {{ packet.name }}::name() const -> std::string
 {
     return m_name;
 }
@@ -85,25 +75,25 @@ std::string {{ packet.name }}::name() const
 
 {% endif %}
 {% if packet.is_context or packet.is_command %}
-{{ function_defs.cif(packet, type_helper) | trim }}
+{{ function_defs.cif(packet, packet.name, type_helper) | trim }}
 
 {% endif %}
 {% if packet.is_data %}
 {{ function_defs.data(packet, type_helper) | trim }}
 
 {% endif %}
-std::span<const uint8_t> {{ packet.name }}::data()
+auto {{ packet.name }}::data() -> std::span<const uint8_t>
 {
     sync();
     return { m_data.data(), m_data.size() };
 }
 
-std::size_t {{ packet.name }}::size() const
+auto {{ packet.name }}::size() -> std::size_t
 {
-    return m_data.size();
+    return data().size();
 }
 
-void {{ packet.name }}::update_packet_size()
+auto {{ packet.name }}::update_packet_size() -> void
 {
     m_header.packet_size(static_cast<uint16_t>((m_data.size() + 3) / 4));
     m_header.pack_into(m_data.data());
@@ -117,17 +107,34 @@ void {{ packet.name }}::update_packet_size()
 {% endmacro %}
 
 {%- macro define_source() %}
-#include <vrtgen/buffer.hpp>
 #include "{{ header }}"
+{% if namespace_ %}
 
-{% if project_name %}
-using namespace {{ project_name }}::packets;
-
+namespace {{ namespace_ }}::packets {
 {% endif %}
+{% for packet in packets if packet.enums or packet.structs or packet.cif7.enabled %}
+{%   if packet.structs %}
 
-{% for packet in packets %}
-{{ packet_functions(packet, type_helper) | trim }}
+namespace {{ packet.name | to_snake }}::structs {
 
+{%     for struct in packet.structs if not struct.is_template %}
+{{ user_class.def(struct, type_helper) | trim }}
+
+{%     endfor %}
+} // end namespace {{ packet.name | to_snake }}::structs
+{%   endif %}
 {% endfor %}
+{% for packet in packets %}
+
+{%   if packet.is_ack %}
+{{ ack.packet_functions(packet, type_helper) | trim}}
+{%   else %}
+{{ packet_functions(packet, type_helper) | trim }}
+{%   endif %}
+{% endfor %}
+{% if namespace_ %}
+
+} // end namespace {{ namespace_ }}::packets
+{% endif %}
 {% endmacro %}
 {{ define_source() }}

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -936,292 +936,164 @@ TEST_CASE("State/Event Indicators", "[cif0][state_event_indicators]")
         CHECK(packed_bytes == bytes{ 0, 0, 0, 0 });
     }
 
-    SECTION("Calibrated Time Enable")
+    SECTION("Calibrated Time")
     {
         // Verify zero on construction
-        CHECK(state_event_ind.calibrated_time_enable() == false);
-        // Setter
-        state_event_ind.calibrated_time_enable(true);
-        // Getter check set value
-        CHECK(state_event_ind.calibrated_time_enable() == true);
-        // Pack
-        state_event_ind.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0x80, 0, 0, 0 });
-        // Unpack
-        unpack_state_event_ind.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_state_event_ind.calibrated_time_enable() == true);
-    }
-
-    SECTION("Valid Data Enable")
-    {
-        // Verify zero on construction
-        CHECK(state_event_ind.valid_data_enable() == false);
-        // Setter
-        state_event_ind.valid_data_enable(true);
-        // Getter check set value
-        CHECK(state_event_ind.valid_data_enable() == true);
-        // Pack
-        state_event_ind.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0x40, 0, 0, 0 });
-        // Unpack
-        unpack_state_event_ind.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_state_event_ind.valid_data_enable() == true);
-    }
-
-    SECTION("Reference Lock Enable")
-    {
-        // Verify zero on construction
-        CHECK(state_event_ind.reference_lock_enable() == false);
-        // Setter
-        state_event_ind.reference_lock_enable(true);
-        // Getter check set value
-        CHECK(state_event_ind.reference_lock_enable() == true);
-        // Pack
-        state_event_ind.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0x20, 0, 0, 0 });
-        // Unpack
-        unpack_state_event_ind.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_state_event_ind.reference_lock_enable() == true);
-    }
-
-    SECTION("AGC/MGC Enable")
-    {
-        // Verify zero on construction
-        CHECK(state_event_ind.agc_mgc_enable() == false);
-        // Setter
-        state_event_ind.agc_mgc_enable(true);
-        // Getter check set value
-        CHECK(state_event_ind.agc_mgc_enable() == true);
-        // Pack
-        state_event_ind.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0x10, 0, 0, 0 });
-        // Unpack
-        unpack_state_event_ind.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_state_event_ind.agc_mgc_enable() == true);
-    }
-
-    SECTION("Detected Signal Enable")
-    {
-        // Verify zero on construction
-        CHECK(state_event_ind.detected_signal_enable() == false);
-        // Setter
-        state_event_ind.detected_signal_enable(true);
-        // Getter check set value
-        CHECK(state_event_ind.detected_signal_enable() == true);
-        // Pack
-        state_event_ind.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0x08, 0, 0, 0 });
-        // Unpack
-        unpack_state_event_ind.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_state_event_ind.detected_signal_enable() == true);
-    }
-
-    SECTION("Spectral Inversion Enable")
-    {
-        // Verify zero on construction
-        CHECK(state_event_ind.spectral_inversion_enable() == false);
-        // Setter
-        state_event_ind.spectral_inversion_enable(true);
-        // Getter check set value
-        CHECK(state_event_ind.spectral_inversion_enable() == true);
-        // Pack
-        state_event_ind.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0x04, 0, 0, 0 });
-        // Unpack
-        unpack_state_event_ind.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_state_event_ind.spectral_inversion_enable() == true);
-    }
-
-    SECTION("Over-Range Enable")
-    {
-        // Verify zero on construction
-        CHECK(state_event_ind.over_range_enable() == false);
-        // Setter
-        state_event_ind.over_range_enable(true);
-        // Getter check set value
-        CHECK(state_event_ind.over_range_enable() == true);
-        // Pack
-        state_event_ind.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0x2, 0, 0, 0 });
-        // Unpack
-        unpack_state_event_ind.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_state_event_ind.over_range_enable() == true);
-    }
-
-    SECTION("Sample Loss Enable")
-    {
-        // Verify zero on construction
-        CHECK(state_event_ind.sample_loss_enable() == false);
-        // Setter
-        state_event_ind.sample_loss_enable(true);
-        // Getter check set value
-        CHECK(state_event_ind.sample_loss_enable() == true);
-        // Pack
-        state_event_ind.pack_into(packed_bytes.data());
-        // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0x01, 0, 0, 0 });
-        // Unpack
-        unpack_state_event_ind.unpack_from(packed_bytes.data());
-        // Verify unpacked value
-        CHECK(unpack_state_event_ind.sample_loss_enable() == true);
-    }
-
-    SECTION("Calibrated Time Indicator")
-    {
-        // Verify zero on construction
-        CHECK(state_event_ind.calibrated_time() == false);
+        CHECK(state_event_ind.calibrated_time().has_value() == false);
         // Setter
         state_event_ind.calibrated_time(true);
         // Getter check set value
-        CHECK(state_event_ind.calibrated_time() == true);
+        CHECK(state_event_ind.calibrated_time().has_value());
+        CHECK(state_event_ind.calibrated_time().value() == true);
         // Pack
         state_event_ind.pack_into(packed_bytes.data());
         // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0x08, 0, 0 });
+        CHECK(packed_bytes == bytes{ 0x80, 0x08, 0, 0 });
         // Unpack
         unpack_state_event_ind.unpack_from(packed_bytes.data());
         // Verify unpacked value
+        CHECK(unpack_state_event_ind.calibrated_time().has_value());
         CHECK(unpack_state_event_ind.calibrated_time() == true);
     }
 
-    SECTION("Valid Data Indicator")
+    SECTION("Valid Data")
     {
         // Verify zero on construction
-        CHECK(state_event_ind.valid_data() == false);
+        CHECK(state_event_ind.valid_data().has_value() == false);
         // Setter
         state_event_ind.valid_data(true);
         // Getter check set value
-        CHECK(state_event_ind.valid_data() == true);
+        CHECK(state_event_ind.valid_data().has_value());
+        CHECK(state_event_ind.valid_data().value() == true);
         // Pack
         state_event_ind.pack_into(packed_bytes.data());
         // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0x04, 0, 0 });
+        CHECK(packed_bytes == bytes{ 0x40, 0x04, 0, 0 });
         // Unpack
         unpack_state_event_ind.unpack_from(packed_bytes.data());
         // Verify unpacked value
-        CHECK(unpack_state_event_ind.valid_data() == true);
+        CHECK(unpack_state_event_ind.valid_data().has_value());
+        CHECK(unpack_state_event_ind.valid_data().value() == true);
     }
 
-    SECTION("Reference Lock Indicator")
+    SECTION("Reference Lock")
     {
         // Verify zero on construction
-        CHECK(state_event_ind.reference_lock() == false);
+        CHECK(state_event_ind.reference_lock().has_value() == false);
         // Setter
         state_event_ind.reference_lock(true);
         // Getter check set value
-        CHECK(state_event_ind.reference_lock() == true);
+        CHECK(state_event_ind.reference_lock().has_value());
+        CHECK(state_event_ind.reference_lock().value() == true);
         // Pack
         state_event_ind.pack_into(packed_bytes.data());
         // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0x02, 0, 0 });
+        CHECK(packed_bytes == bytes{ 0x20, 0x02, 0, 0 });
         // Unpack
         unpack_state_event_ind.unpack_from(packed_bytes.data());
         // Verify unpacked value
+        CHECK(unpack_state_event_ind.reference_lock().has_value());
         CHECK(unpack_state_event_ind.reference_lock() == true);
     }
 
-    SECTION("AGC/MGC Indicator")
+    SECTION("AGC/MGC")
     {
         // Verify zero on construction
-        CHECK(state_event_ind.agc_mgc() == false);
+        CHECK(state_event_ind.agc_mgc().has_value() == false);
         // Setter
         state_event_ind.agc_mgc(true);
         // Getter check set value
-        CHECK(state_event_ind.agc_mgc() == true);
+        CHECK(state_event_ind.agc_mgc().has_value());
+        CHECK(state_event_ind.agc_mgc().value() == true);
         // Pack
         state_event_ind.pack_into(packed_bytes.data());
         // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0x01, 0, 0 });
+        CHECK(packed_bytes == bytes{ 0x10, 0x01, 0, 0 });
         // Unpack
         unpack_state_event_ind.unpack_from(packed_bytes.data());
         // Verify unpacked value
-        CHECK(unpack_state_event_ind.agc_mgc() == true);
+        CHECK(unpack_state_event_ind.agc_mgc().has_value());
+        CHECK(unpack_state_event_ind.agc_mgc().value() == true);
     }
 
-    SECTION("Detected Signal Indicator")
+    SECTION("Detected Signal")
     {
         // Verify zero on construction
-        CHECK(state_event_ind.detected_signal() == false);
+        CHECK(state_event_ind.detected_signal().has_value() == false);
         // Setter
         state_event_ind.detected_signal(true);
         // Getter check set value
-        CHECK(state_event_ind.detected_signal() == true);
+        CHECK(state_event_ind.detected_signal().has_value());
+        CHECK(state_event_ind.detected_signal().value() == true);
         // Pack
         state_event_ind.pack_into(packed_bytes.data());
         // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0, 0x80, 0 });
+        CHECK(packed_bytes == bytes{ 0x08, 0, 0x80, 0 });
         // Unpack
         unpack_state_event_ind.unpack_from(packed_bytes.data());
         // Verify unpacked value
-        CHECK(unpack_state_event_ind.detected_signal() == true);
+        CHECK(unpack_state_event_ind.detected_signal().has_value());
+        CHECK(unpack_state_event_ind.detected_signal().value() == true);
     }
 
-    SECTION("Spectral Inversion Indicator")
+    SECTION("Spectral Inversion")
     {
         // Verify zero on construction
-        CHECK(state_event_ind.spectral_inversion() == false);
+        CHECK(state_event_ind.spectral_inversion().has_value() == false);
         // Setter
         state_event_ind.spectral_inversion(true);
         // Getter check set value
-        CHECK(state_event_ind.spectral_inversion() == true);
+        CHECK(state_event_ind.spectral_inversion().has_value());
+        CHECK(state_event_ind.spectral_inversion().value() == true);
         // Pack
         state_event_ind.pack_into(packed_bytes.data());
         // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0, 0x40, 0 });
+        CHECK(packed_bytes == bytes{ 0x04, 0, 0x40, 0 });
         // Unpack
         unpack_state_event_ind.unpack_from(packed_bytes.data());
         // Verify unpacked value
-        CHECK(unpack_state_event_ind.spectral_inversion() == true);
+        CHECK(unpack_state_event_ind.spectral_inversion().has_value());
+        CHECK(unpack_state_event_ind.spectral_inversion().value() == true);
     }
 
-    SECTION("Over-Range Indicator")
+    SECTION("Over-Range")
     {
         // Verify zero on construction
-        CHECK(state_event_ind.over_range() == false);
+        CHECK(state_event_ind.over_range().has_value() == false);
         // Setter
         state_event_ind.over_range(true);
         // Getter check set value
-        CHECK(state_event_ind.over_range() == true);
+        CHECK(state_event_ind.over_range().has_value());
+        CHECK(state_event_ind.over_range().value() == true);
         // Pack
         state_event_ind.pack_into(packed_bytes.data());
         // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0, 0x20, 0 });
+        CHECK(packed_bytes == bytes{ 0x2, 0, 0x20, 0 });
         // Unpack
         unpack_state_event_ind.unpack_from(packed_bytes.data());
         // Verify unpacked value
-        CHECK(unpack_state_event_ind.over_range() == true);
+        CHECK(unpack_state_event_ind.over_range().has_value());
+        CHECK(unpack_state_event_ind.over_range().value() == true);
     }
 
-    SECTION("Sample Loss Indicator")
+    SECTION("Sample Loss")
     {
         // Verify zero on construction
-        CHECK(state_event_ind.sample_loss() == false);
+        CHECK(state_event_ind.sample_loss().has_value() == false);
         // Setter
         state_event_ind.sample_loss(true);
         // Getter check set value
-        CHECK(state_event_ind.sample_loss() == true);
+        CHECK(state_event_ind.sample_loss().has_value());
+        CHECK(state_event_ind.sample_loss().value() == true);
         // Pack
         state_event_ind.pack_into(packed_bytes.data());
         // Verify packed bits
-        CHECK(packed_bytes == bytes{ 0, 0, 0x10, 0 });
+        CHECK(packed_bytes == bytes{ 0x01, 0, 0x10, 0 });
         // Unpack
         unpack_state_event_ind.unpack_from(packed_bytes.data());
         // Verify unpacked value
-        CHECK(unpack_state_event_ind.sample_loss() == true);
+        CHECK(unpack_state_event_ind.sample_loss().has_value());
+        CHECK(unpack_state_event_ind.sample_loss().value() == true);
     }
 }
 

@@ -18,10 +18,28 @@
  */
 
 #include "catch.hpp"
-#include "context.hpp"
 #include <bytes.hpp>
-#include "streamid.hpp"
+#include "context/test_context1.hpp"
+#include "context/test_context2.hpp"
+#include "context/test_context4.hpp"
+#include "context/ref_point_id_optional.hpp"
+#include "context/ref_point_id_required.hpp"
+#include "context/bandwidth_optional.hpp"
+#include "context/bandwidth_required.hpp"
+#include "context/test_basic_cif1.hpp"
+#include "context/test_basic_cif2.hpp"
+#include "context/test_basic_cif7.hpp"
+#include "context/test_cif7_attributes.hpp"
+#include "context/user_defined_discrete_io.hpp"
+#include "context/required_discrete_io.hpp"
+#include "context/not_user_defined_discrete_io.hpp"
+#include "context/test_all_generate_params.hpp"
+#include "stream_id/without_stream_id_context.hpp"
+#include "stream_id/with_stream_id_context.hpp"
 #include "constants.hpp"
+
+using namespace stream_id_ns::packets;
+using namespace context_ns::packets;
 
 TEST_CASE("Section 7.1", "[context_packet][7.1]")
 {
@@ -84,6 +102,985 @@ TEST_CASE("Section 7.1", "[context_packet][7.1]")
     }
 }
 
+TEST_CASE("Section 9.1", "[CIFs][9.1]")
+{
+    SECTION("Rule 9.1-2")
+    {
+        TestContext1 packet_in;
+        CHECK(packet_in.size() == HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES);
+    }
+
+    SECTION("Rule 9.1-6")
+    {
+        SECTION("CIF1")
+        {
+            TestBasicCif1 packet_in;
+            CHECK(packet_in.size() == HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF1_BYTES + PHASE_OFFSET_BYTES);
+            CHECK(packet_in.cif_0().cif1_enable());
+            packet_in.phase_offset(1); // 0x00 00 00 80
+
+            uint8_t CIF1_ENABLE = 0x1 << 1;
+            uint8_t PHASE_OFFSET_ENABLE = 0x1 << 7;
+            bytes CIF0_BE { 0, 0, 0, CIF1_ENABLE };
+            bytes CIF1_BE { PHASE_OFFSET_ENABLE, 0, 0, 0 };
+            bytes PHASE_OFFSET_BE = bytes { 0, 0, 0, 0x80 };
+
+            auto data = packet_in.data();
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES;
+            const bytes packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
+            check_ptr += CIF0_BYTES;
+            const bytes packed_cif1(check_ptr, check_ptr + CIF1_BYTES);
+            check_ptr += CIF1_BYTES;
+            const bytes packed_phase_offset(check_ptr, check_ptr + PHASE_OFFSET_BYTES);
+
+            CHECK(packed_cif0 == CIF0_BE);
+            CHECK(packed_cif1 == CIF1_BE);
+            CHECK(packed_phase_offset == PHASE_OFFSET_BE);
+
+            TestBasicCif1 packet_out(data);
+            CHECK(packet_out.cif_0().cif1_enable());
+        }
+         
+        SECTION("CIF2")
+        {
+            TestBasicCif2 packet_in;
+            CHECK(packet_in.size() == HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF2_BYTES + CITED_SID_BYTES);
+            CHECK(packet_in.cif_0().cif2_enable());
+
+            uint8_t CIF2_ENABLE = 0x1 << 2;
+            uint8_t CITED_SID_ENABLE = 0x1 << 6;
+            bytes CIF0_BE { 0, 0, 0, CIF2_ENABLE };
+            bytes CIF2_BE { CITED_SID_ENABLE, 0, 0, 0 };
+
+            auto data = packet_in.data();
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES;
+            const bytes packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
+            check_ptr += CIF0_BYTES;
+            const bytes packed_cif2(check_ptr, check_ptr + CIF2_BYTES);
+
+            CHECK(packed_cif0 == CIF0_BE);
+            CHECK(packed_cif2 == CIF2_BE);
+
+            TestBasicCif2 packet_out(data);
+            CHECK(packet_out.cif_0().cif2_enable());
+        }
+        
+        // SECTION("CIF3")
+        // {
+            
+        // }
+
+        SECTION("CIF7")
+        {
+            TestBasicCif7 packet_in;
+            CHECK(packet_in.size() == HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF7_BYTES);
+            CHECK(packet_in.cif_0().cif7_enable());
+
+            uint8_t CIF7_ENABLE = 0x1 << 7;
+            uint8_t MEAN_VALUE = 0x1 << 6;
+            bytes CIF0_BE { 0, 0, 0, CIF7_ENABLE };
+            bytes CIF7_BE { MEAN_VALUE, 0, 0, 0 };
+
+            auto data = packet_in.data();
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES;
+            const bytes packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
+            check_ptr += CIF0_BYTES;
+            const bytes packed_cif7(check_ptr, check_ptr + CIF7_BYTES);
+
+            CHECK(packed_cif0 == CIF0_BE);
+            CHECK(packed_cif7 == CIF7_BE);
+
+            TestBasicCif7 packet_out(data);
+            CHECK(packet_out.cif_0().cif7_enable());
+        }
+    }
+}
+
+TEST_CASE("Section 9.5", "[phase_offset_field][9.5]")
+{
+    TestAllGenerateParams packet_in;
+    
+    SECTION("Rule 9.5.8-1")
+    {
+        SECTION("Check positive")
+        {
+            // Reset
+            packet_in.reset_phase_offset();
+            REQUIRE_FALSE(packet_in.phase_offset().has_value());
+            // Setter
+            packet_in.phase_offset(1.0);
+            REQUIRE(packet_in.phase_offset().has_value());
+            // Check the Value
+            CHECK(packet_in.phase_offset().value() == 1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF1_BYTES;
+            bytes packed_phase_offset(check_ptr, check_ptr + 4);
+            // Lower 16-bits with radix 7
+            CHECK(packed_phase_offset == bytes{ 0, 0, 0, 0x80 });
+            // Unpack
+            TestAllGenerateParams unpack_phase_offset(data);
+            REQUIRE(unpack_phase_offset.phase_offset().has_value());
+            CHECK(unpack_phase_offset.phase_offset().value() == 1.0);
+            // Reset
+            unpack_phase_offset.reset_phase_offset();
+            CHECK_FALSE(unpack_phase_offset.phase_offset().has_value());
+        }
+        
+        SECTION("Check negative")
+        {
+            // Reset
+            packet_in.reset_phase_offset();
+            REQUIRE_FALSE(packet_in.phase_offset().has_value());
+            // Setter
+            packet_in.phase_offset(-1.0);
+            REQUIRE(packet_in.phase_offset().has_value());
+            // Check the Value
+            CHECK(packet_in.phase_offset().value() == -1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF1_BYTES;
+            bytes packed_phase_offset(check_ptr, check_ptr + 4);
+            // Lower 16-bits with radix 7
+            CHECK(packed_phase_offset == bytes{ 0, 0, 0xFF, 0x80 });
+            // Unpack
+            TestAllGenerateParams unpack_phase_offset(data);
+            REQUIRE(unpack_phase_offset.phase_offset().has_value());
+            CHECK(unpack_phase_offset.phase_offset().value() == -1.0);
+            // Reset
+            unpack_phase_offset.reset_phase_offset();
+            CHECK_FALSE(unpack_phase_offset.phase_offset().has_value());
+        }
+    }
+    
+    SECTION("Rule 9.5.8-1")
+    {
+        SECTION("Check positive")
+        {
+            // Reset
+            packet_in.reset_reference_level();
+            REQUIRE_FALSE(packet_in.reference_level().has_value());
+            // Setter
+            packet_in.reference_level(1.0);
+            REQUIRE(packet_in.reference_level().has_value());
+            // Check the Value
+            CHECK(packet_in.reference_level().value() == 1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES;
+            bytes packed_reference_level(check_ptr, check_ptr + 4);
+            // Lower 16-bits with radix 7
+            CHECK(packed_reference_level == bytes{ 0, 0, 0, 0x80 });
+            // Unpack
+            TestAllGenerateParams unpack_reference_level(data);
+            REQUIRE(unpack_reference_level.reference_level().has_value());
+            CHECK(unpack_reference_level.reference_level().value() == 1.0);
+            // Reset
+            unpack_reference_level.reset_reference_level();
+            CHECK_FALSE(unpack_reference_level.reference_level().has_value());
+        }
+
+        SECTION("Check negative")
+        {
+            // Reset
+            packet_in.reset_reference_level();
+            REQUIRE_FALSE(packet_in.reference_level().has_value());
+            // Setter
+            packet_in.reference_level(-1.0);
+            REQUIRE(packet_in.reference_level().has_value());
+            // Check the Value
+            CHECK(packet_in.reference_level().value() == -1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES;
+            bytes packed_reference_level(check_ptr, check_ptr + 4);
+            // Lower 16-bits with radix 7
+            CHECK(packed_reference_level == bytes{ 0, 0, 0xFF, 0x80 });
+            // Unpack
+            TestAllGenerateParams unpack_reference_level(data);
+            REQUIRE(unpack_reference_level.reference_level().has_value());
+            CHECK(unpack_reference_level.reference_level().value() == -1.0);
+            // Reset
+            unpack_reference_level.reset_reference_level();
+            CHECK_FALSE(unpack_reference_level.reference_level().has_value());
+        }
+
+        SECTION("Check zero")
+        {
+            // Reset
+            packet_in.reset_reference_level();
+            REQUIRE_FALSE(packet_in.reference_level().has_value());
+            // Setter
+            packet_in.reference_level(0.0);
+            REQUIRE(packet_in.reference_level().has_value());
+            // Check the Value
+            CHECK(packet_in.reference_level().value() == 0.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES;
+            bytes packed_reference_level(check_ptr, check_ptr + 4);
+            // Lower 16-bits with radix 7
+            CHECK(packed_reference_level == bytes{ 0, 0, 0, 0 });
+            // Unpack
+            TestAllGenerateParams unpack_reference_level(data);
+            REQUIRE(unpack_reference_level.reference_level().has_value());
+            CHECK(unpack_reference_level.reference_level().value() == 0.0);
+            // Reset
+            unpack_reference_level.reset_reference_level();
+            CHECK_FALSE(unpack_reference_level.reference_level().has_value());
+        }
+    }
+
+    SECTION("Rule 9.5.10-2")
+    {
+        SECTION("Check positive")
+        {
+            // Reset
+            packet_in.reset_rf_ref_frequency();
+            REQUIRE_FALSE(packet_in.rf_ref_frequency().has_value());
+            // Setter
+            packet_in.rf_ref_frequency(1.0);
+            // Check the Value
+            REQUIRE(packet_in.rf_ref_frequency().has_value());
+            CHECK(packet_in.rf_ref_frequency().value() == 1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES;
+            bytes packed_ref_frequency(check_ptr, check_ptr + 8);
+            // Radix 7
+            CHECK(packed_ref_frequency == bytes { 0, 0, 0, 0, 0, 0x10, 0, 0 });
+            // Unpack
+            TestAllGenerateParams packet_out(data);
+            REQUIRE(packet_out.rf_ref_frequency().has_value());
+            CHECK(packet_out.rf_ref_frequency().value() == 1.0);
+            // Reset
+            packet_out.reset_rf_ref_frequency();
+            CHECK_FALSE(packet_out.rf_ref_frequency().has_value());
+        }
+
+        SECTION("Check negative")
+        {
+            // Reset
+            packet_in.reset_rf_ref_frequency();
+            REQUIRE_FALSE(packet_in.rf_ref_frequency().has_value());
+            // Setter
+            packet_in.rf_ref_frequency(-1.0);
+            // Check the Value
+            REQUIRE(packet_in.rf_ref_frequency().has_value());
+            CHECK(packet_in.rf_ref_frequency().value() == -1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES;
+            bytes packed_ref_frequency(check_ptr, check_ptr + 8);
+            // Radix 7
+            CHECK(packed_ref_frequency == bytes { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF0, 0, 0 });
+            // Unpack
+            TestAllGenerateParams packet_out(data);
+            REQUIRE(packet_out.rf_ref_frequency().has_value());
+            CHECK(packet_out.rf_ref_frequency().value() == -1.0);
+            // Reset
+            packet_out.reset_rf_ref_frequency();
+            CHECK_FALSE(packet_out.rf_ref_frequency().has_value());
+        }
+    }
+
+    SECTION("Rule 9.5.11-3")
+    {
+        SECTION("Check positive")
+        {
+            // Reset
+            packet_in.reset_rf_ref_frequency_offset();
+            REQUIRE_FALSE(packet_in.rf_ref_frequency_offset().has_value());
+            // Setter
+            packet_in.rf_ref_frequency_offset(1.0);
+            // Check the Value
+            REQUIRE(packet_in.rf_ref_frequency_offset().has_value());
+            CHECK(packet_in.rf_ref_frequency_offset().value() == 1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES;
+            bytes packed_ref_frequency(check_ptr, check_ptr + 8);
+            // Radix 7
+            CHECK(packed_ref_frequency == bytes { 0, 0, 0, 0, 0, 0x10, 0, 0 });
+            // Unpack
+            TestAllGenerateParams packet_out(data);
+            REQUIRE(packet_out.rf_ref_frequency_offset().has_value());
+            CHECK(packet_out.rf_ref_frequency_offset().value() == 1.0);
+            // Reset
+            packet_out.reset_rf_ref_frequency_offset();
+            CHECK_FALSE(packet_out.rf_ref_frequency_offset().has_value());
+        }
+
+        SECTION("Check negative")
+        {
+            // Reset
+            packet_in.reset_rf_ref_frequency_offset();
+            REQUIRE_FALSE(packet_in.rf_ref_frequency_offset().has_value());
+            // Setter
+            packet_in.rf_ref_frequency_offset(-1.0);
+            // Check the Value
+            REQUIRE(packet_in.rf_ref_frequency_offset().has_value());
+            CHECK(packet_in.rf_ref_frequency_offset().value() == -1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES;
+            bytes packed_ref_frequency(check_ptr, check_ptr + 8);
+            // Radix 7
+            CHECK(packed_ref_frequency == bytes { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF0, 0, 0 });
+            // Unpack
+            TestAllGenerateParams packet_out(data);
+            REQUIRE(packet_out.rf_ref_frequency_offset().has_value());
+            CHECK(packet_out.rf_ref_frequency_offset().value() == -1.0);
+            // Reset
+            packet_out.reset_rf_ref_frequency_offset();
+            CHECK_FALSE(packet_out.rf_ref_frequency_offset().has_value());
+        }
+    }
+
+    SECTION("Rule 9.5.11-3")
+    {
+        SECTION("Check positive")
+        {
+            // Reset
+            packet_in.reset_sample_rate();
+            REQUIRE_FALSE(packet_in.sample_rate().has_value());
+            // Setter
+            packet_in.sample_rate(1.0);
+            // Check the Value
+            REQUIRE(packet_in.sample_rate().has_value());
+            CHECK(packet_in.sample_rate().value() == 1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES;
+            bytes packed_ref_frequency(check_ptr, check_ptr + 8);
+            // Radix 7
+            CHECK(packed_ref_frequency == bytes { 0, 0, 0, 0, 0, 0x10, 0, 0 });
+            // Unpack
+            TestAllGenerateParams packet_out(data);
+            REQUIRE(packet_out.sample_rate().has_value());
+            CHECK(packet_out.sample_rate().value() == 1.0);
+            // Reset
+            packet_out.reset_sample_rate();
+            CHECK_FALSE(packet_out.sample_rate().has_value());
+        }
+
+        SECTION("Check negative")
+        {
+            // Reset
+            packet_in.reset_sample_rate();
+            REQUIRE_FALSE(packet_in.sample_rate().has_value());
+            // Setter
+            packet_in.sample_rate(-1.0);
+            // Check the Value
+            REQUIRE(packet_in.sample_rate().has_value());
+            CHECK(packet_in.sample_rate().value() == -1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES;
+            bytes packed_ref_frequency(check_ptr, check_ptr + 8);
+            // Radix 7
+            CHECK(packed_ref_frequency == bytes { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF0, 0, 0 });
+            // Unpack
+            TestAllGenerateParams packet_out(data);
+            REQUIRE(packet_out.sample_rate().has_value());
+            CHECK(packet_out.sample_rate().value() == -1.0);
+            // Reset
+            packet_out.reset_sample_rate();
+            CHECK_FALSE(packet_out.sample_rate().has_value());
+        }
+    }
+
+    SECTION("Rule 9.5.14-1")
+    {
+        SECTION("Check positive")
+        {
+            // Reset
+            packet_in.reset_aux_frequency();
+            REQUIRE_FALSE(packet_in.aux_frequency().has_value());
+            // Setter
+            packet_in.aux_frequency(1.0);
+            // Check the Value
+            REQUIRE(packet_in.aux_frequency().has_value());
+            CHECK(packet_in.aux_frequency().value() == 1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF1_BYTES;
+            bytes packed_ref_frequency(check_ptr, check_ptr + 8);
+            // Radix 7
+            CHECK(packed_ref_frequency == bytes { 0, 0, 0, 0, 0, 0x10, 0, 0 });
+            // Unpack
+            TestAllGenerateParams packet_out(data);
+            REQUIRE(packet_out.aux_frequency().has_value());
+            CHECK(packet_out.aux_frequency().value() == 1.0);
+            // Reset
+            packet_out.reset_aux_frequency();
+            CHECK_FALSE(packet_out.aux_frequency().has_value());
+        }
+
+        SECTION("Check negative")
+        {
+            // Reset
+            packet_in.reset_aux_frequency();
+            REQUIRE_FALSE(packet_in.aux_frequency().has_value());
+            // Setter
+            packet_in.aux_frequency(-1.0);
+            // Check the Value
+            REQUIRE(packet_in.aux_frequency().has_value());
+            CHECK(packet_in.aux_frequency().value() == -1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF1_BYTES;
+            bytes packed_ref_frequency(check_ptr, check_ptr + 8);
+            // Radix 7
+            CHECK(packed_ref_frequency == bytes { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF0, 0, 0 });
+            // Unpack
+            TestAllGenerateParams packet_out(data);
+            REQUIRE(packet_out.aux_frequency().has_value());
+            CHECK(packet_out.aux_frequency().value() == -1.0);
+            // Reset
+            packet_out.reset_aux_frequency();
+            CHECK_FALSE(packet_out.aux_frequency().has_value());
+        }
+    }
+
+    SECTION("Rule 9.5.14-1")
+    {
+        SECTION("Check positive")
+        {
+            // Reset
+            packet_in.reset_aux_bandwidth();
+            REQUIRE_FALSE(packet_in.aux_bandwidth().has_value());
+            // Setter
+            packet_in.aux_bandwidth(1.0);
+            // Check the Value
+            REQUIRE(packet_in.aux_bandwidth().has_value());
+            CHECK(packet_in.aux_bandwidth().value() == 1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF1_BYTES;
+            bytes packed_ref_frequency(check_ptr, check_ptr + 8);
+            // Radix 7
+            CHECK(packed_ref_frequency == bytes { 0, 0, 0, 0, 0, 0x10, 0, 0 });
+            // Unpack
+            TestAllGenerateParams packet_out(data);
+            REQUIRE(packet_out.aux_bandwidth().has_value());
+            CHECK(packet_out.aux_bandwidth().value() == 1.0);
+            // Reset
+            packet_out.reset_aux_bandwidth();
+            CHECK_FALSE(packet_out.aux_bandwidth().has_value());
+        }
+
+        SECTION("Check negative")
+        {
+            // Reset
+            packet_in.reset_aux_bandwidth();
+            REQUIRE_FALSE(packet_in.aux_bandwidth().has_value());
+            // Setter
+            packet_in.aux_bandwidth(-1.0);
+            // Check the Value
+            REQUIRE(packet_in.aux_bandwidth().has_value());
+            CHECK(packet_in.aux_bandwidth().value() == -1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF1_BYTES;
+            bytes packed_ref_frequency(check_ptr, check_ptr + 8);
+            // Radix 7
+            CHECK(packed_ref_frequency == bytes { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xF0, 0, 0 });
+            // Unpack
+            TestAllGenerateParams packet_out(data);
+            REQUIRE(packet_out.aux_bandwidth().has_value());
+            CHECK(packet_out.aux_bandwidth().value() == -1.0);
+            // Reset
+            packet_out.reset_aux_bandwidth();
+            CHECK_FALSE(packet_out.aux_bandwidth().has_value());
+        }
+    }
+}
+
+
+TEST_CASE("Section 9.10", "[diagnostic_fields][9.10]")
+{
+    TestAllGenerateParams packet_in;
+
+    SECTION("Rule 9.10.2-1")
+    {
+        // Reset
+        packet_in.reset_health_status();
+        REQUIRE_FALSE(packet_in.health_status().has_value());
+        // Setter
+        packet_in.health_status(1.0);
+        // Check value
+        REQUIRE(packet_in.health_status().has_value());
+        CHECK(packet_in.health_status().value() == 1.0);
+        // Pack
+        auto data = packet_in.data();
+        // Check bytes
+        auto* check_ptr = data.data();
+        check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF1_BYTES;
+        bytes packed_health_status(check_ptr, check_ptr + 4);
+        CHECK(packed_health_status == bytes { 0, 0, 0, 0x01 } );
+        // Unpack
+        TestAllGenerateParams packet_out(data);
+        REQUIRE(packet_out.health_status().has_value());
+        CHECK(packet_out.health_status().value() == 1.0);
+        // Reset
+        packet_out.reset_health_status();
+        CHECK_FALSE(packet_out.health_status().has_value());
+    }
+
+    // SECTION("Rule 9.10.3-1")
+    // {
+    //     // Setter
+    //     size_t PACKED_SIZE = HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF1_BYTES;
+    //     CHECK(packet_in.size() == PACKED_SIZE);
+    //     packet_in.v49_spec_compliance();
+    // }
+}
+
+TEST_CASE("Section 9.11", "[discrete_io_field][9.11]")
+{
+    SECTION("Rule 9.11-1")
+    {
+        SECTION("DiscreteIO32")
+        {
+            user_defined_discrete_io::structs::DiscreteIO32 discrete_io32;
+            user_defined_discrete_io::structs::DiscreteIO32 unpack_discrete_io32;
+            bytes packed_bytes { 0xFF, 0xFF, 0xFF, 0xFF };
+            
+            SECTION("Bool")
+            {
+                // Verify zero on construction
+                CHECK(discrete_io32.switchfield() == false);
+                // Setter
+                discrete_io32.switchfield(true);
+                // Getter check set value
+                CHECK(discrete_io32.switchfield() == true);
+                // Pack
+                discrete_io32.pack_into(packed_bytes.data());
+                // Verify packed bits
+                CHECK(packed_bytes[3] == 0x1);
+                // Unpack
+                unpack_discrete_io32.unpack_from(packed_bytes.data());
+                // Verify unpacked value
+                CHECK(unpack_discrete_io32.switchfield() == true);
+            }
+            
+            SECTION("Enable")
+            {
+                // Verify zero on construction
+                CHECK(discrete_io32.stream_enable() == false);
+                // Setter
+                discrete_io32.stream_enable(true);
+                // Getter check set value
+                CHECK(discrete_io32.stream_enable() == true);
+                // Pack
+                discrete_io32.pack_into(packed_bytes.data());
+                // Verify packed bits
+                CHECK((packed_bytes[3] >> 1) == 0x1);
+                // Unpack
+                unpack_discrete_io32.unpack_from(packed_bytes.data());
+                // Verify unpacked value
+                CHECK(unpack_discrete_io32.stream_enable() == true);
+            }
+
+            SECTION("Indicator")
+            {
+                // Verify zero on construction
+                CHECK(discrete_io32.stream_enable_enable() == false);
+                // Setter
+                discrete_io32.stream_enable_enable(true);
+                // Getter check set value
+                CHECK(discrete_io32.stream_enable_enable() == true);
+                // Pack
+                discrete_io32.pack_into(packed_bytes.data());
+                // Verify packed bits
+                CHECK((packed_bytes[3] >> 2) == 0x1);
+                // Unpack
+                unpack_discrete_io32.unpack_from(packed_bytes.data());
+                // Verify unpacked value
+                CHECK(unpack_discrete_io32.stream_enable_enable() == true);
+            }
+            
+            SECTION("Enum")
+            {
+                // Verify zero on construction
+                CHECK(discrete_io32.test_enum32() == user_defined_discrete_io::enums::test_enum32::zero);
+                // Setter
+                discrete_io32.test_enum32(user_defined_discrete_io::enums::test_enum32::two);
+                // Getter check set value
+                CHECK(discrete_io32.test_enum32() == user_defined_discrete_io::enums::test_enum32::two);
+                // Pack
+                discrete_io32.pack_into(packed_bytes.data());
+                // Verify packed bits
+                CHECK((packed_bytes[3] >> 3) == 0x2); // bits 4-3
+                // Unpack
+                unpack_discrete_io32.unpack_from(packed_bytes.data());
+                // Verify unpacked value
+                CHECK(unpack_discrete_io32.test_enum32() == user_defined_discrete_io::enums::test_enum32::two);
+            }
+            
+            SECTION("Integer")
+            {
+                // Verify zero on construction
+                CHECK(discrete_io32.anint() == 0);
+                // Setter
+                discrete_io32.anint(30);
+                // Getter check set value
+                CHECK(discrete_io32.anint() == 30);
+                // Pack
+                discrete_io32.pack_into(packed_bytes.data());
+                // Verify packed bits
+                CHECK(((packed_bytes[2] << 3) | // bits 12-8
+                       (packed_bytes[3] >> 5)   // bits 7-5
+                      ) == 30);
+                // Unpack
+                unpack_discrete_io32.unpack_from(packed_bytes.data());
+                // Verify unpacked value
+                CHECK(unpack_discrete_io32.anint() == 30);
+            }
+        }
+
+        SECTION("Not User Defined")
+        {
+            NotUserDefinedDiscreteIo packet_in;
+
+            packet_in.discrete_io_32(0xFEED);
+            CHECK(packet_in.discrete_io_32() == 0xFEED);
+
+            auto data = packet_in.data();
+            auto* check_ptr = data.data();
+
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF1_BYTES;
+            bytes packed_discrete32(check_ptr, check_ptr + DISCRETE_IO_32_BYTES);
+            check_ptr += DISCRETE_IO_32_BYTES;
+            bytes discrete_io_32 { 0, 0, 0xFE, 0xED}; 
+            CHECK(packed_discrete32 == discrete_io_32);
+
+            NotUserDefinedDiscreteIo packet_out(data);
+            CHECK(packet_out.discrete_io_32() == 0xFEED);
+        }
+
+        SECTION("Class member discrete_io32")
+        {
+            SECTION("Required")
+            {
+                RequiredDiscreteIo packed_in;
+
+                auto& discrete_io_32 = packed_in.discrete_io_32();
+                discrete_io_32.switchfield(true);
+
+                auto data = packed_in.data();
+                auto* check_ptr = data.data();
+
+                check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF1_BYTES;
+                const bytes packed_discrete(check_ptr, check_ptr + DISCRETE_IO_32_BYTES);
+                bytes discrete_io_32_be { 0, 0, 0, 1 };
+                CHECK(packed_discrete == discrete_io_32_be);
+
+                RequiredDiscreteIo packed_out(data);
+                CHECK(packed_out.discrete_io_32().switchfield() == true);
+            }
+        
+            SECTION("Optional")
+            {
+                UserDefinedDiscreteIo packed_in;
+                CHECK_FALSE(packed_in.discrete_io_32());
+
+                auto& discrete_io_32 = packed_in.discrete_io_32();
+                CHECK(discrete_io_32.has_value() == false);
+                discrete_io_32 = user_defined_discrete_io::structs::DiscreteIO32{};
+                CHECK(discrete_io_32.has_value() == true);
+                discrete_io_32->switchfield(true);
+
+                CHECK(packed_in.discrete_io_32()->switchfield() == true);
+
+                auto data = packed_in.data();
+                auto* check_ptr = data.data();
+
+                check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF1_BYTES;
+                const bytes packed_discrete(check_ptr, check_ptr + DISCRETE_IO_32_BYTES);
+                bytes discrete_io_32_be { 0, 0, 0, 1 };
+                CHECK(packed_discrete == discrete_io_32_be);
+
+                UserDefinedDiscreteIo packed_out(data);
+                CHECK(packed_out.discrete_io_32().has_value() == true);
+                CHECK(packed_out.discrete_io_32()->switchfield() == true);
+            }
+        }
+    }
+
+    SECTION("Rule 9.11-2")
+    {
+        SECTION("DiscreteIO64")
+        {
+            user_defined_discrete_io::structs::DiscreteIO64 discrete_io64;
+            user_defined_discrete_io::structs::DiscreteIO64 unpack_discrete_io64;
+            bytes packed_bytes { 0xFF, 0xFF, 0xFF, 0xFF,
+                                0xFF, 0xFF, 0xFF, 0xFF };
+            
+            SECTION("Bool")
+            {
+                // Verify zero on construction
+                CHECK(discrete_io64.switchfield() == false);
+                // Setter
+                discrete_io64.switchfield(true);
+                // Getter check set value
+                CHECK(discrete_io64.switchfield() == true);
+                // Pack
+                discrete_io64.pack_into(packed_bytes.data());
+                // Verify packed bits
+                CHECK(packed_bytes[7] == 0x1);
+                // Unpack
+                unpack_discrete_io64.unpack_from(packed_bytes.data());
+                // Verify unpacked value
+                CHECK(unpack_discrete_io64.switchfield() == true);
+            }
+            
+            SECTION("Enable")
+            {
+                // Verify zero on construction
+                CHECK(discrete_io64.stream_enable() == false);
+                // Setter
+                discrete_io64.stream_enable(true);
+                // Getter check set value
+                CHECK(discrete_io64.stream_enable() == true);
+                // Pack
+                discrete_io64.pack_into(packed_bytes.data());
+                // Verify packed bits
+                CHECK((packed_bytes[7] >> 1) == 0x1);
+                // Unpack
+                unpack_discrete_io64.unpack_from(packed_bytes.data());
+                // Verify unpacked value
+                CHECK(unpack_discrete_io64.stream_enable() == true);
+            }
+
+            SECTION("Indicator")
+            {
+                // Verify zero on construction
+                CHECK(discrete_io64.stream_enable_enable() == false);
+                // Setter
+                discrete_io64.stream_enable_enable(true);
+                // Getter check set value
+                CHECK(discrete_io64.stream_enable_enable() == true);
+                // Pack
+                discrete_io64.pack_into(packed_bytes.data());
+                // Verify packed bits
+                CHECK((packed_bytes[7] >> 2) == 0x1);
+                // Unpack
+                unpack_discrete_io64.unpack_from(packed_bytes.data());
+                // Verify unpacked value
+                CHECK(unpack_discrete_io64.stream_enable_enable() == true);
+            }
+            
+            SECTION("Enum")
+            {
+                // Verify zero on construction
+                CHECK(discrete_io64.test_enum64() == user_defined_discrete_io::enums::test_enum64::zero);
+                // Setter
+                discrete_io64.test_enum64(user_defined_discrete_io::enums::test_enum64::two);
+                // Getter check set value
+                CHECK(discrete_io64.test_enum64() == user_defined_discrete_io::enums::test_enum64::two);
+                // Pack
+                discrete_io64.pack_into(packed_bytes.data());
+                // Verify packed bits
+                CHECK((packed_bytes[7] >> 3) == 0x2);
+                // Unpack
+                unpack_discrete_io64.unpack_from(packed_bytes.data());
+                // Verify unpacked value
+                CHECK(unpack_discrete_io64.test_enum64() == user_defined_discrete_io::enums::test_enum64::two);
+            }
+            
+            SECTION("Integer")
+            {
+                // Verify zero on construction
+                CHECK(discrete_io64.anint() == 0);
+                // Setter
+                discrete_io64.anint(30);
+                // Getter check set value
+                CHECK(discrete_io64.anint() == 30);
+                // Pack
+                discrete_io64.pack_into(packed_bytes.data());
+                // Verify packed bits
+                CHECK(((packed_bytes[6] << 3) | // bits 12-8
+                       (packed_bytes[7] >> 5)   // bits 7-5
+                      ) == 30);
+                // Unpack
+                unpack_discrete_io64.unpack_from(packed_bytes.data());
+                // Verify unpacked value
+                CHECK(unpack_discrete_io64.anint() == 30);
+            }
+        }
+
+        SECTION("Not User Defined")
+        {
+            NotUserDefinedDiscreteIo packet_in;
+
+            packet_in.discrete_io_64(0xFEED);
+            CHECK(packet_in.discrete_io_64() == 0xFEED);
+
+            auto data = packet_in.data();
+            auto* check_ptr = data.data();
+
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF1_BYTES + DISCRETE_IO_32_BYTES;
+            bytes packed_discrete64(check_ptr, check_ptr + DISCRETE_IO_64_BYTES);
+            check_ptr += DISCRETE_IO_64_BYTES;
+            bytes discrete_io_64 {0, 0, 0, 0, 0, 0, 0xFE, 0xED}; 
+            CHECK(packed_discrete64 == discrete_io_64);
+
+            NotUserDefinedDiscreteIo packet_out(data);
+            CHECK(packet_out.discrete_io_64() == 0xFEED);
+        }
+
+        SECTION("Class member discrete_io64")
+        {
+            SECTION("Required")
+            {
+                RequiredDiscreteIo packed_in;
+
+                auto& discrete_io_64 = packed_in.discrete_io_64();
+                discrete_io_64.switchfield(true);
+
+                auto data = packed_in.data();
+                auto* check_ptr = data.data();
+
+                check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF1_BYTES + DISCRETE_IO_32_BYTES;
+                const bytes packed_discrete(check_ptr, check_ptr + DISCRETE_IO_64_BYTES);
+                bytes discrete_io_64_be { 0, 0, 0, 0, 0, 0, 0, 1 };
+                CHECK(packed_discrete == discrete_io_64_be);
+
+                RequiredDiscreteIo packed_out(data);
+                CHECK(packed_out.discrete_io_64().switchfield() == true);
+            }
+        
+            SECTION("Optional")
+            {
+                UserDefinedDiscreteIo packed_in;
+                CHECK_FALSE(packed_in.discrete_io_64());
+
+                auto& discrete_io_64 = packed_in.discrete_io_64();
+                CHECK(discrete_io_64.has_value() == false);
+                discrete_io_64 = user_defined_discrete_io::structs::DiscreteIO64{};
+                CHECK(discrete_io_64.has_value() == true);
+                discrete_io_64->switchfield(true);
+
+                CHECK(packed_in.discrete_io_64()->switchfield() == true);
+
+                auto data = packed_in.data();
+                auto* check_ptr = data.data();
+
+                check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF1_BYTES;
+                const bytes packed_discrete(check_ptr, check_ptr + DISCRETE_IO_64_BYTES);
+                bytes discrete_io_64_be { 0, 0, 0, 0, 0, 0, 0, 1 };
+                CHECK(packed_discrete == discrete_io_64_be);
+
+                UserDefinedDiscreteIo packed_out(data);
+                CHECK(packed_out.discrete_io_64().has_value() == true);
+                CHECK(packed_out.discrete_io_64()->switchfield() == true);
+            }
+        }
+    }
+}
+
+TEST_CASE("Section 9.12", "[attribute_subfields][9.12]")
+{
+    SECTION("Rule 9.12-2")
+    {
+        double BW_VALUE;
+        double BW_MEAN_VALUE;
+        bytes BANDWIDTH_BE;
+        SECTION("Bandwidth Value 1") {
+            BW_VALUE = 1.0; // represents 0x0000 0000 0010 0000
+            BW_MEAN_VALUE = 1.0; // represents 0x0000 0000 0010 0000
+            BANDWIDTH_BE = bytes { 0, 0, 0, 0, 0, 0x10, 0, 0 };
+        }
+        SECTION("Bandwidth Value 2") {
+            BW_VALUE = 1.0 / (1 << 20); // represents 0x0000 0000 0000 0001
+            BW_MEAN_VALUE = 1.0 / (1 << 20); // represents 0x0000 0000 0000 0001
+            BANDWIDTH_BE = bytes { 0, 0, 0, 0, 0, 0, 0, 0x01 };
+        }
+        SECTION("Bandwidth Value 3") {
+            BW_VALUE = 1.0 + 1.0 / (1 << 20); // represents 0x0000 0000 0010 0001
+            BW_MEAN_VALUE = 1.0 + 1.0 / (1 << 20); // represents 0x0000 0000 0010 0001
+            BANDWIDTH_BE = bytes { 0, 0, 0, 0, 0, 0x10, 0, 0x01 };
+        }
+
+        TestCif7Attributes packet_in;
+        CHECK(packet_in.size() == HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES + CIF7_BYTES + BANDWIDTH_BYTES + BANDWIDTH_BYTES);
+        CHECK(packet_in.cif_0().cif7_enable());
+        test_cif7_attributes::structs::CIF7Attributes<int64_t,long double,64,20> attributes_in;
+        attributes_in.mean_value(BW_MEAN_VALUE);
+        CHECK(attributes_in.mean_value() == BW_MEAN_VALUE);
+
+        packet_in.bandwidth(BW_VALUE);
+        packet_in.bandwidth_attributes() = attributes_in;
+        CHECK(packet_in.bandwidth() == BW_VALUE);
+        CHECK(packet_in.bandwidth_attributes().mean_value() == BW_MEAN_VALUE);
+
+        auto data = packet_in.data();
+        auto* check_ptr = data.data();
+
+        const uint8_t CIF7_ENABLE = 0x1 << 7;
+        const uint8_t BW_ENABLE = 0x1 << 5;
+        const uint8_t CURRENT_ENABLE = 0x1 << 7;
+        const uint8_t MEAN_ENABLE = 0x1 << 6;
+
+        const bytes CIF0_BE {BW_ENABLE, 0, 0, CIF7_ENABLE};
+        const bytes CIF7_BE {CURRENT_ENABLE | MEAN_ENABLE, 0, 0, 0};
+
+        check_ptr += HEADER_BYTES + STREAM_ID_BYTES;
+        const bytes packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
+        check_ptr += CIF0_BYTES;
+        const bytes packed_cif7(check_ptr, check_ptr + CIF7_BYTES);
+        check_ptr += CIF7_BYTES;
+        const bytes packed_bw(check_ptr, check_ptr + BANDWIDTH_BYTES);
+        check_ptr += BANDWIDTH_BYTES;
+        const bytes packed_bw_mean(check_ptr, check_ptr + BANDWIDTH_BYTES);
+        check_ptr += BANDWIDTH_BYTES;
+
+        CHECK(packed_cif0 == CIF0_BE);
+        CHECK(packed_cif7 == CIF7_BE);
+        CHECK(packed_bw == BANDWIDTH_BE);
+        CHECK(packed_bw_mean == BANDWIDTH_BE);
+
+        TestCif7Attributes packet_out(data);
+        CHECK(packet_out.bandwidth() == BW_VALUE);
+        CHECK(packet_out.bandwidth_attributes().mean_value() == BW_MEAN_VALUE);
+    }
+}
+
 /////////////////////////////////// LEGACY ///////////////////////////////////////////////
 
 TEST_CASE("Context Packet Stream ID")
@@ -129,9 +1126,9 @@ TEST_CASE("Context Packet Stream ID")
     CHECK_FALSE(packet_type::match(data));
 
     // Unpack verifed packed data
-    bytes packed_bytes(data.size());
+    bytes packed_bytes(packet_in.size());
     memcpy(packed_bytes.data(), data.data(), data.size());
-    packet_type packet_out(packed_bytes);
+    packet_type packet_out({ packed_bytes.data(), packed_bytes.size() });
 
     // Examine and check unpacked packet header
     const auto& header = packet_out.header();
@@ -200,9 +1197,9 @@ TEST_CASE("Context Packet Class ID")
     CHECK_FALSE(packet_type::match(data));
 
     // Unpack verifed packed data
-    bytes packed_bytes(data.size());
+    bytes packed_bytes(packet_in.size());
     memcpy(packed_bytes.data(), data.data(), data.size());
-    packet_type packet_out(packed_bytes);
+    packet_type packet_out({ packed_bytes.data(), packed_bytes.size() });
 
     // Examine and check unpacked packet header
     const auto& header = packet_out.header();
@@ -295,9 +1292,9 @@ TEST_CASE("Reference Point ID (9.2)", "[cif0][reference_point_id]")
         CHECK_FALSE(packet_type::match(data));
 
         // Unpack verifed packed data
-        bytes packed_bytes(data.size());
-        memcpy(packed_bytes.data(), data.data(), data.size());
-        packet_type packet_out(packed_bytes);
+    bytes packed_bytes(packet_in.size());
+    memcpy(packed_bytes.data(), data.data(), data.size());
+    packet_type packet_out({ packed_bytes.data(), packed_bytes.size() });
 
         // Examine and check unpacked packet header
         const auto& header = packet_out.header();
@@ -384,9 +1381,9 @@ TEST_CASE("Reference Point ID (9.2)", "[cif0][reference_point_id]")
         CHECK_FALSE(packet_type::match(data));
 
         // Unpack verifed packed data
-        bytes packed_bytes(data.size());
+        bytes packed_bytes(packet_in.size());
         memcpy(packed_bytes.data(), data.data(), data.size());
-        packet_type packet_out(packed_bytes);
+        packet_type packet_out({ packed_bytes.data(), packed_bytes.size() });
 
         // Examine and check unpacked packet header
         const auto& header = packet_out.header();
@@ -492,9 +1489,9 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
             CHECK_FALSE(packet_type::match(data));
 
             // Unpack verifed packed data
-            bytes packed_bytes(data.size());
+            bytes packed_bytes(packet_in.size());
             memcpy(packed_bytes.data(), data.data(), data.size());
-            packet_type packet_out(packed_bytes);
+            packet_type packet_out({ packed_bytes.data(), packed_bytes.size() });
 
             // Examine and check unpacked packet header
             const auto& header = packet_out.header();
@@ -591,9 +1588,9 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
             CHECK_FALSE(packet_type::match(data));
 
             // Unpack verifed packed data
-            bytes packed_bytes(data.size());
+            bytes packed_bytes(packet_in.size());
             memcpy(packed_bytes.data(), data.data(), data.size());
-            packet_type packet_out(packed_bytes);
+            packet_type packet_out({ packed_bytes.data(), packed_bytes.size() });
 
             // Examine and check unpacked packet header
             const auto& header = packet_out.header();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -16,8 +16,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
  */
-#ifndef _VRTGEN_PACKING_TRAILER_HPP
-#define _VRTGEN_PACKING_TRAILER_HPP
+
+#pragma once
+
+#include <optional>
 
 #include <vrtgen/types.hpp>
 #include <vrtgen/packing/enums.hpp>
@@ -34,49 +36,19 @@ namespace vrtgen::packing {
 class Trailer : public StateEventIndicators
 {
 public:
-
-    /**
-     * @brief Returns the Sample Frame Enable flag
-     * @return true if Sample Frame Indicator is enabled, otherwise false
-     * 
-     * Sample Frame Enable is 2 bits long at bit position 23
-     * See VITA 49.2 Table 5.1.6-1
-     */
-    bool sample_frame_enable() const noexcept
-    {
-        uint8_t sample_enable = m_packed.get<23, 2, uint8_t>();
-        if (sample_enable == 0b11) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * @brief Sets the Sample Frame Enable flag
-     * @param value Sample Frame Enable flag value to set
-     * 
-     * Sample Frame Enable is 2 bits long at bit position 23
-     * See VITA 49.2 Table 5.1.6-1
-     */
-    void sample_frame_enable(bool value) noexcept
-    {
-        if (value) {
-            m_packed.set<23, 2>(0b11);
-        }
-        else {
-            m_packed.set<23, 2>(0b00);
-        }
-    }
-
     /**
      * @brief Returns the User Defined Indicator flag
      * @return User Defined Indicator
      * 
      * User Defined Indicator is 2 bits long at bit position 11
-     * See VITA 49.2 Table 5.1.6-1
+     * See VITA 49.2-2017 Table 5.1.6-1
      */
-    vrtgen::packing::SSI sample_frame() const noexcept {
-        return m_packed.get<11, 2, vrtgen::packing::SSI>();
+    auto sample_frame() const noexcept -> std::optional<vrtgen::packing::SSI>
+    {
+        if (sample_frame_enable()) {
+            return m_packed.get<11, 2, vrtgen::packing::SSI>();
+        }
+        return std::nullopt;
     }
 
     /**
@@ -84,35 +56,12 @@ public:
      * @param value User Defined Indicator flag value to set
      * 
      * User Defined Indicator is 2 bits long at bit position 11
-     * See VITA 49.2 Table 5.1.6-1
+     * See VITA 49.2-2017 Table 5.1.6-1
      */
-    void sample_frame(const vrtgen::packing::SSI value) noexcept 
+    auto sample_frame(const vrtgen::packing::SSI value) noexcept -> void
     {
+        sample_frame_enable(true);
         m_packed.set<11, 2, vrtgen::packing::SSI>(value);
-    }
-
-    /**
-     * @brief Returns the Associated Context Packets Count Enable flag
-     * @return true if Associated Context Packets Count is enabled, otherwise false
-     * 
-     * Associated Context Packets Count Enable is 1 bit long at bit position 7
-     * See VITA 49.2 Table 5.1.6-1
-     */
-    bool associated_context_packets_count_enable() const noexcept
-    {
-        return m_packed.get<7>();
-    }
-
-    /**
-     * @brief Sets the Associated Context Packets Count Enable flag
-     * @param value Associated Context Packets Count Enable flag value to set
-     * 
-     * Associated Context Packets Count Enable is 1 bit long at bit position 7
-     * See VITA 49.2 Table 5.1.6-1
-     */
-    void associated_context_packets_count_enable(bool value) noexcept
-    {
-        m_packed.set<7>(value);
     }
 
     /**
@@ -120,11 +69,14 @@ public:
      * @return true if Associated Context Packets Count is enabled, otherwise false
      * 
      * Associated Context Packets Enable is 7 bits long at bit position 6
-     * See VITA 49.2 Table 5.1.6-1
+     * See VITA 49.2-2017 Table 5.1.6-1
      */
-    uint8_t associated_context_packets_count() const noexcept
+    auto associated_context_packets_count() const noexcept -> std::optional<uint8_t>
     {
-        return m_packed.get<6,7,uint8_t>();
+        if (associated_context_packets_count_enable()) {
+            return m_packed.get<6,7,uint8_t>();
+        }
+        return std::nullopt;
     }
 
     /**
@@ -132,10 +84,11 @@ public:
      * @param value Associated Context Packets Count subfield value to set
      * 
      * Associated Context Packets Count is 7 bits long at bit position 6
-     * See VITA 49.2 Table 5.1.6-1
+     * See VITA 49.2-2017 Table 5.1.6-1
      */
-    void associated_context_packets_count(uint8_t value) noexcept
+    auto associated_context_packets_count(uint8_t value) noexcept -> void
     {
+        associated_context_packets_count_enable(true);
         m_packed.set<6,7>(value);
     }
 
@@ -166,8 +119,63 @@ public:
         m_packed.unpack_from(buffer_ptr);
     }
 
+private:
+    /**
+     * @brief Returns the Sample Frame Enable flag
+     * @return true if Sample Frame Indicator is enabled, otherwise false
+     * 
+     * Sample Frame Enable is 2 bits long at bit position 23
+     * See VITA 49.2-2017 Table 5.1.6-1
+     */
+    auto sample_frame_enable() const noexcept -> bool
+    {
+        uint8_t sample_enable = m_packed.get<23, 2, uint8_t>();
+        if (sample_enable == 0b11) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @brief Sets the Sample Frame Enable flag
+     * @param value Sample Frame Enable flag value to set
+     * 
+     * Sample Frame Enable is 2 bits long at bit position 23
+     * See VITA 49.2-2017 Table 5.1.6-1
+     */
+    auto sample_frame_enable(bool value) noexcept -> void
+    {
+        auto update_value = 0b00;
+        if (value) {
+            update_value = 0b11;
+        }
+        m_packed.set<23, 2>(update_value);
+    }
+
+    /**
+     * @brief Returns the Associated Context Packets Count Enable flag
+     * @return true if Associated Context Packets Count is enabled, otherwise false
+     * 
+     * Associated Context Packets Count Enable is 1 bit long at bit position 7
+     * See VITA 49.2-2017 Table 5.1.6-1
+     */
+    auto associated_context_packets_count_enable() const noexcept -> bool
+    {
+        return m_packed.get<7>();
+    }
+
+    /**
+     * @brief Sets the Associated Context Packets Count Enable flag
+     * @param value Associated Context Packets Count Enable flag value to set
+     * 
+     * Associated Context Packets Count Enable is 1 bit long at bit position 7
+     * See VITA 49.2-2017 Table 5.1.6-1
+     */
+    auto associated_context_packets_count_enable(bool value) noexcept -> void
+    {
+        m_packed.set<7>(value);
+    }
+
 }; // end class Trailer
 
 } // end namespace vrtgen::packing
-
-#endif // _VRTGEN_PACKING_TRAILER_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -30,20 +30,3 @@ enum class {{enum.name}}
 {% endfor %}
 }; // end enum class {{enum.name}}
 {%- endmacro %}
-#ifndef {{ name | upper }}_HPP
-#define {{ name | upper }}_HPP
-
-namespace vrtgen {
-namespace packing {
-
-{% for enum in enums %}
-{% if not loop.first %}
-
-{% endif  %}
-{{define_enum(enum)}}
-{% endfor %}
-
-} // end namespace packing
-} // end namespace vrtgen
-
-#endif // {{ name | upper }}_HPP

@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2022 Geon Technologies, LLC
+ * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -16,11 +16,8 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
-#ifndef {{ header_name | upper }}_HPP
-#define {{ header_name | upper }}_HPP
+#pragma once
 
 {% for packet in packets %}
 #include "{{packet.name | to_snake}}.hpp"
 {% endfor %}
-
-#endif
