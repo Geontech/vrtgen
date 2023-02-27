@@ -4,6 +4,10 @@ COPY . /root/vrtgen
 
 WORKDIR /root/vrtgen
 
+RUN find /etc/yum.repos.d/ -type f -name "CentOS*.repo" -exec sed -i.bak "s/mirrorlist=/#mirrorlist=/g" {} \;
+RUN find /etc/yum.repos.d/ -type f -name "CentOS*.repo" -exec sed -i.bak "s/#baseurl=/baseurl=/g" {} \;
+RUN yum -y clean all
+
 RUN yum -y --nogpgcheck update \
     && yum install -y --nogpgcheck epel-release centos-release-scl \
     && yum -y --nogpgcheck update \
