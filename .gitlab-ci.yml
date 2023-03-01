@@ -29,19 +29,6 @@ build:rockylinux:8:
       - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file docker/rockylinux.Dockerfile -t $CI_REGISTRY/geon/vita49/vrtgen/rocky-builder:latest .
       - docker push $CI_REGISTRY/geon/vita49/vrtgen/rocky-builder:latest
 
-# build:ubuntu:16.04:
-#     image: docker:19.03.8
-#     stage: build
-#     tags:
-#         - Docker
-#     before_script:
-#       - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-#     script:
-#       - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file docker/ubuntu16.Dockerfile -t $CI_REGISTRY/geon/vita49/vrtgen/ubuntu16-builder:latest .
-#       - docker push $CI_REGISTRY/geon/vita49/vrtgen/ubuntu16-builder:latest
-#     only:
-#         - tags
-
 build:ubuntu:18.04:
     image: docker:19.03.8
     stage: build
@@ -185,51 +172,6 @@ test:cpp:ubuntu:18.04:
         reports:
             junit: build/*-results.xml
 
-# Ubuntu 16.04 Testing
-# lint:ubuntu:16.04:
-#     image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu16-builder:latest
-#     stage: test
-#     needs: ["build:ubuntu:16.04"]
-#     script:
-#         # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
-#         # Unfortunately, even if the command completely fails (e.g., invalid
-#         # path) it still exits with 0.
-#         - pylint -f colorized --exit-zero src/
-#     only:
-#         - tags
-
-# test:ubuntu:16.04:
-#     image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu16-builder:latest
-#     stage: test
-#     needs: ["build:ubuntu:16.04"]
-#     script:
-#         - pytest --color=yes --junit-xml=vrtgen-pytests.xml
-#     artifacts:
-#         paths:
-#             - vrtgen-pytests.xml
-#         reports:
-#             junit: vrtgen-pytests.xml
-#     only:
-#         - tags
-
-# test:cpp:ubuntu:16.04:
-#     image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu16-builder:latest
-#     stage: test
-#     needs: ["build:ubuntu:16.04"]
-#     variables:
-#         # Don't need to clone the repo because we're using the Docker image's copy
-#         GIT_STRATEGY: none
-#     script:
-#         - cd /root/vrtgen
-#         - make -C build check
-#     artifacts:
-#         paths:
-#             - build/*-results.xml
-#         reports:
-#             junit: build/*-results.xml
-#     only:
-#         - tags
-
 # Ubuntu 20.04 Testing
 lint:ubuntu:20.04:
     image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu20-builder:latest
@@ -317,30 +259,6 @@ rpmbuild:rockylinux:8:
             - dist/*.rpm
     only:
         - tags
-
-# debbuild:ubuntu:16.04:
-#     stage: package
-#     image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu16-builder:latest
-#     needs: [
-#         "build:ubuntu:16.04",
-#         "lint:ubuntu:16.04",
-#         "test:ubuntu:16.04",
-#         "test:cpp:ubuntu:16.04"
-#     ]
-#     script:
-#         - apt install -y python3-stdeb fakeroot python-all dh-python
-#         - python3 setup.py --command-packages=stdeb.command bdist_deb
-#         # C++ library packaging (requires installing Python RPMs)
-#         - apt install -y ./deb_dist/*.deb
-#         - cmake -B release
-#         - cd release
-#         - cpack -G DEB
-#         - mv *.deb ../deb_dist
-#     artifacts:
-#         paths:
-#             - deb_dist/*.deb
-#     only:
-#         - tags
 
 debbuild:ubuntu:18.04:
     stage: package

@@ -231,16 +231,17 @@ TEST_CASE("Section 6.1", "[data_packet][6.1]")
         CHECK(packet_in.payload_size() == 32);
     }
 
-    // SECTION("Rule 6.1.1-3")
-    // {
-    //     TestData1 packet_in;
-    //     bytes payload;
-    //     size_t payload_size = 10; 
-    //     size_t new_size = 12;
-    //     payload.resize(payload_size);
-    //     packet_in.payload(payload);
-    //     CHECK(packet_in.payload_size() == new_size);
-    // }
+    SECTION("Rule 6.1.1-3")
+    {
+        TestData1 packet_in;
+        bytes payload{ 1,2,3,4,5,6,7,8,9,10 };
+        bytes payload_padded{ 1,2,3,4,5,6,7,8,9,10,0,0 };
+        packet_in.payload(payload);
+        CHECK(packet_in.payload_size() == payload_padded.size());
+        bytes packed_payload(packet_in.payload_size());
+        std::memcpy(packed_payload.data(), packet_in.payload().data(), packet_in.payload_size());
+        CHECK(packed_payload == payload_padded);
+    }
 }
 
 TEST_CASE("Section 6.2", "[data_packet][6.2]")
