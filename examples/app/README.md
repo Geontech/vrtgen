@@ -3,7 +3,7 @@
 This example is meant to be a simple demonstration of various packet classes
 being aggregated together to form a transactional interface for VITA 49.2. The
 following instructions assume that `vrtpktgen` utility and the `vrtgen` header
-has been installed.
+library has been installed.
 
 ## Generating VITA 49.2 Code
 
@@ -49,21 +49,24 @@ Edit the src/bin/CMakeLists.txt file to look like the following:
 add_executable(example_project main.cpp)
 target_link_libraries(example_project PUBLIC packetlib)
 target_include_directories(example_project PUBLIC
-    "${CMAKE_SOURCE_DIR}/include/packets"
+    ${vrtgen_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}/include/packets
 )
 
 add_executable(example_controllee example_controllee.cpp)
 target_link_libraries(example_controllee PUBLIC packetlib pthread)
 target_include_directories(example_controllee PUBLIC
-    "${CMAKE_SOURCE_DIR}/include"
-    "${CMAKE_SOURCE_DIR}/include/packets"
+    ${vrtgen_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/packets
 )
 
 add_executable(example_controller example_controller.cpp)
 target_link_libraries(example_controller PUBLIC packetlib pthread)
 target_include_directories(example_controller PUBLIC
-    "${CMAKE_SOURCE_DIR}/include"
-    "${CMAKE_SOURCE_DIR}/include/packets"
+    ${vrtgen_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/packets
 )
 ```
 

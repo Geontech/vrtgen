@@ -26,13 +26,66 @@ set(header_files
     ${CMAKE_CURRENT_SOURCE_DIR}/vrtgen/vrtgen.hpp
 )
 
+# Project library
 add_library(vrtgen INTERFACE)
-target_sources(vrtgen INTERFACE ${header_files})
-target_include_directories(vrtgen INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(
+    vrtgen
+    INTERFACE
+    $<BUILD_INTERFACE:${vrtgen_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 
-install(TARGETS vrtgen)
+# Install
 install(
-    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/vrtgen
+    TARGETS vrtgen
+    EXPORT vrtgen_Targets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+# Versioning
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    "vrtgenConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+if(NOT INCLUDE_INSTALL_DIR)
+    set(INCLUDE_INSTALL_DIR include/vrtgen)
+endif()
+
+configure_package_config_file(
+    "${PROJECT_SOURCE_DIR}/cmake/vrtgenConfig.cmake.in"
+    "${PROJECT_BINARY_DIR}/vrtgenConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/vrtgen/cmake
+    PATH_VARS INCLUDE_INSTALL_DIR
+)
+
+install(
+    EXPORT vrtgen_Targets
+    FILE vrtgenTargets.cmake
+    NAMESPACE vrtgen::
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/vrtgen/cmake
+)
+
+install(
+    FILES
+    "${PROJECT_BINARY_DIR}/vrtgenConfig.cmake"
+    "${PROJECT_BINARY_DIR}/include/vrtgenConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/vrtgen/cmake
+)
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    "vrtgenConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+install(
+    DIRECTORY ${PROJECT_SOURCE_DIR}/include/vrtgen
     TYPE INCLUDE
     FILES_MATCHING PATTERN "*.hpp"
 )

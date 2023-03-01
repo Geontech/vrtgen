@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(vrtgen-cpp VERSION 0.5.0 LANGUAGES CXX)
+project(vrtgen-cpp VERSION 0.6.1 LANGUAGES CXX)
 include(GNUInstallDirs)
 
 # Set the C++ version required
@@ -53,6 +53,9 @@ target_link_libraries(test_libvrtgen vrtgen)
 target_link_libraries(test_libvrtgen Catch2)
 target_link_libraries(test_libvrtgen testutils)
 target_compile_options(test_libvrtgen PRIVATE -Wall -Wextra -Wpedantic)
+target_include_directories(test_libvrtgen PRIVATE
+    ${PROJECT_SOURCE_DIR}/include
+)
 
 # Run the library tests, with optional JUnit output
 if(JUNIT_OUTPUT)
@@ -99,10 +102,6 @@ add_executable(test_codegen
     tests/codegen/cpp/test_trailer.cpp
     tests/codegen/cpp/test_context.cpp
     tests/codegen/cpp/test_command.cpp
-    # tests/codegen/test_cif0.cpp
-    # tests/codegen/test_control_ids.cpp
-    # tests/codegen/test_structs.cpp
-    # tests/codegen/test_user.cpp
 )
 
 add_subdirectory(tests/codegen/cpp)
@@ -116,11 +115,6 @@ add_codegen_file(test_codegen tests/codegen/yamls/data.yaml "${data_gen_list}")
 add_codegen_file(test_codegen tests/codegen/yamls/trailer.yaml "${trailer_gen_list}")
 add_codegen_file(test_codegen tests/codegen/yamls/context.yaml "${context_gen_list}")
 add_codegen_file(test_codegen tests/codegen/yamls/command.yaml "${command_gen_list}")
-# add_codegen_file(test_codegen tests/codegen/yamls/cif0.yaml)
-# add_codegen_file(test_codegen tests/codegen/yamls/control_ids.yaml)
-# add_codegen_file(test_codegen tests/codegen/yamls/timestamp.yaml)
-# add_codegen_file(test_codegen tests/codegen/yamls/structs.yaml)
-# add_codegen_file(test_codegen tests/codegen/yamls/user.yaml)
 
 target_link_libraries(test_codegen vrtgen)
 target_link_libraries(test_codegen Catch2)
@@ -130,7 +124,7 @@ target_include_directories(test_codegen PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}/tests/codegen/cpp
     # Explicitly add the build "vrtgen" include directory so that the relative
     # includes in packed.hpp can resolve generated headers
-    ${CMAKE_CURRENT_BINARY_DIR}/include/vrtgen
+    ${PROJECT_SOURCE_DIR}/include
 )
 
 # Run the code generator tests, with optional JUnit output
@@ -151,23 +145,9 @@ endif()
 add_custom_target(docs)
 find_package(Doxygen)
 if (DOXYGEN_FOUND)
-    # set input and output files
-    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/docs/doxygen.conf)
-    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
-
-    # request to configure the file
-    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
-    message("Doxygen build started")
-
-    # note the option ALL which allows to build the docs together with the application
-    add_custom_target( doc_doxygen
-        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../
-        COMMENT "Generating API documentation with Doxygen"
-        VERBATIM )
-    add_dependencies(docs doc_doxygen)
+    add_subdirectory(docs)
 else (DOXYGEN_FOUND)
-    message("Doxygen needs to be installed to generate the doxygen documentation")
+    message(STATUS "Doxygen not found, not building docs")
 endif (DOXYGEN_FOUND)
 
 # Packaging options
