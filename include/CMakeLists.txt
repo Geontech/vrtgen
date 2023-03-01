@@ -53,7 +53,7 @@ write_basic_package_version_file(
 )
 
 if(NOT INCLUDE_INSTALL_DIR)
-    set(INCLUDE_INSTALL_DIR include/vrtgen)
+    set(INCLUDE_INSTALL_DIR include)
 endif()
 
 configure_package_config_file(
