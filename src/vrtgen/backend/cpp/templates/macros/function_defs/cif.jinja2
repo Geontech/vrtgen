@@ -184,7 +184,7 @@ auto {{ packet_name }}::{{ field.name }}_attributes() -> {{ 'std::optional<' if 
 auto {{ packet_name }}::{{ field.name }}_enabled() const -> bool
 {
 {%   if cif.is_optional %}
-    return m_{{ cif.name }}.has_value() && return m_{{ cif.name }}->{{ field.name }}();
+    return m_{{ cif.name }}.has_value() && m_{{ cif.name }}->{{ field.name }}();
 {%   else %}
     return m_{{ cif.name }}.{{ field.name }}();
 {%   endif %}
@@ -227,7 +227,7 @@ auto {{ packet_name }}::reset_{{ field.name }}() -> void
 {% endmacro %}
 
 {%- macro reset_cif(packet, packet_name, cif, type_helper) %}
-auto {{ packet.name }}::reset_{{ cif.name }}() -> void
+auto {{ packet_name }}::reset_{{ cif.name }}() -> void
 {
 {% if cif.is_optional%}
     if (m_{{ cif.name }}.has_value()) {
