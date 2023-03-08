@@ -4,7 +4,7 @@ variables:
 stages:
     - build
     - test
-    - package
+    #- package
 
 # Build Stage Jobs
 build:centos:7:
@@ -212,98 +212,96 @@ test:cpp:ubuntu:20.04:
             junit: build/*-results.xml
 
 # Build release RPMs/debs
-rpmbuild:centos:7:
-    stage: package
-    image: $CI_REGISTRY/geon/vita49/vrtgen/centos-builder:latest
-    needs: [
-        "build:centos:7",
-        "lint:centos:7",
-        "test:centos:7",
-        "test:cpp:centos:7"
-    ]
-    script:
-        - yum install -y rpm-build
-        - python3.7 setup.py bdist_rpm --requires="python3-PyYAML python3-jinja2"
-        # C++ library packaging (requires installing Python RPMs)
-        - yum install -y dist/vrtgen-*.noarch.rpm
-        - cmake3 -B release
-        - cd release
-        - cpack3 -G RPM
-        - mv *.rpm ../dist
-    artifacts:
-        paths:
-            - dist/*.rpm
-    only:
-        - tags
-
-rpmbuild:rockylinux:8:
-    stage: package
-    image: $CI_REGISTRY/geon/vita49/vrtgen/rocky-builder:latest
-    needs: [
-        "build:rockylinux:8",
-        "lint:rockylinux:8",
-        "test:rockylinux:8",
-        "test:cpp:rockylinux:8"
-    ]
-    script:
-        - yum install -y rpm-build
-        - python3 setup.py bdist_rpm --requires="python3-pyyaml python3-jinja2"
-        # C++ library packaging (requires installing Python RPMs)
-        - yum install -y dist/vrtgen-*.noarch.rpm
-        - cmake -B release
-        - cd release
-        - cpack -G RPM
-        - mv *.rpm ../dist
-    artifacts:
-        paths:
-            - dist/*.rpm
-    only:
-        - tags
-
-debbuild:ubuntu:18.04:
-    stage: package
-    image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu18-builder:latest
-    needs: [
-        "build:ubuntu:18.04",
-        "lint:ubuntu:18.04",
-        "test:ubuntu:18.04",
-        "test:cpp:ubuntu:18.04"
-    ]
-    script:
-        - apt install -y python3-stdeb fakeroot python-all dh-python
-        - python3 setup.py --command-packages=stdeb.command bdist_deb
-        # C++ library packaging (requires installing Python RPMs)
-        - apt install -y ./deb_dist/*.deb
-        - cmake -B release
-        - cd release
-        - cpack -G DEB
-        - mv *.deb ../deb_dist
-    artifacts:
-        paths:
-            - deb_dist/*.deb
-    only:
-        - tags
-       
-debbuild:ubuntu:20.04:
-    stage: package
-    image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu20-builder:latest
-    needs: [
-        "build:ubuntu:20.04",
-        "lint:ubuntu:20.04",
-        "test:ubuntu:20.04",
-        "test:cpp:ubuntu:20.04"
-    ]
-    script:
-        - apt install -y python3-stdeb fakeroot python-all dh-python
-        - python3 setup.py --command-packages=stdeb.command bdist_deb
-        # C++ library packaging (requires installing Python RPMs)
-        - apt install -y ./deb_dist/*.deb
-        - cmake -B release
-        - cd release
-        - cpack -G DEB
-        - mv *.deb ../deb_dist
-    artifacts:
-        paths:
-            - deb_dist/*.deb
-    only:
-        - tags
+#rpmbuild:centos:7:
+#    stage: package
+#    image: $CI_REGISTRY/geon/vita49/vrtgen/centos-builder:latest
+#    needs: [
+#        "build:centos:7",
+#        "lint:centos:7",
+#        "test:centos:7",
+#        "test:cpp:centos:7"
+#    ]
+#    script:
+#        - yum install -y rpm-build
+#        - python3.7 setup.py bdist_rpm --requires="python3-PyYAML python3-jinja2"
+#        # C++ library packaging (requires installing Python RPMs)
+#        - yum install -y dist/vrtgen-*.noarch.rpm
+#        - cmake3 -B release
+#        - cd release
+#        - cpack3 -G RPM
+#        - mv *.rpm ../dist
+#    artifacts:
+#        paths:
+#            - dist/*.rpm
+#    only:
+#        - tags#
+#rpmbuild:rockylinux:8:
+#    stage: package
+#    image: $CI_REGISTRY/geon/vita49/vrtgen/rocky-builder:latest
+#    needs: [
+#        "build:rockylinux:8",
+#        "lint:rockylinux:8",
+#        "test:rockylinux:8",
+#        "test:cpp:rockylinux:8"
+#    ]
+#    script:
+#        - yum install -y rpm-build
+#        - python3 setup.py bdist_rpm --requires="python3-pyyaml python3-jinja2"
+#        # C++ library packaging (requires installing Python RPMs)
+#        - yum install -y dist/vrtgen-*.noarch.rpm
+#        - cmake -B release
+#        - cd release
+#        - cpack -G RPM
+#        - mv *.rpm ../dist
+#    artifacts:
+#        paths:
+#            - dist/*.rpm
+#    only:
+#        - tags#
+#debbuild:ubuntu:18.04:
+#    stage: package
+#    image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu18-builder:latest
+#    needs: [
+#        "build:ubuntu:18.04",
+#        "lint:ubuntu:18.04",
+#        "test:ubuntu:18.04",
+#        "test:cpp:ubuntu:18.04"
+#    ]
+#    script:
+#        - apt install -y python3-stdeb fakeroot python-all dh-python
+#        - python3 setup.py --command-packages=stdeb.command bdist_deb
+#        # C++ library packaging (requires installing Python RPMs)
+#        - apt install -y ./deb_dist/*.deb
+#        - cmake -B release
+#        - cd release
+#        - cpack -G DEB
+#        - mv *.deb ../deb_dist
+#    artifacts:
+#        paths:
+#            - deb_dist/*.deb
+#    only:
+#        - tags
+#       
+#debbuild:ubuntu:20.04:
+#    stage: package
+#    image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu20-builder:latest
+#    needs: [
+#        "build:ubuntu:20.04",
+#        "lint:ubuntu:20.04",
+#        "test:ubuntu:20.04",
+#        "test:cpp:ubuntu:20.04"
+#    ]
+#    script:
+#        - apt install -y python3-stdeb fakeroot python-all dh-python
+#        - python3 setup.py --command-packages=stdeb.command bdist_deb
+#        # C++ library packaging (requires installing Python RPMs)
+#        - apt install -y ./deb_dist/*.deb
+#        - cmake -B release
+#        - cd release
+#        - cpack -G DEB
+#        - mv *.deb ../deb_dist
+#    artifacts:
+#        paths:
+#            - deb_dist/*.deb
+#    only:
+#        - tags#
