@@ -4,7 +4,8 @@ variables:
 stages:
     - build
     - test
-    #- package
+    - package
+    - deploy
 
 # Build Stage Jobs
 build:centos:7:
@@ -15,8 +16,8 @@ build:centos:7:
     before_script:
       - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     script:
-      - docker build --pull --file docker/centos.Dockerfile -t $CI_REGISTRY/geon/vita49/vrtgen/centos-builder:latest .
-      - docker push $CI_REGISTRY/geon/vita49/vrtgen/centos-builder:latest
+      - docker build --pull --file docker/centos.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/centos-builder:latest .
+      - docker push $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/centos-builder:latest
 
 build:rockylinux:8:
     image: docker:19.03.8
@@ -26,8 +27,8 @@ build:rockylinux:8:
     before_script:
       - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     script:
-      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file docker/rockylinux.Dockerfile -t $CI_REGISTRY/geon/vita49/vrtgen/rocky-builder:latest .
-      - docker push $CI_REGISTRY/geon/vita49/vrtgen/rocky-builder:latest
+      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file docker/rockylinux.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder:latest .
+      - docker push $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder:latest
 
 build:ubuntu:18.04:
     image: docker:19.03.8
@@ -37,8 +38,8 @@ build:ubuntu:18.04:
     before_script:
       - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     script:
-      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file docker/ubuntu18.Dockerfile -t $CI_REGISTRY/geon/vita49/vrtgen/ubuntu18-builder:latest .
-      - docker push $CI_REGISTRY/geon/vita49/vrtgen/ubuntu18-builder:latest
+      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file docker/ubuntu18.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu18-builder:latest .
+      - docker push $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu18-builder:latest
 
 build:ubuntu:20.04:
     image: docker:19.03.8
@@ -48,14 +49,16 @@ build:ubuntu:20.04:
     before_script:
       - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     script:
-      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file docker/ubuntu20.Dockerfile -t $CI_REGISTRY/geon/vita49/vrtgen/ubuntu20-builder:latest .
-      - docker push $CI_REGISTRY/geon/vita49/vrtgen/ubuntu20-builder:latest
+      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file docker/ubuntu20.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu20-builder:latest .
+      - docker push $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu20-builder:latest
 
 # Centos 7 Testing
 lint:centos:7:
-    image: $CI_REGISTRY/geon/vita49/vrtgen/centos-builder:latest
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/centos-builder:latest
     stage: test
     needs: ["build:centos:7"]
+    tags:
+        - Docker
     script:
         # Enable updated packages
         # Note: scl enable failing in ci, manually modifying $PATH
@@ -67,9 +70,11 @@ lint:centos:7:
         - pylint -f colorized --exit-zero src/
 
 test:centos:7:
-    image: $CI_REGISTRY/geon/vita49/vrtgen/centos-builder:latest
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/centos-builder:latest
     stage: test
     needs: ["build:centos:7"]
+    tags:
+        - Docker
     script:
         - pytest --color=yes --junit-xml=vrtgen-pytests.xml
     artifacts:
@@ -79,9 +84,11 @@ test:centos:7:
             junit: vrtgen-pytests.xml
 
 test:cpp:centos:7:
-    image: $CI_REGISTRY/geon/vita49/vrtgen/centos-builder:latest
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/centos-builder:latest
     stage: test
     needs: ["build:centos:7"]
+    tags:
+        - Docker
     variables:
         # Don't need to clone the repo because we're using the Docker image's copy
         GIT_STRATEGY: none
@@ -96,9 +103,11 @@ test:cpp:centos:7:
 
 # Centos 8 Testing
 lint:rockylinux:8:
-    image: $CI_REGISTRY/geon/vita49/vrtgen/rocky-builder:latest
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder:latest
     stage: test
     needs: ["build:rockylinux:8"]
+    tags:
+        - Docker
     script:
         # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
         # Unfortunately, even if the command completely fails (e.g., invalid
@@ -106,9 +115,11 @@ lint:rockylinux:8:
         - pylint -f colorized --exit-zero src/
 
 test:rockylinux:8:
-    image: $CI_REGISTRY/geon/vita49/vrtgen/rocky-builder:latest
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder:latest
     stage: test
     needs: ["build:rockylinux:8"]
+    tags:
+        - Docker
     script:
         - pytest --color=yes --junit-xml=vrtgen-pytests.xml
     artifacts:
@@ -118,9 +129,11 @@ test:rockylinux:8:
             junit: vrtgen-pytests.xml
 
 test:cpp:rockylinux:8:
-    image: $CI_REGISTRY/geon/vita49/vrtgen/rocky-builder:latest
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder:latest
     stage: test
     needs: ["build:rockylinux:8"]
+    tags:
+        - Docker
     variables:
         # Don't need to clone the repo because we're using the Docker image's copy
         GIT_STRATEGY: none
@@ -135,9 +148,11 @@ test:cpp:rockylinux:8:
 
 # Ubuntu 18.04 Testing
 lint:ubuntu:18.04:
-    image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu18-builder:latest
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu18-builder:latest
     stage: test
     needs: ["build:ubuntu:18.04"]
+    tags:
+        - Docker
     script:
         # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
         # Unfortunately, even if the command completely fails (e.g., invalid
@@ -145,9 +160,11 @@ lint:ubuntu:18.04:
         - pylint -f colorized --exit-zero src/
 
 test:ubuntu:18.04:
-    image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu18-builder:latest
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu18-builder:latest
     stage: test
     needs: ["build:ubuntu:18.04"]
+    tags:
+        - Docker
     script:
         - pytest --color=yes --junit-xml=vrtgen-pytests.xml
     artifacts:
@@ -157,9 +174,11 @@ test:ubuntu:18.04:
             junit: vrtgen-pytests.xml
 
 test:cpp:ubuntu:18.04:
-    image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu18-builder:latest
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu18-builder:latest
     stage: test
     needs: ["build:ubuntu:18.04"]
+    tags:
+        - Docker
     variables:
         # Don't need to clone the repo because we're using the Docker image's copy
         GIT_STRATEGY: none
@@ -174,9 +193,11 @@ test:cpp:ubuntu:18.04:
 
 # Ubuntu 20.04 Testing
 lint:ubuntu:20.04:
-    image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu20-builder:latest
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu20-builder:latest
     stage: test
     needs: ["build:ubuntu:20.04"]
+    tags:
+        - Docker
     script:
         # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
         # Unfortunately, even if the command completely fails (e.g., invalid
@@ -184,9 +205,11 @@ lint:ubuntu:20.04:
         - pylint -f colorized --exit-zero src/
 
 test:ubuntu:20.04:
-    image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu20-builder:latest
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu20-builder:latest
     stage: test
     needs: ["build:ubuntu:20.04"]
+    tags:
+        - Docker
     script:
         - pytest --color=yes --junit-xml=vrtgen-pytests.xml
     artifacts:
@@ -196,9 +219,11 @@ test:ubuntu:20.04:
             junit: vrtgen-pytests.xml
 
 test:cpp:ubuntu:20.04:
-    image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu20-builder:latest
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu20-builder:latest
     stage: test
     needs: ["build:ubuntu:20.04"]
+    tags:
+        - Docker
     variables:
         # Don't need to clone the repo because we're using the Docker image's copy
         GIT_STRATEGY: none
@@ -212,32 +237,35 @@ test:cpp:ubuntu:20.04:
             junit: build/*-results.xml
 
 # Build release RPMs/debs
-#rpmbuild:centos:7:
-#    stage: package
-#    image: $CI_REGISTRY/geon/vita49/vrtgen/centos-builder:latest
-#    needs: [
-#        "build:centos:7",
-#        "lint:centos:7",
-#        "test:centos:7",
-#        "test:cpp:centos:7"
-#    ]
-#    script:
-#        - yum install -y rpm-build
-#        - python3.7 setup.py bdist_rpm --requires="python3-PyYAML python3-jinja2"
-#        # C++ library packaging (requires installing Python RPMs)
-#        - yum install -y dist/vrtgen-*.noarch.rpm
-#        - cmake3 -B release
-#        - cd release
-#        - cpack3 -G RPM
-#        - mv *.rpm ../dist
-#    artifacts:
-#        paths:
-#            - dist/*.rpm
-#    only:
-#        - tags#
+rpmbuild:centos:7:
+    stage: package
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/centos-builder:latest
+    needs: [
+        "build:centos:7",
+        "lint:centos:7",
+        "test:centos:7",
+        "test:cpp:centos:7"
+    ]
+    tags:
+        - Docker
+    script:
+        - yum install -y rpm-build doxygen
+        - python setup.py bdist_rpm --no-autoreq --requires="rh-python38-python rh-python38-python-pyyaml rh-python38-python-jinja2"
+        # C++ library packaging (requires installing Python RPMs)
+        - yum install -y dist/vrtgen-*.noarch.rpm
+        - cmake3 -B release
+        - cd release
+        - cpack3 -G RPM
+        - mv *.rpm ../dist
+    artifacts:
+        paths:
+            - dist/*.rpm
+    only:
+        - tags
+
 #rpmbuild:rockylinux:8:
 #    stage: package
-#    image: $CI_REGISTRY/geon/vita49/vrtgen/rocky-builder:latest
+#    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder:latest
 #    needs: [
 #        "build:rockylinux:8",
 #        "lint:rockylinux:8",
@@ -260,7 +288,7 @@ test:cpp:ubuntu:20.04:
 #        - tags#
 #debbuild:ubuntu:18.04:
 #    stage: package
-#    image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu18-builder:latest
+#    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu18-builder:latest
 #    needs: [
 #        "build:ubuntu:18.04",
 #        "lint:ubuntu:18.04",
@@ -284,7 +312,7 @@ test:cpp:ubuntu:20.04:
 #       
 #debbuild:ubuntu:20.04:
 #    stage: package
-#    image: $CI_REGISTRY/geon/vita49/vrtgen/ubuntu20-builder:latest
+#    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu20-builder:latest
 #    needs: [
 #        "build:ubuntu:20.04",
 #        "lint:ubuntu:20.04",
@@ -305,3 +333,23 @@ test:cpp:ubuntu:20.04:
 #            - deb_dist/*.deb
 #    only:
 #        - tags#
+
+s3:centos:7:
+    variables:
+        arch: x86_64
+        dist: el7
+    stage: deploy
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/centos-builder:latest
+    needs: ["rpmbuild:centos:7"]
+    tags:
+        - Docker
+    script:
+        - yum install -y createrepo s3cmd
+        - mkdir $arch
+        - for file in `find dist -name *.rpm`; do
+            cp $file $arch;
+          done
+        - createrepo $arch
+        - s3cmd put -F -v -r --no-check-certificate $arch s3://${s3_bucket}/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/yum/$CI_COMMIT_REF_SLUG/$dist/
+    rules:
+        - if: $s3_bucket && $CI_COMMIT_TAG
