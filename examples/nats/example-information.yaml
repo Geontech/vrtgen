@@ -1,0 +1,11 @@
+include:
+  - '../packets/example-context.yaml'
+  - '../packets/signal-data.yaml'
+  - '../packets/example-control.yaml'
+
+ExampleInfo: !InformationClass
+  packet_classes:
+      - ExampleContext
+      - SignalData
+      - ExampleControl
+      - ExampleControlAck

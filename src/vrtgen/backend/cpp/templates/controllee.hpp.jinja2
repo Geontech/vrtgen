@@ -29,9 +29,9 @@ virtual void send_{{ packet.name | to_snake }}({{ packet.name }}& value)
 {% if packet.cam.req_v.enabled %}
 auto validate_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> {{ packet.name }}AckVX override
 {
+    auto ack = {{ packet.name }}AckVX{};
     // AUTO-GENERATED FUNCTION STUB
     // IMPLEMENT PACKET HANDLING FUNCTIONALITY HERE
-    auto ack = {{ packet.name }}AckVX{};
     return ack;
 }
 
@@ -40,19 +40,19 @@ auto validate_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> {{ pack
 {%   if packet.cam.req_s.enabled %}
 auto execute_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> std::tuple<{{ packet.name }}AckVX, {{ packet.name }}AckS> override
 {
-    // AUTO-GENERATED FUNCTION STUB
-    // IMPLEMENT PACKET HANDLING FUNCTIONALITY HERE
     auto ack_x = {{ packet.name }}AckVX{};
     auto ack_s = {{ packet.name }}AckS{};
+    // AUTO-GENERATED FUNCTION STUB
+    // IMPLEMENT PACKET HANDLING FUNCTIONALITY HERE
     return { ack_x, ack_s };
 }
 
 {%   else %}
 auto execute_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> {{ packet.name }}AckVX override
 {
+    auto ack = {{ packet.name }}AckVX{};
     // AUTO-GENERATED FUNCTION STUB
     // IMPLEMENT PACKET HANDLING FUNCTIONALITY HERE
-    auto ack = {{ packet.name }}AckVX{};
     return ack;
 }
 
@@ -61,9 +61,9 @@ auto execute_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> {{ packe
 {% if packet.cam.req_s.enabled and not packet.cam.req_x.enabled %}
 auto execute_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> {{ packet.name}}AckS override
 {
+    auto ack = {{ packet.name }}AckS{};
     // AUTO-GENERATED FUNCTION STUB
     // IMPLEMENT PACKET HANDLING FUNCTIONALITY HERE
-    auto ack = {{ packet.name }}AckS{};
     return ack;
 }
 
@@ -92,6 +92,7 @@ public:
 {%   endif %}
 {% endfor %}
 {% if ns.has_control %}
+{%   if cmd_socket != 'nats' %}
     /**
      * @brief Endpoint constructor
      * @param endpoint Desired endpoint to bind command socket to
@@ -100,6 +101,17 @@ public:
         {{ base_class_name }}(endpoint)
     {
     }
+{%   else %}
+    /**
+     * @brief Endpoint constructor
+     * @param nats_url NATS server url to connect to
+     * @param subject NATS subject to be used for command messages
+     */
+    {{ class_name }}(const std::string& nats_url, const std::string& subject) :
+        {{ base_class_name }}(nats_url, subject)
+    {
+    }
+{%   endif %}
 {% else %}
     /**
      * @brief Default constructor
@@ -108,7 +120,7 @@ public:
 {% endif %}
 
     /**
-     * @brief Deconstructor
+     * @brief Destructor
      */
     ~{{ class_name }}() override = default;
 
