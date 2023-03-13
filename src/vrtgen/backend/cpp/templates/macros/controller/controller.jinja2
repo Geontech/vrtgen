@@ -91,13 +91,13 @@ auto send_{{ packet.name | to_snake }}({{ packet.name }}& packet)
     auto& [{{ ns.ack_tup_str }}] = acks;
 {% endif %}
 {% for req_t in req_list %}
-    if (packet.{{ req_t }}()) {
+    if (packet.cam().{{ req_t }}()) {
 {%   if req_t == 'req_v' %}
         ack_v = {{ packet.name }}AckVX{};
 {%   elif req_t == 'req_x' %}
         ack_x = {{ packet.name }}AckVX{};
 {%   elif req_t == 'req_s' %}
-        ack_s = {{ packet.name }}AckVX{};
+        ack_s = {{ packet.name }}AckS{};
 {%   endif %}
     }
 {% endfor %}
