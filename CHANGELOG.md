@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2023-03-13
+### Added
+- New `--cmd-socket` option for `vrtpktgen`: 'nats'
+  - Enables the use of NATS request-reply for command socket interactions between controller and controllee
+- NATS header files to interact with the [nats.c](https://github.com/nats-io/nats.c) library
+  - Adds a dependency on this library as well as the external libraries it depends on
+- Template code to support new `vrtgen::nats::client` type as the transport
+- Example application using NATS
+### Fixed
+- Destructor bug in packet classes
+- Packaging pipeline for centos 7
 ## [0.6.3] - 2023-03-08
 ### Changed
 - Version => 0.6.3

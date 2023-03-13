@@ -1,4 +1,4 @@
-/*#
+/*
  * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
@@ -15,21 +15,42 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
-#*/
-cmake_minimum_required(VERSION 3.15)
-project({{ project_name }} VERSION {{ project_version }} LANGUAGES CXX)
-include(GNUInstallDirs)
+ */
 
-# Set the C++ version required
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#include <iostream>
+#include <atomic>
+#include <csignal>
 
-# Ensure vrtgen is installed
-find_package(vrtgen REQUIRED)
-{% if cmd_socket == 'nats' %}
+#include "Controllee.hpp"
 
-# Find nats.c
-find_package(cnats REQUIRED)
-{% endif %}
+using namespace example::nats::controllee;
 
-add_subdirectory(src)
+namespace
+{
+    std::atomic_bool running{ true };
+}
+ 
+void signal_handler(int signal)
+{
+    running = false;
+}
+
+int main()
+{
+    std::signal(SIGINT, signal_handler);
+
+    // Create a controllee instance
+    Controllee controllee{ NATS_DEFAULT_URL, "example_controllee" };
+    std::cout << "Successfully connected controllee to: " << NATS_DEFAULT_URL << std::endl;
+
+    // Listen
+    controllee.vrt_listen();
+
+    // Wait for user to stop the program
+    while (running) {
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(1s);
+    }
+
+    return 0;
+}

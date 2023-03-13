@@ -195,9 +195,9 @@ public:
     {{ packet_.unpack_constructor(packet.name, type_helper) | indent(4) | trim }}
 
     /**
-     * @brief Default deconstructor
+     * @brief Destructor
      */
-    virtual ~{{ packet.name }}() = default;
+    virtual ~{{ packet.name }}();
 
     {{ packet_.base_public_function_declarations(packet, type_helper) | indent(4) | trim }}
 
@@ -226,9 +226,9 @@ public:
     {{ packet_.unpack_constructor(packet_name, type_helper) | indent(4) | trim }}
 
     /**
-     * @brief Default deconstructor
+     * @brief Destructor
      */
-    ~{{ packet_name }}() override = default;
+    ~{{ packet_name }}() override;
 
     {{ ackvx_public_function_declarations(packet, type_helper) | indent(4) | trim }}
 
@@ -253,9 +253,9 @@ public:
     {{ packet_.unpack_constructor(packet_name, type_helper) | indent(4) | trim }}
 
     /**
-     * @brief Default deconstructor
+     * @brief Destructor
      */
-    ~{{ packet_name }}() override = default;
+    ~{{ packet_name }}() override;
 
     {{ acks_public_function_declarations(packet, type_helper) | indent(4) | trim }}
 

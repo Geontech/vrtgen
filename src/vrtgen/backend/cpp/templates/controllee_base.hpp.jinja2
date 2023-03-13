@@ -152,7 +152,12 @@ if ({{ packet.name }}::helper::match(m_message.data(), recv_length)) {
 #include <optional>
 #include <tuple>
 #include <vrtgen/vrtgen.hpp>
+{% if cmd_socket == 'nats' %}
+#include <chrono>
+#include <vrtgen/nats.hpp>
+{% else %}
 #include <vrtgen/socket.hpp>
+{% endif %}
 
 {% for packet in packets if packet.is_command %}
 #include <{{ packet.name | to_snake }}.hpp>
@@ -178,7 +183,7 @@ class {{ class_name }}
 {%     set ns.has_control = true %}
 {%   endif %}
 {% endfor %}
-{% if ns.has_control %}
+{% if ns.has_control and cmd_socket != 'nats' %}
     using cmd_socket_type = vrtgen::socket::{{ cmd_socket }}::v4;
     using message_buffer = std::array<uint8_t, 65536>;
 {% endif %}
@@ -186,19 +191,17 @@ class {{ class_name }}
     using data_ctxt_socket_type = vrtgen::socket::udp::v4;
     using data_ctxt_endpoint_type = typename data_ctxt_socket_type::endpoint_type;
 {% endif %}
-{% if ns.has_control %}
+{% if ns.has_control and cmd_socket != 'nats' %}
 protected:
     using cmd_endpoint_type = typename cmd_socket_type::endpoint_type;
 {% endif %}
 
 public:
-    /**
-     * @brief Deleted default constructor
-     */
-    {{ class_name }}() = default;
-
+{% if ns.has_control %}
+{%   if cmd_socket != 'nats' %}
     /**
      * @brief Endpoint constructor
+     * @param endpoint Desired endpoint to bind command socket to
      */
     explicit {{ class_name }}(const cmd_endpoint_type& endpoint)
     {
@@ -206,9 +209,31 @@ public:
             throw std::runtime_error("Failed to bind socket during Controllee construction");
         }
     }
+{%   else %}
+    /**
+     * @brief Endpoint constructor
+     * @param nats_url NATS server url to connect to
+     * @param subject NATS subject to be used for command messages
+     */
+    {{ class_name }}(const std::string& nats_url, const std::string& subject)
+    {
+        if (auto res = m_client.connect(nats_url); res != NATS_OK) {
+            throw std::runtime_error("Failed to connect to NATS url during Controllee construction");
+        }
+        if (auto res = m_client.subscribe(subject); res != NATS_OK) {
+            throw std::runtime_error("Failed to subscribe to NATS subject during Controllee construction");
+        }
+    }
+{%   endif %}
+{% else %}
+    /**
+     * @brief Default constructor
+     */
+    {{ class_name }}() = default;
+{% endif %}
 
     /**
-     * @brief Deconstructor
+     * @brief Destructor
      */
     virtual ~{{ class_name }}()
     {
@@ -274,10 +299,25 @@ public:
 
 {% for packet in packets if packet.is_control %}
 {%   if loop.first %}
-    cmd_socket_type& cmd_socket() noexcept
+{%     if cmd_socket != 'nats' %}
+    /**
+     * @brief Return a reference to the command socket for sending control packets
+     * @return Reference to the command socket
+     */
+    auto cmd_socket() -> cmd_socket_type&
     {
         return m_cmd_socket;
     }
+{%     else %}
+    /**
+     * @brief Return a reference to the NATS client for sending control packets
+     * @return Reference to the NATS client
+     */
+    auto nats_client() -> vrtgen::nats::client&
+    {
+        return m_client;
+    }
+{%     endif %}
 
     auto vrt_listen() -> void
     {
@@ -308,7 +348,11 @@ public:
 protected:
 {% for packet in packets if (packet.is_control and packet.controller_id.enabled) %}
 {%   if loop.first %}
+{%     if cmd_socket != 'nats' %}
     cmd_socket_type m_cmd_socket;
+{%     else %}
+    vrtgen::nats::client m_client;
+{%     endif %}
 {%   endif %}
 {% endfor %}
 {% for packet in packets if (packet.is_data or packet.is_context) %}
@@ -329,20 +373,33 @@ private:
     auto m_listener_func() -> void
     {
         while (m_listening) {
+{%     if cmd_socket == 'nats' %}
+            using namespace std::chrono_literals;
+            auto message = m_client.next_msg(1s);
+            if (message == nullptr) {
+                continue;
+            }
+{%     else %}
             auto message = message_buffer{};
-{%     if cmd_socket == 'tcp' %}
+{%       if cmd_socket == 'tcp' %}
             auto recv_length = m_cmd_socket.read_some(message.data(), message.size());
-{%     elif cmd_socket == 'udp' %}
+{%       elif cmd_socket == 'udp' %}
             cmd_endpoint_type endpoint;
             auto recv_length = m_cmd_socket.receive_from(message.data(), m_message.size(), endpoint);
-{%     endif %}
+{%       endif %}
             if (recv_length <= 0) {
                 continue;
             }
+{%     endif %}
 
 {%   endif %}
+{%   if cmd_socket == 'nats' %}
+            if (auto err = {{ packet.name }}::match(message->data()); !err.has_value()) {
+                auto packet = {{ packet.name }}{ message->data() };
+{%   else %}
             if (auto err = {{ packet.name }}::match(message); !err.has_value()) {
                 auto packet = {{ packet.name }}{ message };
+{%   endif %}
 {%   if packet.cam.req_v.enabled %}
                 if (packet.req_v()) {
                     auto ack_v = this->validate_{{ packet.name | to_snake }}(packet);
@@ -356,7 +413,13 @@ private:
                     ack_v.controller_id(packet.controller_id());
 {%     endif %}
                     auto packed_data = ack_v.data();
+{%     if cmd_socket == 'nats' %}
+                    if (auto reply = message->reply_subject(); !reply.empty()) {
+                        m_client.publish(reply, packed_data);
+                    }
+{%     else %}
                     m_cmd_socket.write_some(packed_data.data(), packed_data.size());
+{%     endif %}
                 }
 {%   endif %}
 {%   if packet.cam.req_x.enabled %}
@@ -376,7 +439,13 @@ private:
                     ack_x.controller_id(packet.controller_id());
 {%     endif %}
                     auto packed_data = ack_x.data();
+{%     if cmd_socket == 'nats' %}
+                    if (auto reply = message->reply_subject(); !reply.empty()) {
+                        m_client.publish(reply, packed_data);
+                    }
+{%     else %}
                     m_cmd_socket.write_some(packed_data.data(), packed_data.size());
+{%     endif %}
 {%     if packet.cam.req_s.enabled %}
                     if (packet.req_s()) {
                         ack_s.stream_id(packet.stream_id());
@@ -388,7 +457,13 @@ private:
                         ack_s.controller_id(packet.controller_id());
 {%     endif %}
                         auto packed_data = ack_s.data();
-                        m_cmd_socket.write_some(packed_data.data(), packed_data.size());        
+{%     if cmd_socket == 'nats' %}
+                        if (auto reply = message->reply_subject(); !reply.empty()) {
+                            m_client.publish(reply, packed_data);
+                        }
+{%     else %}
+                        m_cmd_socket.write_some(packed_data.data(), packed_data.size());
+{%     endif %}
                     }
 {%     endif %}
                 }
@@ -405,7 +480,13 @@ private:
                     ack_s.controller_id(packet.controller_id());
 {%     endif %}
                     auto packed_data = ack_s.data();
+{%     if cmd_socket == 'nats' %}
+                    if (auto reply = message->reply_subject(); !reply.empty()) {
+                        m_client.publish(reply, packed_data);
+                    }
+{%     else %}
                     m_cmd_socket.write_some(packed_data.data(), packed_data.size());
+{%     endif %}
                 }
 {%   endif %}
             }

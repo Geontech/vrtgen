@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(vrtgen-cpp VERSION 0.6.1 LANGUAGES CXX)
+project(vrtgen-cpp VERSION 0.7.0 LANGUAGES CXX)
 include(GNUInstallDirs)
 
 # Set the C++ version required
@@ -155,4 +155,5 @@ set(CPACK_PACKAGE_NAME libvrtgen)
 set(CPACK_PACKAGE_VENDOR "Geon Technologies, LLC")
 set(CPACK_RPM_PACKAGE_RELEASE_DIST ON)
 set(CPACK_RPM_FILE_NAME "RPM-DEFAULT")
+set(CPACK_RPM_PACKAGE_REQUIRES "vrtgen >= 0.6.0")
 include(CPack)

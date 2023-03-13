@@ -37,7 +37,7 @@ auto {{ packet.controller_id.name }}({{ type_helper.value_type(packet.controller
 }
 {% endmacro %}
 
-{%- macro handle_control(packet, type_helper) %}
+{%- macro handle_control(packet, type_helper, cmd_socket) %}
 /**
  * @brief Send command packet {{ packet.name }}
  * @param packet Packet to be sent
@@ -101,7 +101,11 @@ auto send_{{ packet.name | to_snake }}({{ packet.name }}& packet)
 {%   endif %}
     }
 {% endfor %}
+{% if cmd_socket == 'nats' %}
+    vrtgen::send_packet(m_client, m_controllee_subject, packet, {{ ns.ack_tup_str }});
+{% else %}
     vrtgen::send_packet(m_cmd_socket, packet, {{ ns.ack_tup_str }});
+{% endif %}
     return acks;
 }
 
@@ -135,7 +139,7 @@ void send_{{ packet.name | to_snake }}({{ packet.name }}& packet)
 
 {% endmacro %}
 
-{%- macro define_functions(packets, class_name, type_helper) %}
+{%- macro define_functions(packets, class_name, type_helper, cmd_socket) %}
 {% for packet in packets if (packet.is_control and packet.controller_id.enabled) %}
 {%   if loop.first %}
 {{ controller_id_functions(packet, type_helper) | trim }}
@@ -143,7 +147,7 @@ void send_{{ packet.name | to_snake }}({{ packet.name }}& packet)
 {%   endif %}
 {% endfor %}
 {% for packet in packets if packet.is_control %}
-{{ handle_control(packet, type_helper) | trim }}
+{{ handle_control(packet, type_helper, cmd_socket) | trim }}
 
 {% endfor %}
 {% for packet in packets if (packet.is_data or packet.is_context) %}
@@ -176,10 +180,15 @@ void disable_receive()
 {% endfor %}
 {% endmacro %}
 
-{%- macro members(packets, type_helper) %}
+{%- macro members(packets, type_helper, cmd_socket) %}
 {% for packet in packets if (packet.is_control and packet.controller_id.enabled) %}
 {%   if loop.first %}
+{%     if cmd_socket == 'nats' %}
+vrtgen::nats::client m_client;
+std::string m_controllee_subject;
+{%     else %}
 cmd_socket_type m_cmd_socket;
+{%     endif %}
 uint32_t m_message_id{ 1 };
 {%   endif %}
 {% endfor %}
@@ -202,6 +211,34 @@ std::function<void({{ packet.name }}&)> m_{{ packet.name | to_snake }}_listener;
 {%- macro socket_functions(packets, cmd_socket) %}
 {% for packet in packets if packet.is_control %}
 {%   if loop.first %}
+{%     if cmd_socket == 'nats' %}
+/**
+ * @brief Set the destination endpoint of the controllee to send control packets to
+ * @param subject Desired NATS controllee subjet
+ */
+auto controllee_endpoint(const std::string& subject) -> void
+{
+    m_controllee_subject = subject;
+}
+
+/**
+ * @brief Get the destination endpoint of the controllee to which control packets are sent
+ * @return The NATS controllee subject to which control packets are sent
+ */
+auto controllee_endpoint() const -> const std::string&
+{
+    return m_controllee_subject;
+}
+
+/**
+ * @brief Return a reference to the NATS client for sending control packets
+ * @return Reference to the NATS client
+ */
+auto nats_client() -> vrtgen::nats::client&
+{
+    return m_client;
+}
+{%     else %}
 /**
  * @brief Set the destination endpoint of the controllee to send control packets to
  * @param endpoint Desired controllee endpoint
@@ -234,6 +271,7 @@ auto cmd_socket() -> cmd_socket_type&
 {
     return m_cmd_socket;
 }
+{%     endif %}
 
 {%   endif %}
 {% endfor %}

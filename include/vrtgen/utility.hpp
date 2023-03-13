@@ -27,6 +27,7 @@
 #include <utility>
 #include <span>
 #include <vrtgen/socket.hpp>
+#include <vrtgen/nats.hpp>
 
 namespace vrtgen {
 
@@ -123,6 +124,29 @@ auto send_packet(SockT& socket, CtrlT& packet, AckT&... acks)
         ack = std::move(ack_t{ { message.data(), static_cast<std::size_t>(reply_length) } });
         reply_length -= ack->size();
         read_idx = ack->size();
+    };
+    (recv_ack(acks), ...);
+}
+
+template <class CtrlT, class ...AckT>
+auto send_packet(vrtgen::nats::client& client, const std::string& subject, CtrlT& packet, AckT&... acks)
+{
+    // Send packet
+    client.publish(subject, packet.data(), client.inbox());
+    // Receive acks on unique reply subject
+    const auto recv_ack = [&client](auto& ack)
+    {
+        if (!ack.has_value()) { return; }
+        using namespace std::chrono_literals;
+        using ack_t = typename std::remove_reference_t<decltype(ack)>::value_type;
+        if (auto msg = client.next_inbox_msg(2s)) {
+            if (auto match_err = ack_t::match(msg->data())) {
+                throw std::runtime_error("incorrect acknowledgement type: " + match_err.value());
+            }
+            ack = std::move(ack_t{ msg->data() });
+        } else {
+            throw std::runtime_error("timed out waiting for acknowledgement packet");
+        }
     };
     (recv_ack(acks), ...);
 }
