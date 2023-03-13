@@ -333,7 +333,7 @@ public:
 {%   endif %}
 {%   if packet.cam.req_x.enabled %}
 {%     if packet.cam.req_s.enabled %}
-    virtual auto execute_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> std::tuple<{{ packet.name }}AckVX {{ packet.name }}AckS> = 0;
+    virtual auto execute_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> std::tuple<{{ packet.name }}AckVX, {{ packet.name }}AckS> = 0;
 {%     else %}
     virtual auto execute_{{ packet.name | to_snake }}({{ packet.name }}& packet) -> {{ packet.name }}AckVX = 0;
 {%     endif %}
@@ -401,7 +401,7 @@ private:
                 auto packet = {{ packet.name }}{ message };
 {%   endif %}
 {%   if packet.cam.req_v.enabled %}
-                if (packet.req_v()) {
+                if (packet.cam().req_v()) {
                     auto ack_v = this->validate_{{ packet.name | to_snake }}(packet);
                     ack_v.ack_v(true);
                     ack_v.stream_id(packet.stream_id());
@@ -423,7 +423,7 @@ private:
                 }
 {%   endif %}
 {%   if packet.cam.req_x.enabled %}
-                if (packet.req_x()) {
+                if (packet.cam().req_x()) {
 {%     if packet.cam.req_s.enabled %}
                     auto [ack_x, ack_s] = this->execute_{{ packet.name | to_snake }}(packet);
 {%     else %}
@@ -447,7 +447,7 @@ private:
                     m_cmd_socket.write_some(packed_data.data(), packed_data.size());
 {%     endif %}
 {%     if packet.cam.req_s.enabled %}
-                    if (packet.req_s()) {
+                    if (packet.cam().req_s()) {
                         ack_s.stream_id(packet.stream_id());
                         ack_s.message_id(packet.message_id());
 {%     if packet.controllee_id.enabled %}
@@ -469,7 +469,7 @@ private:
                 }
 {%   endif %}
 {%   if packet.cam.req_s.enabled and not packet.cam.req_x.enabled %}
-                if (packet.req_s()) {
+                if (packet.cam().req_s()) {
                     auto ack_s = this->execute_{{ packet.name | to_snake }}(packet);
                     ack_s.stream_id(packet.stream_id());
                     ack_s.message_id(packet.message_id());

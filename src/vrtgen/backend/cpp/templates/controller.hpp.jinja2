@@ -20,7 +20,7 @@
 #pragma once 
 
 {% if cmd_socket == 'nats' %}
-#include <natscpp/client.hpp>
+#include <vrtgen/nats.hpp>
 {% else %}
 #include <vrtgen/socket.hpp>
 {% endif %}
