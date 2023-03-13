@@ -387,7 +387,7 @@ class CppGenerator(Generator):
         doc='socket type for V49.2 control [tcp]',
         dtype=str,
         defval='tcp',
-        choices=['tcp', 'udp']
+        choices=['tcp', 'udp', 'nats']
     )
 
     def get_loader(self):
@@ -407,7 +407,8 @@ class CppGenerator(Generator):
             'type_helper': self.type_helper,
             'namespace_': self.namespace_,
             'project_name': self.output_dir,
-            'project_version': '0.1.0'
+            'project_version': '0.1.0',
+            'cmd_socket': self.cmd_socket
         }
 
         self.include_dir = self.output_dir

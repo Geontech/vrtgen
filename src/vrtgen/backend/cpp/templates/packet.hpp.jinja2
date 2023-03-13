@@ -30,6 +30,11 @@ public:
 
     {{ packet_.unpack_constructor(packet.name, type_helper) | indent(4) | trim }}
 
+    /**
+     * @brief Destructor
+     */
+    ~{{ packet.name }}();
+
     {{ packet_.public_function_declarations(packet, type_helper) | indent(4) | trim }}
 
 private:

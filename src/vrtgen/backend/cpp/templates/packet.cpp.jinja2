@@ -61,6 +61,8 @@ auto {{ packet.name }}::sync() -> void
 
 {{ constructors.unpack_constructor(packet, type_helper) | trim }}
 
+{{ packet.name }}::~{{ packet.name }}() {}
+
 auto {{ packet.name }}::name() const -> std::string
 {
     return m_name;

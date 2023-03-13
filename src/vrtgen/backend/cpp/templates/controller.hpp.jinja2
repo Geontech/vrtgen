@@ -19,7 +19,11 @@
 {%- import "macros/controller/controller.jinja2" as controller %}
 #pragma once 
 
+{% if cmd_socket == 'nats' %}
+#include <natscpp/client.hpp>
+{% else %}
 #include <vrtgen/socket.hpp>
+{% endif %}
 {% for packet in packets %}
 #include <{{ packet.name | to_snake }}.hpp>
 {% endfor %}
@@ -45,8 +49,10 @@ class {{ controller_name }}
 {%   endif %}
 {% endfor %}
 {% if ns.has_control %}
+{%   if cmd_socket != 'nats' %}
     using cmd_socket_type = vrtgen::socket::{{ cmd_socket }}::v4;
     using cmd_endpoint_type = typename cmd_socket_type::endpoint_type;
+{%   endif %}
 {% endif %}
 {% if ns.has_datactxt %}
     using data_ctxt_socket_type = vrtgen::socket::udp::v4;
@@ -55,12 +61,20 @@ class {{ controller_name }}
 {% endif %}
 
 public:
-    /**
-     * @brief Default constructor
-     */
-    {{ controller_name }}() = default;
 {% if ns.has_control %}
-
+{%   if cmd_socket == 'nats' %}
+    /**
+     * @brief URL constructor
+     * @param nats_url NATS server url
+     */
+    explicit {{ controller_name }}(const std::string& nats_url)
+    {
+        if (auto res = m_client.connect(nats_url); res != NATS_OK) {
+            throw std::runtime_error("Failed to connect to NATS url during {{ controller_name }} construction");
+        }
+        m_client.new_inbox();
+    }
+{%   else %}
     /**
      * @brief Endpoint constructor
      * @param endpoint Desired endpoint to use for sending command packets
@@ -71,14 +85,20 @@ public:
             throw std::runtime_error("Failed to bind socket during {{ controller_name }} construction");
         }
     }
+{%   endif %}
+{% else %}
+    /**
+     * @brief Default constructor
+     */
+    {{ controller_name }}() = default;
 {% endif %}
 
     {{ controller.socket_functions(packets, cmd_socket) | indent(4) | trim }}
 
-    {{ controller.define_functions(packets, controller_name, type_helper) | indent(4) | trim }}
+    {{ controller.define_functions(packets, controller_name, type_helper, cmd_socket) | indent(4) | trim }}
 
 private:
-    {{ controller.members(packets, type_helper) | indent(4) | trim }}
+    {{ controller.members(packets, type_helper, cmd_socket) | indent(4) | trim }}
 
 {% for packet in packets if packet.is_control %}
 {%   if loop.first %}

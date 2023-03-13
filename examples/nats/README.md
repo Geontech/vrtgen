@@ -1,9 +1,11 @@
-# Example Application
+# Example NATS Application
 
 This example is meant to be a simple demonstration of various packet classes
 being aggregated together to form a transactional interface for VITA 49.2. The
 following instructions assume that `vrtpktgen` utility and the `vrtgen` header
-library has been installed.
+library has been installed. It is very similar to the basic [application](../app)
+example, however this example uses the NATS command socket option
+as opposed to the default TCP socket.
 
 ## Generating VITA 49.2 Code
 
@@ -54,7 +56,8 @@ target_include_directories(example_project PUBLIC
 )
 
 add_executable(example_controllee example_controllee.cpp)
-target_link_libraries(example_controllee PUBLIC packetlib pthread)
+target_link_directories(example_controllee PUBLIC /usr/lib64/openssl11)
+target_link_libraries(example_controllee PUBLIC packetlib pthread nats_static ssl crypto uuid)
 target_include_directories(example_controllee PUBLIC
     ${vrtgen_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/include
@@ -62,7 +65,8 @@ target_include_directories(example_controllee PUBLIC
 )
 
 add_executable(example_controller example_controller.cpp)
-target_link_libraries(example_controller PUBLIC packetlib pthread)
+target_link_directories(example_controller PUBLIC /usr/lib64/openssl11)
+target_link_libraries(example_controller PUBLIC packetlib pthread nats_static ssl crypto uuid)
 target_include_directories(example_controller PUBLIC
     ${vrtgen_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/include
@@ -111,7 +115,10 @@ cmake --build build
 ## Run
 
 In a terminal window first launch the Controllee interface to act as the mock
-application waiting for VRT commands.
+application waiting for VRT commands. Both of the example programs are
+expecting to connect to NATS_DEFAULT_URL (`nats://localhost:4222`). If you are
+running a NATS server at a different location, please update both
+`example_controller.cpp` and `example_controllee.cpp` accordingly and rebuild.
 
 ```
 ./build/src/bin/example_controllee

@@ -1,4 +1,4 @@
-/*#
+/*
  * Copyright (C) 2023 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
@@ -15,21 +15,8 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses/.
-#*/
-cmake_minimum_required(VERSION 3.15)
-project({{ project_name }} VERSION {{ project_version }} LANGUAGES CXX)
-include(GNUInstallDirs)
+ */
 
-# Set the C++ version required
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#pragma once
 
-# Ensure vrtgen is installed
-find_package(vrtgen REQUIRED)
-{% if cmd_socket == 'nats' %}
-
-# Find nats.c
-find_package(cnats REQUIRED)
-{% endif %}
-
-add_subdirectory(src)
+#include "nats/client.hpp"

@@ -7,6 +7,7 @@ __pycache__/
 .pytest_cache/
 examples/*/*pp
 examples/app/example_project
+examples/nats/example_project
 **/venv/**
 .coverage
 **/docs/html/**
