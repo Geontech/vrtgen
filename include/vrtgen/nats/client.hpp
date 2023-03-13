@@ -92,7 +92,7 @@ public:
      * @brief Return the NATS server url
      * @return The URL of the NATS server
      */
-    auto url(const std::string& url) -> std::string
+    auto url() const -> std::string
     {
         std::string retval;
         std::array<char, 256> url_str;
