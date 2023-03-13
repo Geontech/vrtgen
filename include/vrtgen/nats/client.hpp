@@ -197,6 +197,7 @@ public:
         if (auto res = natsSubscription_GetSubject(m_sub); res != nullptr) {
             return { res };
         }
+        return {};
     }
 
     /**
@@ -232,6 +233,7 @@ public:
         if (auto res = natsSubscription_GetSubject(m_reply_sub); res != nullptr) {
             return { res };
         }
+        return {};
     }
 
     /**
