@@ -20,3 +20,4 @@
 #pragma once
 
 #include "nats/client.hpp"
+#include "nats/utility.hpp"
