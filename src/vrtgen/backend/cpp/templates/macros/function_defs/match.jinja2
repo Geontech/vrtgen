@@ -63,7 +63,7 @@ auto {{ packet.name }}::match(std::span<const uint8_t> data) -> std::optional<st
         return { msg.str() };
     }
 {%     endfor %}
-    curr_pos += {{ packet.class_id.name }}.size()
+    curr_pos += {{ packet.class_id.name }}.size();
 {% endif %}
 {% if packet.timestamp.enabled and packet.cam.enabled %}
 {%   if packet.timestamp.integer.enabled %}
