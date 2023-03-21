@@ -60,12 +60,14 @@ inline bool in_range(const T value, const std::pair<T,T>& min_max)
 
 template <class SockT, class CtrlT, class ...AckT>
 requires (std::same_as<SockT, socket::udp::v4>)
-void send_packet(SockT& socket, const CtrlT& packet, AckT&... acks)
+void send_packet(SockT& socket, CtrlT& packet, AckT&... acks)
 {
-    auto packed_data = CtrlT::helper::pack(packet);
+    auto packed_data = packet.data();
     socket.send_to(packed_data.data(), packed_data.size(), socket.dst());
     const auto recv_ack = [&socket](auto& ack)
     {
+        if (!ack.has_value()) { return; }
+        using ack_t = typename std::remove_reference_t<decltype(ack)>::value_type;
         std::array<uint8_t, 65536> message{ 0 };
         std::future<ssize_t> recv_from_fut = std::async(std::launch::async, [&socket, &message]
         {
@@ -73,14 +75,13 @@ void send_packet(SockT& socket, const CtrlT& packet, AckT&... acks)
         });
         auto status = recv_from_fut.wait_for(std::chrono::seconds(2));
         if (status == std::future_status::timeout) {
-            throw std::runtime_error("timed out waiting for acknowledgement: " + ack.name());
+            throw std::runtime_error("timed out waiting for acknowledgement");
         }
         auto reply_length = recv_from_fut.get();
-        using ack_helper = typename std::remove_reference_t<decltype(ack)>::helper;
-        if (auto match_err = ack_helper::match(message.data(), reply_length)) {
+        if (auto match_err = ack_t::match(message)) {
             throw std::runtime_error("incorrect acknowledgement type: " + match_err.value());
         }
-        ack_helper::unpack(ack, message.data(), reply_length);
+        ack = std::move(ack_t{ { message.data(), static_cast<std::size_t>(reply_length) } });
     };
     (recv_ack(acks), ...);
 }
