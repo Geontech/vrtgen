@@ -249,7 +249,7 @@ public:
     /**
     * @brief Bind the data/context recv socket to the desired endpoint for receiving data/context packets
     */
-    void data_ctxt_src_endpoint(const data_ctxt_endpoint_type& endpoint)
+    auto data_ctxt_src_endpoint(const data_ctxt_endpoint_type& endpoint) -> void
     {
         if (!m_data_ctxt_recv_socket.bind(endpoint)) {
             throw std::runtime_error("Failed to bind data/context receive socket to " + endpoint.to_string());
@@ -259,7 +259,7 @@ public:
     /**
     * @brief Get the source endpoint for receiving data and context packets
     */
-    const data_ctxt_endpoint_type& data_ctxt_src_endpoint() const
+    auto data_ctxt_src_endpoint() const -> const data_ctxt_endpoint_type&
     {
         return m_data_ctxt_recv_socket.src();
     }
@@ -267,7 +267,7 @@ public:
     /**
     * @brief Return a reference to the data/context recv socket for data/context packets
     */
-    data_ctxt_socket_type& data_ctxt_recv_socket() noexcept
+    auto data_ctxt_recv_socket() noexcept -> data_ctxt_socket_type&
     {
         return m_data_ctxt_recv_socket;
     }
@@ -275,7 +275,7 @@ public:
     /**
     * @brief Set the destination endpoint to send data and context packets to
     */
-    void data_ctxt_dst_endpoint(const data_ctxt_endpoint_type& endpoint)
+    auto data_ctxt_dst_endpoint(const data_ctxt_endpoint_type& endpoint) -> void
     {
         m_data_ctxt_send_socket.dst(endpoint);
     }
@@ -283,7 +283,7 @@ public:
     /**
     * @brief Get the destination endpoint to send data and context packets to
     */
-    const data_ctxt_endpoint_type& data_ctxt_dst_endpoint() const
+    auto data_ctxt_dst_endpoint() const -> const data_ctxt_endpoint_type&
     {
         return m_data_ctxt_send_socket.dst();
     }
@@ -291,7 +291,7 @@ public:
     /**
     * @brief Return a reference to the data/context send socket for sending data/context packets
     */
-    data_ctxt_socket_type& data_ctxt_send_socket() noexcept
+    auto data_ctxt_send_socket() noexcept -> data_ctxt_socket_type&
     {
         return m_data_ctxt_send_socket;
     }
@@ -319,6 +319,9 @@ public:
     }
 {%     endif %}
 
+    /**
+     * @brief Start the listener thread to receive incoming control packets
+     */
     auto vrt_listen() -> void
     {
         if (!m_listening) {
@@ -385,7 +388,7 @@ private:
             auto recv_length = m_cmd_socket.read_some(message.data(), message.size());
 {%       elif cmd_socket == 'udp' %}
             cmd_endpoint_type endpoint;
-            auto recv_length = m_cmd_socket.receive_from(message.data(), m_message.size(), endpoint);
+            auto recv_length = m_cmd_socket.receive_from(message.data(), message.size(), endpoint);
 {%       endif %}
             if (recv_length <= 0) {
                 continue;
@@ -417,6 +420,8 @@ private:
                     if (auto reply = message->reply_subject(); !reply.empty()) {
                         m_client.publish(reply, packed_data);
                     }
+{%     elif cmd_socket == 'udp' %}
+                    m_cmd_socket.send_to(packed_data.data(), packed_data.size(), endpoint);
 {%     else %}
                     m_cmd_socket.write_some(packed_data.data(), packed_data.size());
 {%     endif %}
@@ -443,6 +448,8 @@ private:
                     if (auto reply = message->reply_subject(); !reply.empty()) {
                         m_client.publish(reply, packed_data);
                     }
+{%     elif cmd_socket == 'udp' %}
+                    m_cmd_socket.send_to(packed_data.data(), packed_data.size(), endpoint);
 {%     else %}
                     m_cmd_socket.write_some(packed_data.data(), packed_data.size());
 {%     endif %}
@@ -461,6 +468,8 @@ private:
                         if (auto reply = message->reply_subject(); !reply.empty()) {
                             m_client.publish(reply, packed_data);
                         }
+{%     elif cmd_socket == 'udp' %}
+                        m_cmd_socket.send_to(packed_data.data(), packed_data.size(), endpoint);
 {%     else %}
                         m_cmd_socket.write_some(packed_data.data(), packed_data.size());
 {%     endif %}
@@ -484,6 +493,8 @@ private:
                     if (auto reply = message->reply_subject(); !reply.empty()) {
                         m_client.publish(reply, packed_data);
                     }
+{%     elif cmd_socket == 'udp' %}
+                    m_cmd_socket.send_to(packed_data.data(), packed_data.size(), endpoint);
 {%     else %}
                     m_cmd_socket.write_some(packed_data.data(), packed_data.size());
 {%     endif %}
