@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.2] - 2023-03-21
 ### Fixed
 - udp send_packet updated to use latest packet structure and tuple argument
+- Bug in packet match function not incrementing `curr_pos` correctly
+- Controllee base class calling the correct send function for udp socket type
 ## [0.7.1] - 2023-03-13
 ### Fixed
 - Controller nats include path in template

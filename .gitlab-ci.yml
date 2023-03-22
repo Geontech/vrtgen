@@ -249,10 +249,10 @@ rpmbuild:centos:7:
     tags:
         - Docker
     script:
-        - yum install -y rpm-build doxygen
+        - yum install -y --nogpgcheck rpm-build doxygen
         - python setup.py bdist_rpm --no-autoreq --requires="rh-python38-python rh-python38-python-pyyaml rh-python38-python-jinja2"
         # C++ library packaging (requires installing Python RPMs)
-        - yum install -y dist/vrtgen-*.noarch.rpm
+        - yum install -y --nogpgcheck dist/vrtgen-*.noarch.rpm
         - cmake3 -B release
         - cd release
         - cpack3 -G RPM
@@ -344,7 +344,7 @@ s3:centos:7:
     tags:
         - Docker
     script:
-        - yum install -y createrepo s3cmd
+        - yum install -y --nogpgcheck createrepo s3cmd
         - mkdir $arch
         - for file in `find dist -name *.rpm`; do
             cp $file $arch;
