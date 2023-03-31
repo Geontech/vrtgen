@@ -16,7 +16,6 @@ If using the NATS command socket type option with `vrtpktgen`, then two addition
 are required:
 
 - [nats.c](https://github.com/nats-io/nats.c)
-- libuuid
 
 ## Installation
 
@@ -35,7 +34,7 @@ This will install both the `vrtgen` Python modules and the `vrtpktgen` executabl
 The `vrtgen` backend library is header only and can be included directly into your build tree
 by adding the contents of the [include](include) folder to your project's build structure.
 
-To install the C++ library header files for development:
+To install the C++ library header files on your system:
 
 ```sh
 cmake3 -B build
@@ -45,6 +44,43 @@ sudo cmake3 --build build --target install
 On some Linux systems, CMake 3 is the default; run `cmake` instead of `cmake3`.
 
 The headers are installed to `/usr/local/include/vrtgen` by default.
+
+### CMake Integration
+
+**External**
+
+To use the library from a CMake project, you can use `find_package()` to discover and use the
+namespaced target from the package configuration:
+
+```cmake
+# CMakeLists.txt
+find_package(vrtgen REQUIRED)
+...
+add_executable(foo foo.cpp)
+...
+target_link_libraries(foo PRIVATE vrtgen::vrtgen)
+```
+
+**FetchContent**
+
+Using CMake's FetchContent allows this library to be downloaded and used as a dependency at
+configuration time, therefore avoiding the need to install it on your system:
+
+```cmake
+# CMakeLists.txt
+include(FetchContent)
+
+FetchContent_Declare(
+    vrtgen
+    GIT_REPOSITORY https://github.com/geontech/vrtgen
+    GIT_TAG v0.7.3
+)
+FetchContent_MakeAvailable(vrtgen)
+...
+add_executable(foo foo.cpp)
+...
+target_link_libraries(foo PRIVATE vrtgen::vrtgen)
+```
 
 ### Developer Setup
 
@@ -84,7 +120,7 @@ vrtpktgen --help
 To build and execute the tests:
 
 ```sh
-cmake3 -B build -DBUILD_TESTS=ON
+cmake3 -B build -DVRTGEN_BUILD_TESTS=ON
 cmake3 --build build --target check
 ```
 

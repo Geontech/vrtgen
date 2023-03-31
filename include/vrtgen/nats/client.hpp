@@ -29,7 +29,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <thread>
-#include <uuid/uuid.h>
+#include <random>
 #include <nats/nats.h>
 
 #include "message.hpp"
@@ -246,15 +246,16 @@ public:
         }
 
         // Generate a unique subject
-        uuid_t uuid;
-        uuid_generate(uuid);
-        std::string uuid_str("0", 37);
-        uuid_unparse(uuid, uuid_str.data());
+        auto inbox_str = std::string{ "INBOX_" };
+        for (auto i=0u; i<INBOX_LEN; ++i) {
+            auto random_index = m_random(m_urbg);
+            inbox_str += DIGITS.at(random_index);
+        }
 
         return natsConnection_Subscribe(
             &m_reply_sub,
             m_connection,
-            uuid_str.c_str(),
+            inbox_str.c_str(),
             &client::on_reply_msg,
             this
         );
@@ -298,6 +299,18 @@ private:
     std::queue<message_ptr> m_inbox_msg_queue;
     std::mutex m_inbox_msg_mtx;
     std::condition_variable m_inbox_msg_cv;
+    const std::size_t INBOX_LEN{ 32 };
+    inline static const std::string DIGITS{
+        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    };
+    inline static std::mt19937 m_urbg{ 
+        static_cast<unsigned long>(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    std::chrono::high_resolution_clock::now().time_since_epoch()
+                ).count()
+        )
+    };
+    inline static std::uniform_int_distribution m_random{ std::size_t{ 0 }, DIGITS.size()-1 };
     
     auto start() -> void
     {
@@ -331,6 +344,9 @@ private:
 
     auto add_msg(message_ptr&& data) -> void
     {
+        if (data && data->data().empty()) {
+            return;
+        }
         {
             const auto lock = std::lock_guard<std::mutex>{ m_msg_mtx };
             m_msg_queue.push(std::move(data));
@@ -353,6 +369,9 @@ private:
 
     auto add_inbox_msg(message_ptr&& data) -> void
     {
+        if (data && data->data().empty()) {
+            return;
+        }
         {
             const auto lock = std::lock_guard<std::mutex>{ m_inbox_msg_mtx };
             m_inbox_msg_queue.push(std::move(data));

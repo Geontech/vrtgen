@@ -29,6 +29,6 @@ RUN git clone https://github.com/nats-io/nats.c \
 RUN python -m pip install --upgrade pip \
     && python -m pip install pytest pylint \
     && python -m pip install . \
-    && cmake3 -B build -DJUNIT_OUTPUT=yes -DBUILD_TESTS=ON . \
+    && cmake3 -B build -DJUNIT_OUTPUT=yes -DVRTGEN_BUILD_TESTS=ON . \
     && export MAKEFLAGS="-j$(nproc)" \
     && make -C build
