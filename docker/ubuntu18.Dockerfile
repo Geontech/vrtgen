@@ -54,5 +54,5 @@ RUN export CXX=g++-10 \
 RUN python3.8 -m pip install --upgrade pip \
     && python3.8 -m pip install pytest pylint \
     && python3.8 -m pip install . \
-    && cmake -B build -DJUNIT_OUTPUT=yes -DBUILD_TESTS=ON . \
+    && cmake -B build -DJUNIT_OUTPUT=yes -DVRTGEN_BUILD_TESTS=ON . \
     && make -C build

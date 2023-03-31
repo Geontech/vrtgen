@@ -37,6 +37,6 @@ RUN export CXX=g++-10 \
     && python3 -m pip install --upgrade pip \
     && python3 -m pip install pytest pylint \
     && python3 -m pip install . \
-    && cmake -B build -DJUNIT_OUTPUT=yes -DBUILD_TESTS=ON . \
+    && cmake -B build -DJUNIT_OUTPUT=yes -DVRTGEN_BUILD_TESTS=ON . \
     && export MAKEFLAGS="-j$(nproc)" \
     && make -C build
