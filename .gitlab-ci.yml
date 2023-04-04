@@ -27,8 +27,19 @@ build:rockylinux:8:
     before_script:
       - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     script:
-      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file docker/rockylinux.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder:latest .
-      - docker push $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder:latest
+      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file docker/rockylinux8.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder8:latest .
+      - docker push $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder8:latest
+
+build:rockylinux:9:
+    image: docker:19.03.8
+    stage: build
+    tags:
+        - Docker
+    before_script:
+      - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    script:
+      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file docker/rockylinux9.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder9:latest .
+      - docker push $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder9:latest
 
 build:ubuntu:18.04:
     image: docker:19.03.8
@@ -103,7 +114,7 @@ test:cpp:centos:7:
 
 # Centos 8 Testing
 lint:rockylinux:8:
-    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder:latest
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder8:latest
     stage: test
     needs: ["build:rockylinux:8"]
     tags:
@@ -115,7 +126,7 @@ lint:rockylinux:8:
         - pylint -f colorized --exit-zero src/
 
 test:rockylinux:8:
-    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder:latest
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder8:latest
     stage: test
     needs: ["build:rockylinux:8"]
     tags:
@@ -129,9 +140,54 @@ test:rockylinux:8:
             junit: vrtgen-pytests.xml
 
 test:cpp:rockylinux:8:
-    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder:latest
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder8:latest
     stage: test
     needs: ["build:rockylinux:8"]
+    tags:
+        - Docker
+    variables:
+        # Don't need to clone the repo because we're using the Docker image's copy
+        GIT_STRATEGY: none
+    script:
+        - cd /root/vrtgen
+        - make -C build check
+    artifacts:
+        paths:
+            - build/*-results.xml
+        reports:
+            junit: build/*-results.xml
+
+# Rocky 9 Testing
+lint:rockylinux:9:
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder9:latest
+    stage: test
+    needs: ["build:rockylinux:9"]
+    tags:
+        - Docker
+    script:
+        # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
+        # Unfortunately, even if the command completely fails (e.g., invalid
+        # path) it still exits with 0.
+        - pylint -f colorized --exit-zero src/
+
+test:rockylinux:9:
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder9:latest
+    stage: test
+    needs: ["build:rockylinux:9"]
+    tags:
+        - Docker
+    script:
+        - pytest --color=yes --junit-xml=vrtgen-pytests.xml
+    artifacts:
+        paths:
+            - vrtgen-pytests.xml
+        reports:
+            junit: vrtgen-pytests.xml
+
+test:cpp:rockylinux:9:
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder9:latest
+    stage: test
+    needs: ["build:rockylinux:9"]
     tags:
         - Docker
     variables:
