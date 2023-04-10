@@ -1,0 +1,23 @@
+StandardFlowSignalContext: !Context
+  stream_id: !StreamID
+  class_id: !ClassID
+    oui: 6A-62-1E
+    packet_code: 1
+  timestamp: !Timestamp
+    integer: utc
+    fractional: picoseconds
+  tsm: coarse
+  cif_0: !CIF0
+    change_indicator: required
+    reference_point_id: required
+    bandwidth: required
+    if_ref_frequency: required
+    rf_ref_frequency: required
+    if_band_offset: required
+    reference_level: required
+    gain: required
+    sample_rate: required
+    timestamp_adjustment: required
+    timestamp_calibration_time: required
+    state_event_indicators: required
+    signal_data_format: required
