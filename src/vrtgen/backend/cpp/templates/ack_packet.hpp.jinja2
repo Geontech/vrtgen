@@ -230,6 +230,12 @@ public:
      */
     ~{{ packet_name }}() override;
 
+    /**
+     * @brief Match the data span against known values for this packet
+     * @retval nullopt if packet is a match, otherwise an error string is returned
+     */
+    static auto match(std::span<const uint8_t> data) -> std::optional<std::string>;
+
     {{ ackvx_public_function_declarations(packet, type_helper) | indent(4) | trim }}
 
 private:
@@ -256,6 +262,12 @@ public:
      * @brief Destructor
      */
     ~{{ packet_name }}() override;
+
+    /**
+     * @brief Match the data span against known values for this packet
+     * @retval nullopt if packet is a match, otherwise an error string is returned
+     */
+    static auto match(std::span<const uint8_t> data) -> std::optional<std::string>;
 
     {{ acks_public_function_declarations(packet, type_helper) | indent(4) | trim }}
 

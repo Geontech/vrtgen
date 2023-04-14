@@ -21,7 +21,7 @@
 {%- import "macros/function_defs/command.jinja2" as command %}
 {%- import "macros/types/weif.jinja2" as weif %}
 {%- import "macros/function_defs/bytes_required.jinja2" as bytes_req %}
-{%- from "macros/function_defs/match.jinja2" import match %}
+{%- from "macros/function_defs/match.jinja2" import match_ack %}
 {%- import "macros/function_defs/constructors.jinja2" as constructors %}
 {%- from "macros/function_defs/cif.jinja2" import sync_cifs, update_cif_pos %}
 
@@ -377,8 +377,6 @@ auto {{ packet.name }}::name() const -> std::string
     return m_name;
 }
 
-{{ match(packet, type_helper) | trim }}
-
 {{ function_defs.prologue(packet, type_helper) | trim }}
 
 {% if packet.is_command %}
@@ -430,6 +428,8 @@ auto {{ packet.name }}::update_packet_size() -> void
 
 {{ packet_name }}::~{{ packet_name }}() {}
 
+{{ match_ack(packet, packet_name, type_helper, true) | trim }}
+
 {%  if packet.cam.ack_v.is_optional %}
 {{ command.req_defs(packet, packet_name, packet.cam.ack_v, type_helper) | trim }}
 
@@ -476,6 +476,8 @@ auto {{ packet.name }}::update_packet_size() -> void
 {{ constructors.acks_unpack_constructor(packet, packet_name, type_helper) | trim }}
 
 {{ packet_name }}::~{{ packet_name }}() {}
+
+{{ match_ack(packet, packet_name, type_helper, false) | trim }}
 
 {{ function_defs.cif(packet, packet_name, type_helper) | trim }}
 

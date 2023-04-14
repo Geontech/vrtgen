@@ -54,16 +54,16 @@ explicit {{ packet_name }}(std::span<const uint8_t> data);
  */
 auto name() const -> std::string;
 
+{{ function_decls.prologue(packet, type_helper) | trim }}
+{% endmacro %}
+
+{%- macro public_function_declarations(packet, type_helper) %}
 /**
  * @brief Match the data span against known values for this packet
  * @retval nullopt if packet is a match, otherwise an error string is returned
  */
 static auto match(std::span<const uint8_t> data) -> std::optional<std::string>;
 
-{{ function_decls.prologue(packet, type_helper) | trim }}
-{% endmacro %}
-
-{%- macro public_function_declarations(packet, type_helper) %}
 {{ base_public_function_declarations(packet, type_helper) | trim }}
 
 {% if packet.is_command %}

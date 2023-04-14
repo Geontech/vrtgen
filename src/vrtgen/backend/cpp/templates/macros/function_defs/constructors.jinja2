@@ -697,6 +697,7 @@ curr_pos += m_{{ field.name }}.size();
     m_name = "{{ packet_name }}";
     m_data.resize(this->min_bytes());
     m_{{ packet.cam.name }}.{{ packet.cam.ack_s.name }}(true);
+    m_{{ packet.cam.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cam.name }}"));
 {% set last_field = packet.last_prologue_field %}
     [[maybe_unused]]
 {% if type_helper.is_scalar(last_field) %}
