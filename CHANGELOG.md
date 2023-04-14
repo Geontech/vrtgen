@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.4] - 2023-04-14
+### Added
+- DIFI yaml files in examples
+- rocky9 to CI pipeline
+### Fixed
+- Ack packet match function.
+  - Moved from base ack class to AckVX and AckS subclasses
+- Pack CAM into packet's data buffer during construction when ack_* value is required
 ## [0.7.3] - 2023-03-31
 ### Added
 - CMake target alias
