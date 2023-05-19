@@ -383,6 +383,10 @@ auto {{ packet.name }}::name() const -> std::string
 {%   if packet.cam.enabled %}
 {{ common.const_ref_getter(packet.name, packet.cam, type_helper) | trim }}
 
+{{ command.req_defs(packet, packet.name, packet.cam.partial_action, type_helper) | trim }}
+
+{{ command.req_defs(packet, packet.name, packet.cam.scheduled_or_executed, type_helper) | trim }}
+
 {% endif %}
 {% if packet.message_id.enabled %}
 {{ command.message_id_defs(packet, type_helper) | trim }}

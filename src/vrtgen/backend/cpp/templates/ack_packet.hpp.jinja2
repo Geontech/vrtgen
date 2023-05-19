@@ -24,6 +24,14 @@
 {% if packet.cam.enabled %}
 {{ function_decls.const_ref_getter(packet.cam, type_helper) | trim }}
 
+{{ function_decls.req_getter(packet.cam.partial_action, type_helper) | trim }}
+
+{{ function_decls.setters(packet.cam.partial_action, type_helper) | trim }}
+
+{{ function_decls.req_getter(packet.cam.scheduled_or_executed, type_helper) | trim }}
+
+{{ function_decls.setters(packet.cam.scheduled_or_executed, type_helper) | trim }}
+
 {% endif %}
 {% if packet.message_id.enabled %}
 {{ function_decls.getters_and_setters(packet.message_id, type_helper) | trim }}
