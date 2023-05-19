@@ -766,3 +766,46 @@ TEST_CASE("Section 8.3", "[control_packet_subtype][8.3]")
 
 } // end TEST_CASE("Section 8.3")
 
+
+TEST_CASE("Section 8.4", "[acknowledge_packet_subtype][8.4]")
+{
+    SECTION("8.4.1.3")
+    {
+        SECTION("AckP")
+        {
+            TestAckPacket9VX packet_in;
+            packet_in.partial_action(true);
+            CHECK(packet_in.partial_action() == true);
+            CHECK(packet_in.cam().partial_action() == true);
+
+            auto data = packet_in.data();
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES;
+            CHECK((check_ptr[2] >> 3) & 0b1 == 1);
+
+            TestAckPacket9VX packet_out(data);
+            CHECK(packet_out.partial_action() == true);
+            CHECK(packet_out.cam().partial_action() == true);
+        }
+    }
+
+    SECTION("8.4.1.4")
+    {
+        SECTION("SchX")
+        {
+            TestAckPacket9VX packet_in;
+            packet_in.scheduled_or_executed(true);
+            CHECK(packet_in.scheduled_or_executed() == true);
+            CHECK(packet_in.cam().scheduled_or_executed() == true);
+
+            auto data = packet_in.data();
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES;
+            CHECK((check_ptr[2] >> 2) & 0b1 == 1);
+
+            TestAckPacket9VX packet_out(data);
+            CHECK(packet_out.scheduled_or_executed() == true);
+            CHECK(packet_out.cam().scheduled_or_executed() == true);
+        }
+    }
+}
