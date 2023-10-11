@@ -6,3 +6,6 @@ add_library(packetlib
 target_include_directories(packetlib PUBLIC
     ${CMAKE_SOURCE_DIR}/include/packets
 )
+target_link_libraries(packetlib PRIVATE
+    vrtgen::vrtgen
+)

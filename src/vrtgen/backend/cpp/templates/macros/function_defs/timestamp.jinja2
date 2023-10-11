@@ -19,6 +19,19 @@
 
 {%- macro function_defs(packet, type_helper) %}
 {% if packet.timestamp.integer.enabled %}
+{%   if packet.header.tsi.value.value == 0b111 %}
+auto {{ packet.name }}::{{ packet.header.tsi.name }}() const -> {{ type_helper.value_type(packet.header.tsi) }}
+{
+    return m_{{ packet.header.name }}.{{ packet.header.tsi.name }}();
+}
+
+auto {{ packet.name }}::{{ packet.header.tsi.name }}(const {{ type_helper.value_type(packet.header.tsi) }} value) -> void
+{
+    m_{{ packet.header.name }}.{{ packet.header.tsi.name }}(value);
+    m_header.pack_into(m_data.data());
+}
+
+{%   endif %}
 auto {{ packet.name }}::{{ packet.timestamp.integer.name }}() const -> {{ type_helper.value_type(packet.timestamp.integer) }}
 {
     const auto pos{ m_positions.at("{{ packet.timestamp.integer.name }}") };
@@ -36,6 +49,19 @@ auto {{ packet.name }}::{{ packet.timestamp.integer.name }}(const {{ type_helper
 {% endif %}
 {% if packet.timestamp.fractional.enabled %}
 {%   if packet.timestamp.integer.enabled %}
+
+{%   endif %}
+{%   if packet.header.tsf.value.value == 0b111 %}
+auto {{ packet.name }}::{{ packet.header.tsf.name }}() const -> {{ type_helper.value_type(packet.header.tsf) }}
+{
+    return m_{{ packet.header.name }}.{{ packet.header.tsf.name }}();
+}
+
+auto {{ packet.name }}::{{ packet.header.tsf.name }}(const {{ type_helper.value_type(packet.header.tsf) }} value) -> void
+{
+    m_{{ packet.header.name }}.{{ packet.header.tsf.name }}(value);
+    m_header.pack_into(m_data.data());
+}
 
 {%   endif %}
 auto {{ packet.name }}::{{ packet.timestamp.fractional.name }}() const -> {{ type_helper.value_type(packet.timestamp.fractional) }}

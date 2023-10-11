@@ -24,7 +24,7 @@
 using namespace {{ namespace_}}::packets;
 {% endif %}
 
-int main()
+auto main() -> int
 {
 {% for packet in packets %}
 {%   if packet.is_ack %}
@@ -41,4 +41,5 @@ int main()
     auto {{ packet.name | to_snake }} = {{ packet.name }}{};
 {%   endif %}
 {% endfor %}
+    return 0;
 }

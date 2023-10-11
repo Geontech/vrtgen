@@ -54,6 +54,8 @@ def parse_stream(stream, loader):
                 parsed_files.append(filename)
                 for inc_name, inc_value in parse_file(filename, loader):
                     parsed_packets[inc_name] = inc_value
+                    if not has_information_class:
+                        yield inc_name,inc_value
         elif isinstance(value, InformationClass):
             class_names = value.packet_classes.values
             for pkt_name in class_names:

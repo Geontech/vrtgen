@@ -3,6 +3,7 @@ VersionFlowSignalContext: !ExtensionContext
   class_id: !ClassID
     oui: 6A-62-1E
     packet_code: 4
+    information_code: 1
   timestamp: !Timestamp
     integer: utc
     fractional: picoseconds
@@ -11,4 +12,4 @@ VersionFlowSignalContext: !ExtensionContext
     change_indicator: required
   cif_1: !CIF1
     v49_spec_compliance: required
-    version_build_code: required
+    version_information: required

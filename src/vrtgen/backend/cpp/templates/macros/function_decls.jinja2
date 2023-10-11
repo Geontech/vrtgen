@@ -100,10 +100,18 @@ auto {{ field.name }}_attributes() -> {{ 'std::optional<' if field.is_optional }
 {% endif %}
 {% if packet.timestamp.enabled %}
 {%   if packet.timestamp.integer.enabled %}
+{%     if packet.header.tsi.value.value == 0b111 %}
+{{ getters_and_setters(packet.header.tsi, type_helper) | trim }}
+
+{%     endif %}
 {{ getters_and_setters(packet.timestamp.integer, type_helper) | trim }}
 
 {%   endif %}
 {%   if packet.timestamp.fractional.enabled %}
+{%     if packet.header.tsf.value.value == 0b111 %}
+{{ getters_and_setters(packet.header.tsf, type_helper) | trim }}
+
+{%     endif %}
 {{ getters_and_setters(packet.timestamp.fractional, type_helper) | trim }}
 
 {%   endif %}

@@ -28,6 +28,7 @@
 #include "context/bandwidth_required.hpp"
 #include "context/test_basic_cif1.hpp"
 #include "context/test_basic_cif2.hpp"
+#include "context/test_basic_cif2_optional.hpp"
 #include "context/test_basic_cif7.hpp"
 #include "context/test_cif7_attributes.hpp"
 #include "context/user_defined_discrete_io.hpp"
@@ -165,6 +166,26 @@ TEST_CASE("Section 9.1", "[CIFs][9.1]")
 
             TestBasicCif2 packet_out(data);
             CHECK(packet_out.cif_0().cif2_enable());
+        }
+
+        SECTION("CIF2 Optional")
+        {
+            TestBasicCif2Optional packet_in;
+            CHECK(packet_in.size() == HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES);
+            CHECK_FALSE(packet_in.cif_0().cif2_enable());
+
+            bytes CIF0_BE { 0, 0, 0, 0 };
+
+            auto data = packet_in.data();
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES;
+            const bytes packed_cif0(check_ptr, check_ptr + CIF0_BYTES);
+            check_ptr += CIF0_BYTES;
+
+            CHECK(packed_cif0 == CIF0_BE);
+
+            TestBasicCif2 packet_out(data);
+            CHECK_FALSE(packet_out.cif_0().cif2_enable());
         }
         
         // SECTION("CIF3")

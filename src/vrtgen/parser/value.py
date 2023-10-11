@@ -2,10 +2,11 @@ import re
 from vrtgen.parser.model.types import enums
 
 _TSI_VALUES = {
-    'none':  enums.TSI.NONE,
-    'utc':   enums.TSI.UTC,
-    'gps':   enums.TSI.GPS,
-    'other': enums.TSI.OTHER
+    'none'  : enums.TSI.NONE,
+    'utc'   : enums.TSI.UTC,
+    'gps'   : enums.TSI.GPS,
+    'other' : enums.TSI.OTHER,
+    'any'   : enums.TSI.ANY
 }
 
 def parse_tsi(value):
@@ -17,13 +18,14 @@ def parse_tsi(value):
     try:
         return _TSI_VALUES[value.casefold()]
     except KeyError:
-        raise ValueError('invalid inteer value: ' + value)
+        raise ValueError('invalid integer value: ' + value)
 
 _TSF_VALUES = {
-    'none':         enums.TSF.NONE,
-    'samples':      enums.TSF.SAMPLE_COUNT,
-    'picoseconds':  enums.TSF.REAL_TIME,
-    'free-running': enums.TSF.FREE_RUNNING
+    'none'         : enums.TSF.NONE,
+    'samples'      : enums.TSF.SAMPLE_COUNT,
+    'picoseconds'  : enums.TSF.REAL_TIME,
+    'free-running' : enums.TSF.FREE_RUNNING,
+    'any'          : enums.TSF.ANY
 }
 
 def parse_tsf(value):
