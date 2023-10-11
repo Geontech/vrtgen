@@ -244,7 +244,7 @@ auto reset_{{ packet.cif1.name }}() -> void;
 {% endif %}
 {% if packet.cif2.enabled %}
 {{ const_ref_getter(packet.cif2, type_helper) | trim }}
-{%   if packet.cif1.is_optional %}
+{%   if packet.cif2.is_optional %}
 
 /**
  * @brief If {{ packet.cif2.name }} contains a value, destroy it and all underlying fields
