@@ -9,6 +9,7 @@ __pycache__/
 examples/*/*pp
 examples/app/example_project
 examples/nats/example_project
+examples/difi/difi_*
 **/venv/**
 .coverage
 **/docs/html/**

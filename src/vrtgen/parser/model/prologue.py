@@ -26,6 +26,8 @@ class ClassIdentifier(PackedStruct):
                     self.oui.value = value.parse_oui(val)
                 elif key == 'packet_code':
                     self.packet_code.value = val
+                elif key == 'information_code':
+                    self.packet_code.value = val
                 else:
                     raise KeyError(val)
             except:
@@ -46,11 +48,15 @@ class Timestamp(Field):
     def parse_mapping(self, **mapping):
         for key,val in mapping.items():
             if key == 'integer':
+                self.tsi.required = True
+                self.tsi.enabled = True
                 self.tsi.value = value.parse_tsi(val)
                 self.integer.enabled = True
                 self.integer.required = True
                 self.bits += self.integer.bits
             elif key == 'fractional':
+                self.tsf.required = True
+                self.tsf.enabled = True
                 self.tsf.value = value.parse_tsf(val)
                 self.fractional.enabled = True
                 self.fractional.required = True

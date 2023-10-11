@@ -160,6 +160,7 @@ class TSI(BinaryEnum, bits=2):
     UTC = 0b01
     GPS = 0b10
     OTHER = 0b11
+    ANY = 0b111
 
 class TSF(BinaryEnum, bits=2):
 
@@ -174,6 +175,7 @@ class TSF(BinaryEnum, bits=2):
     SAMPLE_COUNT = 0b01
     REAL_TIME = 0b10
     FREE_RUNNING = 0b11
+    ANY = 0b111
 
 class TSM(BinaryEnum, bits=1):
     """

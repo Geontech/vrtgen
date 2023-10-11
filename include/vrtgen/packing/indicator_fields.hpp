@@ -1351,25 +1351,25 @@ public:
     }
 
     /**
-     * @brief Returns the Version Build Code enable flag
-     * @return true if packet contains Version Build Code field, otherwise false
+     * @brief Returns the Version Information enable flag
+     * @return true if packet contains Version Information field, otherwise false
      * 
-     * Version Build Code is 1 bit long at bit position 2
+     * Version Information is 1 bit long at bit position 2
      * See VITA 49.2-2017 Table 9.1-1
      */
-    bool version_build_code() const noexcept
+    bool version_information() const noexcept
     {
         return m_packed.get<2>();
     }
 
     /**
-     * @brief Sets the Version Build Code enable flag
-     * @param value Version Build Code enable flag value to set
+     * @brief Sets the Version Information enable flag
+     * @param value Version Information enable flag value to set
      * 
-     * Version Build Code is 1 bit long at bit position 2
+     * Version Information is 1 bit long at bit position 2
      * See VITA 49.2-2017 Table 9.1-1
      */
-    void version_build_code(bool value) noexcept
+    void version_information(bool value) noexcept
     {
         m_packed.set<2>(value);
     }

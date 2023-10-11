@@ -94,8 +94,8 @@ def test_timestamp_integer(parameter, value):
     assert timestamp.integer.required
     assert not timestamp.integer.value
     # TSI
-    assert not timestamp.tsi.enabled
-    assert not timestamp.tsi.required
+    assert timestamp.tsi.enabled
+    assert timestamp.tsi.required
     check_tsi(timestamp, value)
     # Fractional
     assert not timestamp.fractional.enabled
@@ -135,8 +135,8 @@ def test_timestamp_fractional(parameter, value):
     assert timestamp.fractional.required
     assert not timestamp.fractional.value
     # TSF
-    assert not timestamp.tsf.enabled
-    assert not timestamp.tsf.required
+    assert timestamp.tsf.enabled
+    assert timestamp.tsf.required
     check_tsf(timestamp, value)
 
 def test_timestamp_both():
@@ -155,16 +155,16 @@ def test_timestamp_both():
     assert timestamp.integer.required
     assert not timestamp.integer.value
     # TSI
-    assert not timestamp.tsi.enabled
-    assert not timestamp.tsi.required
+    assert timestamp.tsi.enabled
+    assert timestamp.tsi.required
     check_tsi(timestamp, integer_value)
     # Fractional
     assert timestamp.fractional.enabled
     assert timestamp.fractional.required
     assert not timestamp.fractional.value
     # TSF
-    assert not timestamp.tsf.enabled
-    assert not timestamp.tsf.required
+    assert timestamp.tsf.enabled
+    assert timestamp.tsf.required
     check_tsf(timestamp, fractional_value)
 
 def test_timestamp_invalid_key():
