@@ -86,8 +86,8 @@ def test_cif1_default():
     assert not cif1.health_status.required
     assert not cif1.v49_spec_compliance.enabled
     assert not cif1.v49_spec_compliance.required
-    assert not cif1.version_build_code.enabled
-    assert not cif1.version_build_code.required
+    assert not cif1.version_information.enabled
+    assert not cif1.version_information.required
     assert not cif1.buffer_size.enabled
     assert not cif1.buffer_size.required
 
@@ -136,8 +136,8 @@ field_data = [
     ('health_status', 'optional'),
     ('v49_spec_compliance', 'required'),
     ('v49_spec_compliance', 'optional'),
-    ('version_build_code', 'required'),
-    ('version_build_code', 'optional'),
+    ('version_information', 'required'),
+    ('version_information', 'optional'),
     ('buffer_size', 'required'),
     ('buffer_size', 'optional'),
 ]

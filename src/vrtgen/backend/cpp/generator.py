@@ -374,14 +374,6 @@ class CppGenerator(Generator):
         defval=''
     )
 
-    # capability = GeneratorOption(
-    #     '--capability',
-    #     doc='TX and/or RX capabilities [rx]',
-    #     dtype=str,
-    #     defval='rx',
-    #     choices=['rx', 'tx', 'txrx']
-    # )
-
     cmd_socket = GeneratorOption(
         '--cmd-socket',
         doc='socket type for V49.2 control [tcp]',
@@ -500,20 +492,12 @@ class CppGenerator(Generator):
     def generate_packet(self, name, packet):
         model = CppPacket(name, packet)
         self.packets.append(model)
-        # if model.ack is not None:
-        #     self.packets.append(model.ack)
 
     def generate(self, name, config):
         name = name_to_identifier(name)
-        # if isinstance(config, list):
-        #     for item in config:
-        #         self.generate(name, item)
-        # el
         if isinstance(config, Packet):
             self.generate_packet(name, config)
         elif isinstance(config, InformationClass):
             self.information_class = (name, config)
-            # for subconfig in config.packet_classes.values:
-            #     self.generate(subconfig.name, subconfig)
         else:
             raise NotImplementedError(type(config))

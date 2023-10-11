@@ -346,6 +346,21 @@ class DiscreteIO64(DiscreteIO):
         return ([field for field in self.subfields] + [self.packed])
 
 @dataclass
+class VersionInformation(PackedStruct):
+    """
+    Version Information [9.10.4].
+    """
+    name : str = 'version_information'
+    year : IntegerType = field(default_factory=lambda: IntegerType('year', bits=7, enabled=True, required=True, packed_tag=PackedTag(31,7,0)))
+    day : IntegerType = field(default_factory=lambda: IntegerType('day', bits=9, enabled=True, required=True, packed_tag=PackedTag(24,9,0)))
+    revision : IntegerType = field(default_factory=lambda: IntegerType('revision', bits=6, enabled=True, required=True, packed_tag=PackedTag(15,6,0)))
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.type_ = type(self).__name__
+        self.bits = 32
+
+@dataclass
 class CIF1(CIF):
     """
     CIF1 Enables
@@ -375,7 +390,7 @@ class CIF1(CIF):
     discrete_io_64 : CIFEnableType = field(default_factory=lambda: CIFEnableType('discrete_io_64', type_=DiscreteIO64(), packed_tag=PackedTag(5,1,0,0)))
     health_status : CIFEnableType = field(default_factory=lambda: CIFEnableType('health_status', type_=Identifier16(), packed_tag=PackedTag(4,1,0,0)))
     v49_spec_compliance : CIFEnableType = field(default_factory=lambda: CIFEnableType('v49_spec_compliance', type_=EnumType('v49_spec', type_=V49StandardCompliance, value=1), packed_tag=PackedTag(3,1,0,0)))
-    version_build_code : CIFEnableType = field(default_factory=lambda: CIFEnableType('version_build_code', type_=Identifier32(), packed_tag=PackedTag(2,1,0,0)))
+    version_information : CIFEnableType = field(default_factory=lambda: CIFEnableType('version_information', type_=VersionInformation(), packed_tag=PackedTag(2,1,0,0)))
     buffer_size : CIFEnableType = field(default_factory=lambda: CIFEnableType('buffer_size', type_=FixedPoint64r20(), packed_tag=PackedTag(1,1,0,0)))
     packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
 

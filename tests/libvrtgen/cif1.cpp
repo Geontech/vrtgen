@@ -471,11 +471,11 @@ TEST_CASE("CIF1", "[cif1]")
     SECTION("Version and Build Code")
     {
         // Verify zero on construction
-        CHECK(cif1.version_build_code() == false);
+        CHECK(cif1.version_information() == false);
         // Setter
-        cif1.version_build_code(true);
+        cif1.version_information(true);
         // Getter check set value
-        CHECK(cif1.version_build_code() == true);
+        CHECK(cif1.version_information() == true);
         // Pack
         cif1.pack_into(packed_bytes.data());
         // Verify packed bits
@@ -483,7 +483,7 @@ TEST_CASE("CIF1", "[cif1]")
         // Unpack
         unpack_cif1.unpack_from(packed_bytes.data());
         // Verify unpacked value
-        CHECK(unpack_cif1.version_build_code() == true);
+        CHECK(unpack_cif1.version_information() == true);
     }
 
     SECTION("Buffer Size")

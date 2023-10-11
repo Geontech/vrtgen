@@ -108,9 +108,11 @@ class Packet:
             self.header.class_id_enable.value = True
         if self.timestamp.integer.enabled:
             self.header.tsi.enabled = True
+            self.header.tsi.required = True
             self.header.tsi.value = self.timestamp.tsi.value
         if self.timestamp.fractional.enabled:
             self.header.tsf.enabled = True
+            self.header.tsf.required = True
             self.header.tsf.value = self.timestamp.tsf.value
 
 @dataclass

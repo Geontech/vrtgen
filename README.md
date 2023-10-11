@@ -12,8 +12,8 @@ Generated C++ code requires g++ >= 10 for C++20 support, including concepts.
 The only dependency is the C++ header library.
 See the testing section.
 
-If using the NATS command socket type option with `vrtpktgen`, then two additional dependencies
-are required:
+If using the NATS command socket type option with `vrtpktgen`, the following library is also
+required:
 
 - [nats.c](https://github.com/nats-io/nats.c)
 

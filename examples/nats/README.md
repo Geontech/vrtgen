@@ -51,26 +51,32 @@ Edit the src/bin/CMakeLists.txt file to look like the following:
 add_executable(example_project main.cpp)
 target_link_libraries(example_project PUBLIC packetlib)
 target_include_directories(example_project PUBLIC
-    ${vrtgen_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/include/packets
+)
+target_link_libraries(example_project PRIVATE
+    vrtgen::vrtgen
 )
 
 add_executable(example_controllee example_controllee.cpp)
 target_link_directories(example_controllee PUBLIC /usr/lib64/openssl11)
 target_link_libraries(example_controllee PUBLIC packetlib pthread nats_static ssl crypto uuid)
 target_include_directories(example_controllee PUBLIC
-    ${vrtgen_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/packets
+)
+target_link_libraries(example_controllee PRIVATE
+    vrtgen::vrtgen
 )
 
 add_executable(example_controller example_controller.cpp)
 target_link_directories(example_controller PUBLIC /usr/lib64/openssl11)
 target_link_libraries(example_controller PUBLIC packetlib pthread nats_static ssl crypto uuid)
 target_include_directories(example_controller PUBLIC
-    ${vrtgen_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/packets
+)
+target_link_libraries(example_controller PRIVATE
+    vrtgen::vrtgen
 )
 ```
 

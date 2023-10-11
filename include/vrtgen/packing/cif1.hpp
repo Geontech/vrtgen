@@ -839,4 +839,139 @@ private:
 
 }; // end class IndexList
 
+/**
+ * @class VersionInformation
+ * @brief VersionInformation field
+ */
+class VersionInformation
+{
+public:
+    /**
+     * @brief Returns the VersionInformation Year
+     * @return VersionInformation Year
+     * 
+     * VersionInformation Year is 7 bits long at bit position 31
+     * See VITA 49.2-2017 Table 9.10.4-1
+     */
+    constexpr uint8_t year() const noexcept
+    {
+        return m_packed.get<31,7,uint8_t>();
+    }
+
+    /**
+     * @brief Sets the VersionInformation Year
+     * @param value Year value to set
+     * 
+     * VersionInformation Year is 7 bits long at bit position 31
+     * See VITA 49.2-2017 Table 9.10.4-1
+     */
+    constexpr void year(uint8_t value) noexcept
+    {
+        m_packed.set<31,7>(value);
+    }
+
+    /**
+     * @brief Returns the VersionInformation Day
+     * @return VersionInformation Day
+     * 
+     * VersionInformation Day is 9 bits long at bit position 24
+     * See VITA 49.2-2017 Table 9.10.4-1
+     */
+    constexpr uint8_t day() const noexcept
+    {
+        return m_packed.get<24,9,uint16_t>();
+    }
+
+    /**
+     * @brief Sets the VersionInformation Day
+     * @param value Day value to set
+     * 
+     * VersionInformation Day is 9 bits long at bit position 24
+     * See VITA 49.2-2017 Table 9.10.4-1
+     */
+    constexpr void day(uint16_t value) noexcept
+    {
+        m_packed.set<24,9>(value);
+    }
+
+    /**
+     * @brief Returns the VersionInformation Revision
+     * @return VersionInformation Revision
+     * 
+     * VersionInformation Revision is 6 bits long at bit position 15
+     * See VITA 49.2-2017 Table 9.10.4-1
+     */
+    constexpr uint8_t revision() const noexcept
+    {
+        return m_packed.get<15,6,uint8_t>();
+    }
+
+    /**
+     * @brief Sets the VersionInformation Revision
+     * @param value Revision value to set
+     * 
+     * VersionInformation Revision is 6 bits long at bit position 15
+     * See VITA 49.2-2017 Table 9.10.4-1
+     */
+    constexpr void revision(uint8_t value) noexcept
+    {
+        m_packed.set<15,6>(value);
+    }
+
+    /**
+     * @brief Returns the VersionInformation User-Defined
+     * @return VersionInformation User-Defined
+     * 
+     * VersionInformation User-Defined is 10 bits long at bit position 9
+     * See VITA 49.2-2017 Table 9.10.4-1
+     */
+    constexpr uint16_t user_defined() const noexcept
+    {
+        return m_packed.get<9,10,uint16_t>();
+    }
+
+    /**
+     * @brief Sets the VersionInformation User-Defined
+     * @param value User-Defined value to set
+     * 
+     * VersionInformation User-Defined is 10 bits long at bit position 9
+     * See VITA 49.2-2017 Table 9.10.4-1
+     */
+    constexpr void user_defined(uint16_t value) noexcept
+    {
+        m_packed.set<9,10>(value);
+    }
+
+    /**
+     * @brief Returns the number of VersionInformation bytes
+     * @return Number of VersionInformation bytes
+     */
+    constexpr std::size_t size() const noexcept
+    {
+        return m_packed.size();
+    }
+
+    /**
+     * @brief Pack VersionInformation as bytes into the buffer
+     * @param buffer_ptr Pointer to buffer location to add VersionInformation bytes
+     */
+    inline constexpr void pack_into(uint8_t* buffer_ptr) const
+    {
+        m_packed.pack_into(buffer_ptr);
+    }
+
+    /**
+     * @brief Unpack buffer bytes into VersionInformation
+     * @param buffer_ptr Pointer to beginning of VersionInformation bytes in the buffer
+     */
+    inline constexpr void unpack_from(const uint8_t* buffer_ptr)
+    {
+        m_packed.unpack_from(buffer_ptr);
+    }
+
+protected:
+    vrtgen::packed<uint32_t> m_packed; //!< Packed VersionInformation bits structure
+
+}; // end class VersionInformation
+
 } // end namespace vrtgen::packing

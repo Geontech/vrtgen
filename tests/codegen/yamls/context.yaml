@@ -42,6 +42,10 @@ TestBasicCif2: !Context
   cif_2: !CIF2
     cited_sid: required
 
+TestBasicCif2Optional: !Context
+  cif_2: !CIF2
+    cited_sid: optional
+
 TestBasicCif7: !Context
   cif_7: !CIF7
     mean_value: required

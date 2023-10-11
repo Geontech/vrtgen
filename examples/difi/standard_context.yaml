@@ -3,8 +3,9 @@ StandardFlowSignalContext: !Context
   class_id: !ClassID
     oui: 6A-62-1E
     packet_code: 1
+    information_code: 0
   timestamp: !Timestamp
-    integer: utc
+    integer: any
     fractional: picoseconds
   tsm: coarse
   cif_0: !CIF0

@@ -30,6 +30,12 @@ auto {{ packet.name }}::match(std::span<const uint8_t> data) -> std::optional<st
 {%   if field.name == 'packet_count' or field.name == 'packet_size' %}
 {%     continue %}
 {%   endif %}
+{%   if field.name == 'tsi' and field.value.value == 0b111 %}
+{%     continue %}
+{%   endif %}
+{%   if field.name == 'tsf' and field.value.value == 0b111 %}
+{%     continue %}
+{%   endif %}
     if (header.{{ field.name }}() != {{ type_helper.literal_value(field) }}) {
         std::ostringstream msg;
         msg << "Failed to match header field {{ field.name }}."

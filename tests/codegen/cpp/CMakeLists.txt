@@ -92,6 +92,7 @@ list(APPEND context_gen_list
     "context/bandwidth_required"
     "context/test_basic_cif1"
     "context/test_basic_cif2"
+    "context/test_basic_cif2_optional"
     "context/test_basic_cif7"
     "context/test_cif7_attributes"
     "context/test_cif7_all_attributes"
