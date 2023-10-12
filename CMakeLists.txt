@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(vrtgen-cpp VERSION 0.7.5 LANGUAGES CXX)
+project(vrtgen-cpp VERSION 0.7.6 LANGUAGES CXX)
 include(GNUInstallDirs)
 
 # Set the C++ version required
