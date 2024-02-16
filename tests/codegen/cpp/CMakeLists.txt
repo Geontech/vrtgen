@@ -100,6 +100,7 @@ list(APPEND context_gen_list
     "context/required_discrete_io"
     "context/not_user_defined_discrete_io"
     "context/test_all_generate_params"
+    "context/cif2_uuid_fields"
     # "test_context5"
     # "test_context6"
     "context/test_context8"

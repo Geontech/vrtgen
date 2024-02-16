@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.7] - 2024-02-15
+### Fixed
+- CIF2 UUID fields (`controllee_uuid` and `controller_uuid`) being generated as `uint32_t`
 ## [0.7.6] - 2023-10-11
 ### Added
 - 'any' type for timestamp fields

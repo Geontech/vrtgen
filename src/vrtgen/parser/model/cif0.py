@@ -10,8 +10,8 @@ class Gain(PackedStruct):
     Gain/Attenuation [9.5.3].
     """
     name : str = 'gain'
-    stage_2 : FixedPoint16r7 = FixedPoint16r7('stage_2', packed_tag=PackedTag(31,16,0))
-    stage_1 : FixedPoint16r7 = FixedPoint16r7('stage_1', required=True, enabled=True, packed_tag=PackedTag(15,16,0))
+    stage_2 : FixedPoint16r7 = field(default_factory=lambda: FixedPoint16r7('stage_2', packed_tag=PackedTag(31,16,0)))
+    stage_1 : FixedPoint16r7 = field(default_factory=lambda: FixedPoint16r7('stage_1', required=True, enabled=True, packed_tag=PackedTag(15,16,0)))
 
     def __post_init__(self):
         super().__post_init__()
@@ -24,10 +24,9 @@ class DeviceIdentifier(PackedStruct):
     Device Identifier [9.10.1].
     """
     name : str = 'device_id'
-    reserved_0 : PackedType = PackedType('reserved_0', bits=8, packed_tag=PackedTag(31,8,0))
-    manufacturer_oui : OUI = OUI('manufacturer_oui', packed_tag=PackedTag(23,24,0))
-    device_code : IntegerType = IntegerType('device_code', bits=16, packed_tag=PackedTag(15,16,1,1))
-    packed_1 : PackedType = PackedType('packed_1', bits=32, packed_tag=PackedTag(0,32,1))
+    reserved_0 : PackedType = field(default_factory=lambda: PackedType('reserved_0', bits=8, packed_tag=PackedTag(31,8,0)))
+    manufacturer_oui : OUI = field(default_factory=lambda: OUI('manufacturer_oui', packed_tag=PackedTag(23,24,0)))
+    device_code : IntegerType = field(default_factory=lambda: IntegerType('device_code', bits=16, packed_tag=PackedTag(15,16,1,1)))
 
     def __post_init__(self):
         super().__post_init__()
@@ -40,18 +39,18 @@ class PayloadFormat(PackedStruct):
     Data Packet Payload Format Field [9.13.3]
     """
     name : str = 'payload_format'
-    packing_method : EnumType = EnumType('packing_method', type_=PackingMethod, packed_tag=PackedTag(31,1,0,0))
-    real_complex_type : EnumType = EnumType('real_complex_type', type_=DataSampleType, packed_tag=PackedTag(30,2,0,0))
-    data_item_format : EnumType = EnumType('data_item_format', type_=DataItemFormat, packed_tag=PackedTag(28,5,0,0))
-    repeat_indicator : BooleanType = BooleanType('repeat_indicator', packed_tag=PackedTag(23,1,0,0))
-    event_tag_size : IntegerType = IntegerType('event_tag_size', bits=3, packed_tag=PackedTag(22,3,0,0))
-    channel_tag_size : IntegerType = IntegerType('channel_tag_size', bits=4, packed_tag=PackedTag(19,4,0,0))
-    data_item_fraction_size : IntegerType = IntegerType('data_item_fraction_size', bits=4, packed_tag=PackedTag(15,4,0,0))
-    item_packing_field_size : IntegerType = IntegerType('item_packing_field_size', bits=6, packed_tag=PackedTag(11,6,0,0))
-    data_item_size : IntegerType = IntegerType('data_item_size', bits=6, packed_tag=PackedTag(5,6,0,0))
-    packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
-    repeat_count : IntegerType = IntegerType('repeat_count', bits=16, packed_tag=PackedTag(31,16,1))
-    vector_size : IntegerType = IntegerType('vector_size', bits=16, packed_tag=PackedTag(15,16,1))
+    packing_method : EnumType = field(default_factory=lambda: EnumType('packing_method', type_=PackingMethod, packed_tag=PackedTag(31,1,0,0)))
+    real_complex_type : EnumType = field(default_factory=lambda: EnumType('real_complex_type', type_=DataSampleType, packed_tag=PackedTag(30,2,0,0)))
+    data_item_format : EnumType = field(default_factory=lambda: EnumType('data_item_format', type_=DataItemFormat, packed_tag=PackedTag(28,5,0,0)))
+    repeat_indicator : BooleanType = field(default_factory=lambda: BooleanType('repeat_indicator', packed_tag=PackedTag(23,1,0,0)))
+    event_tag_size : IntegerType = field(default_factory=lambda: IntegerType('event_tag_size', bits=3, packed_tag=PackedTag(22,3,0,0)))
+    channel_tag_size : IntegerType = field(default_factory=lambda: IntegerType('channel_tag_size', bits=4, packed_tag=PackedTag(19,4,0,0)))
+    data_item_fraction_size : IntegerType = field(default_factory=lambda: IntegerType('data_item_fraction_size', bits=4, packed_tag=PackedTag(15,4,0,0)))
+    item_packing_field_size : IntegerType = field(default_factory=lambda: IntegerType('item_packing_field_size', bits=6, packed_tag=PackedTag(11,6,0,0)))
+    data_item_size : IntegerType = field(default_factory=lambda: IntegerType('data_item_size', bits=6, packed_tag=PackedTag(5,6,0,0)))
+    packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0)))
+    repeat_count : IntegerType = field(default_factory=lambda: IntegerType('repeat_count', bits=16, packed_tag=PackedTag(31,16,1)))
+    vector_size : IntegerType = field(default_factory=lambda: IntegerType('vector_size', bits=16, packed_tag=PackedTag(15,16,1)))
 
     def __post_init__(self):
         super().__post_init__()
@@ -64,22 +63,22 @@ class Geolocation(PackedStruct):
     Formatted GPS Geolocation [9.4.5) and INS Geolocation (9.4.6].
     """
     name : str = 'geolocation'
-    tsi : EnumType = EnumType('tsi', type_=TSI, packed_tag=PackedTag(27,2,0,0))
-    tsf : EnumType = EnumType('tsf', type_=TSF, packed_tag=PackedTag(25,2,0,0))
-    packed_0 : PackedType = PackedType('packed_0', bits=8, packed_tag=PackedTag(23,8,0))
-    manufacturer_oui : OUI = OUI('manufacturer_oui', packed_tag=PackedTag(23,24,0))
+    tsi : EnumType = field(default_factory=lambda: EnumType('tsi', type_=TSI, packed_tag=PackedTag(27,2,0,0)))
+    tsf : EnumType = field(default_factory=lambda: EnumType('tsf', type_=TSF, packed_tag=PackedTag(25,2,0,0)))
+    packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=8, packed_tag=PackedTag(23,8,0)))
+    manufacturer_oui : OUI = field(default_factory=lambda: OUI('manufacturer_oui', packed_tag=PackedTag(23,24,0)))
     # Integer timestamp shall be 0xFFFFFFFF if TSI is 0 (rule 9.4.5-6)
-    integer_timestamp : IntegerTimestamp = IntegerTimestamp(value=0xFFFFFFFF, packed_tag=PackedTag(31,32,1))
+    integer_timestamp : IntegerTimestamp = field(default_factory=lambda: IntegerTimestamp(value=0xFFFFFFFF, packed_tag=PackedTag(31,32,1)))
     # Fractional timestamp shall be 0xFFFFFFFFFFFFFFFF if TSF is 0 (rule 9.4.5-6)
-    fractional_timestamp : FractionalTimestamp = FractionalTimestamp(value=0xFFFFFFFFFFFFFFFF, packed_tag=PackedTag(31,64,2))
+    fractional_timestamp : FractionalTimestamp = field(default_factory=lambda: FractionalTimestamp(value=0xFFFFFFFFFFFFFFFF, packed_tag=PackedTag(31,64,2)))
     # Default values for these subfields shall be 0x7FFFFFFF when unspecified (rule 9.4.5-6)
-    latitude : GeolocationAngle = GeolocationAngle('latitude', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,4))
-    longitude : GeolocationAngle = GeolocationAngle('longitude', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,5))
-    altitude : FixedPointType = FixedPointType('altitude', bits=32, signed=True, radix=5, value=0x7FFFFFFF, packed_tag=PackedTag(31,32,6))
-    speed_over_ground : FixedPointType = FixedPointType('speed_over_ground', bits=32, signed=True, radix=16, value=0x7FFFFFFF, packed_tag=PackedTag(31,32,7))
-    heading_angle : GeolocationAngle = GeolocationAngle('heading_angle', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,8))
-    track_angle : GeolocationAngle = GeolocationAngle('track_angle', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,9))
-    magnetic_variation : GeolocationAngle = GeolocationAngle('magnetic_variation', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,10))
+    latitude : GeolocationAngle = field(default_factory=lambda: GeolocationAngle('latitude', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,4)))
+    longitude : GeolocationAngle = field(default_factory=lambda: GeolocationAngle('longitude', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,5)))
+    altitude : FixedPointType = field(default_factory=lambda: FixedPointType('altitude', bits=32, signed=True, radix=5, value=0x7FFFFFFF, packed_tag=PackedTag(31,32,6)))
+    speed_over_ground : FixedPointType = field(default_factory=lambda: FixedPointType('speed_over_ground', bits=32, signed=True, radix=16, value=0x7FFFFFFF, packed_tag=PackedTag(31,32,7)))
+    heading_angle : GeolocationAngle = field(default_factory=lambda: GeolocationAngle('heading_angle', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,8)))
+    track_angle : GeolocationAngle = field(default_factory=lambda: GeolocationAngle('track_angle', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,9)))
+    magnetic_variation : GeolocationAngle = field(default_factory=lambda: GeolocationAngle('magnetic_variation', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,10)))
 
     def __post_init__(self):
         super().__post_init__()
@@ -92,24 +91,24 @@ class Ephemeris(PackedStruct):
     ECEF Ephemeris [9.4.3] and Relative Ephemeris [9.4.9].
     """
     name : str = 'ephemeris'
-    tsi : EnumType = EnumType('tsi', type_=TSI, packed_tag=PackedTag(27,2,0,0))
-    tsf : EnumType = EnumType('tsf', type_=TSF, packed_tag=PackedTag(25,2,0,0))
-    packed_0 : PackedType = PackedType('packed_0', bits=8, packed_tag=PackedTag(23,8,0))
-    manufacturer_oui : OUI = OUI('manufacturer_oui', packed_tag=PackedTag(23,24,0))
+    tsi : EnumType = field(default_factory=lambda: EnumType('tsi', type_=TSI, packed_tag=PackedTag(27,2,0,0)))
+    tsf : EnumType = field(default_factory=lambda: EnumType('tsf', type_=TSF, packed_tag=PackedTag(25,2,0,0)))
+    packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=8, packed_tag=PackedTag(23,8,0)))
+    manufacturer_oui : OUI = field(default_factory=lambda: OUI('manufacturer_oui', packed_tag=PackedTag(23,24,0)))
     # Integer timestamp should be 0xFFFFFFFF if TSI is 0
-    integer_timestamp : IntegerTimestamp = IntegerTimestamp(value=0xFFFFFFFF, packed_tag=PackedTag(31,32,1))
+    integer_timestamp : IntegerTimestamp = field(default_factory=lambda: IntegerTimestamp(value=0xFFFFFFFF, packed_tag=PackedTag(31,32,1)))
     # Fractional timestamp should be 0xFFFFFFFFFFFFFFFF if TSF is 0
-    fractional_timestamp : FractionalTimestamp = FractionalTimestamp(value=0xFFFFFFFFFFFFFFFF, packed_tag=PackedTag(31,64,2))
+    fractional_timestamp : FractionalTimestamp = field(default_factory=lambda: FractionalTimestamp(value=0xFFFFFFFFFFFFFFFF, packed_tag=PackedTag(31,64,2)))
     # Default values for these subfields shall be 0x7FFFFFFF when unspecified (rule 9.4.3-8)
-    position_x : CartesianCoordinate = CartesianCoordinate('position_x', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,4))
-    position_y : CartesianCoordinate = CartesianCoordinate('position_y', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,5))
-    position_z : CartesianCoordinate = CartesianCoordinate('position_z', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,6))
-    attitude_alpha : GeolocationAngle = GeolocationAngle('attitude_alpha', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,7))
-    attitude_beta : GeolocationAngle = GeolocationAngle('attitude_beta', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,8))
-    attitude_phi : GeolocationAngle = GeolocationAngle('attitude_phi', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,9))
-    velocity_dx : VelocityCoordinate = VelocityCoordinate('velocity_dx', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,10))
-    velocity_dy : VelocityCoordinate = VelocityCoordinate('velocity_dy', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,11))
-    velocity_dz : VelocityCoordinate = VelocityCoordinate('velocity_dz', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,12))
+    position_x : CartesianCoordinate = field(default_factory=lambda: CartesianCoordinate('position_x', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,4)))
+    position_y : CartesianCoordinate = field(default_factory=lambda: CartesianCoordinate('position_y', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,5)))
+    position_z : CartesianCoordinate = field(default_factory=lambda: CartesianCoordinate('position_z', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,6)))
+    attitude_alpha : GeolocationAngle = field(default_factory=lambda: GeolocationAngle('attitude_alpha', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,7)))
+    attitude_beta : GeolocationAngle = field(default_factory=lambda: GeolocationAngle('attitude_beta', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,8)))
+    attitude_phi : GeolocationAngle = field(default_factory=lambda: GeolocationAngle('attitude_phi', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,9)))
+    velocity_dx : VelocityCoordinate = field(default_factory=lambda: VelocityCoordinate('velocity_dx', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,10)))
+    velocity_dy : VelocityCoordinate = field(default_factory=lambda: VelocityCoordinate('velocity_dy', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,11)))
+    velocity_dz : VelocityCoordinate = field(default_factory=lambda: VelocityCoordinate('velocity_dz', value=0x7FFFFFFF, packed_tag=PackedTag(31,32,12)))
 
     def __post_init__(self):
         super().__post_init__()
@@ -122,9 +121,9 @@ class GPS_ASCII(PackedStruct):
     GPS ASCII Field [9.4.7]
     """
     name : str = 'gps_ascii'
-    manufacturer_oui : OUI = OUI('manufacturer_oui', packed_tag=PackedTag(23,24,0))
-    num_words : IntegerType = IntegerType('num_words', bits=32, packed_tag=PackedTag(31,32,1))
-    sentence : ListType = ListType('sentence', type_=IntegerType(bits=8), packed_tag=PackedTag(31,32,2))
+    manufacturer_oui : OUI = field(default_factory=lambda: OUI('manufacturer_oui', packed_tag=PackedTag(23,24,0)))
+    num_words : IntegerType = field(default_factory=lambda: IntegerType('num_words', bits=32, packed_tag=PackedTag(31,32,1)))
+    sentence : ListType = field(default_factory=lambda: ListType('sentence', type_=IntegerType(bits=8), packed_tag=PackedTag(31,32,2)))
 
     def __post_init__(self):
         super().__post_init__()
@@ -138,11 +137,11 @@ class ContextAssociationLists(PackedStruct):
     name : str = 'context_association_lists'
     source_list_size : IntegerType = field(default_factory=lambda: IntegerType('source_list_size', bits=9, enabled=True, required=True, packed_tag=PackedTag(24,9,0,0)))
     system_list_size : IntegerType = field(default_factory=lambda: IntegerType('system_list_size', bits=9, enabled=True, required=True, packed_tag=PackedTag(8,9,0,0)))
-    packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
+    packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0)))
     vector_component_list_size : IntegerType = field(default_factory=lambda: IntegerType('vector_component_list_size', bits=16, enabled=True, required=True, packed_tag=PackedTag(31,16,1,1)))
     async_channel_tag_list_enable : BooleanType = field(default_factory=lambda: BooleanType('async_channel_tag_list_enable', enabled=True, required=True, packed_tag=PackedTag(15,1,1,1)))
     async_channel_list_size : IntegerType = field(default_factory=lambda: IntegerType('async_channel_list_size', bits=15, enabled=True, required=True, packed_tag=PackedTag(14,15,1,1)))
-    packed_1 : PackedType = PackedType('packed_1', bits=32, packed_tag=PackedTag(0,32,1))
+    packed_1 : PackedType = field(default_factory=lambda: PackedType('packed_1', bits=32, packed_tag=PackedTag(0,32,1)))
     source_list : ListType = field(default_factory=lambda: ListType('source_list', type_=Identifier32(), enabled=True, required=True, packed_tag=PackedTag(31,0,2)))
     system_list : ListType = field(default_factory=lambda: ListType('system_list', type_=Identifier32(), enabled=True, required=True, packed_tag=PackedTag(31,0,3)))
     vector_component_list : ListType = field(default_factory=lambda: ListType('vector_component_list', type_=Identifier32(), enabled=True, required=True, packed_tag=PackedTag(31,0,4)))

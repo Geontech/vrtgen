@@ -154,7 +154,7 @@ class SectorStepScanCIF(CIF):
     start_time : CIFEnableType = field(default_factory=lambda: CIFEnableType('start_time', type_=Timestamp('StartTime'), packed_tag=PackedTag(22,1,0,0)))
     time_3 : CIFEnableType = field(default_factory=lambda: CIFEnableType('time_3', type_=FractionalTimestamp('Time3', bits=32), packed_tag=PackedTag(21,1,0,0)))
     time_4 : CIFEnableType = field(default_factory=lambda: CIFEnableType('time_4', type_=FractionalTimestamp('Time4', bits=32), packed_tag=PackedTag(20,1,0,0)))
-    packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
+    packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0)))
 
     def _validate(self, mapping):
         for key, val in mapping.items():
@@ -210,7 +210,7 @@ class IndexList(TemplateArrayStruct):
     total_size : Unsigned32 = field(default_factory=lambda: Unsigned32('total_size', bits=32, required=True, packed_tag=PackedTag(31,32,0)))
     entry_size : EnumType = field(default_factory=lambda: EnumType('entry_size', type_=EntrySize, value=EntrySize.EIGHT_BIT.value, enabled=True, required=True, packed_tag=PackedTag(31,4,1,0)))
     num_entries : IntegerType = field(default_factory=lambda: IntegerType('num_entries', bits=20, required=True, packed_tag=PackedTag(19,20,1,0)))
-    packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,1))
+    packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,1)))
     entries : ListType = field(default_factory=lambda: ListType('entries', type_=IntegerType(), enabled=True, required=True, packed_tag=PackedTag(31,0,2)))
 
     def __post_init__(self):
@@ -318,7 +318,7 @@ class DiscreteIO32(DiscreteIO):
     """
     name : str = 'discrete_io_32'
     subfields : List[Field] = field(default_factory=list)
-    packed : PackedType = PackedType('packed', bits=32, enabled=True, required=True, packed_tag=PackedTag(0,32,1))
+    packed : PackedType = field(default_factory=lambda: PackedType('packed', bits=32, enabled=True, required=True, packed_tag=PackedTag(0,32,1)))
 
     def __post_init__(self):
         super().__post_init__()
@@ -335,7 +335,7 @@ class DiscreteIO64(DiscreteIO):
     """
     name : str = 'discrete_io_64'
     subfields : List[Field] = field(default_factory=list)
-    packed : PackedType = PackedType('packed', bits=64, enabled=True, required=True, packed_tag=PackedTag(0,64,1))
+    packed : PackedType = field(default_factory=lambda: PackedType('packed', bits=64, enabled=True, required=True, packed_tag=PackedTag(0,64,1)))
 
     def __post_init__(self):
         super().__post_init__()
@@ -392,7 +392,7 @@ class CIF1(CIF):
     v49_spec_compliance : CIFEnableType = field(default_factory=lambda: CIFEnableType('v49_spec_compliance', type_=EnumType('v49_spec', type_=V49StandardCompliance, value=1), packed_tag=PackedTag(3,1,0,0)))
     version_information : CIFEnableType = field(default_factory=lambda: CIFEnableType('version_information', type_=VersionInformation(), packed_tag=PackedTag(2,1,0,0)))
     buffer_size : CIFEnableType = field(default_factory=lambda: CIFEnableType('buffer_size', type_=FixedPoint64r20(), packed_tag=PackedTag(1,1,0,0)))
-    packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
+    packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0)))
 
     def _validate(self, mapping):
         for key, val in mapping.items():
