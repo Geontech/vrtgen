@@ -15,8 +15,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
-from dataclasses import dataclass
-from .packing import IntegerType
+from dataclasses import dataclass, field
+from .packing import Field, IntegerType
+from .enums import IdentifierFormat
+from vrtgen.parser.value import parse_identifier_format
 
 @dataclass
 class StreamIdentifier(IntegerType):
@@ -70,3 +72,25 @@ class OUI(IntegerType):
             return '-'.join('{:02X}'.format(x) for x in octets)
         else:
             return ''
+        
+@dataclass
+class ControlIdentifier(Field):
+    format : IdentifierFormat = field(default_factory=IdentifierFormat)
+
+    def __post_init__(self):
+        self.type_ = type(self).__name__
+        self.bits = 32
+
+    @property
+    def is_integer_type(self):
+        return self.format == IdentifierFormat.WORD
+
+    def _parse_mapping(self, mapping):
+        try:
+            self.format = parse_identifier_format(mapping)
+            if self.format == IdentifierFormat.UUID:
+                self.bits = 128
+        except:
+            raise ValueError('invalid identifier format: ' + mapping)
+        self.enabled = True
+        self.required = True

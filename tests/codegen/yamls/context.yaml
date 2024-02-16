@@ -129,6 +129,11 @@ TestAllGenerateParams: !Context
     health_status: optional
     v49_spec_compliance: optional
 
+Cif2UuidFields: !Context
+  cif_2: !CIF2
+    controllee_uuid: optional
+    controller_uuid: required
+
 TestContext4: !Context
   cif_0: !CIF0
 #     gps_ascii: optional

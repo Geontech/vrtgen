@@ -116,7 +116,6 @@ class TypeHelper:
             return VRTGEN_NAMESPACE + 'OUI'
         elif isinstance(field, ControlIdentifier):
             if field.format == IdentifierFormat.UUID:
-                # return 'std::string'
                 return VRTGEN_NAMESPACE + 'UUID'
             else:
                 return 'uint32_t'

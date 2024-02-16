@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Geon Technologies, LLC
+ * Copyright (C) 2024 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -21,6 +21,6 @@
 
 #define VRTGEN_VERSION_MAJOR 0
 #define VRTGEN_VERSION_MINOR 7
-#define VRTGEN_VERSION_PATCH 6
+#define VRTGEN_VERSION_PATCH 7
 #define VRTGEN_VERSION_TWEAK 
-#define VRTGEN_VERSION "0.7.6"
+#define VRTGEN_VERSION "0.7.7"
