@@ -9,59 +9,70 @@ stages:
 
 # Build Stage Jobs
 build:centos:7:
-    image: docker:19.03.8
+    image: docker:latest
     stage: build
     tags:
         - Docker
     before_script:
       - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     script:
-      - docker build --pull --file docker/centos.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/centos-builder:latest .
+      - docker build --pull --file .ci/centos.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/centos-builder:latest .
       - docker push $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/centos-builder:latest
 
 build:rockylinux:8:
-    image: docker:19.03.8
+    image: docker:latest
     stage: build
     tags:
         - Docker
     before_script:
       - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     script:
-      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file docker/rockylinux8.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder8:latest .
+      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file .ci/rockylinux8.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder8:latest .
       - docker push $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder8:latest
 
 build:rockylinux:9:
-    image: docker:19.03.8
+    image: docker:latest
     stage: build
     tags:
         - Docker
     before_script:
       - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     script:
-      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file docker/rockylinux9.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder9:latest .
+      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file .ci/rockylinux9.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder9:latest .
       - docker push $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/rocky-builder9:latest
 
-build:ubuntu:18.04:
-    image: docker:19.03.8
-    stage: build
-    tags:
-        - Docker
-    before_script:
-      - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    script:
-      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file docker/ubuntu18.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu18-builder:latest .
-      - docker push $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu18-builder:latest
-
 build:ubuntu:20.04:
-    image: docker:19.03.8
+    image: docker:latest
     stage: build
     tags:
         - Docker
     before_script:
       - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     script:
-      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file docker/ubuntu20.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu20-builder:latest .
+      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file .ci/ubuntu20.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu20-builder:latest .
       - docker push $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu20-builder:latest
+
+build:ubuntu:22.04:
+    image: docker:latest
+    stage: build
+    tags:
+        - Docker
+    before_script:
+      - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    script:
+      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file .ci/ubuntu22.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu22-builder:latest .
+      - docker push $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu22-builder:latest
+
+build:alpine:3.19:
+    image: docker:latest
+    stage: build
+    tags:
+        - Docker
+    before_script:
+      - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    script:
+      - docker build --pull --build-arg branch=$CI_COMMIT_BRANCH --file .ci/alpine3.19.Dockerfile -t $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/alpine3.19-builder:latest .
+      - docker push $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/alpine3.19-builder:latest
 
 # Centos 7 Testing
 lint:centos:7:
@@ -202,51 +213,6 @@ test:cpp:rockylinux:9:
         reports:
             junit: build/*-results.xml
 
-# Ubuntu 18.04 Testing
-lint:ubuntu:18.04:
-    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu18-builder:latest
-    stage: test
-    needs: ["build:ubuntu:18.04"]
-    tags:
-        - Docker
-    script:
-        # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
-        # Unfortunately, even if the command completely fails (e.g., invalid
-        # path) it still exits with 0.
-        - pylint -f colorized --exit-zero src/
-
-test:ubuntu:18.04:
-    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu18-builder:latest
-    stage: test
-    needs: ["build:ubuntu:18.04"]
-    tags:
-        - Docker
-    script:
-        - pytest --color=yes --junit-xml=vrtgen-pytests.xml
-    artifacts:
-        paths:
-            - vrtgen-pytests.xml
-        reports:
-            junit: vrtgen-pytests.xml
-
-test:cpp:ubuntu:18.04:
-    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu18-builder:latest
-    stage: test
-    needs: ["build:ubuntu:18.04"]
-    tags:
-        - Docker
-    variables:
-        # Don't need to clone the repo because we're using the Docker image's copy
-        GIT_STRATEGY: none
-    script:
-        - cd /root/vrtgen
-        - make -C build check
-    artifacts:
-        paths:
-            - build/*-results.xml
-        reports:
-            junit: build/*-results.xml
-
 # Ubuntu 20.04 Testing
 lint:ubuntu:20.04:
     image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu20-builder:latest
@@ -284,6 +250,99 @@ test:cpp:ubuntu:20.04:
         # Don't need to clone the repo because we're using the Docker image's copy
         GIT_STRATEGY: none
     script:
+        - cd /root/vrtgen
+        - make -C build check
+    artifacts:
+        paths:
+            - build/*-results.xml
+        reports:
+            junit: build/*-results.xml
+
+# Ubuntu 22.04 Testing
+lint:ubuntu:22.04:
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu22-builder:latest
+    stage: test
+    needs: ["build:ubuntu:22.04"]
+    tags:
+        - Docker
+    script:
+        # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
+        # Unfortunately, even if the command completely fails (e.g., invalid
+        # path) it still exits with 0.
+        - pylint -f colorized --exit-zero src/
+
+test:ubuntu:22.04:
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu22-builder:latest
+    stage: test
+    needs: ["build:ubuntu:22.04"]
+    tags:
+        - Docker
+    script:
+        - pytest --color=yes --junit-xml=vrtgen-pytests.xml
+    artifacts:
+        paths:
+            - vrtgen-pytests.xml
+        reports:
+            junit: vrtgen-pytests.xml
+
+test:cpp:ubuntu:22.04:
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/ubuntu22-builder:latest
+    stage: test
+    needs: ["build:ubuntu:22.04"]
+    tags:
+        - Docker
+    variables:
+        # Don't need to clone the repo because we're using the Docker image's copy
+        GIT_STRATEGY: none
+    script:
+        - cd /root/vrtgen
+        - make -C build check
+    artifacts:
+        paths:
+            - build/*-results.xml
+        reports:
+            junit: build/*-results.xml
+
+# Alpine 3.19 Testing
+lint:alpine:3.19:
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/alpine3.19-builder:latest
+    stage: test
+    needs: ["build:alpine:3.19"]
+    tags:
+        - Docker
+    script:
+        - . /opt/venv/bin/activate
+        # Tell Pylint not to exit with a non-zero status for GitLab's benefit.
+        # Unfortunately, even if the command completely fails (e.g., invalid
+        # path) it still exits with 0.
+        - pylint -f colorized --exit-zero src/
+
+test:alpine:3.19:
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/alpine3.19-builder:latest
+    stage: test
+    needs: ["build:alpine:3.19"]
+    tags:
+        - Docker
+    script:
+        - . /opt/venv/bin/activate
+        - pytest --color=yes --junit-xml=vrtgen-pytests.xml
+    artifacts:
+        paths:
+            - vrtgen-pytests.xml
+        reports:
+            junit: vrtgen-pytests.xml
+
+test:cpp:alpine:3.19:
+    image: $CI_REGISTRY/$CI_PROJECT_NAMESPACE/vrtgen/alpine3.19-builder:latest
+    stage: test
+    needs: ["build:alpine:3.19"]
+    tags:
+        - Docker
+    variables:
+        # Don't need to clone the repo because we're using the Docker image's copy
+        GIT_STRATEGY: none
+    script:
+        - . /opt/venv/bin/activate
         - cd /root/vrtgen
         - make -C build check
     artifacts:

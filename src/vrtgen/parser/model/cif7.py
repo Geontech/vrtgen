@@ -58,7 +58,7 @@ class CIF7Attributes(TemplateArrayStruct):
     third_derivative : CIFEnableType = field(default_factory=lambda: CIFEnableType('third_derivative', template_type=True, packed_tag=PackedTag(21,1,0,0)))
     probability : CIFEnableType = field(default_factory=lambda: CIFEnableType('probability', type_=Probability(reserved_bits=16), packed_tag=PackedTag(20,1,0,0)))
     belief : CIFEnableType = field(default_factory=lambda: CIFEnableType('belief', type_=Belief(reserved_bits=24), packed_tag=PackedTag(19,1,0,0)))
-    packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
+    packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0)))
 
     def __post_init__(self):
         super().__post_init__()

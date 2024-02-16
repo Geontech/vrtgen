@@ -16,7 +16,7 @@
 # along with this program.  If not, see http://www.gnu.org/licenses/. 
 
 import yaml
-from dataclasses import make_dataclass
+from dataclasses import make_dataclass, field
 
 from vrtgen.parser.model import data, context, command
 from vrtgen.parser.model.types import packing
@@ -30,7 +30,6 @@ def data_packet_constructor(loader, node) -> data.DataPacket:
     packet = data.DataPacket()
     if not isinstance(node, yaml.ScalarNode):
         packet.validate_and_parse_mapping(**loader.construct_mapping(node))
-        # packet._update_header()
     return packet
 
 def context_packet_constructor(loader, node) -> context.ContextPacket:
@@ -40,7 +39,6 @@ def context_packet_constructor(loader, node) -> context.ContextPacket:
     packet = context.ContextPacket()
     if not isinstance(node, yaml.ScalarNode):
         packet.validate_and_parse_mapping(**loader.construct_mapping(node))
-        # packet._update_header()
     return packet
 
 def ext_context_packet_constructor(loader, node) -> context.ExtensionContextPacket:
@@ -50,7 +48,6 @@ def ext_context_packet_constructor(loader, node) -> context.ExtensionContextPack
     packet = context.ExtensionContextPacket()
     if not isinstance(node, yaml.ScalarNode):
         packet.validate_and_parse_mapping(**loader.construct_mapping(node))
-        # packet._update_header()
     return packet
 
 def control_packet_constructor(loader, node) -> command.ControlPacket:
@@ -60,7 +57,6 @@ def control_packet_constructor(loader, node) -> command.ControlPacket:
     packet = command.ControlPacket()
     if not isinstance(node, yaml.ScalarNode):
         packet.validate_and_parse_mapping(**loader.construct_mapping(node))
-        # packet._update_header()
         packet._update_cam()
     return packet
 
@@ -108,19 +104,20 @@ def stream_id_constructor(loader, node) -> prologue.StreamIdentifier:
                 raise ValueError('stream_id value must be an int, not',type(node_scalar_value))
             stream_id.value = node_scalar_value
     else:
+        pos = 0
         fields = [('name',str,'stream_id')]
         for key,val in loader.construct_mapping(node, deep=True).items():
+            if type(val) != packing.IntegerType:
+                raise TypeError('stream_id constituents must be of type !IntegerType')
             val.name = key
-            if val.packed_tag:
-                val.packed_tag.field_word = 0
-                val.packed_tag.packed_int = 0
-            else:
-                pos = val.bits - 1
-                val.packed_tag = packing.PackedTag(position=pos, bits=val.bits, field_word=0, packed_int=0)
+            pos += val.bits
+            if pos > 32:
+                raise ValueError('stream_id constituent bits cannot be greater than 32')
+            val.packed_tag = packing.PackedTag(position=pos-1, bits=val.bits, field_word=0, packed_int=0)
             val.is_extension_type =  True
             val.user_defined = True
-            fields.append((key,type(val),val))
-        fields.append(('packed', packing.PackedType, packing.PackedType('packed', bits=32, enabled=True, required=True, packed_tag=packing.PackedTag(0,32,0))))
+            fields.append((val.name, type(val), field(default_factory=lambda: val)))
+        fields.append(('packed', packing.PackedType, field(default_factory=lambda: packing.PackedType('packed', bits=32, enabled=True, required=True, packed_tag=packing.PackedTag(0,32,0)))))
         packed_stream_id_type = make_dataclass(
             cls_name='StreamIdentifier',
             fields=fields,

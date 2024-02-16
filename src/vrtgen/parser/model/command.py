@@ -48,7 +48,7 @@ class ControlAcknowledgeMode(PackedStruct):
     # action_mode : EnumType = field(default_factory=lambda: EnumType('action_mode', type_=ActionMode, packed_tag=PackedTag(24,2,0,0)))
     # nack_only : BooleanType = field(default_factory=lambda: BooleanType('nack_only', packed_tag=PackedTag(22,1,0,0)))
     # timing_control : EnumType = field(default_factory=lambda: EnumType('timing_control', type_=TimestampControlMode, packed_tag=PackedTag(14,3,0,0)))
-    packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
+    packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0)))
 
     def __post_init__(self):
         super().__post_init__()
@@ -250,7 +250,7 @@ class WarningErrorFields(PackedStruct):
     out_of_band_power_compliance : BooleanType = field(default_factory=lambda: BooleanType('out_of_band_power_compliance', packed_tag=PackedTag(21,1,0,0)))
     cosite_interference : BooleanType = field(default_factory=lambda: BooleanType('cosite_interference', packed_tag=PackedTag(20,1,0,0)))
     regional_interference : BooleanType = field(default_factory=lambda: BooleanType('regional_interference', packed_tag=PackedTag(19,1,0,0)))
-    packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
+    packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0)))
 
     def __post_init__(self):
         super().__post_init__()
@@ -285,7 +285,7 @@ class WEIF0(CIF):
     ephermis_ref_id : CIFEnableType = field(default_factory=lambda: CIFEnableType('ephermis_ref_id', type_=WarningErrorFields(), packed_tag=PackedTag(10,1,0,0)))
     gps_ascii : CIFEnableType = field(default_factory=lambda: CIFEnableType('gps_ascii', type_=WarningErrorFields(), packed_tag=PackedTag(9,1,0,0)))
     context_association_lists : CIFEnableType = field(default_factory=lambda: CIFEnableType('context_association_lists', type_=WarningErrorFields(), packed_tag=PackedTag(8,1,0,0)))
-    packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
+    packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0)))
 
 @dataclass
 class WIF0(WEIF0):
@@ -339,7 +339,7 @@ class WEIF1(CIF):
     v49_spec_compliance : CIFEnableType = field(default_factory=lambda: CIFEnableType('v49_spec_compliance', type_=WarningErrorFields(), packed_tag=PackedTag(3,1,0,0)))
     version_information : CIFEnableType = field(default_factory=lambda: CIFEnableType('version_information', type_=WarningErrorFields(), packed_tag=PackedTag(2,1,0,0)))
     buffer_size : CIFEnableType = field(default_factory=lambda: CIFEnableType('buffer_size', type_=WarningErrorFields(), packed_tag=PackedTag(1,1,0,0)))
-    packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
+    packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0)))
 
 @dataclass
 class WEIF2(CIF):
@@ -376,7 +376,7 @@ class WEIF2(CIF):
     communication_priority_id : CIFEnableType = field(default_factory=lambda: CIFEnableType('communication_priority_id', type_=WarningErrorFields(), packed_tag=PackedTag(5,1,0,0)))
     rf_footprint : CIFEnableType = field(default_factory=lambda: CIFEnableType('rf_footprint', type_=WarningErrorFields(), packed_tag=PackedTag(4,1,0,0)))
     rf_footprint_range : CIFEnableType = field(default_factory=lambda: CIFEnableType('rf_footprint_range', type_=WarningErrorFields(), packed_tag=PackedTag(3,1,0,0)))
-    packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
+    packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0)))
 
 @dataclass
 class AcknowledgePacket(CommandPacket):

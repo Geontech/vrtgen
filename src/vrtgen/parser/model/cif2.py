@@ -40,7 +40,7 @@ class CIF2(CIF):
     communication_priority_id : CIFEnableType = field(default_factory=lambda: CIFEnableType('communication_priority_id', type_=Identifier32(), packed_tag=PackedTag(5,1,0,0)))
     rf_footprint : CIFEnableType = field(default_factory=lambda: CIFEnableType('rf_footprint', type_=Identifier32(), packed_tag=PackedTag(4,1,0,0)))
     rf_footprint_range : CIFEnableType = field(default_factory=lambda: CIFEnableType('rf_footprint_range', type_=Identifier32(), packed_tag=PackedTag(3,1,0,0)))
-    packed_0 : PackedType = PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0))
+    packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0)))
 
     def _parse_mapping(self, mapping):
         for key,val in mapping.items():
