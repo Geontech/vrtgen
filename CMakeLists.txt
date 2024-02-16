@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.15)
-project(vrtgen-cpp VERSION 0.7.6 LANGUAGES CXX)
+project(vrtgen-cpp VERSION 0.7.7 LANGUAGES CXX)
 include(GNUInstallDirs)
 
 # Set the C++ version required
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Check if spdlog is being used directly or via add_subdirectory, but allow overriding
+# Check if being used directly or via add_subdirectory, but allow overriding
 if(NOT DEFINED VRTGEN_MASTER_PROJECT)
     if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         set(VRTGEN_MASTER_PROJECT ON)

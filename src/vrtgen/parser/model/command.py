@@ -136,29 +136,6 @@ class AcknowledgeCAM(ControlAcknowledgeMode):
         return True
 
 @dataclass
-class ControlIdentifier(Field):
-    format : IdentifierFormat = field(default_factory=IdentifierFormat)
-
-    def __post_init__(self):
-        self.type_ = type(self).__name__
-        self.bits = 32
-
-    @property
-    def is_integer_type(self):
-        return self.format == IdentifierFormat.WORD
-
-    def _parse_mapping(self, mapping):
-        try:
-            self.format = parse_identifier_format(mapping)
-            if self.format == IdentifierFormat.UUID:
-                self.bits = 128
-
-        except:
-            raise ValueError('invalid identifier format: ' + mapping)
-        self.enabled = True
-        self.required = True
-
-@dataclass
 class CommandPacket(Packet):
     """
     Command base class

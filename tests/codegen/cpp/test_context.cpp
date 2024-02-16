@@ -35,6 +35,7 @@
 #include "context/required_discrete_io.hpp"
 #include "context/not_user_defined_discrete_io.hpp"
 #include "context/test_all_generate_params.hpp"
+#include "context/cif2_uuid_fields.hpp"
 #include "stream_id/without_stream_id_context.hpp"
 #include "stream_id/with_stream_id_context.hpp"
 #include "constants.hpp"
@@ -1633,6 +1634,74 @@ TEST_CASE("Bandwidth (9.5.1)", "[cif0][bandwidth]")
     
     }
 } // end TEST_CASE("Bandwidth")
+
+TEST_CASE("CIF2 UUID Fields")
+{
+    using packet_type = Cif2UuidFields;
+    packet_type packet_in;
+
+    const std::string uuid_str = "69865750-7d90-41cd-86a3-0fabd02f61d5";
+    vrtgen::UUID uuid{uuid_str};
+    packet_in.controllee_uuid(uuid);
+    packet_in.controller_uuid() = uuid;
+
+    // Examine and check packed UUID fiedls
+    CHECK(packet_in.controllee_uuid().value().get() == uuid_str);
+    CHECK(packet_in.controller_uuid().get() == uuid_str);
+
+    // Check bytes required
+    const size_t UUID_BYTES = 16;
+    const size_t EXPECTED_SIZE = HEADER_BYTES +
+                                 STREAM_ID_BYTES +
+                                 CIF0_BYTES +
+                                 CIF2_BYTES +
+                                 UUID_BYTES +
+                                 UUID_BYTES;
+    const size_t PACKED_SIZE = packet_in.size();
+    CHECK(PACKED_SIZE == EXPECTED_SIZE);
+
+    // Get underlying data
+    auto data = packet_in.data();
+    CHECK(data.size() == PACKED_SIZE);
+    auto* check_ptr = data.data();
+
+    // Examine and check packed header
+    const uint8_t PACKET_SIZE = PACKED_SIZE / 4;
+    
+    const bytes packed_header(check_ptr, check_ptr + HEADER_BYTES);
+    check_ptr += HEADER_BYTES;
+    check_ptr += STREAM_ID_BYTES;
+    check_ptr += CIF0_BYTES;
+
+    // Examine and check packed CIF2
+    const bytes CIF2_BE{ 0x01, 0x40, 0, 0 };
+    const bytes packed_cif2(check_ptr, check_ptr + CIF2_BYTES);
+    check_ptr += CIF2_BYTES;
+    CHECK(packed_cif2 == CIF2_BE);
+
+    // Check match
+    CHECK_FALSE(packet_type::match(data));
+
+    // Unpack verifed packed data
+    bytes packed_bytes(packet_in.size());
+    memcpy(packed_bytes.data(), data.data(), data.size());
+    packet_type packet_out({ packed_bytes.data(), packed_bytes.size() });
+
+    // Examine and check unpacked packet header
+    const auto& header = packet_out.header();
+    CHECK(header.packet_type() == vrtgen::packing::PacketType::CONTEXT);
+    CHECK_FALSE(header.class_id_enable());
+    CHECK(header.tsm() == vrtgen::packing::TSM::FINE);
+    CHECK(header.tsi() == vrtgen::packing::TSI::NONE);
+    CHECK(header.tsf() == vrtgen::packing::TSF::NONE);
+    CHECK(header.packet_size() == PACKET_SIZE);
+
+    // Examine and check unpacked UUID fiedls
+    CHECK(packet_out.controllee_uuid().value().get() == uuid_str);
+    CHECK(packet_out.controller_uuid().get() == uuid_str);
+
+} // end TEST_CASE("CIF2 UUID Fields")
+
 
 // TEST_CASE("Context Packet CIF0 Optional")
 // {
