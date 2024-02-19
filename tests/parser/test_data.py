@@ -20,7 +20,7 @@ from vrtgen.parser.model.types.enums import *
 from vrtgen.parser.model.data import *
 import pytest
 
-from vrtgen.parser.model.types.enums import SPECTRUM_OR_TIME
+from vrtgen.parser.model.types.enums import SpectrumOrTime
 
 def test_data_default():
     document = """data: !Data"""
@@ -64,8 +64,8 @@ def test_data_update_header_stream_id():
     assert not data.header.spectrum_or_time.required
 
 testdata = [
-    ('spectrum', SPECTRUM_OR_TIME.SPECTRUM),
-    ('time', SPECTRUM_OR_TIME.TIME),
+    ('spectrum', SpectrumOrTime.SPECTRUM),
+    ('time', SpectrumOrTime.TIME),
 ]
 
 @pytest.mark.parametrize('mode,enum', testdata)

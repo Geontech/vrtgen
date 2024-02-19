@@ -57,8 +57,8 @@ def parse_tsm(value):
         raise ValueError('invalid TSM value: ' + value)
 
 _S_BIT_VALUES = {
-    'spectrum' : enums.SPECTRUM_OR_TIME.SPECTRUM,
-    'time' :  enums.SPECTRUM_OR_TIME.TIME
+    'spectrum' : enums.SpectrumOrTime.SPECTRUM,
+    'time' :  enums.SpectrumOrTime.TIME
 }
 
 def parse_spectrum_or_time(value):
@@ -70,7 +70,7 @@ def parse_spectrum_or_time(value):
     try:
         return _S_BIT_VALUES[value.casefold()]
     except KeyError:
-        raise ValueError('invalid Spectrum or Time value: ' + value)
+        raise ValueError('invalid SpectrumorTime value: ' + value)
 
 
 _ENABLE_VALUES = {

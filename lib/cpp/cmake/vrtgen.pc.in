@@ -1,0 +1,5 @@
+Name: vrtgen
+Description: VITA 49.2 packing library
+URL: https://github.com/geontech/vrtgen
+Version: ${PROJECT_VERSION}
+CFlags: -I${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}

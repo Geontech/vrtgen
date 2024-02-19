@@ -188,7 +188,7 @@ class TSM(BinaryEnum, bits=1):
     FINE = 0
     COARSE = 1
 
-class SPECTRUM_OR_TIME(BinaryEnum, bits=1):
+class SpectrumOrTime(BinaryEnum, bits=1):
     """
     S Bit (S_BIT) of data packets:
         SPECTRUM (0) - Conveys that the vector contains spectrum data
