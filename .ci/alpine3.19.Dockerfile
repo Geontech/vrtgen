@@ -8,6 +8,7 @@ RUN apk add \
     build-base \
     cmake \
     py3-pip \
+    python3-dev \
     openssl-dev \
     git
 
@@ -21,8 +22,9 @@ RUN git clone https://github.com/nats-io/nats.c \
     && rm -rf nats.c
 
 COPY . /root/vrtgen
-
 WORKDIR /root/vrtgen
+
+RUN git submodule update --init --recursive
 
 RUN python3 -m venv /opt/venv \
     && . /opt/venv/bin/activate \
