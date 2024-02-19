@@ -14,7 +14,7 @@ class DataHeader(Header):
     """
     trailer_included : BooleanType = field(default_factory=lambda: BooleanType('trailer_included', packed_tag=PackedTag(26,1,0,0)))
     not_v49d0 : BooleanType = field(default_factory=lambda: BooleanType('not_v49d0', packed_tag=PackedTag(25,1,0,0)))
-    spectrum_or_time : EnumType = field(default_factory=lambda: EnumType('spectrum_or_time', type_=SPECTRUM_OR_TIME, packed_tag=PackedTag(24,1,0,0)))
+    spectrum_or_time : EnumType = field(default_factory=lambda: EnumType('spectrum_or_time', type_=SpectrumOrTime, packed_tag=PackedTag(24,1,0,0)))
     
     def __post_init__(self):
         super().__post_init__()
