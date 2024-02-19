@@ -1,13 +1,11 @@
 FROM rockylinux/rockylinux:9
 ARG branch
 
-COPY . /root/vrtgen
-
-WORKDIR /root/vrtgen
+WORKDIR /build
 
 RUN yum -y --nogpgcheck update \
     && yum install -y --nogpgcheck python3-pip gcc-c++ make cmake libarchive \
-        libuuid-devel openssl-libs openssl-devel git
+        libuuid-devel openssl-libs openssl-devel git python3-devel
 
 # nats.c install
 RUN git clone https://github.com/nats-io/nats.c \
@@ -17,6 +15,11 @@ RUN git clone https://github.com/nats-io/nats.c \
     && cmake --build build --target install \
     && cd .. \
     && rm -rf nats.c
+
+COPY . /root/vrtgen
+WORKDIR /root/vrtgen
+
+RUN git submodule update --init --recursive
 
 # Enable updated packages
 RUN python3 -m pip install --upgrade pip \

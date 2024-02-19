@@ -1,13 +1,11 @@
 FROM rockylinux/rockylinux:8
 ARG branch
 
-COPY . /root/vrtgen
-
-WORKDIR /root/vrtgen
+WORKDIR /build
 
 RUN yum -y --nogpgcheck update \
     && yum install -y --nogpgcheck python38-pip gcc-toolset-11-gcc-c++ make cmake libarchive \
-        libuuid-devel openssl-libs openssl-devel git
+        libuuid-devel openssl-libs openssl-devel git python38-devel
 
 # nats.c install
 RUN export PATH=/opt/rh/gcc-toolset-11/root/usr/bin:$PATH \
@@ -18,6 +16,11 @@ RUN export PATH=/opt/rh/gcc-toolset-11/root/usr/bin:$PATH \
     && cmake --build build --target install \
     && cd .. \
     && rm -rf nats.c
+
+COPY . /root/vrtgen
+WORKDIR /root/vrtgen
+
+RUN git submodule update --init --recursive
 
 # Enable updated packages
 RUN export PATH=/opt/rh/gcc-toolset-11/root/usr/bin:$PATH \
