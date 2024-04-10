@@ -13,6 +13,7 @@ void init_cif1(py::module_& mod);
 void init_cif2(py::module_& mod);
 void init_cif7(py::module_& mod);
 void init_command(py::module_& mod);
+void init_uuid(py::module_& mod);
 
 PYBIND11_MODULE(pyvrtgen, vrtgen_mod) {
     auto enum_submod = vrtgen_mod.def_submodule("enums");
@@ -28,4 +29,5 @@ PYBIND11_MODULE(pyvrtgen, vrtgen_mod) {
     init_cif2(packing_submod);
     init_cif7(packing_submod);
     init_command(packing_submod);
+    init_uuid(packing_submod);
 }
