@@ -16,7 +16,7 @@ ENV PATH="/opt/rh/rh-python38/root/usr/local/bin:/opt/rh/rh-python38/root/usr/bi
 RUN ln -s /opt/rh/rh-python38/root/usr/bin/python3.8 /usr/bin/python3.8
 
 # nats.c install
-RUN git clone https://github.com/nats-io/nats.c \
+RUN git clone -b v3.8.0 https://github.com/nats-io/nats.c \
     && cd nats.c \
     && cmake3 -DOPENSSL_ROOT_DIR=/usr/lib64/openssl11 -DOPENSSL_INCLUDE_DIR=/usr/include/openssl11 -DNATS_BUILD_STREAMING=OFF -B build \
     && cmake3 --build build \

@@ -9,7 +9,7 @@ RUN yum -y --nogpgcheck update \
 
 # nats.c install
 RUN export PATH=/opt/rh/gcc-toolset-11/root/usr/bin:$PATH \
-    && git clone https://github.com/nats-io/nats.c \
+    && git clone -b v3.8.0 https://github.com/nats-io/nats.c \
     && cd nats.c \
     && cmake -DNATS_BUILD_STREAMING=OFF -B build \
     && cmake --build build \

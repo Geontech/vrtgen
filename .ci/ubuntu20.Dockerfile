@@ -23,7 +23,7 @@ RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/nul
 
 # nats.c install
 RUN export CXX=g++-10 \
-    && git clone https://github.com/nats-io/nats.c \
+    && git clone -b v3.8.0 https://github.com/nats-io/nats.c \
     && cd nats.c \
     && cmake -DNATS_BUILD_STREAMING=OFF -B build \
     && cmake --build build \

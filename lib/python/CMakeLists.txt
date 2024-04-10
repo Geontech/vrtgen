@@ -19,6 +19,7 @@ pybind11_add_module(pyvrtgen
     vrtgen/cif2.cpp
     vrtgen/cif7.cpp
     vrtgen/command.cpp
+    vrtgen/uuid.cpp
 )
 
 target_include_directories(pyvrtgen

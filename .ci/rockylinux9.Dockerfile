@@ -8,7 +8,7 @@ RUN yum -y --nogpgcheck update \
         libuuid-devel openssl-libs openssl-devel git python3-devel
 
 # nats.c install
-RUN git clone https://github.com/nats-io/nats.c \
+RUN git clone -b v3.8.0 https://github.com/nats-io/nats.c \
     && cd nats.c \
     && cmake -DNATS_BUILD_STREAMING=OFF -B build \
     && cmake --build build \
