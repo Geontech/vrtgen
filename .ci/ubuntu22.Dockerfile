@@ -16,7 +16,7 @@ RUN apt install -f -m \
 
 # nats.c install
 RUN export CXX=g++-11 \
-    && git clone https://github.com/nats-io/nats.c \
+    && git clone -b v3.8.0 https://github.com/nats-io/nats.c \
     && cd nats.c \
     && cmake -DNATS_BUILD_STREAMING=OFF -B build \
     && cmake --build build \
