@@ -101,7 +101,11 @@ auto {{ packet_name }}::{{ func_name }}(const {{ type_helper.member_type(field) 
         update_packet_size();
     }
     m_{{ func_name }}->pack_into(m_data.data() + m_positions.at("{{ func_name }}"));
+{% if is_warning %}
     m_{{ packet.cam.name }}.ack_w(true);
+{% else %}
+    m_{{ packet.cam.name }}.ack_er(true);
+{% endif %}
     m_cam.pack_into(m_data.data() + m_positions.at("{{ packet.cam.name }}"));
 }
 
