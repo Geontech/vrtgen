@@ -137,6 +137,59 @@ class Time(FixedPointType):
         self.radix = 22
 
 @dataclass
+class SpectrumType(PackedStruct):
+    """
+    Spectrum Type Subfield [9.6.1.1]
+    """
+    name : str = 'SpectrumType'
+    reserved: IntegerType = field(default_factory=lambda: IntegerType('reserved', bits=12, packed_tag=PackedTag(31,12,0)))
+    spectrum_type: IntegerType = field(default_factory=lambda: IntegerType('spectrum_type', bits=8, packed_tag=PackedTag(19,8,0)))
+    averaging_type: IntegerType = field(default_factory=lambda: IntegerType('averaging_type', bits=8, packed_tag=PackedTag(11,8,0)))
+    window_time : IntegerType = field(default_factory=lambda: IntegerType('window_time', bits=4, packed_tag=PackedTag(3,4,0)))
+
+@dataclass
+class WindowType(PackedStruct):
+    """
+    Window Type Subfield [9.6.1.2]
+    """
+    name : str = 'WindowType'
+    reserved: IntegerType = field(default_factory=lambda: IntegerType('reserved', bits=24, packed_tag=PackedTag(31,24,0)))
+    window_type: IntegerType = field(default_factory=lambda: IntegerType('window_type', bits=8, packed_tag=PackedTag(7,8,0)))
+
+@dataclass
+class SpectrumF1F2Indicies(PackedStruct):
+    """
+    Spectrum F1-F2 Indicies Subfield [9.6.1.9]
+    """
+    name : str = 'SpectrumF1F2Indicies'
+    f1_index : Unsigned32 = field(default_factory=lambda: Unsigned32('f1_index', packed_tag=PackedTag(31,32,0)))
+    f2_index : Unsigned32 = field(default_factory=lambda: Unsigned32('f2_index', packed_tag=PackedTag(31,32,1)))
+
+@dataclass
+class Spectrum(PackedStruct):
+    """
+    Spectrum [9.6.1]
+    """
+    name : str = 'Spectrum'
+    spectrum_type : SpectrumType = field(default_factory=lambda: SpectrumType('spectrum_type', packed_tag=PackedTag(31,32,0)))
+    window_type : WindowType = field(default_factory=lambda: WindowType('window_type', packed_tag=PackedTag(31,32,1)))
+    number_transform_points : Unsigned32 = field(default_factory=lambda: Unsigned32('number_transform_points', packed_tag=PackedTag(31,32,2)))
+    number_window_points : Unsigned32 = field(default_factory=lambda: Unsigned32('number_window_points', packed_tag=PackedTag(31,32,3)))
+    resolution : FixedPoint64r20 = field(default_factory=lambda: FixedPoint64r20('resolution', packed_tag=PackedTag(31,64,4)))
+    span : FixedPoint64r20 = field(default_factory=lambda: FixedPoint64r20('span', packed_tag=PackedTag(31,64,6)))
+    number_averages : Unsigned32 = field(default_factory=lambda: Unsigned32('number_averages', packed_tag=PackedTag(31,32,8)))
+    # The weighting_factor field is defined to be 32-bits, but there is no mention of type.
+    # As it represents a coefficient value, we assume a signed fixed-point w/ radix 16 here.
+    weighting_factor : FixedPointType = field(default_factory=lambda: FixedPointType('weighting_factor', bits=32, signed=True, radix=16, packed_tag=PackedTag(31,32,9)))
+    spectrum_f1_f2_indicies : SpectrumF1F2Indicies = field(default_factory=lambda: SpectrumF1F2Indicies('spectrum_f1_f2_indicies', packed_tag=PackedTag(31, 64, 10)))
+    # There are options for how the window_time_delta field can be defined:
+    # A) Time: 32-bit unsigned int
+    # B) Samples: 32-bit unsigned int
+    # C) Percent Overlap: signed fixed-point w/ radix 12
+    window_time_delta : Unsigned32 = field(default_factory=lambda: Unsigned32('window_time_delta', packed_tag=PackedTag(31,32,12)))
+    # window_time_delta : FixedPointType = field(default_factory=lambda: FixedPointType('window_time_delta', bits=32, signed=True, radix=12, packed_tag=PackedTag(31,32,12)))
+
+@dataclass
 class SectorStepScanCIF(CIF):
     """
     Sector/Step-Scan Control/Context Indicator Word [9.6.2.1]
@@ -383,7 +436,7 @@ class CIF1(CIF):
     aux_gain : CIFEnableType = field(default_factory=lambda: CIFEnableType('aux_gain', type_=Gain(), packed_tag=PackedTag(14,1,0,0)))
     aux_bandwidth : CIFEnableType = field(default_factory=lambda: CIFEnableType('aux_bandwidth', type_=FixedPoint64r20(), packed_tag=PackedTag(13,1,0,0)))
     array_of_cifs : CIFEnableType = field(default_factory=lambda: CIFEnableType('array_of_cifs', packed_tag=PackedTag(11,1,0,0)))
-    spectrum : CIFEnableType = field(default_factory=lambda: CIFEnableType('spectrum', packed_tag=PackedTag(10,1,0,0)))
+    spectrum : CIFEnableType = field(default_factory=lambda: CIFEnableType('spectrum', type_=Spectrum(), packed_tag=PackedTag(10,1,0,0)))
     sector_step_scan : CIFEnableType = field(default_factory=lambda: CIFEnableType('sector_step_scan', type_=SectorStepScan(), packed_tag=PackedTag(9,1,0,0)))
     index_list : CIFEnableType = field(default_factory=lambda: CIFEnableType('index_list', type_=IndexList(), packed_tag=PackedTag(7,1,0,0)))
     discrete_io_32 : CIFEnableType = field(default_factory=lambda: CIFEnableType('discrete_io_32', type_=DiscreteIO32(), packed_tag=PackedTag(6,1,0,0)))
