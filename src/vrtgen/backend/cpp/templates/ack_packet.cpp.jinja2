@@ -383,9 +383,13 @@ auto {{ packet.name }}::name() const -> std::string
 {%   if packet.cam.enabled %}
 {{ common.const_ref_getter(packet.name, packet.cam, type_helper) | trim }}
 
-{{ command.req_defs(packet, packet.name, packet.cam.partial_action, type_helper) | trim }}
+{{ command.cam_defs(packet, packet.name, packet.cam.action_mode, type_helper) | trim }}
 
-{{ command.req_defs(packet, packet.name, packet.cam.scheduled_or_executed, type_helper) | trim }}
+{{ command.cam_defs(packet, packet.name, packet.cam.timing_control, type_helper) | trim }}
+
+{{ command.cam_defs(packet, packet.name, packet.cam.partial_action, type_helper) | trim }}
+
+{{ command.cam_defs(packet, packet.name, packet.cam.scheduled_or_executed, type_helper) | trim }}
 
 {% endif %}
 {% if packet.message_id.enabled %}
@@ -435,11 +439,11 @@ auto {{ packet.name }}::update_packet_size() -> void
 {{ match_ack(packet, packet_name, type_helper, true) | trim }}
 
 {%  if packet.cam.ack_v.is_optional %}
-{{ command.req_defs(packet, packet_name, packet.cam.ack_v, type_helper) | trim }}
+{{ command.cam_defs(packet, packet_name, packet.cam.ack_v, type_helper) | trim }}
 
 {%  endif %}
 {%  if packet.cam.ack_x.is_optional %}
-{{ command.req_defs(packet, packet_name, packet.cam.ack_x, type_helper) | trim }}
+{{ command.cam_defs(packet, packet_name, packet.cam.ack_x, type_helper) | trim }}
 
 {%  endif %}
 {% if packet.wif0.enabled and packet.warnings_enabled %}
