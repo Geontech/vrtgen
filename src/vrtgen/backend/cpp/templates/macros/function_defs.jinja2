@@ -50,26 +50,30 @@
 {%- macro command(packet, type_helper) %}
 {% if packet.cam.enabled %}
 {{ common.const_ref_getter(packet.name, packet.cam, type_helper) | trim }}
+
+{{ command_.cam_defs(packet, packet.name, packet.cam.action_mode, type_helper) | trim }}
+
+{{ command_.cam_defs(packet, packet.name, packet.cam.timing_control, type_helper) | trim }}
 {%   if packet.cam.is_control and packet.cam.req_v.is_optional %}
 
-{{ command_.req_defs(packet, packet.name, packet.cam.req_v, type_helper ) | trim }}
+{{ command_.cam_defs(packet, packet.name, packet.cam.req_v, type_helper ) | trim }}
 {%   elif packet.cam.is_ack and packet.cam.ack_v.is_optional %}
 
-{{ command_.req_defs(packet, packet.name, packet.cam.ack_v, type_helper ) | trim }}
+{{ command_.cam_defs(packet, packet.name, packet.cam.ack_v, type_helper ) | trim }}
 {%   endif %}
 {%   if packet.cam.is_control and packet.cam.req_x.is_optional %}
 
-{{ command_.req_defs(packet, packet.name, packet.cam.req_x, type_helper ) | trim }}
+{{ command_.cam_defs(packet, packet.name, packet.cam.req_x, type_helper ) | trim }}
 {%   elif packet.cam.is_ack and packet.cam.ack_x.is_optional %}
 
-{{ command_.req_defs(packet, packet.name, packet.cam.ack_x, type_helper ) | trim }}
+{{ command_.cam_defs(packet, packet.name, packet.cam.ack_x, type_helper ) | trim }}
 {%   endif %}
 {%   if packet.cam.is_control and packet.cam.req_s.is_optional %}
 
-{{ command_.req_defs(packet, packet.name, packet.cam.req_s, type_helper ) | trim }}
+{{ command_.cam_defs(packet, packet.name, packet.cam.req_s, type_helper ) | trim }}
 {%   elif packet.cam.is_ack and packet.cam.ack_s.is_optional %}
 
-{{ command_.req_defs(packet, packet.name, packet.cam.ack_s, type_helper ) | trim }}
+{{ command_.cam_defs(packet, packet.name, packet.cam.ack_s, type_helper ) | trim }}
 {%   endif %}
 
 {% endif %}

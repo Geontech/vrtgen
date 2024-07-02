@@ -45,9 +45,9 @@ class ControlAcknowledgeMode(PackedStruct):
     permit_partial : BooleanType = field(default_factory=lambda: BooleanType('permit_partial', packed_tag=PackedTag(27,1,0,0)))
     permit_warnings : BooleanType = field(default_factory=lambda: BooleanType('permit_warnings', packed_tag=PackedTag(26,1,0,0)))
     permit_errors : BooleanType = field(default_factory=lambda: BooleanType('permit_errors', packed_tag=PackedTag(25,1,0,0)))
-    # action_mode : EnumType = field(default_factory=lambda: EnumType('action_mode', type_=ActionMode, packed_tag=PackedTag(24,2,0,0)))
+    action_mode : EnumType = field(default_factory=lambda: EnumType('action_mode', type_=ActionMode, packed_tag=PackedTag(24,2,0,0)))
     # nack_only : BooleanType = field(default_factory=lambda: BooleanType('nack_only', packed_tag=PackedTag(22,1,0,0)))
-    # timing_control : EnumType = field(default_factory=lambda: EnumType('timing_control', type_=TimestampControlMode, packed_tag=PackedTag(14,3,0,0)))
+    timing_control : EnumType = field(default_factory=lambda: EnumType('timing_control', type_=TimestampControlMode, packed_tag=PackedTag(14,3,0,0)))
     packed_0 : PackedType = field(default_factory=lambda: PackedType('packed_0', bits=32, packed_tag=PackedTag(0,32,0)))
 
     def __post_init__(self):

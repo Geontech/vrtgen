@@ -86,7 +86,7 @@ auto {{ packet.name }}::{{ packet.controller_id.name }}(const {{ type_helper.val
 {% endif %}
 {% endmacro %}
 
-{%- macro req_defs(packet, packet_name, req, type_helper) %}
+{%- macro cam_defs(packet, packet_name, req, type_helper) %}
 auto {{ packet_name }}::{{ req.name }}() const -> {{ type_helper.value_type(req) }}
 {
     return m_{{ packet.cam.name }}.{{ req.name }}();
