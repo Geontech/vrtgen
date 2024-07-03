@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.10] - 2024-07-03
+### Fixed
+- `SNRNoise::noise` functions using incorrect subfield
+### Removed
+- CentOS 7 CI
 ## [0.7.9] - 2024-07-02
 ### Added
 - Getter/setter functions for `action_mode` and `timing_control` in command packets

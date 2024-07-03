@@ -468,20 +468,20 @@ public:
      */
     double noise() const noexcept
     {
-        return subfield_31();
+        return subfield_15();
     }
 
     /**
-     * @brief Sets the 3IIP subfield value
-     * @param value 3IIP subfield value to set
+     * @brief Sets the Noise subfield value
+     * @param value Noise subfield value to set
      * 
-     * 3IIP subfield is 16 bits long at bit position 15 expressed in
+     * Noise subfield is 16 bits long at bit position 15 expressed in
      * two's-complement format with a radix point to the right of bit 7
      * See VITA 49.2-2017 Figure 9.5.7-1
      */
     void noise(double value) noexcept
     {
-        subfield_31(value);
+        subfield_15(value);
     }
 
 }; // end class SNRNoise
