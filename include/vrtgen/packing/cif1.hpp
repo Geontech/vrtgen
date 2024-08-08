@@ -487,6 +487,189 @@ public:
 }; // end class SNRNoise
 
 /**
+ * @class Spectrum
+ * @brief Spectrum field (VITA 49.2-2017 Section 9.6.1)
+ */
+class Spectrum
+{
+public:
+    uint32_t spectrum_type() const noexcept
+    {
+        return m_spectrum_type;
+    }
+    void spectrum_type(uint32_t value) noexcept
+    {
+        m_spectrum_type = value;
+    }
+    uint32_t window_type() const noexcept
+    {
+        return m_window_type;
+    }
+    void window_type(uint32_t value) noexcept
+    {
+        m_window_type = value;
+    }
+    uint32_t num_transform_points() const noexcept
+    {
+        return m_num_transform_points;
+    }
+    void num_transform_points(uint32_t value) noexcept
+    {
+        m_num_transform_points = value;
+    }
+    uint32_t num_window_points() const noexcept
+    {
+        return m_num_window_points;
+    }
+    void num_window_points(uint32_t value) noexcept
+    {
+        m_num_window_points = value;
+    }
+    uint32_t num_averages() const noexcept
+    {
+        return m_num_averages;
+    }
+    void num_averages(uint32_t value) noexcept
+    {
+        m_num_averages = value;
+    }
+    double resolution() const noexcept
+    {
+        return vrtgen::fixed::to_fp<64,20>(vrtgen::swap::from_be(m_resolution));
+    }
+    void resolution(double value) noexcept
+    {
+        m_resolution = vrtgen::swap::to_be(vrtgen::fixed::to_int<64,20>(value));
+    }
+    double span() const noexcept
+    {
+        return vrtgen::fixed::to_fp<64,20>(vrtgen::swap::from_be(m_span));
+    }
+    void span(double value) noexcept
+    {
+        m_span = vrtgen::swap::to_be(vrtgen::fixed::to_int<64,20>(value));
+    }
+    uint32_t weighting_factor() const noexcept
+    {
+        return m_weighting_factor;
+    }
+    void weighting_factor(uint32_t value) noexcept
+    {
+        m_weighting_factor = value;
+    }
+    uint32_t f1_index() const noexcept
+    {
+        return m_f1_index;
+    }
+    void f1_index(uint32_t value) noexcept
+    {
+        m_f1_index = value;
+    }
+    uint32_t f2_index() const noexcept
+    {
+        return m_f2_index;
+    }
+    void f2_index(uint32_t value) noexcept
+    {
+        m_f2_index = value;
+    }
+    uint32_t window_time_delta() const noexcept
+    {
+        return m_window_time_delta;
+    }
+    void window_time_delta(uint32_t value) noexcept
+    {
+        m_window_time_delta = value;
+    }
+    std::size_t size() const
+    {
+        return sizeof(Spectrum);
+    }
+    void pack_into(uint8_t* buffer_ptr) const
+    {
+        std::memcpy(buffer_ptr, &m_spectrum_type, sizeof(m_spectrum_type));
+        buffer_ptr += sizeof(m_spectrum_type);
+
+        std::memcpy(buffer_ptr, &m_window_type, sizeof(m_window_type));
+        buffer_ptr += sizeof(m_window_type);
+
+        std::memcpy(buffer_ptr, &m_num_transform_points, sizeof(m_num_transform_points));
+        buffer_ptr += sizeof(m_num_transform_points);
+
+        std::memcpy(buffer_ptr, &m_num_window_points, sizeof(m_num_window_points));
+        buffer_ptr += sizeof(m_num_window_points);
+
+        std::memcpy(buffer_ptr, &m_resolution, sizeof(m_resolution));
+        buffer_ptr += sizeof(m_resolution);
+
+        std::memcpy(buffer_ptr, &m_span, sizeof(m_span));
+        buffer_ptr += sizeof(m_span);
+
+        std::memcpy(buffer_ptr, &m_num_averages, sizeof(m_num_averages));
+        buffer_ptr += sizeof(m_num_averages);
+
+        std::memcpy(buffer_ptr, &m_weighting_factor, sizeof(m_weighting_factor));
+        buffer_ptr += sizeof(m_weighting_factor);
+
+        std::memcpy(buffer_ptr, &m_f1_index, sizeof(m_f1_index));
+        buffer_ptr += sizeof(m_f1_index);
+
+        std::memcpy(buffer_ptr, &m_f2_index, sizeof(m_f2_index));
+        buffer_ptr += sizeof(m_f2_index);
+
+        std::memcpy(buffer_ptr, &m_window_time_delta, sizeof(m_window_time_delta));
+        buffer_ptr += sizeof(m_window_time_delta);
+    }
+    void unpack_from(const uint8_t* buffer_ptr)
+    {
+        std::memcpy(&m_spectrum_type, buffer_ptr, sizeof(m_spectrum_type));
+        buffer_ptr += sizeof(m_spectrum_type);
+
+        std::memcpy(&m_window_type, buffer_ptr, sizeof(m_window_type));
+        buffer_ptr += sizeof(m_window_type);
+
+        std::memcpy(&m_num_transform_points, buffer_ptr, sizeof(m_num_transform_points));
+        buffer_ptr += sizeof(m_num_transform_points);
+
+        std::memcpy(&m_num_window_points, buffer_ptr, sizeof(m_num_window_points));
+        buffer_ptr += sizeof(m_num_window_points);
+
+        std::memcpy(&m_resolution, buffer_ptr, sizeof(m_resolution));
+        buffer_ptr += sizeof(m_resolution);
+
+        std::memcpy(&m_span, buffer_ptr, sizeof(m_span));
+        buffer_ptr += sizeof(m_span);
+
+        std::memcpy(&m_num_averages, buffer_ptr, sizeof(m_num_averages));
+        buffer_ptr += sizeof(m_num_averages);
+
+        std::memcpy(&m_weighting_factor, buffer_ptr, sizeof(m_weighting_factor));
+        buffer_ptr += sizeof(m_weighting_factor);
+
+        std::memcpy(&m_f1_index, buffer_ptr, sizeof(m_f1_index));
+        buffer_ptr += sizeof(m_f1_index);
+
+        std::memcpy(&m_f2_index, buffer_ptr, sizeof(m_f2_index));
+        buffer_ptr += sizeof(m_f2_index);
+
+        std::memcpy(&m_window_time_delta, buffer_ptr, sizeof(m_window_time_delta));
+        buffer_ptr += sizeof(m_window_time_delta);
+    }
+private:
+    uint32_t m_spectrum_type;
+    uint32_t m_window_type;
+    uint32_t m_num_transform_points;
+    uint32_t m_num_window_points;
+    uint64_t m_resolution;
+    uint64_t m_span;
+    uint32_t m_num_averages;
+    uint32_t m_weighting_factor;
+    uint32_t m_f1_index;
+    uint32_t m_f2_index;
+    uint32_t m_window_time_delta;
+};
+
+/**
  * @class SectorStepScanCIF
  * @brief Sector/Step-Scan Control/Context Indicator Word (VITA 49.2-2017 Section 9.6.2.1)
  */
