@@ -1,6 +1,6 @@
 # VITA 49.2 Packet Generator
 
-Generates native-language classes/structs for V49.2 packet definitons in a YAML configuration file.
+Generates native-language classes/structs for V49.2 packet definitions in a YAML configuration file.
 
 ## Dependencies
 
