@@ -24,13 +24,13 @@
 {% if packet.cam.enabled %}
 {{ function_decls.const_ref_getter(packet.cam, type_helper) | trim }}
 
-{{ function_decls.req_getter(packet.cam.partial_action, type_helper) | trim }}
+{{ function_decls.getters_and_setters(packet.cam.action_mode, type_helper) | trim }}
 
-{{ function_decls.setters(packet.cam.partial_action, type_helper) | trim }}
+{{ function_decls.getters_and_setters(packet.cam.timing_control, type_helper) | trim }}
 
-{{ function_decls.req_getter(packet.cam.scheduled_or_executed, type_helper) | trim }}
+{{ function_decls.getters_and_setters(packet.cam.partial_action, type_helper) | trim }}
 
-{{ function_decls.setters(packet.cam.scheduled_or_executed, type_helper) | trim }}
+{{ function_decls.getters_and_setters(packet.cam.scheduled_or_executed, type_helper) | trim }}
 
 {% endif %}
 {% if packet.message_id.enabled %}
@@ -90,13 +90,13 @@ auto reset_{{ func_name }}() -> void;
 
 {%- macro ackvx_public_function_declarations(packet, type_helper) %}
 {%  if packet.cam.ack_v.is_optional %}
-{{ function_decls.req_getter(packet.cam.ack_v, type_helper) | trim }}
+{{ function_decls.cam_getter(packet.cam.ack_v, type_helper) | trim }}
 
 {{ function_decls.setters(packet.cam.ack_v, type_helper) | trim }}
 
 {%  endif %}
 {%  if packet.cam.ack_x.is_optional %}
-{{ function_decls.req_getter(packet.cam.ack_x, type_helper) | trim }}
+{{ function_decls.cam_getter(packet.cam.ack_x, type_helper) | trim }}
 
 {{ function_decls.setters(packet.cam.ack_x, type_helper) | trim }}
 

@@ -53,19 +53,19 @@ auto {{ packet_name }}::update_positions() -> void
         curr_pos += m_{{ packet.wif2.name }}->size();
     }
 {% endif %}
-{% if packet.eif0.enabled and packet.warnings_enabled %}
+{% if packet.eif0.enabled and packet.errors_enabled %}
     m_positions.at("{{ packet.eif0.name }}") = curr_pos;
     if (m_{{ packet.eif0.name }}.has_value()) {
         curr_pos += m_{{ packet.eif0.name }}->size();
     }
 {% endif %}
-{% if packet.eif1.enabled and packet.warnings_enabled %}
+{% if packet.eif1.enabled and packet.errors_enabled %}
     m_positions.at("{{ packet.eif1.name }}") = curr_pos;
     if (m_{{ packet.eif1.name }}.has_value()) {
         curr_pos += m_{{ packet.eif1.name }}->size();
     }
 {% endif %}
-{% if packet.eif2.enabled and packet.warnings_enabled %}
+{% if packet.eif2.enabled and packet.errors_enabled %}
     m_positions.at("{{ packet.eif2.name }}") = curr_pos;
     if (m_{{ packet.eif2.name }}.has_value()) {
         curr_pos += m_{{ packet.eif2.name }}->size();
@@ -99,7 +99,7 @@ auto {{ packet_name }}::update_positions() -> void
 {%   for field in packet.eif0.fields if field.enabled %}
     m_positions.at("{{ field.name }}_errors") = curr_pos;
     if (m_{{ packet.eif0.name }}.has_value() && m_{{ packet.eif0.name }}->{{ field.name }}()) {
-        curr_pos += m_{{ field.name }}_warnings->size();
+        curr_pos += m_{{ field.name }}_errors->size();
     }
 {%   endfor %}
 {% endif %}
@@ -107,7 +107,7 @@ auto {{ packet_name }}::update_positions() -> void
 {%   for field in packet.eif1.fields if field.enabled %}
     m_positions.at("{{ field.name }}_errors") = curr_pos;
     if (m_{{ packet.eif1.name }}.has_value() && m_{{ packet.eif1.name }}->{{ field.name }}()) {
-        curr_pos += m_{{ field.name }}_warnings->size();
+        curr_pos += m_{{ field.name }}_errors->size();
     }
 {%   endfor %}
 {% endif %}
@@ -115,7 +115,7 @@ auto {{ packet_name }}::update_positions() -> void
 {%   for field in packet.eif2.fields if field.enabled %}
     m_positions.at("{{ field.name }}_errors") = curr_pos;
     if (m_{{ packet.eif2.name }}.has_value() && m_{{ packet.eif2.name }}->{{ field.name }}()) {
-        curr_pos += m_{{ field.name }}_warnings->size();
+        curr_pos += m_{{ field.name }}_errors->size();
     }
 {%   endfor %}
 {% endif %}
@@ -146,11 +146,11 @@ auto {{ packet_name }}::sync() -> void
         }
         if (!m_{{ packet.wif0.name }}->{{ field.name }}()) {
             m_data.insert(m_data.begin() + m_positions.at("{{ field_name }}"), m_{{ field_name }}->size(), 0);
-            m_{{ packet.wif0.name }}->{{ field.name }}(true);
-            m_{{ packet.wif0.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.wif0.name }}"));
             update_positions();
             update_packet_size();
         }
+        m_{{ packet.wif0.name }}->{{ field.name }}(true);
+        m_{{ packet.wif0.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.wif0.name }}"));
         m_{{ field_name }}->pack_into(m_data.data() + m_positions.at("{{ field_name }}"));
         m_{{ packet.cam.name }}.ack_w(true);
         m_{{ packet.cam.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cam.name }}"));
@@ -161,15 +161,13 @@ auto {{ packet_name }}::sync() -> void
 {%   for field in packet.wif1.fields if field.enabled %}
 {%     set field_name = field.name + '_warnings' %}
     if (m_{{ field_name }}.has_value()) {
+        if (!m_{{ packet.wif0.name }}.has_value()) {
+            m_{{ packet.wif0.name }} = {{ type_helper.member_type(packet.wif0) }}{};
+            m_data.insert(m_data.begin() + m_positions.at("{{ packet.wif0.name }}"), m_{{ packet.wif0.name }}->size(), 0);
+            update_positions();
+            update_packet_size();
+        }
         if (!m_{{ packet.wif1.name }}.has_value()) {
-            if (!m_{{ packet.wif0.name }}.has_value()) {
-                m_{{ packet.wif0.name }} = {{ type_helper.member_type(packet.wif0) }}{};
-                m_data.insert(m_data.begin() + m_positions.at("{{ packet.wif0.name }}"), m_{{ packet.wif0.name }}->size(), 0);
-                m_{{ packet.wif0.name }}->wif1_enable(true);
-                m_{{ packet.wif0.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.wif0.name }}"));
-                update_positions();
-                update_packet_size();
-            }
             m_{{ packet.wif1.name }} = {{ type_helper.member_type(packet.wif1) }}{};
             m_data.insert(m_data.begin() + m_positions.at("{{ packet.wif1.name }}"), m_{{ packet.wif1.name }}->size(), 0);
             update_positions();
@@ -177,11 +175,13 @@ auto {{ packet_name }}::sync() -> void
         }
         if (!m_{{ packet.wif1.name }}->{{ field.name }}()) {
             m_data.insert(m_data.begin() + m_positions.at("{{ field_name }}"), m_{{ field_name }}->size(), 0);
-            m_{{ packet.wif1.name }}->{{ field.name }}(true);
-            m_{{ packet.wif1.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.wif1.name }}"));
             update_positions();
             update_packet_size();
         }
+        m_{{ packet.wif0.name }}->wif1_enable(true);
+        m_{{ packet.wif0.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.wif0.name }}"));
+        m_{{ packet.wif1.name }}->{{ field.name }}(true);
+        m_{{ packet.wif1.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.wif1.name }}"));
         m_{{ field_name }}->pack_into(m_data.data() + m_positions.at("{{ field_name }}"));
         m_{{ packet.cam.name }}.ack_w(true);
         m_{{ packet.cam.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cam.name }}"));
@@ -192,15 +192,13 @@ auto {{ packet_name }}::sync() -> void
 {%   for field in packet.wif2.fields if field.enabled %}
 {%     set field_name = field.name + '_warnings' %}
     if (m_{{ field_name }}.has_value()) {
+        if (!m_{{ packet.wif0.name }}.has_value()) {
+            m_{{ packet.wif0.name }} = {{ type_helper.member_type(packet.wif0) }}{};
+            m_{{ packet.wif0.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.wif0.name }}"));
+            update_positions();
+            update_packet_size();
+        }
         if (!m_{{ packet.wif2.name }}.has_value()) {
-            if (!m_{{ packet.wif0.name }}.has_value()) {
-                m_{{ packet.wif0.name }} = {{ type_helper.member_type(packet.wif0) }}{};
-                m_data.insert(m_data.begin() + m_positions.at("{{ packet.wif0.name }}"), m_{{ packet.wif0.name }}->size(), 0);
-                m_{{ packet.wif0.name }}->wif2_enable(true);
-                m_{{ packet.wif0.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.wif0.name }}"));
-                update_positions();
-                update_packet_size();
-            }
             m_{{ packet.wif2.name }} = {{ type_helper.member_type(packet.wif2) }}{};
             m_data.insert(m_data.begin() + m_positions.at("{{ packet.wif2.name }}"), m_{{ packet.wif2.name }}->size(), 0);
             update_positions();
@@ -208,11 +206,13 @@ auto {{ packet_name }}::sync() -> void
         }
         if (!m_{{ packet.wif2.name }}->{{ field.name }}()) {
             m_data.insert(m_data.begin() + m_positions.at("{{ field_name }}"), m_{{ field_name }}->size(), 0);
-            m_{{ packet.wif2.name }}->{{ field.name }}(true);
-            m_{{ packet.wif2.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.wif2.name }}"));
             update_positions();
             update_packet_size();
         }
+        m_{{ packet.wif0.name }}->wif2_enable(true);
+        m_data.insert(m_data.begin() + m_positions.at("{{ packet.wif0.name }}"), m_{{ packet.wif0.name }}->size(), 0);
+        m_{{ packet.wif2.name }}->{{ field.name }}(true);
+        m_{{ packet.wif2.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.wif2.name }}"));
         m_{{ field_name }}->pack_into(m_data.data() + m_positions.at("{{ field_name }}"));
         m_{{ packet.cam.name }}.ack_w(true);
         m_{{ packet.cam.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cam.name }}"));
@@ -231,11 +231,11 @@ auto {{ packet_name }}::sync() -> void
         }
         if (!m_{{ packet.eif0.name }}->{{ field.name }}()) {
             m_data.insert(m_data.begin() + m_positions.at("{{ field_name }}"), m_{{ field_name }}->size(), 0);
-            m_{{ packet.eif0.name }}->{{ field.name }}(true);
-            m_{{ packet.eif0.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.eif0.name }}"));
             update_positions();
             update_packet_size();
         }
+        m_{{ packet.eif0.name }}->{{ field.name }}(true);
+        m_{{ packet.eif0.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.eif0.name }}"));
         m_{{ field_name }}->pack_into(m_data.data() + m_positions.at("{{ field_name }}"));
         m_{{ packet.cam.name }}.ack_er(true);
         m_{{ packet.cam.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cam.name }}"));
@@ -246,15 +246,13 @@ auto {{ packet_name }}::sync() -> void
 {%   for field in packet.eif1.fields if field.enabled %}
 {%     set field_name = field.name + '_errors' %}
     if (m_{{ field_name }}.has_value()) {
+        if (!m_{{ packet.eif0.name }}.has_value()) {
+            m_{{ packet.eif0.name }} = {{ type_helper.member_type(packet.eif0) }}{};
+            m_data.insert(m_data.begin() + m_positions.at("{{ packet.eif0.name }}"), m_{{ packet.eif0.name }}->size(), 0);
+            update_positions();
+            update_packet_size();
+        }
         if (!m_{{ packet.eif1.name }}.has_value()) {
-            if (!m_{{ packet.eif0.name }}.has_value()) {
-                m_{{ packet.eif0.name }} = {{ type_helper.member_type(packet.eif0) }}{};
-                m_data.insert(m_data.begin() + m_positions.at("{{ packet.eif0.name }}"), m_{{ packet.wif0.name }}->size(), 0);
-                m_{{ packet.eif0.name }}->eif1_enable(true);
-                m_{{ packet.eif0.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.eif0.name }}"));
-                update_positions();
-                update_packet_size();
-            }
             m_{{ packet.eif1.name }} = {{ type_helper.member_type(packet.eif1) }}{};
             m_data.insert(m_data.begin() + m_positions.at("{{ packet.eif1.name }}"), m_{{ packet.eif1.name }}->size(), 0);
             update_positions();
@@ -262,11 +260,13 @@ auto {{ packet_name }}::sync() -> void
         }
         if (!m_{{ packet.eif1.name }}->{{ field.name }}()) {
             m_data.insert(m_data.begin() + m_positions.at("{{ field_name }}"), m_{{ field_name }}->size(), 0);
-            m_{{ packet.eif1.name }}->{{ field.name }}(true);
-            m_{{ packet.eif1.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.eif1.name }}"));
             update_positions();
             update_packet_size();
         }
+        m_{{ packet.eif0.name }}->eif1_enable(true);
+        m_{{ packet.eif0.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.eif0.name }}"));
+        m_{{ packet.eif1.name }}->{{ field.name }}(true);
+        m_{{ packet.eif1.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.eif1.name }}"));
         m_{{ field_name }}->pack_into(m_data.data() + m_positions.at("{{ field_name }}"));
         m_{{ packet.cam.name }}.ack_er(true);
         m_{{ packet.cam.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cam.name }}"));
@@ -277,15 +277,13 @@ auto {{ packet_name }}::sync() -> void
 {%   for field in packet.eif2.fields if field.enabled %}
 {%     set field_name = field.name + '_errors' %}
     if (m_{{ field_name }}.has_value()) {
+        if (!m_{{ packet.eif0.name }}.has_value()) {
+            m_{{ packet.eif0.name }} = {{ type_helper.member_type(packet.eif0) }}{};
+            m_data.insert(m_data.begin() + m_positions.at("{{ packet.eif0.name }}"), m_{{ packet.eif0.name }}->size(), 0);
+            update_positions();
+            update_packet_size();
+        }
         if (!m_{{ packet.eif2.name }}.has_value()) {
-            if (!m_{{ packet.eif0.name }}.has_value()) {
-                m_{{ packet.eif0.name }} = {{ type_helper.member_type(packet.eif0) }}{};
-                m_data.insert(m_data.begin() + m_positions.at("{{ packet.eif0.name }}"), m_{{ packet.wif0.name }}->size(), 0);
-                m_{{ packet.eif0.name }}->eif2_enable(true);
-                m_{{ packet.eif0.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.eif0.name }}"));
-                update_positions();
-                update_packet_size();
-            }
             m_{{ packet.eif2.name }} = {{ type_helper.member_type(packet.eif2) }}{};
             m_data.insert(m_data.begin() + m_positions.at("{{ packet.eif2.name }}"), m_{{ packet.eif2.name }}->size(), 0);
             update_positions();
@@ -293,11 +291,13 @@ auto {{ packet_name }}::sync() -> void
         }
         if (!m_{{ packet.eif2.name }}->{{ field.name }}()) {
             m_data.insert(m_data.begin() + m_positions.at("{{ field_name }}"), m_{{ field_name }}->size(), 0);
-            m_{{ packet.eif2.name }}->{{ field.name }}(true);
-            m_{{ packet.eif2.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.eif2.name }}"));
             update_positions();
             update_packet_size();
         }
+        m_{{ packet.eif0.name }}->eif2_enable(true);
+        m_{{ packet.eif0.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.eif0.name }}"));
+        m_{{ packet.eif2.name }}->{{ field.name }}(true);
+        m_{{ packet.eif2.name }}->pack_into(m_data.data() + m_positions.at("{{ packet.eif2.name }}"));
         m_{{ field_name }}->pack_into(m_data.data() + m_positions.at("{{ field_name }}"));
         m_{{ packet.cam.name }}.ack_er(true);
         m_{{ packet.cam.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cam.name }}"));
@@ -383,9 +383,13 @@ auto {{ packet.name }}::name() const -> std::string
 {%   if packet.cam.enabled %}
 {{ common.const_ref_getter(packet.name, packet.cam, type_helper) | trim }}
 
-{{ command.req_defs(packet, packet.name, packet.cam.partial_action, type_helper) | trim }}
+{{ command.cam_defs(packet, packet.name, packet.cam.action_mode, type_helper) | trim }}
 
-{{ command.req_defs(packet, packet.name, packet.cam.scheduled_or_executed, type_helper) | trim }}
+{{ command.cam_defs(packet, packet.name, packet.cam.timing_control, type_helper) | trim }}
+
+{{ command.cam_defs(packet, packet.name, packet.cam.partial_action, type_helper) | trim }}
+
+{{ command.cam_defs(packet, packet.name, packet.cam.scheduled_or_executed, type_helper) | trim }}
 
 {% endif %}
 {% if packet.message_id.enabled %}
@@ -435,11 +439,11 @@ auto {{ packet.name }}::update_packet_size() -> void
 {{ match_ack(packet, packet_name, type_helper, true) | trim }}
 
 {%  if packet.cam.ack_v.is_optional %}
-{{ command.req_defs(packet, packet_name, packet.cam.ack_v, type_helper) | trim }}
+{{ command.cam_defs(packet, packet_name, packet.cam.ack_v, type_helper) | trim }}
 
 {%  endif %}
 {%  if packet.cam.ack_x.is_optional %}
-{{ command.req_defs(packet, packet_name, packet.cam.ack_x, type_helper) | trim }}
+{{ command.cam_defs(packet, packet_name, packet.cam.ack_x, type_helper) | trim }}
 
 {%  endif %}
 {% if packet.wif0.enabled and packet.warnings_enabled %}

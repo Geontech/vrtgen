@@ -121,7 +121,7 @@ auto {{ field.name }}_attributes() -> {{ 'std::optional<' if field.is_optional }
 /*#
  * Command function declarations
 #*/
-{%- macro req_getter(field, type_helper) %}
+{%- macro cam_getter(field, type_helper) %}
 /**
  * @brief Returns the value of {{ field.name }} from the CAM
  * @return {{ field.name }}'s value
@@ -132,36 +132,44 @@ auto {{ field.name }}() const -> {{ type_helper.value_type(field) }};
 {%- macro command(packet, type_helper) %}
 {% if packet.cam.enabled %}
 {{ const_ref_getter(packet.cam, type_helper) | trim }}
+
+{{ cam_getter(packet.cam.action_mode, type_helper) | trim }}
+
+{{ setters(packet.cam.action_mode, type_helper) | trim }}
+
+{{ cam_getter(packet.cam.timing_control, type_helper) | trim }}
+
+{{ setters(packet.cam.timing_control, type_helper) | trim }}
 {%   if packet.cam.is_control and packet.cam.req_v.is_optional %}
 
-{{ req_getter(packet.cam.req_v, type_helper) | trim }}
+{{ cam_getter(packet.cam.req_v, type_helper) | trim }}
 
 {{ setters(packet.cam.req_v, type_helper) | trim }}
 {%   elif packet.cam.is_ack and packet.cam.ack_v.is_optional %}
 
-{{ req_getter(packet.cam.ack_v, type_helper) | trim }}
+{{ cam_getter(packet.cam.ack_v, type_helper) | trim }}
 
 {{ setters(packet.cam.ack_v, type_helper) | trim }}
 {%   endif %}
 {%   if packet.cam.is_control and packet.cam.req_x.is_optional %}
 
-{{ req_getter(packet.cam.req_x, type_helper) | trim }}
+{{ cam_getter(packet.cam.req_x, type_helper) | trim }}
 
 {{ setters(packet.cam.req_x, type_helper) | trim }}
 {%   elif packet.cam.is_ack and packet.cam.ack_x.is_optional %}
 
-{{ req_getter(packet.cam.ack_x, type_helper) | trim }}
+{{ cam_getter(packet.cam.ack_x, type_helper) | trim }}
 
 {{ setters(packet.cam.ack_x, type_helper) | trim }}
 {%   endif %}
 {%   if packet.cam.is_control and packet.cam.req_s.is_optional %}
 
-{{ req_getter(packet.cam.req_s, type_helper) | trim }}
+{{ cam_getter(packet.cam.req_s, type_helper) | trim }}
 
 {{ setters(packet.cam.req_s, type_helper) | trim }}
 {%   elif packet.cam.is_ack and packet.cam.ack_s.is_optional %}
 
-{{ req_getter(packet.cam.ack_s, type_helper) | trim }}
+{{ cam_getter(packet.cam.ack_s, type_helper) | trim }}
 
 {{ setters(packet.cam.ack_s, type_helper) | trim }}
 {%   endif %}

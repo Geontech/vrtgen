@@ -181,7 +181,7 @@ void disable_receive()
 {% endmacro %}
 
 {%- macro members(packets, type_helper, cmd_socket) %}
-{% for packet in packets if (packet.is_control and packet.controller_id.enabled) %}
+{% for packet in packets if packet.is_control %}
 {%   if loop.first %}
 {%     if cmd_socket == 'nats' %}
 vrtgen::nats::client m_client;

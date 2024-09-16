@@ -11,6 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Using new version of catch2 for unit tests
 - `GPS_ASCII` enum class name changed to `GpsAscii`
 - `SPECTRUM_OR_TIME` enum class name changed to `SpectrumOrTime`
+## [0.7.12] - 2024-09-06
+### Fixed
+- Controller class template not including message_id and socket members for control packets
+- PayloadFormat bits updated to 64
+## [0.7.11] - 2024-07-31
+### Fixed
+- Set `not_v49d0` bit to true when `spectrum` bit is true for data packets
+## [0.7.10] - 2024-07-03
+### Fixed
+- `SNRNoise::noise` functions using incorrect subfield
+### Removed
+- CentOS 7 CI
+## [0.7.9] - 2024-07-02
+### Added
+- Getter/setter functions for `action_mode` and `timing_control` in command packets
+## [0.7.8] - 2024-05-09
+### Fixed
+- Error setter functions in ack packets not setting cam.ack_er appropriately
 ## [0.7.7] - 2024-02-15
 ### Fixed
 - Python dataclass errors for Python versions > 3.9

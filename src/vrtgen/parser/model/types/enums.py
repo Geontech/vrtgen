@@ -191,8 +191,8 @@ class TSM(BinaryEnum, bits=1):
 class SpectrumOrTime(BinaryEnum, bits=1):
     """
     S Bit (S_BIT) of data packets:
-        SPECTRUM (0) - Conveys that the vector contains spectrum data
-        TIME     (1) - Conveys that the vector contains time data
+        TIME (0) - Conveys that the vector contains time data
+        SPECTRUM (1) - Conveys that the vector contains spectrum data
     """
     TIME = 0
     SPECTRUM = 1

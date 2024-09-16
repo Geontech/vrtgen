@@ -43,15 +43,6 @@ class Trailer(StateEventIndicators):
                 continue
             if not field in [f.name for f in self.fields]:
                 raise ValueError('invalid field provided: ' + field)
-        # for _,val in mapping.items():
-        #     if val == 'required' or val == 'optional':
-        #         continue
-        #     elif val == 'enable_indicator':
-        #         continue
-        #     elif isinstance(val, list):
-        #         continue
-        #     else:
-        #         raise ValueError('invalid trailer type specified: ', val)
 
     @property
     def none_enabled(self):
@@ -121,6 +112,10 @@ class DataPacket(Packet):
             self.header.trailer_included.enabled = True
             self.header.trailer_included.value = True
         if self.trailer.sample_frame.enabled:
+            self.header.not_v49d0.enabled = True
+            self.header.not_v49d0.required = True
+            self.header.not_v49d0.value = True
+        if self.header.spectrum_or_time.enabled and self.header.spectrum_or_time.value == SPECTRUM_OR_TIME.SPECTRUM:
             self.header.not_v49d0.enabled = True
             self.header.not_v49d0.required = True
             self.header.not_v49d0.value = True
