@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.13] - 2024-09-19
+### Fixed
+- Threshold data model field variable names
+- Spectrum data model to include number of bits
+- Spectrum packing class function types and
 ## [0.7.12] - 2024-09-06
 ### Fixed
 - Controller class template not including message_id and socket members for control packets

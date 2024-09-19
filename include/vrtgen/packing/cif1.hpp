@@ -487,187 +487,334 @@ public:
 }; // end class SNRNoise
 
 /**
+ * @enum SpectrumType
+ * @brief Spectrum Type Bit field in the Spectrum Type subfield
+ * 
+ * Constants for the 8-bit Spectrum Type Bit field in the Spectrum Type subfield
+ * Refer to VITA 49.2-2017 Table 9.6.1.1.1-1.
+ */
+enum class SpectrumType : uint8_t
+{
+    NONE = 0b00000000, //!< Default "no setting" value
+    LOG_POWER = 0b00000001, //!< Log power (dB)
+    CARTESIAN = 0b00000010, //!< Cartesian (I,Q)
+    POLAR = 0b00000011, //!< Polar (magnitude, phase)
+    MAGNITUDE = 0b00000100 //!< Magnitude
+    // Remaining values reserved or user-defined
+
+}; // end enum class SpectrumType
+
+/**
+ * @enum AveragingType
+ * @brief Averaging Type Bit field in the Spectrum Type subfield
+ * 
+ * Constants for the 8-bit Averaging Type Bit field in the Spectrum Type subfield
+ * Refer to VITA 49.2-2017 Table 9.6.1.1.2-1.
+ */
+enum class AveragingType : uint8_t
+{
+    NONE = 0b00000000, //!< No averaging
+    LINEAR = 0b00000001, //!< Linear averaging
+    PEAK_HOLD = 0b00000010, //!< Peak hold
+    MIN_HOLD = 0b00000100, //!< Min hold
+    EXPONENTIAL = 0b00001000, //!< Exponential averaging
+    MEDIAN = 0b00010000, //!< Median averaging
+    SMOOTHING = 0b00100000 //!< Smoothing (within the sample frame)
+    // Remaining values reserved
+
+}; // end enum class AveragingType
+
+/**
+ * @enum WindowTimeDelta
+ * @brief Window Time-Delta Interpretation Bit field in the Spectrum Type subfield
+ * 
+ * Constants for the 8-bit Window Time-Delta Interpretation field in the Spectrum Type subfield
+ * Refer to VITA 49.2-2017 Table 9.6.1.1.3-1.
+ */
+enum class WindowTimeDelta : uint8_t
+{
+    NONE = 0b0000, //!< Overlap is NOT controlled
+    PERCENT = 0b0001, //!< Percent overlap
+    SAMPLES = 0b0010, //!< Samples
+    TIME = 0b0011 //!< Time
+    // Remaining values reserved
+
+}; // end enum class WindowTimeDelta
+
+/**
+ * @enum WindowType
+ * @brief Window Type subfield
+ * 
+ * Constants for the 8-bit Window Type Bit subfield
+ * Refer to VITA 49.2-2017 Table 9.6.1.2-1.
+ */
+enum class WindowType : uint8_t
+{
+    RECTANGLE = 0,
+    TRIANGLE = 1,
+    HANNING_ALPHA_1 = 2,
+    HANNING_ALPHA_2 = 3,
+    HANNING_ALPHA_3 = 4,
+    HANNING_ALPHA_4 = 5,
+    HAMMING = 6,
+    RIESZ = 7,
+    RIEMANN = 8,
+    DE_LA_VALLEPOUSSIN = 9,
+    TUKEY_POINT_25 = 10,
+    TUKEY_POINT_50 = 11,
+    TUKEY_POINT_75 = 12,
+    BOHMAN = 13,
+    POISSON_2 = 14,
+    POISSON_3 = 15,
+    POISSON_4 = 16,
+    HANNING_POISSON_POINT_50 = 17,
+    HANNING_POISSON_1 = 18,
+    HANNING_POISSON_2 = 19,
+    CAUCHY_3 = 20,
+    CAUCHY_4 = 21,
+    CAUCHY_5 = 22,
+    GAUSSIAN_2_POINT_50 = 23,
+    GAUSSIAN_3 = 24,
+    GAUSSIAN_3_POINT_50 = 25,
+    DOLPH_CHEBYSHEV_2_POINT_50 = 26,
+    DOLPH_CHEBYSHEV_3 = 27,
+    DOLPH_CHEBYSHEV_3_POINT_50 = 28,
+    DOLPH_CHEBYSHEV_4 = 29,
+    KAISER_BESSEL_2 = 30,
+    KAISER_BESSEL_2_POINT_50 = 31,
+    KAISER_BESSEL_3 = 32,
+    KAISER_BESSEL_3_POINT_50 = 33,
+    BARCILON_TEMES_3 = 34,
+    BARCILON_TEMES_3_POINT_50 = 35,
+    BARCILON_TEMES_4 = 36,
+    EXACT_BLACKMAN = 37,
+    BLACKMAN = 38,
+    MIN_THREE_SAMPLE_BLACKMAN_HARRIS = 39,
+    MIN_FOUR_SAMPLE_BLACKMAN_HARRIS = 40,
+    THREE_SAMPLE_BLACKMAN_HARRIS_61DB = 41,
+    FOUR_SAMPLE_BLACKMAN_HARRIS_74DB = 42,
+    FOUR_SAMPLE_KAISER_BESSEL = 43
+    // Remaining values reserved or user-defined
+
+}; // end enum class WindowType
+
+/**
  * @class Spectrum
  * @brief Spectrum field (VITA 49.2-2017 Section 9.6.1)
  */
 class Spectrum
 {
 public:
-    uint32_t spectrum_type() const noexcept
+    uint8_t spectrum_type() const noexcept
     {
-        return m_spectrum_type;
+        return m_spectrum_type.get<7,8,uint8_t>();
     }
-    void spectrum_type(uint32_t value) noexcept
+
+    void spectrum_type(uint8_t value) noexcept
     {
-        m_spectrum_type = value;
+        m_spectrum_type.set<7,8>(value);
     }
-    uint32_t window_type() const noexcept
+
+    AveragingType averaging_type() const noexcept
     {
-        return m_window_type;
+        return AveragingType{m_spectrum_type.get<15,8,uint8_t>()};
     }
-    void window_type(uint32_t value) noexcept
+
+    void averaging_type(AveragingType value) noexcept
     {
-        m_window_type = value;
+        m_spectrum_type.set<15,8>(static_cast<uint8_t>(value));
     }
+
+    WindowTimeDelta window_time() const noexcept
+    {
+        return WindowTimeDelta{m_spectrum_type.get<19,4,uint8_t>()};
+    }
+
+    void window_time(WindowTimeDelta value) noexcept
+    {
+        m_spectrum_type.set<19,4>(static_cast<uint8_t>(value));
+    }
+
+    WindowType window_type() const noexcept
+    {
+        return WindowType{m_window_type.get<7,8,uint8_t>()};
+    }
+
+    void window_type(WindowType value) noexcept
+    {
+        m_window_type.set<7,8>(static_cast<uint8_t>(value));
+    }
+
     uint32_t num_transform_points() const noexcept
     {
         return m_num_transform_points;
     }
+
     void num_transform_points(uint32_t value) noexcept
     {
         m_num_transform_points = value;
     }
+
     uint32_t num_window_points() const noexcept
     {
         return m_num_window_points;
     }
+
     void num_window_points(uint32_t value) noexcept
     {
         m_num_window_points = value;
     }
-    uint32_t num_averages() const noexcept
-    {
-        return m_num_averages;
-    }
-    void num_averages(uint32_t value) noexcept
-    {
-        m_num_averages = value;
-    }
+
     double resolution() const noexcept
     {
         return vrtgen::fixed::to_fp<64,20>(vrtgen::swap::from_be(m_resolution));
     }
+
     void resolution(double value) noexcept
     {
         m_resolution = vrtgen::swap::to_be(vrtgen::fixed::to_int<64,20>(value));
     }
+
     double span() const noexcept
     {
         return vrtgen::fixed::to_fp<64,20>(vrtgen::swap::from_be(m_span));
     }
+
     void span(double value) noexcept
     {
         m_span = vrtgen::swap::to_be(vrtgen::fixed::to_int<64,20>(value));
     }
+
+    uint32_t num_averages() const noexcept
+    {
+        return m_num_averages;
+    }
+
+    void num_averages(uint32_t value) noexcept
+    {
+        m_num_averages = value;
+    }
+
     uint32_t weighting_factor() const noexcept
     {
         return m_weighting_factor;
     }
+
     void weighting_factor(uint32_t value) noexcept
     {
         m_weighting_factor = value;
     }
-    uint32_t f1_index() const noexcept
+
+    int32_t f1_index() const noexcept
     {
         return m_f1_index;
     }
-    void f1_index(uint32_t value) noexcept
+
+    void f1_index(int32_t value) noexcept
     {
         m_f1_index = value;
     }
-    uint32_t f2_index() const noexcept
+
+    int32_t f2_index() const noexcept
     {
         return m_f2_index;
     }
-    void f2_index(uint32_t value) noexcept
+
+    void f2_index(int32_t value) noexcept
     {
         m_f2_index = value;
     }
+
     uint32_t window_time_delta() const noexcept
     {
         return m_window_time_delta;
     }
+
     void window_time_delta(uint32_t value) noexcept
     {
         m_window_time_delta = value;
     }
+
     std::size_t size() const
     {
-        return sizeof(Spectrum);
+        return m_spectrum_type.size() +
+            m_window_type.size() +
+            sizeof(m_num_transform_points) +
+            sizeof(m_num_window_points) +
+            sizeof(m_resolution) +
+            sizeof(m_span) +
+            sizeof(m_num_averages) +
+            sizeof(m_weighting_factor) +
+            sizeof(m_f1_index) +
+            sizeof(m_f2_index) +
+            sizeof(m_window_time_delta);
     }
+
     void pack_into(uint8_t* buffer_ptr) const
     {
-        std::memcpy(buffer_ptr, &m_spectrum_type, sizeof(m_spectrum_type));
-        buffer_ptr += sizeof(m_spectrum_type);
-
-        std::memcpy(buffer_ptr, &m_window_type, sizeof(m_window_type));
-        buffer_ptr += sizeof(m_window_type);
-
+        m_spectrum_type.pack_into(buffer_ptr);
+        buffer_ptr += m_spectrum_type.size();
+        m_window_type.pack_into(buffer_ptr);
+        buffer_ptr += m_window_type.size();
         std::memcpy(buffer_ptr, &m_num_transform_points, sizeof(m_num_transform_points));
         buffer_ptr += sizeof(m_num_transform_points);
-
         std::memcpy(buffer_ptr, &m_num_window_points, sizeof(m_num_window_points));
         buffer_ptr += sizeof(m_num_window_points);
-
         std::memcpy(buffer_ptr, &m_resolution, sizeof(m_resolution));
         buffer_ptr += sizeof(m_resolution);
-
         std::memcpy(buffer_ptr, &m_span, sizeof(m_span));
         buffer_ptr += sizeof(m_span);
-
         std::memcpy(buffer_ptr, &m_num_averages, sizeof(m_num_averages));
         buffer_ptr += sizeof(m_num_averages);
-
         std::memcpy(buffer_ptr, &m_weighting_factor, sizeof(m_weighting_factor));
         buffer_ptr += sizeof(m_weighting_factor);
-
         std::memcpy(buffer_ptr, &m_f1_index, sizeof(m_f1_index));
         buffer_ptr += sizeof(m_f1_index);
-
         std::memcpy(buffer_ptr, &m_f2_index, sizeof(m_f2_index));
         buffer_ptr += sizeof(m_f2_index);
-
         std::memcpy(buffer_ptr, &m_window_time_delta, sizeof(m_window_time_delta));
-        buffer_ptr += sizeof(m_window_time_delta);
     }
+
     void unpack_from(const uint8_t* buffer_ptr)
     {
-        std::memcpy(&m_spectrum_type, buffer_ptr, sizeof(m_spectrum_type));
-        buffer_ptr += sizeof(m_spectrum_type);
-
-        std::memcpy(&m_window_type, buffer_ptr, sizeof(m_window_type));
-        buffer_ptr += sizeof(m_window_type);
-
-        std::memcpy(&m_num_transform_points, buffer_ptr, sizeof(m_num_transform_points));
-        buffer_ptr += sizeof(m_num_transform_points);
-
-        std::memcpy(&m_num_window_points, buffer_ptr, sizeof(m_num_window_points));
-        buffer_ptr += sizeof(m_num_window_points);
-
-        std::memcpy(&m_resolution, buffer_ptr, sizeof(m_resolution));
-        buffer_ptr += sizeof(m_resolution);
-
-        std::memcpy(&m_span, buffer_ptr, sizeof(m_span));
-        buffer_ptr += sizeof(m_span);
-
-        std::memcpy(&m_num_averages, buffer_ptr, sizeof(m_num_averages));
-        buffer_ptr += sizeof(m_num_averages);
-
-        std::memcpy(&m_weighting_factor, buffer_ptr, sizeof(m_weighting_factor));
-        buffer_ptr += sizeof(m_weighting_factor);
-
-        std::memcpy(&m_f1_index, buffer_ptr, sizeof(m_f1_index));
-        buffer_ptr += sizeof(m_f1_index);
-
-        std::memcpy(&m_f2_index, buffer_ptr, sizeof(m_f2_index));
-        buffer_ptr += sizeof(m_f2_index);
-
-        std::memcpy(&m_window_time_delta, buffer_ptr, sizeof(m_window_time_delta));
-        buffer_ptr += sizeof(m_window_time_delta);
+        auto* ptr = buffer_ptr;
+        m_spectrum_type.unpack_from(ptr);
+        ptr += m_spectrum_type.size();
+        m_window_type.unpack_from(ptr);
+        ptr += m_window_type.size();
+        std::memcpy(&m_num_transform_points, ptr, sizeof(m_num_transform_points));
+        ptr += sizeof(m_num_transform_points);
+        std::memcpy(&m_num_window_points, ptr, sizeof(m_num_window_points));
+        ptr += sizeof(m_num_window_points);
+        std::memcpy(&m_resolution, ptr, sizeof(m_resolution));
+        ptr += sizeof(m_resolution);
+        std::memcpy(&m_span, ptr, sizeof(m_span));
+        ptr += sizeof(m_span);
+        std::memcpy(&m_num_averages, ptr, sizeof(m_num_averages));
+        ptr += sizeof(m_num_averages);
+        std::memcpy(&m_weighting_factor, ptr, sizeof(m_weighting_factor));
+        ptr += sizeof(m_weighting_factor);
+        std::memcpy(&m_f1_index, ptr, sizeof(m_f1_index));
+        ptr += sizeof(m_f1_index);
+        std::memcpy(&m_f2_index, ptr, sizeof(m_f2_index));
+        ptr += sizeof(m_f2_index);
+        std::memcpy(&m_window_time_delta, ptr, sizeof(m_window_time_delta));
     }
+
 private:
-    uint32_t m_spectrum_type;
-    uint32_t m_window_type;
+    vrtgen::packed<uint32_t> m_spectrum_type;
+    vrtgen::packed<uint32_t> m_window_type;
     uint32_t m_num_transform_points;
     uint32_t m_num_window_points;
     uint64_t m_resolution;
     uint64_t m_span;
     uint32_t m_num_averages;
     uint32_t m_weighting_factor;
-    uint32_t m_f1_index;
-    uint32_t m_f2_index;
+    int32_t m_f1_index;
+    int32_t m_f2_index;
     uint32_t m_window_time_delta;
-};
+
+}; // class Spectrum
 
 /**
  * @class SectorStepScanCIF
@@ -1060,7 +1207,7 @@ public:
      * VersionInformation Day is 9 bits long at bit position 24
      * See VITA 49.2-2017 Table 9.10.4-1
      */
-    constexpr uint8_t day() const noexcept
+    constexpr uint16_t day() const noexcept
     {
         return m_packed.get<24,9,uint16_t>();
     }
