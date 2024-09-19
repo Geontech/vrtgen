@@ -85,8 +85,8 @@ class Threshold(PackedStruct):
     Signal threshold level [9.5.13].
     """
     name : str = 'threshold'
-    stage_1 : FixedPoint16r7 = field(default_factory=lambda: FixedPoint16r7('stage_1', packed_tag=PackedTag(31,16,0)))
-    stage_2 : FixedPoint16r7 = field(default_factory=lambda: FixedPoint16r7('stage_2', packed_tag=PackedTag(15,16,0)))
+    stage_2 : FixedPoint16r7 = field(default_factory=lambda: FixedPoint16r7('stage_2', packed_tag=PackedTag(31,16,0)))
+    stage_1 : FixedPoint16r7 = field(default_factory=lambda: FixedPoint16r7('stage_1', packed_tag=PackedTag(15,16,0)))
 
     def __post_init__(self):
         super().__post_init__()
@@ -189,6 +189,11 @@ class Spectrum(PackedStruct):
     window_time_delta : Unsigned32 = field(default_factory=lambda: Unsigned32('window_time_delta', packed_tag=PackedTag(31,32,12)))
     # window_time_delta : FixedPointType = field(default_factory=lambda: FixedPointType('window_time_delta', bits=32, signed=True, radix=12, packed_tag=PackedTag(31,32,12)))
 
+    def __post_init__(self):
+        super().__post_init__()
+        self.type_ = type(self).__name__
+        self.bits = 13 * 32 # 13 words
+    
 @dataclass
 class SectorStepScanCIF(CIF):
     """
