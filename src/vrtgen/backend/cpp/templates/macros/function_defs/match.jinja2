@@ -55,7 +55,7 @@ auto {{ packet.name }}::match(std::span<const uint8_t> data) -> std::optional<st
 {% if packet.class_id.enabled %}
     auto {{ packet.class_id.name }} = {{ type_helper.value_type(packet.class_id) }}{};
     {{ packet.class_id.name }}.unpack_from(data.data() + curr_pos);
-{%     for field in packet.class_id.fields if not field.is_packed_type %}
+{%     for field in packet.class_id.fields if not field.is_packed_type and not field.name == 'pad_bits' %}
     if ({{ packet.class_id.name }}.{{ field.name }}() != {{ type_helper.literal_value(field) }}) {
         std::ostringstream msg;
         msg << "Failed to match class_id field {{ field.name }}."

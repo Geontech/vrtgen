@@ -110,11 +110,12 @@ test:cpp:rockylinux:8:
     script:
       - cd /root/vrtgen
       - make -C build check
+      - cp build/*-results.xml $CI_PROJECT_DIR/
     artifacts:
       paths:
-        - build/*-results.xml
+        - '*-results.xml'
       reports:
-        junit: build/*-results.xml
+        junit: '*-results.xml'
 
 # Rocky 9 Testing
 lint:rockylinux:9:
@@ -158,11 +159,12 @@ test:cpp:rockylinux:9:
     script:
       - cd /root/vrtgen
       - make -C build check
+      - cp build/*-results.xml $CI_PROJECT_DIR/
     artifacts:
       paths:
-        - build/*-results.xml
+        - '*-results.xml'
       reports:
-        junit: build/*-results.xml
+        junit: '*-results.xml'
 
 # Ubuntu 20.04 Testing
 lint:ubuntu:20.04:
@@ -206,11 +208,12 @@ test:cpp:ubuntu:20.04:
     script:
       - cd /root/vrtgen
       - make -C build check
+      - cp build/*-results.xml $CI_PROJECT_DIR/
     artifacts:
       paths:
-        - build/*-results.xml
+        - '*-results.xml'
       reports:
-        junit: build/*-results.xml
+        junit: '*-results.xml'
 
 # Ubuntu 22.04 Testing
 lint:ubuntu:22.04:
@@ -254,11 +257,12 @@ test:cpp:ubuntu:22.04:
     script:
       - cd /root/vrtgen
       - make -C build check
+      - cp build/*-results.xml $CI_PROJECT_DIR/
     artifacts:
       paths:
-        - build/*-results.xml
+        - '*-results.xml'
       reports:
-        junit: build/*-results.xml
+        junit: '*-results.xml'
 
 # Alpine 3.19 Testing
 lint:alpine:3.19:
@@ -305,8 +309,9 @@ test:cpp:alpine:3.19:
       - . /opt/venv/bin/activate
       - cd /root/vrtgen
       - make -C build check
+      - cp build/*-results.xml $CI_PROJECT_DIR/
     artifacts:
       paths:
-        - build/*-results.xml
+        - '*-results.xml'
       reports:
-        junit: build/*-results.xml
+        junit: '*-results.xml'

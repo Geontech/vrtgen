@@ -97,6 +97,8 @@ auto {{ field.name }}_attributes() -> {{ 'std::optional<' if field.is_optional }
 {% if packet.class_id.enabled %}
 {{ const_ref_getter(packet.class_id, type_helper) | trim }}
 
+{{ getters_and_setters(packet.class_id.pad_bits, type_helper) | trim }}
+
 {% endif %}
 {% if packet.timestamp.enabled %}
 {%   if packet.timestamp.integer.enabled %}

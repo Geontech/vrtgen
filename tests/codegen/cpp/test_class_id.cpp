@@ -77,6 +77,27 @@ TEST_CASE("ClassID 5.1.3", "[class_id]")
         CHECK((data[0] & 0b00001000) == 1 << 3);
     }
 
+    SECTION("Bit pad count")
+    {
+        TestDataClassId1 packet_in;
+
+	const uint8_t PAD_BITS = 0xE;
+	packet_in.pad_bits(PAD_BITS);
+	CHECK(packet_in.pad_bits() == PAD_BITS);
+	auto data = packet_in.data();
+	bytes CLASS_ID_BE = bytes{ PAD_BITS << 3, 0xAA, 0xBB, 0xCC, 0, 0, 0, 0 };
+
+	TestDataClassId1 packet_out(data);
+	CHECK(packet_out.pad_bits() == PAD_BITS);
+	auto* check_ptr = data.data();
+	check_ptr += HEADER_BYTES;
+
+	// Examine and check packed Class ID. Value shall be in big-endian format.
+	const bytes packed_class_id(check_ptr, check_ptr + CLASS_ID_BYTES);
+	check_ptr += CLASS_ID_BYTES;
+	CHECK(packed_class_id == CLASS_ID_BE);
+    }
+
     SECTION("Yaml Input") 
     {
         bytes data;
