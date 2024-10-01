@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.14] - Unreleased
+### Changed
+- Make Class ID field `pad_bits` runtime dynamic
+  - Do not check value in match function
+  - Add public getter/setter functions
 ## [0.7.13] - 2024-09-19
 ### Fixed
 - Threshold data model field variable names

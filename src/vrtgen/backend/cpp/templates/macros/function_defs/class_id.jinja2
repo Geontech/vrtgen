@@ -1,0 +1,46 @@
+/*#
+ * Copyright (C) 2024 Geon Technologies, LLC
+ *
+ * This file is part of vrtgen.
+ *
+ * vrtgen is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * vrtgen is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses/.
+#*/
+
+{%- macro class_id_def(packet, type_helper) %}
+{% set field = packet.class_id %}
+auto {{ packet.name }}::{{ field.name }}() const -> const {{ type_helper.value_type(field) }}&
+{
+    return m_{{ field.name }};
+}
+{% endmacro %}
+
+{%- macro pad_bits_def(packet, type_helper) %}
+{% set field = packet.class_id.pad_bits %}
+auto {{ packet.name }}::{{ field.name }}() const -> {{ type_helper.value_type(field) }}
+{
+    return m_class_id.pad_bits();
+}
+
+auto {{ packet.name }}::{{ field.name }}(const {{ type_helper.value_type(field) }} value) -> void
+{
+    m_class_id.pad_bits(value);
+    m_class_id.pack_into(m_data.data() + m_positions.at("class_id"));
+}
+{% endmacro %}
+
+{%- macro function_defs(packet, type_helper) %}
+{{ class_id_def(packet, type_helper) | trim }}
+
+{{ pad_bits_def(packet, type_helper) | trim }}
+{% endmacro %}

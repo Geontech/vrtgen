@@ -20,6 +20,7 @@
 {%- import "macros/function_defs/common.jinja2" as common %}
 {%- import "macros/function_defs/header.jinja2" as header %}
 {%- import "macros/function_defs/stream_id.jinja2" as stream_id %}
+{%- import "macros/function_defs/class_id.jinja2" as class_id %}
 {%- import "macros/function_defs/timestamp.jinja2" as timestamp %}
 {%- import "macros/function_defs/data.jinja2" as data_ %}
 {%- import "macros/function_defs/cif.jinja2" as cif_ %}
@@ -36,7 +37,7 @@
 
 {% endif %}
 {% if packet.class_id.enabled %}
-{{ common.const_ref_getter(packet.name, packet.class_id, type_helper) | trim }}
+{{ class_id.function_defs(packet, type_helper) | trim }}
 
 {% endif %}
 {% if packet.timestamp.enabled %}
