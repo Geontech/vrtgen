@@ -192,6 +192,71 @@ public:
 
 }; // end class Gain
 
+namespace difi {
+
+ /**
+ * @class ReferenceLevel
+ * @brief Scaling Level/Reference Level field (DIFI 1.2 4.2.1)
+ */
+class ReferenceLevel : public Packed32_Fixed16R<7>
+{
+public:
+    /**
+     * @brief Returns the Scaling Level subfield value
+     * @return Scaling Level subfield value
+     * 
+     * Scaling Level subfield is 16 bits long at bit position 31 expressed in
+     * two's-complement format with a radix point to the right of bit 7
+     * See DIFI 1.2 4.2.1
+     */
+    double scaling_level() const noexcept
+    {
+        return subfield_31();
+    }
+
+    /**
+     * @brief Sets the Scaling Level subfield value
+     * @param value Scaling Level subfield value to set
+     * 
+     * Scaling Level subfield is 16 bits long at bit position 31 expressed in
+     * two's-complement format with a radix point to the right of bit 7
+     * See DIFI 1.2 4.2.1
+     */
+    void scaling_level(double value) noexcept
+    {
+        subfield_31(value);
+    }
+
+    /**
+     * @brief Returns the Reference Level subfield value
+     * @return Reference Level subfield value
+     * 
+     * Reference Level subfield is 16 bits long at bit position 15 expressed in
+     * two's-complement format with a radix point to the right of bit 7
+     * See VITA 49.2-2017-2017 Figure 9.5.9-2
+     */
+    double reference_level() const noexcept
+    {
+        return subfield_15();
+    }
+
+    /**
+     * @brief Sets the Reference Level subfield value
+     * @param value Reference Level subfield value to set
+     * 
+     * Reference Level subfield is 16 bits long at bit position 15 expressed in
+     * two's-complement format with a radix point to the right of bit 7
+     * See VITA 49.2-2017-2017 Figure 9.5.9-2
+     */
+    void reference_level(double value) noexcept
+    {
+        subfield_15(value);
+    }
+
+}; // end class Reference Level
+
+} // namespace difi
+
 /**
  * @class DeviceIdentifier
  * @brief Device Identifier Field (VITA 49.2-2017 Section 9.10.1)

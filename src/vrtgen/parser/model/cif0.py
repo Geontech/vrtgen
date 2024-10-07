@@ -19,6 +19,38 @@ class Gain(PackedStruct):
         self.bits = 32
 
 @dataclass
+class ReferenceLevel(PackedStruct):
+    """
+    Scaling Level/Reference Level [DIFI 1.2 4.2.1].
+    """
+    name : str = 'reference_level'
+    scaling_level : FixedPoint16r7 = field(default_factory=lambda: FixedPoint16r7('scaling_level', packed_tag=PackedTag(31,16,0)))
+    reference_level : FixedPoint16r7 = field(default_factory=lambda: FixedPoint16r7('reference_level', required=True, enabled=True, packed_tag=PackedTag(15,16,0)))
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.type_ = type(self).__name__
+        self.bits = 32
+
+    def _validate(self, mapping):
+        for key,val in mapping.items():
+            if key == 'mode':
+                continue
+            else:
+                raise ValueError('invalid reference_level type specified: ', val)
+
+    def _parse_mapping(self, mapping):
+        for key,val in mapping.items():
+            if key == 'mode':
+                mode = parse_enable(val)
+                self.enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
+                self.required = True if (mode == Mode.REQUIRED) else False
+
+    def validate_and_parse_mapping(self, **mapping):
+        self._validate(mapping)
+        self._parse_mapping(mapping)
+
+@dataclass
 class DeviceIdentifier(PackedStruct):
     """
     Device Identifier [9.10.1].
@@ -200,10 +232,20 @@ class CIF0(CIF):
 
     def _parse_mapping(self, mapping):
         for key,val in mapping.items():
-            mode = parse_enable(val)
-            if key == 'change_indicator':
+            if 'reference_level' in key:
+                if isinstance(val, str):
+                    mode = parse_enable(val)
+                    self.__dict__[key].enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
+                    self.__dict__[key].required = True if (mode == Mode.REQUIRED) else False
+                else:
+                    self.__dict__[key].enabled = val.enabled
+                    self.__dict__[key].required = val.required
+                    self.__dict__[key].type_ = val
+            elif key == 'change_indicator':
+                mode = parse_enable(val)
                 if mode != Mode.REQUIRED:
                     print('change_indicator is a required field, ignoring: ', val)
             else:
+                mode = parse_enable(val)
                 self.__dict__[key].enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
                 self.__dict__[key].required = True if (mode == Mode.REQUIRED) else False

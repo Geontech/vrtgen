@@ -171,6 +171,12 @@ def cif7_constructor(loader, node) -> cif7.CIF7:
         cif_7.validate_and_parse_mapping(**loader.construct_mapping(node))
     return cif_7
 
+def difi1p2_reference_level_constructor(loader, node) -> cif0.ReferenceLevel:
+    reference_level = cif0.ReferenceLevel()
+    if not isinstance(node, yaml.ScalarNode):
+        reference_level.validate_and_parse_mapping(**loader.construct_mapping(node, deep=True))
+    return reference_level
+
 def sector_step_scan_constructor(loader, node) -> cif1.SectorStepScan:
     sector_step_scan = cif1.SectorStepScan(enabled=True, required=True)
     if not isinstance(node, yaml.ScalarNode):
@@ -236,6 +242,7 @@ def get_loader():
     loader.add_constructor('!Timestamp', timestamp_constructor)
     # CIF0 constructors
     loader.add_constructor('!CIF0', cif0_constructor)
+    loader.add_constructor('!DIFI1p2ReferenceLevel', difi1p2_reference_level_constructor)
     # CIF1 constructors
     loader.add_constructor('!CIF1', cif1_constructor)
     loader.add_constructor('!SectorStepScan', sector_step_scan_constructor)
