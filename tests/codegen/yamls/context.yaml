@@ -236,3 +236,8 @@ TestContext8: !Context
 #     sector_step_scan: !SectorStepScan
 #       subfield_cif: !SectorStepScanCIF
 #         f2_stop_frequency: required
+
+Difi1p2: !Context
+  cif_0: !CIF0
+    reference_level: !DIFI1p2ReferenceLevel
+      mode: required

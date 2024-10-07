@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.7.14] - Unreleased
+### Added
+- YAML tag to support DIFI 1.2 deviation to reference level context field
 ### Changed
 - Make Class ID field `pad_bits` runtime dynamic
   - Do not check value in match function

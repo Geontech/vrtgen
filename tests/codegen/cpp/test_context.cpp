@@ -36,6 +36,7 @@
 #include "context/not_user_defined_discrete_io.hpp"
 #include "context/test_all_generate_params.hpp"
 #include "context/cif2_uuid_fields.hpp"
+#include "context/difi1p2.hpp"
 #include "stream_id/without_stream_id_context.hpp"
 #include "stream_id/with_stream_id_context.hpp"
 #include "constants.hpp"
@@ -1701,6 +1702,143 @@ TEST_CASE("CIF2 UUID Fields")
     CHECK(packet_out.controller_uuid().get() == uuid_str);
 
 } // end TEST_CASE("CIF2 UUID Fields")
+
+
+TEST_CASE("DIFI 1.2")
+{
+    Difi1p2 packet_in;
+
+    SECTION("Section 4.2.1 - Reference Level")
+    {
+        SECTION("Check positive")
+        {
+            // Setter
+	    vrtgen::packing::difi::ReferenceLevel reference_level;
+	    reference_level.reference_level(1.0);
+	    packet_in.reference_level(reference_level);
+            // Check the Value
+            CHECK(packet_in.reference_level().reference_level() == 1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES;
+            bytes packed_reference_level(check_ptr, check_ptr + 4);
+            // Lower 16-bits with radix 7
+            CHECK(packed_reference_level == bytes{ 0, 0, 0, 0x80 });
+            // Unpack
+            Difi1p2 unpack_reference_level(data);
+            CHECK(unpack_reference_level.reference_level().reference_level() == 1.0);
+        }
+
+        SECTION("Check negative")
+        {
+            // Setter
+	    vrtgen::packing::difi::ReferenceLevel reference_level;
+	    reference_level.reference_level(-1.0);
+	    packet_in.reference_level(reference_level);
+            // Check the Value
+            CHECK(packet_in.reference_level().reference_level() == -1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES;
+            bytes packed_reference_level(check_ptr, check_ptr + 4);
+            // Lower 16-bits with radix 7
+            CHECK(packed_reference_level == bytes{ 0, 0, 0xFF, 0x80 });
+            // Unpack
+            Difi1p2 unpack_reference_level(data);
+            CHECK(unpack_reference_level.reference_level().reference_level() == -1.0);
+        }
+
+        SECTION("Check zero")
+        {
+            // Setter
+	    vrtgen::packing::difi::ReferenceLevel reference_level;
+	    reference_level.reference_level(0.0);
+	    packet_in.reference_level(reference_level);
+            // Check the Value
+            CHECK(packet_in.reference_level().reference_level() == 0.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES;
+            bytes packed_reference_level(check_ptr, check_ptr + 4);
+            // Lower 16-bits with radix 7
+            CHECK(packed_reference_level == bytes{ 0, 0, 0, 0 });
+            // Unpack
+            Difi1p2 unpack_reference_level(data);
+            CHECK(unpack_reference_level.reference_level().reference_level() == 0.0);
+        }
+    }
+    SECTION("Section 4.2.1 - Scaling Level")
+    {
+        SECTION("Check positive")
+        {
+            // Setter
+	    vrtgen::packing::difi::ReferenceLevel reference_level;
+	    reference_level.scaling_level(1.0);
+	    packet_in.reference_level(reference_level);
+            // Check the Value
+            CHECK(packet_in.reference_level().scaling_level() == 1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES;
+            bytes packed_reference_level(check_ptr, check_ptr + 4);
+            // Lower 16-bits with radix 7
+            CHECK(packed_reference_level == bytes{ 0, 0x80, 0, 0 });
+            // Unpack
+            Difi1p2 unpack_reference_level(data);
+            CHECK(unpack_reference_level.reference_level().scaling_level() == 1.0);
+        }
+
+        SECTION("Check negative")
+        {
+            // Setter
+	    vrtgen::packing::difi::ReferenceLevel reference_level;
+	    reference_level.scaling_level(-1.0);
+	    packet_in.reference_level(reference_level);
+            // Check the Value
+            CHECK(packet_in.reference_level().scaling_level() == -1.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES;
+            bytes packed_reference_level(check_ptr, check_ptr + 4);
+            // Lower 16-bits with radix 7
+            CHECK(packed_reference_level == bytes{ 0xFF, 0x80, 0, 0 });
+            // Unpack
+            Difi1p2 unpack_reference_level(data);
+            CHECK(unpack_reference_level.reference_level().scaling_level() == -1.0);
+        }
+
+        SECTION("Check zero")
+        {
+            // Setter
+	    vrtgen::packing::difi::ReferenceLevel reference_level;
+	    reference_level.scaling_level(0.0);
+	    packet_in.reference_level(reference_level);
+            // Check the Value
+            CHECK(packet_in.reference_level().scaling_level() == 0.0);
+            // Pack
+            auto data = packet_in.data();
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CIF0_BYTES;
+            bytes packed_reference_level(check_ptr, check_ptr + 4);
+            // Lower 16-bits with radix 7
+            CHECK(packed_reference_level == bytes{ 0, 0, 0, 0 });
+            // Unpack
+            Difi1p2 unpack_reference_level(data);
+            CHECK(unpack_reference_level.reference_level().scaling_level() == 0.0);
+        }
+    }
+} // end TEST_CASE("DIFI 1.2")
 
 
 // TEST_CASE("Context Packet CIF0 Optional")
