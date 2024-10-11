@@ -21,7 +21,7 @@ from vrtgen.parser.model.types import *
 from vrtgen.parser.model.command import ControlIdentifier, WarningErrorFields
 from vrtgen.parser.model.data import Trailer
 from vrtgen.parser.model.cif0 import ReferenceLevel
-from vrtgen.parser.model.cif1 import DiscreteIO
+from vrtgen.parser.model.cif1 import DiscreteIO, BufferSize
 from vrtgen.parser.model.cif7 import CIF7, CIF7Attributes
 from vrtgen.parser.model.aor import ArrayOfRecords
 
@@ -151,7 +151,9 @@ class TypeHelper:
         elif isinstance(field, Trailer) and field.is_user_defined:
             return '{}::structs::{}'.format(field.packet_name, field.type_)
         elif isinstance(field, ReferenceLevel):
-            return PACKING_NAMESPACE + 'difi::' +field.type_
+            return PACKING_NAMESPACE + 'difi::' + field.type_
+        elif isinstance(field, BufferSize):
+            return PACKING_NAMESPACE + 'difi::' + field.type_
         elif isinstance(field, Field):
             return PACKING_NAMESPACE + field.type_
         else:

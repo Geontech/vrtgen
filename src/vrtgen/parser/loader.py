@@ -207,6 +207,12 @@ def discrete_io_64_constructor(loader, node) -> cif1.DiscreteIO:
         discrete_io.validate_and_parse_mapping(**loader.construct_mapping(node, deep=True))
     return discrete_io
 
+def difi1p2_buffer_size_constructor(loader, node) -> cif1.BufferSize:
+    buffer_size = cif1.BufferSize()
+    if not isinstance(node, yaml.ScalarNode):
+        buffer_size.validate_and_parse_mapping(**loader.construct_mapping(node, deep=True))
+    return buffer_size
+
 def trailer_constructor(loader, node) -> data.Trailer:
     trailer = data.Trailer(enabled=True, required=True)
     if not isinstance(node, yaml.ScalarNode):
@@ -250,6 +256,7 @@ def get_loader():
     loader.add_constructor('!IndexList', index_list_constructor)
     loader.add_constructor('!DiscreteIO32', discrete_io_32_constructor)
     loader.add_constructor('!DiscreteIO64', discrete_io_64_constructor)
+    loader.add_constructor('!DIFI1p2BufferSize', difi1p2_buffer_size_constructor)
     # CIF2 constructors
     loader.add_constructor('!CIF2', cif2_constructor)
     # CIF7 constructors

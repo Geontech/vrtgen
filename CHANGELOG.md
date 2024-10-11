@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.14] - Unreleased
 ### Added
-- YAML tag to support DIFI 1.2 deviation to reference level context field
+- YAML tags and namespace to support DIFI 1.2 deviations to reference level and buffer size context fields
 ### Changed
 - Make Class ID field `pad_bits` runtime dynamic
   - Do not check value in match function

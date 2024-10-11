@@ -419,6 +419,51 @@ class VersionInformation(PackedStruct):
         self.bits = 32
 
 @dataclass
+class BufferStatus(PackedStruct):
+    """
+    Buffer Status Subfield [DIFI 1.2 4.3]
+    """
+    name : str = 'BufferStatus'
+    reserved: IntegerType = field(default_factory=lambda: IntegerType('reserved', bits=16, packed_tag=PackedTag(31,16,0)))
+    level: IntegerType = field(default_factory=lambda: IntegerType('spectrum_type', bits=12, packed_tag=PackedTag(15,12,0)))
+    overflow: BooleanType = field(default_factory=lambda: BooleanType('overflow', packed_tag=PackedTag(3,1,0,0)))
+    nearly_full: BooleanType = field(default_factory=lambda: BooleanType('nearly_full', packed_tag=PackedTag(2,1,0,0)))
+    nearly_empty: BooleanType = field(default_factory=lambda: BooleanType('nearly_empty', packed_tag=PackedTag(1,1,0,0)))
+    underflow: BooleanType = field(default_factory=lambda: BooleanType('underflow', packed_tag=PackedTag(0,1,0,0)))
+
+@dataclass
+class BufferSize(PackedStruct):
+    """
+    Buffer Size [DIFI 1.2 4.3].
+    """
+    name : str = 'buffer_size'
+    buffer_size : Unsigned64 = field(default_factory=lambda: Unsigned64('buffer_size', packed_tag=PackedTag(31,64,0)))
+    buffer_status : BufferStatus = field(default_factory=lambda: BufferStatus('buffer_status', packed_tag=PackedTag(31,32,2)))
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.type_ = type(self).__name__
+        self.bits = 96
+
+    def _validate(self, mapping):
+        for key,val in mapping.items():
+            if key == 'mode':
+                continue
+            else:
+                raise ValueError('invalid buffer_size type specified: ', val)
+
+    def _parse_mapping(self, mapping):
+        for key,val in mapping.items():
+            if key == 'mode':
+                mode = parse_enable(val)
+                self.enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
+                self.required = True if (mode == Mode.REQUIRED) else False
+
+    def validate_and_parse_mapping(self, **mapping):
+        self._validate(mapping)
+        self._parse_mapping(mapping)
+        
+@dataclass
 class CIF1(CIF):
     """
     CIF1 Enables
@@ -468,6 +513,15 @@ class CIF1(CIF):
                 self.__dict__[key].required = True
                 self.__dict__[key].type_ = val
             elif 'discrete_io' in key:
+                if isinstance(val, str):
+                    mode = parse_enable(val)
+                    self.__dict__[key].enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
+                    self.__dict__[key].required = True if (mode == Mode.REQUIRED) else False
+                else:
+                    self.__dict__[key].enabled = val.enabled
+                    self.__dict__[key].required = val.required
+                    self.__dict__[key].type_ = val
+            elif 'buffer_size' in key:
                 if isinstance(val, str):
                     mode = parse_enable(val)
                     self.__dict__[key].enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
