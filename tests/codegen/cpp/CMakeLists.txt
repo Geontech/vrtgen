@@ -129,6 +129,7 @@ list(APPEND command_gen_list
     "command/test_ack_packet_wif110"
     "command/test_command_packet11"
     "command/test_ack_packet11"
+    "command/difi1p2"
     # "command/test_command_packet_no_action12"
     # "command/test_command_packet_dry_run12"
     # "command/test_command_packet_exectute12"

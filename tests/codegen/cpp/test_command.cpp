@@ -35,6 +35,7 @@
 #include "command/test_ack_packet11.hpp"
 #include "command/test_command_packet_wif110.hpp"
 #include "command/test_ack_packet_wif110.hpp"
+#include "command/difi1p2.hpp"
 
 #include <vector>
 #include <bytes.hpp>
@@ -807,5 +808,52 @@ TEST_CASE("Section 8.4", "[acknowledge_packet_subtype][8.4]")
             CHECK(packet_out.scheduled_or_executed() == true);
             CHECK(packet_out.cam().scheduled_or_executed() == true);
         }
+    }
+}
+
+TEST_CASE("DIFI Section 4.3", "[command_packet_classes][4.3]")
+{
+    SECTION("4.3")
+    {
+        size_t PACKET_SIZE = HEADER_BYTES + 
+                            STREAM_ID_BYTES + 
+                            CAM_BYTES + 
+                            MESSAGE_ID_BYTES;
+        SECTION("Buffer Size")
+        {
+            const size_t BUFFER_SIZE_BYTES = 12;
+            PACKET_SIZE += CIF0_BYTES + CIF1_BYTES + BUFFER_SIZE_BYTES;
+
+            Difi1p2 packet_in;
+            CHECK(packet_in.size() == PACKET_SIZE);
+
+            uint64_t BUFFER_SIZE = 0xBA5EBA11BA5EBA11;
+	    uint16_t LEVEL = 0x0BEE;
+	    bool ONE = true;
+	    packet_in.buffer_size().buffer_size(BUFFER_SIZE);
+	    packet_in.buffer_size().level(LEVEL);
+	    packet_in.buffer_size().overflow(ONE);
+	    packet_in.buffer_size().nearly_full(ONE);
+	    packet_in.buffer_size().nearly_empty(ONE);
+	    packet_in.buffer_size().underflow(ONE);
+
+	    auto data = packet_in.data();
+	    CHECK(data.size() == PACKET_SIZE);
+            // Check bytes
+            auto* check_ptr = data.data();
+            check_ptr += HEADER_BYTES + STREAM_ID_BYTES + CAM_BYTES + MESSAGE_ID_BYTES + CIF0_BYTES + CIF1_BYTES;
+            bytes packed_buffer_size(check_ptr, check_ptr + 12);
+	    CHECK(packed_buffer_size == bytes{ 0xBA, 0x5E, 0xBA, 0x11, 0xBA, 0x5E, 0xBA, 0x11, 0x00, 0x00, 0xBE, 0xEF });
+            
+            Difi1p2 packet_out(data);
+            CHECK(packet_out.size() == PACKET_SIZE);
+	    CHECK(packet_out.buffer_size().buffer_size() == BUFFER_SIZE);
+	    CHECK(packet_out.buffer_size().level() == LEVEL);
+	    CHECK(packet_out.buffer_size().overflow() == ONE);
+	    CHECK(packet_out.buffer_size().nearly_full() == ONE);
+	    CHECK(packet_out.buffer_size().nearly_empty() == ONE);
+	    CHECK(packet_out.buffer_size().underflow() == ONE);
+
+	}
     }
 }

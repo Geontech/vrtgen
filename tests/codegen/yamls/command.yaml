@@ -198,3 +198,10 @@ TestAckPacket11: !Ack
 #   class_id: !ClassID
 #     oui: FF-EE-DD
 #     packet_code: 0x1235
+
+Difi1p2: !Control
+  cam: !ControlAcknowledgeMode
+    req_x: true
+  cif_1: !CIF1
+    buffer_size: !DIFI1p2BufferSize
+      mode: required
