@@ -605,14 +605,14 @@ enum class WindowType : uint8_t
 class Spectrum
 {
 public:
-    uint8_t spectrum_type() const noexcept
+    SpectrumType spectrum_type() const noexcept
     {
-        return m_spectrum_type.get<7,8,uint8_t>();
+        return SpectrumType{m_spectrum_type.get<7,8,uint8_t>()};
     }
 
-    void spectrum_type(uint8_t value) noexcept
+    void spectrum_type(SpectrumType value) noexcept
     {
-        m_spectrum_type.set<7,8>(value);
+        m_spectrum_type.set<7,8>(static_cast<uint8_t>(value));
     }
 
     AveragingType averaging_type() const noexcept
