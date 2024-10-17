@@ -647,22 +647,22 @@ public:
 
     uint32_t num_transform_points() const noexcept
     {
-        return m_num_transform_points;
+        return vrtgen::swap::from_be(m_num_transform_points);
     }
 
     void num_transform_points(uint32_t value) noexcept
     {
-        m_num_transform_points = value;
+        m_num_transform_points = vrtgen::swap::to_be(value);
     }
 
     uint32_t num_window_points() const noexcept
     {
-        return m_num_window_points;
+        return vrtgen::swap::from_be(m_num_window_points);
     }
 
     void num_window_points(uint32_t value) noexcept
     {
-        m_num_window_points = value;
+        m_num_window_points = vrtgen::swap::to_be(value);
     }
 
     double resolution() const noexcept
@@ -687,52 +687,52 @@ public:
 
     uint32_t num_averages() const noexcept
     {
-        return m_num_averages;
+        return vrtgen::swap::from_be(m_num_averages);
     }
 
     void num_averages(uint32_t value) noexcept
     {
-        m_num_averages = value;
+        m_num_averages = vrtgen::swap::to_be(value);
     }
 
     uint32_t weighting_factor() const noexcept
     {
-        return m_weighting_factor;
+        return vrtgen::swap::from_be(m_weighting_factor);
     }
 
     void weighting_factor(uint32_t value) noexcept
     {
-        m_weighting_factor = value;
+        m_weighting_factor = vrtgen::swap::to_be(value);
     }
 
     int32_t f1_index() const noexcept
     {
-        return m_f1_index;
+        return vrtgen::swap::from_be(m_f1_index);
     }
 
     void f1_index(int32_t value) noexcept
     {
-        m_f1_index = value;
+        m_f1_index = vrtgen::swap::to_be(value);
     }
 
     int32_t f2_index() const noexcept
     {
-        return m_f2_index;
+        return vrtgen::swap::from_be(m_f2_index);
     }
 
     void f2_index(int32_t value) noexcept
     {
-        m_f2_index = value;
+        m_f2_index = vrtgen::swap::to_be(value);
     }
 
     uint32_t window_time_delta() const noexcept
     {
-        return m_window_time_delta;
+        return vrtgen::swap::from_be(m_window_time_delta);
     }
 
     void window_time_delta(uint32_t value) noexcept
     {
-        m_window_time_delta = value;
+        m_window_time_delta = vrtgen::swap::to_be(value);
     }
 
     std::size_t size() const
