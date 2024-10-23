@@ -1,6 +1,6 @@
 # VITA 49.2 Packet Generator
 
-Generates native-language classes/structs for V49.2 packet definitons in a YAML configuration file.
+Generates native-language classes/structs for V49.2 packet definitions in a YAML configuration file.
 
 ## Dependencies
 
@@ -44,6 +44,36 @@ sudo cmake3 --build build --target install
 On some Linux systems, CMake 3 is the default; run `cmake` instead of `cmake3`.
 
 The headers are installed to `/usr/local/include/vrtgen` by default.
+
+### Docker Installation
+
+Installing in a Docker container is another option and may be useful
+in environments where a modern Python environment is not available. To
+build the container, run:
+
+```sh
+docker build -t vrtgen:latest .
+```
+
+Then, to run the container (passing in files from `$PWD`):
+
+```sh
+docker run -u "$(id -u):$(id -g)" \
+           -v "${PWD}:${PWD}" \
+           -w "$PWD" \
+           --rm \
+           vrtgen:latest <vrtpktgen arguments>
+```
+
+This Docker command can also be aliased to make invocation easier:
+
+```sh
+$ alias vrtpktgen="docker run -u "$(id -u):$(id -g)" -v "${PWD}:${PWD}" -w "$PWD" --rm vrtgen:latest"
+$ vrtpktgen --help
+usage: vrtpktgen [-h] [-v] [-p] [--version]
+                 GENERATOR ... FILENAME [FILENAME ...]
+...
+```
 
 ### CMake Integration
 
