@@ -90,7 +90,8 @@ class CppPacket:
         try:
             if self.is_context:
                 return True
-            elif (self.is_control and (self.config.is_control_v or self.config.is_control_x)):
+            elif self.is_control and (self.cam.action_mode.value == enums.ActionMode.EXECUTE or
+                                      self.cam.action_mode.value == enums.ActionMode.DRY_RUN):
                 return True
             elif (self.is_ack and self.config.is_ack_s):
                 return True
@@ -101,7 +102,7 @@ class CppPacket:
     @property
     def requires_cif_enable_functions(self):
         try:
-            if (self.is_control and self.config.is_control_s):
+            if self.is_control and (self.cam.action_mode.value == enums.ActionMode.NO_ACTION):
                 return True
         except:
             pass

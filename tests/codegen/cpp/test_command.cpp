@@ -114,7 +114,8 @@ TEST_CASE("Section 8.2", "[command_packet][8.2]")
             // auto CONTROLLEE_FORMAT_128 = uint8_t{0x1 << 6 }; // Bit 30 in CAM
             // auto CONTROLLER_ENABLED = uint8_t{0x1 << 5 }; // Bit 29 in CAM
             // auto CONTROLLER_FORMAT_128 = uint8_t{0x1 << 4 }; // Bit 28 in CAM
-            bytes CAM_BE = { 0xF0, 0, 0, 0 };
+            // auto ACTION_MODE_EXECUTE = uint8_t{0x1}; // Bit 24 in CAM
+            bytes CAM_BE = { 0xF1, 0, 0, 0 };
             auto MESSAGE_ID_BE = parse_32(MESSAGE_ID);
             auto data = packet_in.data();
             auto* check_ptr = data.data();
@@ -163,7 +164,8 @@ TEST_CASE("Section 8.2", "[command_packet][8.2]")
 
         bytes HEADER_BE { 0x60, 0x00, 0x00, static_cast<uint8_t>(PACKET_SIZE/4) };
         auto STREAM_ID_BE = parse_32(STREAM_ID);
-        bytes CAM_BE = { 0, 0, 0, 0 };
+	// auto ACTION_MODE_EXECUTE = uint8_t{0x1}; // Bit 24 in CAM
+        bytes CAM_BE = { 0x01, 0, 0, 0 };
         auto MESSAGE_ID_BE = parse_32(MESSAGE_ID);
         auto data = packet_in.data();
         auto* check_ptr = data.data();

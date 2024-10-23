@@ -137,8 +137,6 @@ auto {{ field.name }}() const -> {{ type_helper.value_type(field) }};
 
 {{ cam_getter(packet.cam.action_mode, type_helper) | trim }}
 
-{{ setters(packet.cam.action_mode, type_helper) | trim }}
-
 {{ cam_getter(packet.cam.timing_control, type_helper) | trim }}
 
 {{ setters(packet.cam.timing_control, type_helper) | trim }}

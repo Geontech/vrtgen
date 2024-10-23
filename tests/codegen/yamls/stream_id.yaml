@@ -3,6 +3,8 @@ WithoutStreamIdData: !Data
 WithoutStreamIdContext: !Context
 
 WithoutStreamIdControl: !Control
+  cam: !ControlAcknowledgeMode
+    action_mode: execute
 
 WithStreamIdData: !Data
   stream_id: !StreamID
@@ -12,6 +14,8 @@ WithStreamIdContext: !Context
 
 WithStreamIdControl: !Control
   stream_id: !StreamID
+  cam: !ControlAcknowledgeMode
+    action_mode: execute
 
 TestStreamIdData3: !Data
   stream_id: !StreamID 0xDEADBEEF

@@ -64,6 +64,7 @@ auto send_{{ packet.name | to_snake }}({{ packet.name }}& packet)
 {%     do ack_list.append('ack_s') %}
 {%   endif %}
 {% endif %}
+{% set ns = namespace(ack_tup_str='') %}
 {% for ack_t in ack_list %}
 {%   if loop.first %}
     auto acks = std::tuple<
@@ -80,7 +81,6 @@ auto send_{{ packet.name | to_snake }}({{ packet.name }}& packet)
 {%   endif %}
 {% endfor %}
 {% if ack_list %}
-{% set ns = namespace(ack_tup_str='') %}
 {%   for ack_t in ack_list %}
 {%     if not loop.last %}
 {%     set ns.ack_tup_str = ns.ack_tup_str + ack_t + ', '%}
@@ -102,11 +102,13 @@ auto send_{{ packet.name | to_snake }}({{ packet.name }}& packet)
     }
 {% endfor %}
 {% if cmd_socket == 'nats' %}
-    vrtgen::send_packet(m_client, m_controllee_subject, packet, {{ ns.ack_tup_str }});
+    vrtgen::send_packet(m_client, m_controllee_subject, packet{% if ns.ack_tup_str != '' %}, {{ ns.ack_tup_str }} {% endif %});
 {% else %}
-    vrtgen::send_packet(m_cmd_socket, packet, {{ ns.ack_tup_str }});
+    vrtgen::send_packet(m_cmd_socket, packet{% if ns.ack_tup_str != ''%} , {{ ns.ack_tup_str }} {% endif %});
 {% endif %}
+{% if ns.ack_tup_str != '' %}
     return acks;
+{% endif %}    
 }
 
 {% endmacro %}
