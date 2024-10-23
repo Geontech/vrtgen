@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make Class ID field `pad_bits` runtime dynamic
   - Do not check value in match function
   - Add public getter/setter functions
+- Removed setter for control packet CAM action mode field
+### Fixed
+- Vrtpktgen bug when no acknowledgement packets are requested
 ## [0.7.13] - 2024-09-19
 ### Fixed
 - Threshold data model field variable names

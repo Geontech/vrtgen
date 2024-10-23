@@ -27,7 +27,7 @@ class ClassIdentifier(PackedStruct):
                 elif key == 'packet_code':
                     self.packet_code.value = val
                 elif key == 'information_code':
-                    self.packet_code.value = val
+                    self.information_code.value = val
                 else:
                     raise KeyError(val)
             except:

@@ -83,17 +83,26 @@ class ControlAcknowledgeMode(PackedStruct):
                 self.__dict__[key].value = parse_identifier_format(val)
                 self.__dict__[key].enabled = True
                 self.__dict__[key].required = True
-            # elif key == 'action_mode':
-            #     if val == 'required' or val == 'optional':
-            #         mode = parse_enable(val)
-            #         self.__dict__[key].enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
-            #         self.__dict__[key].required = True if (mode == Mode.REQUIRED) else False
-            #         if mode == Mode.REQUIRED:
-            #             self.__dict__[key].value = True
-            #     else:
-            #         self.__dict__[key].value = parse_action_mode(val)
-            #         self.__dict__[key].enabled = True
-            #         self.__dict__[key].required = True
+            elif key == 'action_mode':
+                if val == 'required' or val == 'optional':
+                    mode = parse_enable(val)
+                    self.__dict__[key].enabled = True if (mode == Mode.REQUIRED or mode == Mode.OPTIONAL) else False
+                    self.__dict__[key].required = True if (mode == Mode.REQUIRED) else False
+                    if mode == Mode.REQUIRED:
+                        self.__dict__[key].value = True
+                else:
+                    self.__dict__[key].value = parse_action_mode(val)
+                    self.__dict__[key].enabled = True
+                    self.__dict__[key].required = True
+                    # Check for valid combinations of action_mode and acknowledge requests
+                    if self.action_mode.value == enums.ActionMode.NO_ACTION:
+                        if not self.req_s.value:
+                            raise ValueError('When action_mode set to none, req_s must be true')
+                        elif self.req_x.value or self.req_v.value:
+                            raise ValueError('When action_mode set to none, req_x and req_v must be false')
+                        elif self.req_w.value or self.req_er.value:
+                            raise ValueError('When action_mode set to none, req_w and req_er must be false')
+                        
             # elif key == 'timing_control':
             #     self.__dict__[key].value = parse_timing_control(val)
             #     self.__dict__[key].enabled = True

@@ -92,9 +92,12 @@ auto {{ packet_name }}::{{ req.name }}() const -> {{ type_helper.value_type(req)
     return m_{{ packet.cam.name }}.{{ req.name }}();
 }
 
+{% if req.name != 'action_mode' %}
 auto {{ packet_name }}::{{ req.name }}(const {{ type_helper.value_type(req) }} value) -> void
 {
     m_{{ packet.cam.name }}.{{ req.name }}(value);
     m_{{ packet.cam.name }}.pack_into(m_data.data() + m_positions.at("{{ packet.cam.name }}"));
 }
+{% endif %}
+
 {%  endmacro %}

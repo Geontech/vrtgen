@@ -21,3 +21,5 @@ TimestampControl1: !Control
   timestamp: !Timestamp
     integer: utc
     fractional: picoseconds
+  cam: !ControlAcknowledgeMode
+    action_mode: execute
