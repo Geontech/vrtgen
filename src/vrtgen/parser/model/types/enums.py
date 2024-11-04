@@ -187,6 +187,7 @@ class TSM(BinaryEnum, bits=1):
     """
     FINE = 0
     COARSE = 1
+    ANY = 0b111
 
 class SPECTRUM_OR_TIME(BinaryEnum, bits=1):
     """

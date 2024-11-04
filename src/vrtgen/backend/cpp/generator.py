@@ -25,6 +25,7 @@ from vrtgen.parser.loader import get_loader
 from .type_helpers import TypeHelper, format_enum
 from .jinja import *
 import copy
+import logging
 
 def name_to_identifier(name):
     """
@@ -58,6 +59,7 @@ class CppPacket:
         self.helper = name + 'Helper'
         self.namespace = ''
         self.config = packet
+        self.supports_multiple_information_codes = False
 
     @property
     def is_data(self):
@@ -491,8 +493,18 @@ class CppGenerator(Generator):
 
 
     def generate_packet(self, name, packet):
+        # Loop over existing packets to check for duplicates
+        for existing_packet in self.packets:
+            if existing_packet.name == name:
+                logging.info('Duplicate packet name detected: %s', name)
+                if existing_packet.config.class_id.information_code.value == packet.class_id.information_code.value:
+                    logging.error('Attempt to add duplicate packet type %s to Information Class %s', name, packet.class_id.information_code.value)
+                    raise SystemExit()
+                else: # Set flag and do not add packet
+                    existing_packet.supports_multiple_information_codes = True
+                    return
         model = CppPacket(name, packet)
-        self.packets.append(model)
+        self.packets.append(copy.deepcopy(model))
 
     def generate(self, name, config):
         name = name_to_identifier(name)

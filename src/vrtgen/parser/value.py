@@ -42,7 +42,8 @@ def parse_tsf(value):
 
 _TSM_VALUES = {
     'fine' : enums.TSM.FINE,
-    'coarse' :  enums.TSM.COARSE
+    'coarse' :  enums.TSM.COARSE,
+    'any' :  enums.TSM.ANY
 }
 
 def parse_tsm(value):
