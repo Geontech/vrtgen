@@ -21,6 +21,9 @@
 m_data.resize(min_bytes());
 auto curr_pos = std::size_t{};
 {% for field in packet.header.fields if field.enabled and field.value %}
+{%   if field.name == 'tsm' and field.value.value == 0b111 %}
+{%     continue %}
+{%   endif %}
 {%   if field.name == 'tsi' and field.value.value == 0b111 %}
 {%     continue %}
 {%   endif %}

@@ -39,8 +39,26 @@ auto {{ packet.name }}::{{ field.name }}(const {{ type_helper.value_type(field) 
 }
 {% endmacro %}
 
+{%- macro tsm_def(packet, type_helper) %}
+{% set field = packet.header.tsm %}
+auto {{ packet.name }}::{{ field.name }}() const -> {{ type_helper.value_type(field) }}
+{
+    return m_header.tsm();
+}
+
+auto {{ packet.name }}::{{ field.name }}(const {{ type_helper.value_type(field) }} value) -> void
+{
+    m_header.tsm(value);
+    m_header.pack_into(m_data.data());  
+}
+{% endmacro %}
+
 {%- macro function_defs(packet, type_helper) %}
 {{ header_def(packet, type_helper) | trim }}
 
 {{ packet_count_def(packet, type_helper) | trim }}
+
+{%   if packet.is_context and packet.header.tsm.value.value == 0b111 %}
+{{ tsm_def(packet, type_helper) | trim }}
+{%   endif %}
 {% endmacro %}

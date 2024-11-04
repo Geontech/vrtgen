@@ -39,8 +39,25 @@ auto {{ packet.name }}::{{ field.name }}(const {{ type_helper.value_type(field) 
 }
 {% endmacro %}
 
+{%- macro information_code_def(packet, type_helper) %}
+{% set field = packet.class_id.information_code %}
+auto {{ packet.name }}::{{ field.name }}() const -> {{ type_helper.value_type(field) }}
+{
+    return m_class_id.information_code();
+}
+
+auto {{ packet.name }}::{{ field.name }}(const {{ type_helper.value_type(field) }} value) -> void
+{
+    m_class_id.information_code(value);
+    m_class_id.pack_into(m_data.data() + m_positions.at("class_id"));
+}
+{% endmacro %}
+
 {%- macro function_defs(packet, type_helper) %}
 {{ class_id_def(packet, type_helper) | trim }}
 
 {{ pad_bits_def(packet, type_helper) | trim }}
+{% if packet.supports_multiple_information_codes %}
+{{ information_code_def(packet, type_helper) | trim }}
+{% endif %}
 {% endmacro %}
