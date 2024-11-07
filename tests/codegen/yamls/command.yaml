@@ -1,5 +1,6 @@
 TestCommandPacket1: !Control
   cam: !ControlAcknowledgeMode
+    action_mode: execute
     req_v: optional
     req_x: optional
     req_s: optional
@@ -17,6 +18,7 @@ TestCommandPacket3: !Control
   class_id: !ClassID
     oui: FF-EE-DD
   cam: !ControlAcknowledgeMode
+    action_mode: execute
     req_v: optional
     req_x: optional
     req_s: optional
@@ -26,6 +28,7 @@ TestAckPacket3: !Ack
 
 TestCommandPacket4: !Control
   cam: !ControlAcknowledgeMode
+    action_mode: execute
     req_v: optional
     req_x: optional
     req_s: optional
@@ -37,6 +40,7 @@ TestAckPacket4: !Ack
 
 TestCommandPacket5: !Control
   cam: !ControlAcknowledgeMode
+    action_mode: execute
     req_v: optional
     req_x: optional
     req_s: optional
@@ -55,6 +59,7 @@ TestCommandPacket9: !Control
   controllee_id: uuid
   controller_id: uuid
   cam: !ControlAcknowledgeMode
+    action_mode: execute
     req_v: optional
     req_x: optional
     req_s: optional
@@ -64,6 +69,7 @@ TestAckPacket9: !Ack
 
 TestCommandPacketWif010: !Control
   cam: !ControlAcknowledgeMode
+    action_mode: execute
     permit_errors: true
     permit_warnings: true
     req_x: true
@@ -78,6 +84,7 @@ TestAckPacketWif010: !Ack
 
 TestCommandPacketWif110: !Control
   cam: !ControlAcknowledgeMode
+    action_mode: execute
     permit_errors: true
     permit_warnings: true
     req_x: true
@@ -91,6 +98,7 @@ TestAckPacketWif110: !Ack
 
 TestCommandPacket11: !Control
   cam: !ControlAcknowledgeMode
+    action_mode: execute
     permit_errors: true
     permit_warnings: true
     req_x: true
@@ -198,3 +206,15 @@ TestAckPacket11: !Ack
 #   class_id: !ClassID
 #     oui: FF-EE-DD
 #     packet_code: 0x1235
+
+Difi1p2: !Control
+  cam: !ControlAcknowledgeMode
+    action_mode: execute
+    req_x: false
+    req_v: false
+    req_s: false
+    req_w: false
+    req_er: false
+  cif_1: !CIF1
+    buffer_size: !DIFI1p2BufferSize
+      mode: required

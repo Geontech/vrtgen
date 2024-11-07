@@ -73,7 +73,7 @@ include(FetchContent)
 FetchContent_Declare(
     vrtgen
     GIT_REPOSITORY https://github.com/geontech/vrtgen
-    GIT_TAG v0.7.11
+    GIT_TAG v0.7.14
 )
 FetchContent_MakeAvailable(vrtgen)
 ...

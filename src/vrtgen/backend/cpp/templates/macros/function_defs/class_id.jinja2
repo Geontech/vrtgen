@@ -1,5 +1,5 @@
 /*#
- * Copyright (C) 2023 Geon Technologies, LLC
+ * Copyright (C) 2024 Geon Technologies, LLC
  *
  * This file is part of vrtgen.
  *
@@ -17,48 +17,47 @@
  * along with this program.  If not, see http://www.gnu.org/licenses/.
 #*/
 
-{%- macro header_def(packet, type_helper) %}
-{% set field = packet.header %}
+{%- macro class_id_def(packet, type_helper) %}
+{% set field = packet.class_id %}
 auto {{ packet.name }}::{{ field.name }}() const -> const {{ type_helper.value_type(field) }}&
 {
     return m_{{ field.name }};
 }
 {% endmacro %}
 
-{%- macro packet_count_def(packet, type_helper) %}
-{% set field = packet.header.packet_count %}
+{%- macro pad_bits_def(packet, type_helper) %}
+{% set field = packet.class_id.pad_bits %}
 auto {{ packet.name }}::{{ field.name }}() const -> {{ type_helper.value_type(field) }}
 {
-    return m_header.packet_count();
+    return m_class_id.pad_bits();
 }
 
 auto {{ packet.name }}::{{ field.name }}(const {{ type_helper.value_type(field) }} value) -> void
 {
-    m_header.packet_count(value);
-    m_header.pack_into(m_data.data());  
+    m_class_id.pad_bits(value);
+    m_class_id.pack_into(m_data.data() + m_positions.at("class_id"));
 }
 {% endmacro %}
 
-{%- macro tsm_def(packet, type_helper) %}
-{% set field = packet.header.tsm %}
+{%- macro information_code_def(packet, type_helper) %}
+{% set field = packet.class_id.information_code %}
 auto {{ packet.name }}::{{ field.name }}() const -> {{ type_helper.value_type(field) }}
 {
-    return m_header.tsm();
+    return m_class_id.information_code();
 }
 
 auto {{ packet.name }}::{{ field.name }}(const {{ type_helper.value_type(field) }} value) -> void
 {
-    m_header.tsm(value);
-    m_header.pack_into(m_data.data());  
+    m_class_id.information_code(value);
+    m_class_id.pack_into(m_data.data() + m_positions.at("class_id"));
 }
 {% endmacro %}
 
 {%- macro function_defs(packet, type_helper) %}
-{{ header_def(packet, type_helper) | trim }}
+{{ class_id_def(packet, type_helper) | trim }}
 
-{{ packet_count_def(packet, type_helper) | trim }}
-
-{%   if packet.is_context and packet.header.tsm.value.value == 0b111 %}
-{{ tsm_def(packet, type_helper) | trim }}
-{%   endif %}
+{{ pad_bits_def(packet, type_helper) | trim }}
+{% if packet.supports_multiple_information_codes %}
+{{ information_code_def(packet, type_helper) | trim }}
+{% endif %}
 {% endmacro %}

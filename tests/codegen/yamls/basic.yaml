@@ -3,6 +3,8 @@ BasicDataPacket: !Data
 BasicContextPacket: !Context
 
 BasicControlPacket: !Control
+  cam: !ControlAcknowledgeMode
+    action_mode: execute
 
 BasicControlPacketAck: !Ack
   responds_to: BasicControlPacket

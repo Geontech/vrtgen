@@ -25,6 +25,7 @@ from vrtgen.parser.loader import get_loader
 from .type_helpers import TypeHelper, format_enum
 from .jinja import *
 import copy
+import logging
 
 def name_to_identifier(name):
     """
@@ -58,6 +59,7 @@ class CppPacket:
         self.helper = name + 'Helper'
         self.namespace = ''
         self.config = packet
+        self.supports_multiple_information_codes = False
 
     @property
     def is_data(self):
@@ -90,7 +92,8 @@ class CppPacket:
         try:
             if self.is_context:
                 return True
-            elif (self.is_control and (self.config.is_control_v or self.config.is_control_x)):
+            elif self.is_control and (self.cam.action_mode.value == enums.ActionMode.EXECUTE or
+                                      self.cam.action_mode.value == enums.ActionMode.DRY_RUN):
                 return True
             elif (self.is_ack and self.config.is_ack_s):
                 return True
@@ -101,7 +104,7 @@ class CppPacket:
     @property
     def requires_cif_enable_functions(self):
         try:
-            if (self.is_control and self.config.is_control_s):
+            if self.is_control and (self.cam.action_mode.value == enums.ActionMode.NO_ACTION):
                 return True
         except:
             pass
@@ -490,8 +493,18 @@ class CppGenerator(Generator):
 
 
     def generate_packet(self, name, packet):
+        # Loop over existing packets to check for duplicates
+        for existing_packet in self.packets:
+            if existing_packet.name == name:
+                logging.info('Duplicate packet name detected: %s', name)
+                if existing_packet.config.class_id.information_code.value == packet.class_id.information_code.value:
+                    logging.error('Attempt to add duplicate packet type %s to Information Class %s', name, packet.class_id.information_code.value)
+                    raise SystemExit()
+                else: # Set flag and do not add packet
+                    existing_packet.supports_multiple_information_codes = True
+                    return
         model = CppPacket(name, packet)
-        self.packets.append(model)
+        self.packets.append(copy.deepcopy(model))
 
     def generate(self, name, config):
         name = name_to_identifier(name)

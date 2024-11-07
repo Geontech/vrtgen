@@ -18,7 +18,11 @@ TestControlClassId1: !Control
   stream_id: !StreamID 0xABCDEF
   class_id: !ClassID
     oui: AA-BB-CC
+  cam: !ControlAcknowledgeMode
+    action_mode: execute
 
 TestControlClassId2: !Control
   class_id: !ClassID
     packet_code: 0x1234
+  cam: !ControlAcknowledgeMode
+    action_mode: execute

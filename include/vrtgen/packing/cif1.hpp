@@ -1304,4 +1304,198 @@ protected:
 
 }; // end class VersionInformation
 
+namespace difi {
+
+/**
+ * @class BufferSize
+ * @brief BufferSize field (DIFI 1.2 Section 4.3)
+ */  
+class BufferSize
+{
+public:
+    /**
+     * @brief Returns the BufferSize BufferSize
+     * @return BufferSize BufferSize
+     * 
+     * BufferSize BufferSize is 64 bits long at bit position 95
+     * See DIFI 1.2 Section 4.3 Table 20
+     */
+    constexpr uint64_t buffer_size() const noexcept
+    {
+        return vrtgen::swap::to_be(m_buffer_size);
+    }
+  
+    /**
+     * @brief Sets the BufferSize BufferSize
+     * @param value BufferSize BufferSize value to set
+     * 
+     * BufferSize BufferSize is 64 bits long at bit position 95
+     * See DIFI 1.2 Section 4.3 Table 20
+     */
+    void buffer_size(uint64_t value) noexcept
+    {
+        m_buffer_size = vrtgen::swap::to_be(value);
+    }
+  
+    /**
+     * @brief Returns the BufferSize Level
+     * @return BufferSize Level
+     * 
+     * BufferSize Level is 12 bits long at bit position 15
+     * See DIFI 1.2 Section 4.3 Table 20
+     */
+    uint16_t level() const noexcept
+    {
+        return m_buffer_status.get<15,12,uint16_t>();
+    }
+
+    /**
+     * @brief Sets the BufferSize Level
+     * @param value BufferSize Level value to set
+     * 
+     * BufferSize Level is 12 bits long at bit position 15
+     * See DIFI 1.2 Section 4.3 Table 20
+     */
+    void level(uint16_t value) noexcept
+    {
+        m_buffer_status.set<15,12>(value);
+    }
+  
+    /**
+     * @brief Returns the BufferSize Overflow
+     * @return BufferSize Overflow
+     * 
+     * BufferSize Overflow is 1 bit long at bit position 3
+     * See DIFI 1.2 Section 4.3 Table 20
+     */
+    bool overflow() const noexcept
+    {
+        return m_buffer_status.get<3>();
+    }
+
+    /**
+     * @brief Sets the BufferSize Overflow
+     * @param value BufferSize Overflow value to set
+     * 
+     * BufferSize Overflow is 1 bit long at bit position 3
+     * See DIFI 1.2 Section 4.3 Table 20
+     */
+    void overflow(bool value) noexcept
+    {
+        m_buffer_status.set<3>(value);
+    }
+  
+    /**
+     * @brief Returns the BufferSize Nearly Full Indicator
+     * @return BufferSize Nearly Full Indicator
+     * 
+     * BufferSize Nearly Full Indicator is 1 bit long at bit position 2
+     * See DIFI 1.2 Section 4.3 Table 20
+     */
+    bool nearly_full() const noexcept
+    {
+        return m_buffer_status.get<2>();
+    }
+
+    /**
+     * @brief Sets the BufferSize Nearly Full Indicator
+     * @param value BufferSize Nearly Full Indicator value to set
+     * 
+     * BufferSize Nearly Full Indicator is 1 bit long at bit position 2
+     * See DIFI 1.2 Section 4.3 Table 20
+     */
+    void nearly_full(bool value) noexcept
+    {
+        m_buffer_status.set<2>(value);
+    }
+
+    /**
+     * @brief Returns the BufferSize Nearly Empty Indicator
+     * @return BufferSize Nearly Empty Indicator
+     * 
+     * BufferSize Nearly Empty Indicator is 1 bit long at bit position 1
+     * See DIFI 1.2 Section 4.3 Table 20
+     */
+    bool nearly_empty() const noexcept
+    {
+        return m_buffer_status.get<1>();
+    }
+
+    /**
+     * @brief Sets the BufferSize Nearly Empty Indicator
+     * @param value BufferSize Nearly Empty Indicator value to set
+     * 
+     * BufferSize Nearly Empty Indicator is 1 bit long at bit position 1
+     * See DIFI 1.2 Section 4.3 Table 20
+     */
+    void nearly_empty(bool value) noexcept
+    {
+        m_buffer_status.set<1>(value);
+    }
+
+    /**
+     * @brief Returns the BufferSize Underflow
+     * @return BufferSize Underflow
+     * 
+     * BufferSize Underflow is 1 bit long at bit position 0
+     * See DIFI 1.2 Section 4.3 Table 20
+     */
+    bool underflow() const noexcept
+    {
+        return m_buffer_status.get<0>();
+    }
+
+    /**
+     * @brief Sets the BufferSize Underflow
+     * @param value BufferSize Underflow value to set
+     * 
+     * BufferSize Underflow is 1 bit long at bit position 0
+     * See DIFI 1.2 Section 4.3 Table 20
+     */
+    void underflow(bool value) noexcept
+    {
+        m_buffer_status.set<0>(value);
+    }
+
+    /**
+     * @brief Returns the number of BufferSize bytes
+     * @return Number of BufferSize bytes
+     */
+    constexpr std::size_t size() const noexcept
+    {
+        return sizeof(m_buffer_size) + m_buffer_status.size();
+    }
+  
+    /**
+     * @brief Pack BufferSize as bytes into the buffer
+     * @param buffer_ptr Pointer to buffer location to add BufferSize bytes
+     */
+    void pack_into(uint8_t* buffer_ptr) const
+    {
+        std::memcpy(buffer_ptr, &m_buffer_size, sizeof(m_buffer_size));
+        buffer_ptr += sizeof(m_buffer_size);
+
+        m_buffer_status.pack_into(buffer_ptr);
+    }
+  
+    /**
+     * @brief Unpack buffer bytes into BufferSize
+     * @param buffer_ptr Pointer to beginning of BufferSize bytes in the buffer
+     */
+    void unpack_from(const uint8_t* buffer_ptr)
+    {
+        std::memcpy(&m_buffer_size, buffer_ptr, sizeof(m_buffer_size));
+        buffer_ptr += sizeof(m_buffer_size);
+
+        m_buffer_status.unpack_from(buffer_ptr);
+    }
+  
+private:
+    uint64_t m_buffer_size{};
+    vrtgen::packed<uint32_t> m_buffer_status; //!< Packed Buffer status bits structure
+
+}; // end class Buffersize
+
+} // namespace difi
+
 } // end namespace vrtgen::packing

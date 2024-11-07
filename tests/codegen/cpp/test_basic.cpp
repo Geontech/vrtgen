@@ -187,7 +187,8 @@ TEST_CASE("Basic Control Packet")
     CHECK(packed_stream_id == STREAM_ID_BE);
 
     // Examine and check packed CAM
-    const bytes CAM_BE{ 0, 0, 0, 0 };
+    // auto ACTION_MODE_EXECUTE = uint8_t{0x1}; // Bit 24 in CAM
+    bytes CAM_BE = { 0x01, 0, 0, 0 };
     const bytes packed_cam(check_ptr, check_ptr + CAM_BYTES);
     check_ptr += CAM_BYTES;
     CHECK(packed_cam == CAM_BE);

@@ -4,6 +4,7 @@ TestHeaderContextPacket: !Context
 
 TestHeaderControlPacket: !Control
   cam: !ControlAcknowledgeMode
+    action_mode: execute
     req_v: required
 
 TestHeaderAckPacket: !Ack
@@ -24,6 +25,7 @@ TestHeaderControlTSPacket: !Control
     integer: utc
     fractional: picoseconds
   cam: !ControlAcknowledgeMode
+    action_mode: execute
     req_v: required
 
 TestHeaderAckTSPacket: !Ack

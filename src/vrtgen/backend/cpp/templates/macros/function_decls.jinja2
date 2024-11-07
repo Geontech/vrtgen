@@ -89,6 +89,9 @@ auto {{ field.name }}_attributes() -> {{ 'std::optional<' if field.is_optional }
 {{ const_ref_getter(packet.header, type_helper) | trim }}
 
 {{ getters_and_setters(packet.header.packet_count, type_helper) | trim }}
+{% if packet.is_context and packet.header.tsm.value.value == 0b111 %}
+{{ getters_and_setters(packet.header.tsm, type_helper) | trim }}
+{% endif %}
 
 {% if packet.stream_id.enabled %}
 {{ getters_and_setters(packet.stream_id, type_helper) | trim }}
@@ -96,6 +99,12 @@ auto {{ field.name }}_attributes() -> {{ 'std::optional<' if field.is_optional }
 {% endif %}
 {% if packet.class_id.enabled %}
 {{ const_ref_getter(packet.class_id, type_helper) | trim }}
+
+{{ getters_and_setters(packet.class_id.pad_bits, type_helper) | trim }}
+
+{% if packet.supports_multiple_information_codes %}
+{{ getters_and_setters(packet.class_id.information_code, type_helper) | trim }}
+{% endif %}
 
 {% endif %}
 {% if packet.timestamp.enabled %}
@@ -134,8 +143,6 @@ auto {{ field.name }}() const -> {{ type_helper.value_type(field) }};
 {{ const_ref_getter(packet.cam, type_helper) | trim }}
 
 {{ cam_getter(packet.cam.action_mode, type_helper) | trim }}
-
-{{ setters(packet.cam.action_mode, type_helper) | trim }}
 
 {{ cam_getter(packet.cam.timing_control, type_helper) | trim }}
 
