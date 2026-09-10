@@ -16,7 +16,7 @@ class ContextHeader(Header):
     """
     not_v49d0 : BooleanType = field(default_factory=lambda: BooleanType('not_v49d0', packed_tag=PackedTag(25,1,0,0)))
     tsm : EnumType = field(default_factory=lambda: EnumType('tsm', type_=TSM, packed_tag=PackedTag(24,1,0,0)))
-    
+
     def __post_init__(self):
         super().__post_init__()
         self.type_ = type(self).__name__
@@ -64,7 +64,20 @@ class ExtensionContextPacket(ContextPacket):
     """
     Extension Context Packet
     """
-    
+
     def __post_init__(self):
         super().__post_init__()
         self.header.packet_type.value = PacketType.EXTENSION_CONTEXT
+
+@dataclass
+class DifiExtensionContextPacket(ExtensionContextPacket):
+    """
+    Difi Extension Context Packet
+    """
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.header.packet_type.value = PacketType.EXTENSION_CONTEXT
+
+    def _update_header(self):
+        Packet._update_header(self)

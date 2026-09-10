@@ -43,9 +43,18 @@ def context_packet_constructor(loader, node) -> context.ContextPacket:
 
 def ext_context_packet_constructor(loader, node) -> context.ExtensionContextPacket:
     """
-    Construct a ContextPacket.
+    Construct an ExtensionContextPacket.
     """
     packet = context.ExtensionContextPacket()
+    if not isinstance(node, yaml.ScalarNode):
+        packet.validate_and_parse_mapping(**loader.construct_mapping(node))
+    return packet
+
+def difi_ext_context_packet_constructor(loader, node) -> context.DifiExtensionContextPacket:
+    """
+    Construct a DifiExtensionContextPacket.
+    """
+    packet = context.DifiExtensionContextPacket()
     if not isinstance(node, yaml.ScalarNode):
         packet.validate_and_parse_mapping(**loader.construct_mapping(node))
     return packet
@@ -238,6 +247,7 @@ def get_loader():
     loader.add_constructor('!Data', data_packet_constructor)
     loader.add_constructor('!Context', context_packet_constructor)
     loader.add_constructor('!ExtensionContext', ext_context_packet_constructor)
+    loader.add_constructor('!DifiExtensionContext', difi_ext_context_packet_constructor)
     loader.add_constructor('!Control', control_packet_constructor)
     loader.add_constructor('!Ack', ack_packet_constructor)
     loader.add_constructor('!ExtensionControl', ext_control_packet_constructor)
