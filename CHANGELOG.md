@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.15] - 2026-10-01
+### Added
+  - DIFI Extension Context support — Adds the YAML tag !DifiExtensionContext. Its header handling intentionally bypasses the normal context rule that automatically sets not_v49d0 when CIF1, CIF2, or CIF7 is enabled.
+### Fixed
+  - Ack-S C++ generation fix — Required CIF0/1/2 fields now correctly reference packet.cif7 while generating min_bytes(). Previously, the unscoped cif7 reference could cause generation failures.
 ## [0.7.14] - 2024-11-06
 ### Added
   - YAML tags and namespace to support DIFI 1.2 deviations to reference level and buffer size context fields
